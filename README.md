@@ -1,69 +1,100 @@
 # Punto Participa
 
-## 📌 Descripción del proyecto
+## 1. Nombre del proyecto
 
-**Punto Participa** es una plataforma web orientada a la gestión de actividades, talleres, inscripciones y control de asistencia del Punto Estudiantil de Duoc UC Sede Alameda.
+**Punto Participa**
 
-El proyecto busca centralizar y optimizar el proceso de gestión de participación estudiantil, reemplazando el uso de planillas Excel y formularios externos por una solución web organizada y centralizada.
-
-La plataforma estará dirigida principalmente a:
-
-* **Administradores del Punto Estudiantil**, encargados de gestionar actividades, usuarios, talleres y reportes.
-* **Operadores**, encargados de registrar la asistencia durante las actividades.
-* **Estudiantes**, quienes podrán consultar e inscribirse en talleres con cupos disponibles.
-
-El sistema contempla dos tipos principales de actividades:
-
-* **Actividades masivas:** permiten registrar la asistencia presencial mediante digitación del RUT, lectura de código QR de la cédula o lectura del código de barras mostrado en la aplicación Vivo Duoc.
-* **Talleres con cupo:** permiten que los estudiantes consulten la disponibilidad de vacantes y realicen su inscripción mediante la plataforma.
-
-El problema principal que busca resolver es la gestión manual y dispersa de la información de participación, facilitando la centralización de datos, el control de acceso, el registro de asistencia y la generación de reportes.
+Plataforma web para la gestión de actividades, talleres, inscripciones y control de asistencia del Punto Estudiantil de Duoc UC Sede Alameda.
 
 ---
 
-## 🛠️ Tecnologías utilizadas
+## 2. Descripción del proyecto
 
-El proyecto utilizará inicialmente las siguientes tecnologías:
+**Punto Participa** es una plataforma web que busca centralizar y optimizar la gestión de actividades y participación estudiantil del Punto Estudiantil.
 
-| Tecnología     | Uso                                     |
-| -------------- | --------------------------------------- |
-| **HTML**       | Estructura de las interfaces web        |
-| **CSS**        | Diseño y estilos de la aplicación       |
-| **JavaScript** | Interactividad del frontend             |
-| **Python**     | Lenguaje de programación del backend    |
-| **Django**     | Framework para el desarrollo backend    |
-| **PostgreSQL** | Base de datos                           |
-| **Git**        | Control de versiones                    |
-| **GitHub**     | Repositorio y gestión del código fuente |
+Actualmente, el registro de participación se realiza mediante planillas Excel con macros que son trasladadas manualmente, lo que dificulta la centralización de la información, el control de acceso, el resguardo de los datos y la generación de información histórica.
 
-Estas corresponden a la base tecnológica definida para el proyecto.
+Además, para los talleres con cupos limitados se utilizan formularios externos, dificultando que los estudiantes puedan conocer la disponibilidad de vacantes en tiempo real.
 
-> **Estado actual:** el proyecto se encuentra en una etapa inicial y el repositorio contiene actualmente el esqueleto de desarrollo. Las tecnologías serán implementadas progresivamente durante el desarrollo.
+La solución propuesta permitirá gestionar desde una plataforma centralizada:
+
+* Actividades masivas.
+* Talleres con cupos limitados.
+* Inscripciones de estudiantes.
+* Registro de asistencia.
+* Usuarios y roles.
+* Reportes de participación.
+
+### ¿A quién está dirigido?
+
+El sistema estará dirigido principalmente a:
+
+* **Administradores del Punto Estudiantil:** responsables de gestionar actividades, talleres, usuarios y reportes.
+* **Operadores:** encargados de registrar la asistencia durante las actividades presenciales.
+* **Estudiantes:** usuarios que podrán consultar e inscribirse en talleres disponibles.
+
+### ¿Qué problema resuelve?
+
+Punto Participa busca reemplazar procesos manuales y dispersos por una solución web centralizada, permitiendo mejorar la gestión de la participación estudiantil, reducir registros duplicados, facilitar el control de asistencia y disponer de información consolidada para reportes y análisis.
+
+La propuesta contempla el registro de asistencia mediante digitación del RUT, lectura del código QR de la cédula de identidad o lectura del código de barras mostrado en la aplicación Vivo Duoc.
 
 ---
 
-## 🚀 Instrucciones para ejecutar el proyecto localmente
+## 3. Tecnologías utilizadas
 
-Actualmente **Punto Participa se encuentra en una etapa inicial de desarrollo**, por lo que todavía no existe una versión funcional que requiera un procedimiento completo de instalación y ejecución.
+La solución será desarrollada utilizando las siguientes tecnologías:
 
-Una vez implementada la estructura de Django y sus dependencias, esta sección será actualizada con:
+| Tecnología     | Uso                              |
+| -------------- | -------------------------------- |
+| **HTML**       | Estructura de las interfaces web |
+| **CSS**        | Diseño y estilos                 |
+| **JavaScript** | Interactividad del frontend      |
+| **Python**     | Desarrollo del backend           |
+| **Django**     | Framework del backend            |
+| **PostgreSQL** | Base de datos                    |
+| **Git**        | Control de versiones             |
+| **GitHub**     | Repositorio del proyecto         |
 
-1. Clonación del repositorio.
-2. Creación y activación del entorno virtual.
-3. Instalación de dependencias.
-4. Configuración de PostgreSQL.
-5. Configuración de variables de entorno.
-6. Ejecución de migraciones.
-7. Inicio del servidor local.
+Estas tecnologías corresponden a la base tecnológica definida para el proyecto.
+
+### Cloud
+
+**Por definir durante el desarrollo del proyecto.**
+
+Actualmente no se ha definido una plataforma de despliegue en la nube.
+
+---
+
+## 4. Instrucciones para ejecutar el proyecto localmente
+
+### Estado actual
+
+El proyecto se encuentra actualmente en una **etapa inicial de definición** y el repositorio todavía no contiene la implementación de la aplicación.
+
+Por este motivo, **actualmente no existe una versión funcional que pueda ejecutarse localmente**.
+
+El repositorio será utilizado para incorporar progresivamente el código fuente, configuración, dependencias y documentación necesarias para ejecutar la aplicación.
 
 ### Repositorio
 
-**GitHub:**
-https://github.com/Gegs-12358/Punto_Participa
+[GitHub — Punto Participa](https://github.com/Gegs-12358/Punto_Participa)
+
+### Próximamente
+
+Cuando se implemente el proyecto, esta sección será actualizada con las instrucciones para:
+
+1. Clonar el repositorio.
+2. Crear el entorno virtual de Python.
+3. Instalar las dependencias.
+4. Configurar PostgreSQL.
+5. Configurar las variables de entorno.
+6. Ejecutar las migraciones de Django.
+7. Iniciar el servidor local.
 
 ---
 
-## 👥 Integrantes del equipo
+## 5. Integrantes del equipo y roles
 
 | Integrante             | Rol                                      |
 | ---------------------- | ---------------------------------------- |
@@ -90,8 +121,8 @@ Responsabilidades:
 
 * Diseño UX/UI.
 * Maquetación web.
-* Desarrollo frontend.
-* Conexión frontend/backend.
+* Desarrollo Frontend.
+* Conexión Frontend/Backend.
 
 ### Diverson Nonnombre
 
@@ -99,121 +130,121 @@ Responsabilidades:
 
 Responsabilidades:
 
-* Modelamiento de PostgreSQL.
+* Modelamiento PostgreSQL.
 * Gestión de base de datos.
 * QA / Testing.
 * Consultas para reportes.
 
-Los roles se encuentran definidos en la propuesta del proyecto.
+Los roles del equipo están definidos en la propuesta del proyecto.
 
 ---
 
-## 🔄 Metodología de trabajo
+## 6. Metodología de trabajo
 
-El equipo trabajará utilizando una metodología basada en **Scrum**.
+El equipo utilizará una metodología de trabajo basada en **Scrum**.
 
-Para la planificación y estimación del trabajo se utilizará **Planning Poker**, permitiendo dimensionar las distintas funcionalidades y distribuirlas dentro del periodo de desarrollo.
+La planificación y estimación de las funcionalidades se realizará mediante **Planning Poker**, permitiendo dimensionar el trabajo y organizar las actividades del equipo.
 
-El proyecto se organizará mediante épicas y tareas, realizando un desarrollo progresivo de las funcionalidades.
+El proyecto será dividido en funcionalidades y épicas que serán desarrolladas progresivamente.
 
-La planificación contempla la distribución de las épicas durante las semanas de trabajo definidas para el proyecto.
+Entre las principales funcionalidades consideradas se encuentran:
+
+* Registro de asistencia.
+* Gestión de cupos e inscripciones.
+* Invitaciones por correo.
+* Usuarios y roles.
+* Reportes y métricas.
+* Gestión de actividades.
+* Auditoría y trazabilidad.
+* Respaldo y continuidad de datos.
+
+La planificación del proyecto contempla la distribución de estas funcionalidades durante las semanas de desarrollo.
 
 ---
 
-## 🏗️ Arquitectura de la solución
+## 7. Arquitectura de la solución
 
-Punto Participa será desarrollado como una **aplicación web**, utilizando una arquitectura separada en frontend, backend y base de datos.
+La solución será desarrollada como una aplicación web utilizando una arquitectura basada en tres componentes principales:
 
-### Diagrama de arquitectura
+### Frontend
 
-```text
-                  ┌─────────────────────────┐
-                  │         USUARIOS        │
-                  │                         │
-                  │ Administrador           │
-                  │ Operador                │
-                  │ Estudiante              │
-                  └────────────┬────────────┘
-                               │
-                               ▼
-                  ┌─────────────────────────┐
-                  │        FRONTEND         │
-                  │                         │
-                  │ HTML + CSS + JavaScript │
-                  └────────────┬────────────┘
-                               │
-                               ▼
-                  ┌─────────────────────────┐
-                  │         BACKEND         │
-                  │                         │
-                  │      Python + Django    │
-                  │                         │
-                  │ • Usuarios y roles      │
-                  │ • Actividades           │
-                  │ • Inscripciones         │
-                  │ • Asistencia            │
-                  │ • Reportes              │
-                  └────────────┬────────────┘
-                               │
-                               ▼
-                  ┌─────────────────────────┐
-                  │       BASE DE DATOS     │
-                  │                         │
-                  │        PostgreSQL       │
-                  │                         │
-                  │ • Usuarios              │
-                  │ • Estudiantes           │
-                  │ • Actividades           │
-                  │ • Inscripciones         │
-                  │ • Asistencias           │
-                  │ • Reportes              │
-                  └─────────────────────────┘
-```
+Será la capa con la que interactuarán los usuarios del sistema.
 
-### Componentes
-
-**Frontend**
-
-Será responsable de la interfaz con la que interactuarán administradores, operadores y estudiantes.
-
-Tecnologías:
+**Tecnologías:**
 
 * HTML
 * CSS
 * JavaScript
 
-**Backend**
+### Backend
 
-Será responsable de la lógica de negocio y procesamiento de las funcionalidades de la plataforma.
+Será responsable de procesar la lógica de negocio de la aplicación, incluyendo usuarios, actividades, inscripciones, asistencia y reportes.
 
-Tecnologías:
+**Tecnologías:**
 
 * Python
 * Django
 
-**Base de datos**
+### Base de datos
 
-PostgreSQL será utilizada para almacenar y centralizar la información relacionada con usuarios, estudiantes, actividades, inscripciones y asistencias.
+Será responsable de almacenar y centralizar la información del sistema.
 
-**Control de acceso**
+**Tecnología:**
 
-La solución contempla un sistema de roles que permitirá restringir las funcionalidades disponibles según el tipo de usuario.
+* PostgreSQL
+
+### Diagrama de arquitectura propuesta
+
+```text
+                    ┌──────────────────────┐
+                    │       USUARIOS       │
+                    │                      │
+                    │ Administrador        │
+                    │ Operador             │
+                    │ Estudiante           │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │       FRONTEND       │
+                    │                      │
+                    │ HTML / CSS / JS      │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │       BACKEND        │
+                    │                      │
+                    │ Python / Django      │
+                    │                      │
+                    │ • Usuarios y roles   │
+                    │ • Actividades        │
+                    │ • Inscripciones      │
+                    │ • Asistencia         │
+                    │ • Reportes           │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │      PostgreSQL      │
+                    │                      │
+                    │ • Usuarios           │
+                    │ • Estudiantes        │
+                    │ • Actividades        │
+                    │ • Inscripciones      │
+                    │ • Asistencias        │
+                    └──────────────────────┘
+```
+
+> **Nota:** La arquitectura presentada corresponde a la propuesta inicial del proyecto y podrá ajustarse durante las etapas de diseño y desarrollo.
 
 ---
 
-## 📍 Estado del proyecto
+## Estado actual del proyecto
 
-**Punto Participa se encuentra actualmente en fase inicial de desarrollo.**
+**Punto Participa se encuentra actualmente en etapa inicial.**
 
-En esta etapa se está trabajando principalmente en la definición, planificación y construcción del esqueleto inicial de la solución.
+El repositorio será utilizado para incorporar progresivamente la implementación de la solución durante el desarrollo del Proyecto APT.
 
-Las funcionalidades y componentes descritos en este README corresponden a la **propuesta actual del proyecto** y serán implementados progresivamente durante las siguientes etapas.
-
----
-
-## 📄 Proyecto
-
-**Proyecto APT / CAPSTONE**
-**Duoc UC — Escuela de Informática y Telecomunicaciones**
-
-**Punto Participa**
+**Repositorio:**
+https://github.com/Gegs-12358/Punto_Participa
