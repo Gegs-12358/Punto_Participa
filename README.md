@@ -27,11 +27,12 @@ La solución propuesta permitirá gestionar desde una plataforma centralizada:
 
 ### ¿A quién está dirigido?
 
-El sistema estará dirigido principalmente a:
+El sistema está dirigido a tres perfiles de usuario:
 
-* **Administradores del Punto Estudiantil:** responsables de gestionar actividades, talleres, usuarios y reportes.
-* **Operadores:** encargados de registrar la asistencia durante las actividades presenciales.
-* **Estudiantes:** usuarios que podrán consultar e inscribirse en talleres disponibles.
+* **Administrador:** responsable de la gestión completa del sistema, incluyendo usuarios, roles, actividades y reportes.
+* **Creador de Evento:** encargado de crear y gestionar actividades y talleres, así como de enviar invitaciones por correo.
+* **Encargado de Registro:** responsable de registrar la asistencia presencial durante las actividades.
+* **Estudiantes:** usuarios que pueden consultar talleres disponibles e inscribirse en ellos, así como participar en actividades masivas.
 
 ### ¿Qué problema resuelve?
 
@@ -70,11 +71,11 @@ Actualmente no se ha definido una plataforma de despliegue en la nube.
 
 ### Estado actual
 
-El proyecto se encuentra actualmente en una **etapa inicial de definición** y el repositorio todavía no contiene la implementación de la aplicación.
+El proyecto se encuentra actualmente en la **Fase 1: Definición del Proyecto APT**, que ha sido completada. Esta fase incluye la documentación de especificación de requisitos, el Producto Mínimo Viable (PMV), la guía de definición del proyecto y la presentación ante el docente.
 
 Por este motivo, **actualmente no existe una versión funcional que pueda ejecutarse localmente**.
 
-El repositorio será utilizado para incorporar progresivamente el código fuente, configuración, dependencias y documentación necesarias para ejecutar la aplicación.
+El repositorio será actualizado progresivamente con el código fuente durante las fases de desarrollo (Fase 2 y Fase 3).
 
 ### Repositorio
 
@@ -82,7 +83,7 @@ El repositorio será utilizado para incorporar progresivamente el código fuente
 
 ### Próximamente
 
-Cuando se implemente el proyecto, esta sección será actualizada con las instrucciones para:
+Cuando el proyecto entre en la Fase 2 de desarrollo, esta sección será actualizada con las instrucciones para:
 
 1. Clonar el repositorio.
 2. Crear el entorno virtual de Python.
@@ -234,17 +235,3 @@ Será responsable de almacenar y centralizar la información del sistema.
                     │ • Inscripciones      │
                     │ • Asistencias        │
                     └──────────────────────┘
-```
-
-> **Nota:** La arquitectura presentada corresponde a la propuesta inicial del proyecto y podrá ajustarse durante las etapas de diseño y desarrollo.
-
----
-
-## Estado actual del proyecto
-
-**Punto Participa se encuentra actualmente en etapa inicial.**
-
-El repositorio será utilizado para incorporar progresivamente la implementación de la solución durante el desarrollo del Proyecto APT.
-
-**Repositorio:**
-https://github.com/Gegs-12358/Punto_Participa
