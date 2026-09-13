@@ -1,0 +1,1446 @@
+/**
+ * styles.css - Punto Participa
+ * Todo el CSS de la app, escrito a mano (sin Bootstrap ni Tailwind).
+ * Lo fui ordenando por secciones a medida que armaba cada vista, por eso
+ * los comentarios de más abajo van más o menos en el mismo orden en que
+ * fui construyendo la interfaz.
+ */
+
+/* Puse los colores de Duoc como variables acá arriba para no andar
+   escribiendo el mismo código hexadecimal 40 veces por todo el CSS. Si
+   cambia algún color de la marca, se edita solo acá. */
+:root {
+  --navy: #002f5f;
+  --blue: #00549a;
+  --gold: #fbb800;
+  --gold-soft: #fff4ca;
+  --ink: #172b3d;
+  --muted: #68798a;
+  --line: #dbe3e9;
+  --surface: #f3f6f8;
+  --white: #fff;
+  --green: #158149;
+  --red: #b42318;
+  --shadow: 0 16px 45px rgba(0, 47, 95, 0.11);
+}
+
+/* Reset básico de siempre (box-sizing, márgenes, etc.) más un par de
+   reglas de accesibilidad que fui agregando cuando probé la página con
+   el teclado y el lector de pantalla. */
+* {
+  box-sizing: border-box;
+}
+html {
+  background: #e9eef2;
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #e9eef2;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 3px solid rgba(251, 184, 0, 0.45);
+  outline-offset: 2px;
+}
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+a {
+  color: var(--blue);
+}
+[hidden] {
+  display: none !important;
+}
+.site-shell {
+  width: min(1440px, 100%);
+  min-height: 100vh;
+  margin: auto;
+  background: var(--white);
+  padding: 0 clamp(18px, 5vw, 76px);
+}
+
+/* Cabeceras comunes del acceso y de la zona privada. */
+.brand-header,
+.app-header {
+  height: 116px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 4px solid var(--gold);
+}
+.brand-header img,
+.app-header > img {
+  width: 270px;
+  height: 100px;
+  object-fit: cover;
+  object-position: center;
+}
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  font-weight: 900;
+  color: var(--blue);
+}
+.card,
+.panel {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 5px 18px rgba(0, 47, 95, 0.04);
+}
+.login-view {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Distribución de la portada y tarjeta de inicio de sesión. */
+.login-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 460px;
+  gap: 7vw;
+  align-items: center;
+  min-height: 650px;
+  background: radial-gradient(
+    circle at 15% 35%,
+    var(--gold-soft),
+    transparent 29%
+  );
+}
+.login-copy {
+  padding-left: 4vw;
+  max-width: 650px;
+}
+.login-copy h1 {
+  margin: 14px 0 25px;
+  font-size: clamp(45px, 6vw, 78px);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  color: var(--navy);
+}
+.login-copy p {
+  font-size: 20px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.login-card {
+  padding: 38px;
+  display: grid;
+  gap: 16px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.login-card h2 {
+  font-size: 30px;
+  color: var(--navy);
+  margin: 0;
+}
+.login-card > p {
+  color: var(--muted);
+  margin: -9px 0 4px;
+}
+label {
+  display: grid;
+  gap: 7px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 750;
+}
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 13px;
+  border: 1px solid #b9c6d0;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+}
+textarea {
+  min-height: 85px;
+  resize: vertical;
+}
+.login-card small {
+  color: var(--muted);
+}
+.btn {
+  border: 0;
+  border-radius: 8px;
+  padding: 13px 19px;
+  background: var(--gold);
+  color: var(--navy);
+  font-weight: 900;
+  box-shadow: 0 4px 10px rgba(120, 84, 0, 0.13);
+}
+.btn:hover {
+  filter: brightness(0.97);
+  transform: translateY(-1px);
+}
+.btn.secondary {
+  background: #fff;
+  border: 1px solid #b9c6d0;
+  box-shadow: none;
+}
+
+/* Cuenta del usuario y navegación principal filtrada por rol. */
+.account {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  position: relative;
+}
+.icon-button {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  font-size: 23px;
+  color: var(--navy);
+  background: var(--surface);
+}
+.icon-button i {
+  position: absolute;
+  right: -2px;
+  top: -3px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  font: 700 10px/17px Arial;
+}
+.profile {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: var(--ink);
+}
+.profile > span:first-child,
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #dceaf5;
+  color: var(--navy);
+  font-weight: 900;
+}
+.profile > span:last-child {
+  display: grid;
+}
+.profile small {
+  color: var(--muted);
+}
+.text-button {
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  font-weight: 800;
+}
+.main-nav {
+  display: flex;
+  gap: 5px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+  overflow: auto;
+}
+.main-nav button {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 13px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+  white-space: nowrap;
+}
+.main-nav button.active {
+  background: var(--navy);
+  color: #fff;
+}
+.main-nav button span {
+  margin-right: 7px;
+}
+#main-content {
+  min-height: 670px;
+  padding: 30px 0 45px;
+}
+.page-title,
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 22px;
+}
+.page-title {
+  margin-bottom: 25px;
+}
+.page-title h1 {
+  margin: 5px 0;
+  font-size: 36px;
+  color: var(--navy);
+}
+.page-title p {
+  margin: 5px 0;
+  color: var(--muted);
+}
+.hero {
+  padding: 34px 38px;
+  border-radius: 18px;
+  background: linear-gradient(115deg, var(--navy), #075b98);
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 30px;
+  position: relative;
+  overflow: hidden;
+}
+.hero:after {
+  content: "";
+  position: absolute;
+  right: -65px;
+  top: -80px;
+  width: 260px;
+  height: 260px;
+  border: 45px solid rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+}
+.hero > * {
+  position: relative;
+  z-index: 1;
+}
+.hero h1 {
+  max-width: 780px;
+  margin: 9px 0;
+  font-size: clamp(31px, 4vw, 49px);
+  line-height: 1.05;
+}
+.hero p {
+  max-width: 690px;
+  margin: 0;
+  color: #dceaf5;
+}
+.hero .eyebrow {
+  color: #ffd463;
+}
+
+/* Indicadores y tablas reutilizados en actividades, alumnos y reportes. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin: 22px 0;
+}
+.stat {
+  display: grid;
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--gold);
+  border-radius: 12px;
+}
+.stat span,
+.stat small {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 800;
+}
+.stat strong {
+  margin: 6px 0;
+  font-size: 40px;
+  color: var(--navy);
+}
+.panel {
+  padding: 24px;
+}
+.panel-head h2 {
+  margin: 4px 0;
+}
+.toolbar,
+.filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.filters {
+  margin-bottom: 22px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.filters > * {
+  flex: 1;
+  min-width: 145px;
+}
+.filters .btn {
+  flex: 0;
+}
+.table-wrap {
+  overflow: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 18px;
+}
+th,
+td {
+  padding: 14px 13px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+}
+th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+td small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+.badge,
+.role {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 30px;
+  background: #e1f4e9;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 900;
+}
+.badge.draft {
+  background: #fff3d0;
+  color: #896000;
+}
+.badge.inactive {
+  background: #fee4e2;
+  color: var(--red);
+}
+.role {
+  background: #e8f0f6;
+  color: var(--navy);
+}
+.link-button {
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  font-weight: 900;
+}
+.scanner-grid {
+  display: grid;
+  grid-template-columns: 1fr 330px;
+  gap: 24px;
+}
+
+/* Registro presencial y resumen del turno de asistencia. */
+.scan-card {
+  margin-top: 25px;
+  padding: 42px;
+  text-align: center;
+}
+.scan-symbol {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  margin: auto;
+  border: 2px solid var(--gold);
+  border-radius: 18px;
+  font-size: 38px;
+  color: var(--navy);
+}
+.scan-card h2 {
+  margin: 20px 0 7px;
+  color: var(--navy);
+}
+.alert {
+  max-width: 720px;
+  margin: 20px auto 0;
+  padding: 14px 18px;
+  border-radius: 9px;
+  display: flex;
+  gap: 12px;
+  text-align: left;
+  font-size: 20px;
+}
+.alert > div {
+  display: grid;
+}
+.alert small {
+  font-size: 12px;
+}
+.alert.error {
+  background: #fee6e4;
+  color: var(--red);
+}
+.session {
+  padding: 28px;
+  border-radius: 16px;
+  background: var(--navy);
+  color: #fff;
+}
+.live {
+  color: #76dda3;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+.session > strong {
+  display: block;
+  margin-top: 22px;
+  font-size: 64px;
+}
+.session > small,
+.person small {
+  color: #adc8db;
+}
+.session hr {
+  margin: 27px 0;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+.person {
+  display: grid;
+  grid-template-columns: 38px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  margin: 17px 0;
+}
+.person p {
+  display: grid;
+  margin: 0;
+}
+.person time {
+  font-size: 12px;
+  color: #adc8db;
+}
+.restricted {
+  padding: 9px 13px;
+  border-radius: 20px;
+  background: #fff1f0;
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 900;
+}
+.timeline article {
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 5px;
+  border-bottom: 1px solid var(--line);
+}
+.timeline article > span {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #e8f0f6;
+  color: var(--navy);
+  font-weight: 900;
+}
+.timeline article div {
+  display: grid;
+  gap: 5px;
+}
+.timeline small,
+.timeline time {
+  color: var(--muted);
+  font-size: 12px;
+}
+.enrollment-wrap {
+  padding: 22px;
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+/* Ficha pública del taller y formulario de reserva de cupo. */
+.event-card {
+  max-width: 780px;
+  margin: auto;
+  overflow: hidden;
+}
+.event-card > .event-logo {
+  display: block;
+  width: 250px;
+  height: 90px;
+  margin: auto;
+  object-fit: cover;
+  object-position: center;
+}
+.event-banner {
+  height: 180px;
+  padding: 25px;
+  display: flex;
+  align-items: end;
+  background:
+    linear-gradient(110deg, rgba(0, 47, 95, 0.95), rgba(0, 84, 154, 0.72)),
+    linear-gradient(35deg, #d2dce4, #7f9db6);
+  color: #fff;
+}
+.event-banner span {
+  color: #ffd463;
+  font-size: 11px;
+  font-weight: 900;
+}
+.event-banner h2 {
+  margin: 7px 0 0;
+}
+.event-body {
+  padding: 28px;
+  display: grid;
+  grid-template-columns: 70px 1fr 250px;
+  gap: 21px;
+}
+.date-tile {
+  height: 70px;
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--gold);
+  border-radius: 9px;
+  text-align: center;
+  display: grid;
+}
+.date-tile strong {
+  font-size: 27px;
+  color: var(--navy);
+}
+.date-tile span {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--muted);
+}
+.event-copy h1 {
+  margin: 5px 0 8px;
+  color: var(--navy);
+}
+.event-copy p {
+  color: var(--muted);
+  line-height: 1.45;
+}
+.event-copy ul {
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  line-height: 2;
+}
+.enroll-box {
+  padding-left: 20px;
+  border-left: 1px solid var(--line);
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+.seat-note {
+  padding: 10px;
+  border-radius: 8px;
+  background: #e3f7eb;
+  color: var(--green);
+  display: grid;
+  font-size: 12px;
+}
+.state-box {
+  text-align: center;
+}
+.state-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin: auto;
+  border-radius: 50%;
+  background: #e3f7eb;
+  color: var(--green);
+  font-size: 25px;
+}
+.state-box.error .state-icon {
+  background: #fee6e4;
+  color: var(--red);
+}
+.state-box.neutral .state-icon {
+  background: #e7edf2;
+  color: var(--muted);
+}
+.state-box h3 {
+  margin: 12px 0 7px;
+  color: var(--navy);
+}
+.state-box p {
+  font-size: 12px;
+  color: var(--muted);
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  padding: 20px;
+  background: rgba(0, 25, 49, 0.62);
+  display: grid;
+  place-items: center;
+}
+
+/* Modal reutilizable y avisos breves de éxito o error. */
+.modal {
+  width: min(640px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 28px;
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: 0 25px 80px #0005;
+}
+.modal > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 22px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--line);
+}
+.modal h2 {
+  margin: 5px 0;
+  color: var(--navy);
+}
+.close-button {
+  width: 35px;
+  height: 35px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: 23px;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 17px;
+}
+.wide {
+  grid-column: 1/-1;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.toast {
+  position: fixed;
+  right: 25px;
+  bottom: 25px;
+  z-index: 30;
+  padding: 14px 19px;
+  border-radius: 9px;
+  background: var(--green);
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+@media (max-width: 950px) {
+  .scanner-grid {
+    grid-template-columns: 1fr;
+  }
+  .session {
+    order: -1;
+  }
+  .event-body {
+    grid-template-columns: 60px 1fr;
+  }
+  .enroll-box {
+    grid-column: 1/-1;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: 20px 0 0;
+  }
+  .login-layout {
+    grid-template-columns: 1fr 390px;
+    gap: 4vw;
+  }
+}
+@media (max-width: 700px) {
+  .site-shell {
+    padding: 0 17px;
+  }
+  .brand-header,
+  .app-header {
+    height: 92px;
+  }
+  .brand-header img,
+  .app-header > img {
+    width: 190px;
+    height: 80px;
+  }
+  .profile > span:last-child,
+  .icon-button {
+    display: none;
+  }
+  #main-content {
+    padding-top: 22px;
+  }
+  .login-layout {
+    grid-template-columns: 1fr;
+    padding: 40px 0;
+  }
+  .login-copy {
+    display: none;
+  }
+  .login-card {
+    padding: 28px 22px;
+  }
+  .hero,
+  .page-title,
+  .panel-head {
+    align-items: start;
+    flex-direction: column;
+  }
+  .stats {
+    grid-template-columns: 1fr;
+  }
+  .panel,
+  .scan-card {
+    padding: 19px;
+  }
+  .toolbar {
+    width: 100%;
+    flex-direction: column;
+  }
+  .toolbar > * {
+    width: 100%;
+  }
+  .filters {
+    flex-direction: column;
+  }
+  .filters > * {
+    width: 100%;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .wide {
+    grid-column: 1;
+  }
+  .event-body {
+    grid-template-columns: 1fr;
+  }
+  .event-copy,
+  .enroll-box {
+    grid-column: 1;
+  }
+  .timeline article {
+    grid-template-columns: 40px 1fr;
+  }
+  .timeline time {
+    grid-column: 2;
+  }
+  .page-title h1 {
+    font-size: 30px;
+  }
+}
+
+/* Logos: se muestran completos, sin deformación ni recortes forzados. */
+.brand-header .project-logo,
+.app-header > .project-logo {
+  width: 300px;
+  height: 96px;
+  object-fit: contain;
+  object-position: left center;
+}
+/* Mayor especificidad que la regla genérica de cabecera: evita recortar el logo oficial. */
+.brand-header .duoc-logo,
+.app-header .duoc-logo {
+  width: 310px;
+  height: 82px;
+  object-fit: contain;
+  object-position: center;
+  flex: none;
+  padding: 5px;
+  background: #fff;
+}
+.account .duoc-logo {
+  margin-left: 12px;
+}
+.event-card > .event-logo {
+  width: 330px;
+  height: 120px;
+  object-fit: contain;
+  object-position: center;
+}
+.action-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.danger-button {
+  border: 0;
+  background: transparent;
+  color: var(--red);
+  font-weight: 800;
+}
+
+/* Selector múltiple de carreras agrupado por escuela. */
+.career-selector {
+  margin: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.career-selector legend {
+  padding: 0 8px;
+  color: var(--navy);
+  font-size: 15px;
+  font-weight: 900;
+}
+.career-selector section {
+  margin-top: 13px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+}
+.career-selector h3 {
+  margin: 0 0 10px;
+  color: var(--navy);
+  font-size: 14px;
+}
+.career-selector label {
+  display: flex;
+  grid-template: none;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 6px 4px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.career-selector input[type="checkbox"] {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 1px 0;
+  accent-color: var(--blue);
+}
+.field-error {
+  display: block;
+  margin-top: 10px;
+  color: var(--red);
+  font-weight: 800;
+}
+.career-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid #c9d6df;
+  border-radius: 9px;
+  background: #fff;
+}
+.career-actions > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.career-actions > div {
+  display: flex;
+  gap: 8px;
+}
+.career-action {
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid var(--navy);
+  border-radius: 7px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+.career-action:hover {
+  background: var(--blue);
+}
+.career-action.secondary {
+  background: #fff;
+  color: var(--navy);
+  border-color: #aebdc8;
+}
+.career-action.secondary:hover {
+  background: var(--surface);
+}
+.schedule-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.schedule-options label {
+  min-width: 150px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+.schedule-options input {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  accent-color: var(--blue);
+}
+@media (max-width: 560px) {
+  .career-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .career-actions > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .career-action {
+    white-space: nowrap;
+  }
+}
+
+/* Estados y controles incorporados en la versión funcional. */
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none !important;
+}
+.btn.danger {
+  background: var(--red);
+  color: #fff;
+}
+.toast.error {
+  background: var(--red);
+}
+.empty-state {
+  min-height: 220px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  color: var(--muted);
+}
+.empty-state > span {
+  font-size: 50px;
+  color: #a9b7c2;
+}
+.empty-state h3 {
+  margin: 8px 0;
+  color: var(--navy);
+}
+.empty-state p {
+  max-width: 430px;
+}
+.session-controls {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0 22px;
+}
+.scan-card > label {
+  max-width: 650px;
+  margin: auto;
+  text-align: left;
+}
+.scan-card hr {
+  margin: 25px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+#attendance-form {
+  max-width: 650px;
+  margin: 20px auto;
+  display: grid;
+  gap: 13px;
+}
+.input-help {
+  font-weight: 400;
+  color: var(--muted);
+}
+.check-line {
+  display: flex;
+  grid-template: none;
+  align-items: center;
+  gap: 9px;
+}
+.check-line input {
+  width: 18px;
+  min-height: 18px;
+  accent-color: var(--blue);
+}
+.confirm-box p {
+  font-size: 17px;
+  line-height: 1.5;
+}
+.enrollment-wrap > label {
+  max-width: 600px;
+  margin: 0 auto 20px;
+}
+.event-card {
+  margin-top: 18px;
+}
+@media (max-width: 1050px) {
+  .app-header .duoc-logo {
+    width: 210px;
+  }
+}
+@media (max-width: 700px) {
+  .session-controls {
+    flex-direction: column;
+  }
+  .action-group {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .event-card {
+    width: 100%;
+  }
+}
+@media (max-width: 900px) {
+  .brand-header .duoc-logo,
+  .app-header .duoc-logo {
+    width: 235px;
+    height: 65px;
+  }
+  .account .duoc-logo {
+    margin-left: 4px;
+  }
+}
+@media (max-width: 700px) {
+  .brand-header .project-logo,
+  .app-header > .project-logo {
+    width: 185px;
+    height: 72px;
+  }
+  .brand-header .duoc-logo,
+  .app-header .duoc-logo {
+    display: block;
+    width: 150px;
+    height: 50px;
+    padding: 2px;
+  }
+  .account .duoc-logo {
+    display: block;
+  }
+  .text-button {
+    font-size: 12px;
+  }
+}
+
+/* Ilustraciones de orientación integradas en acceso y actividades. */
+.login-guide {
+  display: block;
+  width: min(100%, 390px);
+  height: auto;
+  margin: 0 auto 2px;
+  border-radius: 12px;
+  object-fit: contain;
+  object-position: center;
+  box-shadow: 0 8px 24px rgba(0, 47, 95, 0.16);
+}
+.hero {
+  align-items: center;
+}
+.hero-actions {
+  position: relative;
+  z-index: 1;
+  width: min(430px, 38%);
+  display: grid;
+  gap: 12px;
+  flex: none;
+}
+.hero-actions .activity-guide {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 14px;
+  background: #f7fbfe;
+  object-fit: contain;
+  object-position: center;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+}
+.hero-actions .btn {
+  width: 100%;
+}
+@media (max-width: 900px) {
+  .hero-actions {
+    width: 350px;
+  }
+}
+@media (max-width: 700px) {
+  .login-guide {
+    width: min(100%, 360px);
+    height: auto;
+  }
+  .hero-actions {
+    width: 100%;
+    max-width: 420px;
+    margin-inline: auto;
+  }
+  .hero-actions .activity-guide {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+  .hero-actions .btn {
+    width: 100%;
+  }
+}
+
+/* Mensaje de bienvenida sin métricas ficticias. */
+.welcome-note {
+  max-width: 580px;
+  margin-top: 42px;
+  padding: 17px 20px;
+  border-left: 5px solid var(--gold);
+  border-radius: 0 10px 10px 0;
+  background: rgba(255, 255, 255, 0.72);
+  display: grid;
+  gap: 5px;
+}
+.welcome-note strong {
+  color: var(--navy);
+  font-size: 18px;
+}
+.welcome-note span {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.welcome-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.welcome-features span {
+  padding: 9px 14px;
+  border: 1px solid #d7c06b;
+  border-radius: 999px;
+  background: #fff9e5;
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 850;
+}
+.welcome-features span:before {
+  content: "✓";
+  margin-right: 7px;
+  color: var(--green);
+}
+
+/* El acceso ocupa una sola pantalla en computadores. */
+@media (min-width: 701px) {
+  .login-view {
+    height: 100vh;
+    min-height: 620px;
+    overflow: hidden;
+  }
+  .login-view .brand-header {
+    height: 96px;
+  }
+  .login-layout {
+    min-height: 0;
+    height: calc(100vh - 96px);
+    padding-block: 16px;
+  }
+  .login-copy h1 {
+    font-size: clamp(44px, 5vw, 68px);
+    margin: 10px 0 18px;
+  }
+  .login-copy p {
+    font-size: 18px;
+    line-height: 1.45;
+  }
+  .welcome-note {
+    margin-top: 24px;
+    padding: 13px 17px;
+  }
+  .welcome-features {
+    margin-top: 12px;
+  }
+  .welcome-features span {
+    padding: 7px 12px;
+  }
+  .login-card {
+    padding: 22px 32px;
+    gap: 10px;
+  }
+  .login-guide {
+    width: min(100%, 396px);
+    height: auto;
+  }
+  .login-card h2 {
+    font-size: 26px;
+  }
+  .login-card > p {
+    margin: -5px 0 1px;
+  }
+  .login-card input {
+    min-height: 42px;
+    padding-block: 9px;
+  }
+  .login-card .btn {
+    padding-block: 11px;
+  }
+}
+@media (min-width: 701px) and (max-height: 760px) {
+  .login-view .brand-header {
+    height: 82px;
+  }
+  .login-layout {
+    height: calc(100vh - 82px);
+    padding-block: 10px;
+  }
+  .login-copy h1 {
+    font-size: 50px;
+  }
+  .welcome-note {
+    margin-top: 16px;
+  }
+  .login-card {
+    padding: 16px 26px;
+    gap: 7px;
+  }
+  .login-guide {
+    width: min(100%, 240px);
+    height: auto;
+  }
+  .login-card h2 {
+    font-size: 23px;
+  }
+  .login-card small {
+    font-size: 11px;
+  }
+}
+
+/* Ilustraciones principales: grandes, completas y con proporciones reutilizables. */
+.illustrated-title {
+  align-items: center;
+  padding: 22px 24px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(0, 47, 95, 0.1);
+}
+.section-illustration {
+  display: block;
+  width: 500px;
+  max-width: 46%;
+  height: 270px;
+  object-fit: contain;
+  border-radius: 15px;
+  background: #f5f9fc;
+  box-shadow: 0 8px 22px rgba(0, 47, 95, 0.1);
+}
+.reports-title .report-illustration {
+  width: 500px;
+  height: 270px;
+  margin-left: auto;
+}
+.management-title .management-illustration {
+  width: 500px;
+  height: 270px;
+  margin-left: auto;
+}
+.reports-title .btn,
+.management-title .btn {
+  flex: 0 0 auto;
+}
+.enrollment-title .enrollment-illustration {
+  width: 560px;
+  height: 290px;
+  margin-left: auto;
+}
+.registry-title .registry-illustration,
+.audit-title .audit-illustration {
+  width: 500px;
+  height: 270px;
+  margin-left: auto;
+}
+.audit-title .restricted {
+  flex: 0 0 auto;
+}
+@media (max-width: 1100px) {
+  .reports-title,
+  .management-title,
+  .audit-title {
+    flex-wrap: wrap;
+  }
+  .reports-title .report-illustration,
+  .management-title .management-illustration,
+  .audit-title .audit-illustration {
+    order: 3;
+    width: 100%;
+    max-width: 100%;
+    height: 290px;
+    margin: 0;
+  }
+  .reports-title .btn,
+  .management-title .btn,
+  .audit-title .restricted {
+    margin-left: auto;
+  }
+}
+@media (max-width: 900px) {
+  .illustrated-title {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .section-illustration {
+    max-width: 48%;
+  }
+  .registry-title .registry-illustration,
+  .enrollment-title .enrollment-illustration {
+    margin-left: 0;
+  }
+}
+@media (max-width: 700px) {
+  .illustrated-title {
+    padding: 15px;
+  }
+  .section-illustration,
+  .reports-title .report-illustration,
+  .management-title .management-illustration,
+  .enrollment-title .enrollment-illustration,
+  .registry-title .registry-illustration,
+  .audit-title .audit-illustration {
+    order: initial;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: 310px;
+    margin: 0;
+  }
+  .reports-title .btn,
+  .management-title .btn,
+  .audit-title .restricted {
+    width: 100%;
+    margin: 0;
+    text-align: center;
+  }
+}

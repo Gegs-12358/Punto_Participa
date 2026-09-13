@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Punto Participa - gestión de actividades del Punto Estudiantil Duoc UC Alameda"
+    />
+    <title>Punto Participa | Duoc UC</title>
+    <!-- Cuando esta página la sirva Django de verdad, esta meta debería
+         quedar así: <meta name="csrf-token" content="{{ csrf_token }}">
+         (o se lee directo la cookie csrftoken que deja Django). Por ahora
+         queda vacía porque no hay backend sirviendo nada todavía. La función
+         getCsrfToken() en app.js ya la lee desde acá. -->
+    <meta name="csrf-token" content="" />
+    <link rel="icon" href="imagenes/logo.png" type="image/png" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/app.js" defer></script>
+  </head>
+  <body>
+    <!-- Este div de acá es el contenedor de toda la app. Adentro solo hay dos
+         secciones grandes: la del login y la de la app "de verdad". Voy
+         mostrando una y escondiendo la otra con el atributo hidden desde el JS,
+         no uso rutas de verdad porque es todo una sola página (SPA a mano). -->
+    <div id="app" class="site-shell">
+      <section
+        id="login-view"
+        class="view login-view"
+        aria-labelledby="login-title"
+      >
+        <header class="brand-header">
+          <img
+            class="project-logo"
+            src="imagenes/logo.png"
+            alt="Punto Participa Duoc UC"
+          /><img class="duoc-logo" src="imagenes/logo1.png" alt="Duoc UC" />
+        </header>
+        <div class="login-layout">
+          <div class="login-copy">
+            <span class="eyebrow">SEDE ALAMEDA</span>
+            <h1 id="login-title">Haz que cada encuentro cuente.</h1>
+            <p>
+              Organiza experiencias que conectan a la comunidad estudiantil y
+              simplifica cada etapa de participación.
+            </p>
+            <div class="welcome-note">
+              <strong>Todo en un mismo lugar</strong
+              ><span
+                >Planifica, convoca y acompaña la participación de tus
+                estudiantes.</span
+              >
+            </div>
+            <div class="welcome-features" aria-label="Funciones principales">
+              <span>Actividades</span><span>Inscripciones</span
+              ><span>Asistencia</span>
+            </div>
+          </div>
+          <form id="login-form" class="card login-card">
+            <img
+              class="login-guide"
+              src="imagenes/acceso.png"
+              alt="Mascota de Punto Participa indicando el acceso"
+            />
+            <h2>Bienvenido</h2>
+            <p>Ingresa con tu cuenta registrada</p>
+            <label
+              >Usuario<input
+                id="username"
+                name="username"
+                type="text"
+                autocomplete="username"
+                placeholder="pa.rebolledoa"
+                required /></label
+            ><label
+              >Contraseña<input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                minlength="4"
+                required /></label
+            ><button class="btn" type="submit">
+              Ingresar al sistema <span>→</span></button
+            ><a href="#">¿Olvidaste tu contraseña?</a
+            ><small>Administrador inicial: usuario pa.rebolledoa</small>
+          </form>
+        </div>
+      </section>
+
+      <!-- Ojo: acá adentro (#main-content) no hay nada escrito a mano. Todo el
+           HTML de las 7 pantallas (actividades, registro, reportes, etc.) lo
+           genera app.js y lo mete acá con innerHTML cada vez que se cambia de
+           vista. Por eso este main queda vacío en el html original. -->
+      <section id="private-view" class="view" hidden>
+        <header class="app-header">
+          <img
+            class="project-logo"
+            src="imagenes/logo.png"
+            alt="Punto Participa Duoc UC"
+          />
+          <div class="account">
+            <button class="icon-button" aria-label="Notificaciones">
+              ◇<i id="notification-count">0</i></button
+            ><button id="profile-button" class="profile">
+              <span id="profile-initials">GG</span
+              ><span
+                ><b id="profile-name">Gabriel González</b
+                ><small id="profile-role">Administrador</small></span
+              ></button
+            ><button id="logout-button" class="text-button">Salir</button
+            ><img class="duoc-logo" src="imagenes/logo1.png" alt="Duoc UC" />
+          </div>
+        </header>
+        <nav
+          id="main-nav"
+          class="main-nav"
+          aria-label="Navegación principal"
+        ></nav>
+        <main id="main-content" tabindex="-1"></main>
+      </section>
+    </div>
+
+    <!-- Este modal lo reutilizo para TODOS los formularios (crear actividad,
+         editar usuario, confirmar eliminar, etc.), para no tener que repetir
+         la misma cajita 6 veces. El JS solo le cambia el título y el contenido
+         de adentro según lo que se necesite mostrar. -->
+    <div id="modal-backdrop" class="modal-backdrop" hidden>
+      <section
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
+        <header>
+          <div>
+            <span class="eyebrow">PUNTO PARTICIPA</span>
+            <h2 id="modal-title"></h2>
+          </div>
+          <button id="modal-close" class="close-button" aria-label="Cerrar">
+            ×
+          </button>
+        </header>
+        <div id="modal-content"></div>
+      </section>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>
