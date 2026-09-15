@@ -1,0 +1,130 @@
+/* ============================================================
+   Estilos base del sistema (Header, Navbar y Footer)
+   ============================================================ */
+body {
+    background-color: #fcfcfc;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #444;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.header {
+    background: #fff;
+    border-bottom: 4px solid #003366;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    overflow: hidden; /* Evita que el logo se corte feo */
+}
+
+.header img {
+    height: 75px;
+    width: auto;
+    max-width: 100%;
+    flex-shrink: 0; /* Evita que el logo del pingüino se encoja */
+}
+
+/* Regla específica para el logo Duoc UC: Se encoge en vez de cortarse */
+.header img.logo-duoc {
+    height: 70px;
+    max-width: 160px; /* Ancho máximo para que no empuje el menú */
+    object-fit: contain;
+    flex-shrink: 1; /* Permitir que se encoja si no hay espacio */
+}
+
+.navbar-custom {
+    background-color: transparent;
+    border-bottom: none;
+    flex-grow: 1;
+    padding: 0;
+    flex-shrink: 1; /* El menú puede encogerse si no cabe */
+}
+
+.navbar-custom .navbar-nav {
+    margin-left: auto;
+}
+
+.navbar-custom .navbar-nav .nav-link {
+    color: #003366;
+    font-weight: 600;
+    /* Reducir padding para que quepan más elementos */
+    padding: 10px 12px;
+    font-size: 14px;
+    border-bottom: 3px solid transparent;
+}
+
+.navbar-custom .navbar-nav .nav-link:hover {
+    color: #00509e;
+    background-color: #e9ecef;
+    border-bottom: 3px solid #003366;
+}
+
+.navbar-custom .navbar-nav .nav-link i {
+    margin-right: 8px;
+}
+
+.navbar-custom .navbar-text {
+    color: #777;
+    font-weight: 600;
+    margin-right: 15px;
+    font-size: 14px;
+}
+
+main {
+    flex: 1;
+    padding: 30px;
+}
+
+.footer {
+    background-color: #fff;
+    border-top: 1px solid #e0e0e0;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #777;
+    font-size: 14px;
+}
+
+.footer a {
+    color: #003366;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+.footer .enlaces {
+    display: flex;
+    gap: 15px;
+}
+
+@media (max-width: 991px) {
+    .header {
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 10px;
+    }
+    .header img {
+        height: 60px;
+    }
+    .header img.logo-duoc {
+        max-width: 120px;
+        height: 50px;
+    }
+    .navbar-custom {
+        flex-grow: 0;
+        width: 100%;
+    }
+    .footer {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+}

@@ -1,0 +1,155 @@
+/* ============================================================
+   Estilos específicos para la página de Login
+   ============================================================ */
+body {
+    background-color: #fcfcfc;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #444;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* --- HEADER --- */
+.header {
+    background: #fff;
+    padding: 15px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 4px solid #003366;
+}
+.header img {
+    height: 80px;
+}
+
+/* --- CONTENIDO PRINCIPAL --- */
+.contenido {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    background-color: #fff;
+}
+
+.contenedor-grid {
+    display: flex;
+    align-items: center;
+    gap: 100px;
+}
+
+/* --- CÍRCULO IZQUIERDO --- */
+.circulo-bienvenida {
+    border: 2px solid #999;
+    border-radius: 50%;
+    width: 260px;
+    height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    color: #555;
+    font-size: 18px;
+    font-weight: 500;
+    background-color: #fff;
+}
+
+/* --- TARJETA DEL FORMULARIO --- */
+.card-login {
+    background-color: #fff;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    padding: 40px;
+    width: 380px;
+}
+.card-login h1 {
+    color: #003366;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 32px;
+}
+.form-label {
+    color: #333;
+    font-weight: 600;
+    font-size: 14px;
+}
+.form-control {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 20px;
+    background-color: #fff;
+}
+.form-control:focus {
+    border-color: #003366;
+    box-shadow: none;
+}
+.btn-login {
+    background-color: #003366;
+    color: #fff;
+    border: none;
+    width: 100%;
+    padding: 12px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 15px;
+}
+.btn-login:hover {
+    background-color: #002244;
+}
+.link-password {
+    color: #003366;
+    text-decoration: none;
+    text-align: center;
+    display: block;
+    font-size: 14px;
+}
+.link-password:hover {
+    text-decoration: underline;
+}
+
+/* --- FOOTER --- */
+.footer {
+    background-color: #fff;
+    border-top: 1px solid #e0e0e0;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #777;
+    font-size: 14px;
+}
+.footer a {
+    color: #003366;
+    text-decoration: none;
+    font-weight: 600;
+}
+.footer a:hover {
+    text-decoration: underline;
+}
+.footer .enlaces {
+    display: flex;
+    gap: 20px;
+}
+
+/* Ajuste para pantallas pequeñas */
+@media (max-width: 768px) {
+    .contenedor-grid {
+        flex-direction: column;
+        gap: 30px;
+    }
+    .header img {
+        height: 50px;
+    }
+    .footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+}

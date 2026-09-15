@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Invitación</title>
+</head>
+
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+    <div
+        style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0;">
+        <!-- Header -->
+        <div style="background-color: #003366; padding: 20px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Punto Participa</h1>
+        </div>
+
+        <!-- Contenido -->
+        <div style="padding: 30px; color: #333333;">
+            <h2 style="color: #003366; margin-top: 0;">¡Súmate al {{ actividad.titulo }}!</h2>
+
+            <p style="font-size: 16px; line-height: 1.6;">
+                Estimada comunidad:
+            </p>
+
+            <p style="font-size: 16px; line-height: 1.6;">
+                {{ actividad.descripcion }}
+            </p>
+
+            <!-- Cronograma -->
+            <div style="background-color: #f9f9f9; border-left: 4px solid #FFC107; padding: 15px; margin-bottom: 20px;">
+                <h3 style="margin: 0 0 10px 0; color: #003366;">A continuación, detallamos el cronograma de las
+                    sesiones:</h3>
+
+                {% if actividad.cronograma %}
+                <p style="margin: 5px 0;"><strong>Fechas:</strong> {{ actividad.cronograma }}</p>
+                {% else %}
+                <p style="margin: 5px 0;"><strong>Fecha:</strong> {{ actividad.fecha_inicio|date:"d/m/Y" }}</p>
+                {% endif %}
+
+                <p style="margin: 5px 0;"><strong>Lugar:</strong> {{ actividad.lugar }}</p>
+                <p style="margin: 5px 0;"><strong>Horario:</strong> {{ actividad.fecha_inicio|date:"H:i" }} a {{
+                    actividad.fecha_fin|date:"H:i" }} horas.</p>
+            </div>
+
+            <p style="font-size: 16px; line-height: 1.6;">Asegura tu cupo registrándote en el siguiente enlace:</p>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <a href="{{ site_url }}/taller/{{ actividad.id }}/"
+                    style="background-color: #FFC107; color: #003366; padding: 15px 30px; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 16px;">
+                    Inscribirme
+                </a>
+            </div>
+
+            <!-- Cierre Genérico -->
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+                ¡No dejes pasar esta oportunidad de participar y potenciar tu desarrollo personal y profesional! ¡Te
+                esperamos!
+            </p>
+
+            <p style="font-size: 12px; color: #888888;">
+                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
+                {{ site_url }}/taller/{{ actividad.id }}/
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #f4f4f4; padding: 15px; text-align: center; font-size: 12px; color: #888888;">
+            Punto Participa - Duoc UC Sede Alameda
+        </div>
+    </div>
+</body>
+
+</html>

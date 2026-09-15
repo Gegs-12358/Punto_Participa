@@ -1,0 +1,24 @@
+{% extends 'gestion/base.html' %}
+
+{% block title %}Eliminar Actividad{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación</h5>
+            </div>
+            <div class="card-body">
+                <p>¿Estás seguro de que deseas eliminar la actividad <strong>{{ actividad.titulo }}</strong>?</p>
+                <p class="text-muted">Esta acción no se puede deshacer.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+                    <a href="{% url 'lista_actividades' %}" class="btn btn-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'gestion/base.html' %}
+{% load static %}
+{% block title %}Inscripción a {{ actividad.titulo }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'gestion/css/inscripcion.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="contenedor-workshop">
+    <!-- Contenido principal (El header global ya se carga desde base.html) -->
+    <div class="contenido-workshop">
+        <div class="row">
+            <div class="col-md-6">
+                <!-- Imagen del taller -->
+                {% if actividad.imagen %}
+                    <img src="{{ actividad.imagen.url }}" alt="{{ actividad.titulo }}" class="imagen-taller">
+                {% else %}
+                    <img src="https://via.placeholder.com/400x300?text=Sin+Imagen" alt="Sin imagen" class="imagen-taller">
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <!-- Información del taller -->
+                <h2 class="titulo-workshop">{{ actividad.titulo }}</h2>
+                <p class="descripcion-workshop">{{ actividad.descripcion }}</p>
+                
+                <p class="info-fecha"><i class="fas fa-calendar-alt"></i> {{ actividad.fecha_inicio|date:"d F, Y" }}</p>
+                <p class="info-fecha"><i class="fas fa-map-marker-alt"></i> {{ actividad.lugar }}</p>
+                
+                {% if estado == 'con_cupos' %}
+                    <div class="badge-cupos">
+                        <i class="fas fa-users"></i> Cupos disponibles: {{ actividad.cupos_disponibles }}
+                    </div>
+                    
+                    <form method="POST" class="formulario-inscripcion">
+                        {% csrf_token %}
+                        <label class="fw-bold">RUT</label>
+                        <input type="text" name="rut" class="input-rut" placeholder="Ingresa tu RUT (ej: 12345678-9)" required>
+                        
+                        {% if error %}
+                            <div class="alert alert-danger mt-2">{{ error }}</div>
+                        {% endif %}
+                        {% if exito %}
+                            <div class="alert alert-success mt-2">{{ exito }}</div>
+                        {% endif %}
+                        
+                        <button type="submit" class="btn-registrar">
+                            <i class="fas fa-check-circle"></i> Registrar
+                        </button>
+                    </form>
+                {% elif estado == 'sin_cupos' %}
+                    <div class="mensaje-sin-cupos">
+                        <i class="fas fa-exclamation-triangle"></i><br>
+                        No quedan cupos disponibles
+                    </div>
+                {% elif estado == 'finalizado' %}
+                    <div class="mensaje-finalizado">
+                        <i class="fas fa-hourglass-end"></i><br>
+                        Evento ya realizado
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer propio de la inscripción (opcional, el footer global ya está en base.html) -->
+    <div class="footer-workshop">
+        Contacta Punto Estudiantil: puntoestu@duoc.cl<br>
+        Aviso de Privacidad | www.duoc.cl
+    </div>
+</div>
+{% endblock %}

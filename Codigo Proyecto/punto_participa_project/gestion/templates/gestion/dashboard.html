@@ -1,0 +1,180 @@
+{% extends 'gestion/base.html' %}
+{% load static %}
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'gestion/css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<!-- ============================================================ -->
+<!-- TÍTULO -->
+<!-- ============================================================ -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Panel de Control</h2>
+    <small class="text-muted">
+        <i class="fas fa-calendar-alt"></i> {% now "d/m/Y H:i" %}
+    </small>
+</div>
+
+<!-- ============================================================ -->
+<!-- GRÁFICOS -->
+<!-- ============================================================ -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm card-grafico">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 text-primary">
+                    <i class="fas fa-chart-bar"></i> Asistencia por Actividad (Top 5)
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoBarras" role="img" aria-label="Gráfico de barras: asistentes por actividad"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm card-grafico">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 text-primary">
+                    <i class="fas fa-chart-pie"></i> Distribución por Carrera
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoPastel" role="img" aria-label="Gráfico de pastel: distribución por carrera"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ACTIVIDADES Y INDICADORES -->
+<!-- ============================================================ -->
+<div class="row">
+    <div class="col-md-7">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="mb-0">Últimas Actividades Creadas</h3>
+            <button class="btn btn-primary" data-action="activity-new">
+                <i class="fas fa-plus"></i> Crear Nueva Actividad
+            </button>
+        </div>
+
+        <div class="card card-tabla">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <caption class="visually-hidden">Últimas actividades creadas</caption>
+                        <thead class="table-light">
+                            <tr>
+                                <th>Imagen</th>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for actividad in actividades %}
+                            <tr>
+                                <td>
+                                    {% if actividad.imagen %}
+                                        <img src="{{ actividad.imagen.url }}"
+                                             alt="Imagen de {{ actividad.titulo }}"
+                                             width="40" height="40"
+                                             style="object-fit: cover; border-radius: 5px;">
+                                    {% else %}
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center"
+                                             style="width: 40px; height: 40px;">
+                                            <i class="fas fa-image text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>{{ actividad.titulo }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ actividad.get_tipo_display }}</span>
+                                </td>
+                                <td>{{ actividad.fecha_inicio|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <span class="badge {% if actividad.estado == 'ACTIVA' %}bg-success{% elif actividad.estado == 'FINALIZADA' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                        {{ actividad.get_estado_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary btn-editar"
+                                            data-url="{% url 'editar_actividad' actividad.pk %}"
+                                            aria-label="Editar actividad {{ actividad.titulo }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    <i class="fas fa-inbox fa-2x d-block mb-2"></i>
+                                    Sin actividades registradas.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-end mt-2">
+            <a href="{% url 'lista_actividades' %}" class="btn btn-link">
+                Ver todas las actividades <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <h3 class="mb-3">Indicadores</h3>
+
+        <div class="card shadow-sm card-indicador mb-2">
+            <div class="card-body text-center">
+                <h2 class="text-primary">{{ actividades_activas }}</h2>
+                <h6 class="text-muted">
+                    <i class="fas fa-calendar-check"></i> Actividades Activas
+                </h6>
+            </div>
+        </div>
+
+        <div class="card shadow-sm card-indicador mb-2">
+            <div class="card-body text-center">
+                <h2 class="text-primary">{{ talleres_proximos }}</h2>
+                <h6 class="text-muted">
+                    <i class="fas fa-users"></i> Talleres Próximos con Cupo
+                </h6>
+            </div>
+        </div>
+
+        <div class="card shadow-sm card-indicador">
+            <div class="card-body text-center">
+                <h2 class="text-primary">{{ asistencias_hoy }}</h2>
+                <h6 class="text-muted">
+                    <i class="fas fa-qrcode"></i> Asistencias Registradas Hoy
+                </h6>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- DATOS PARA GRÁFICOS (JSON seguro) -->
+<!-- ============================================================ -->
+{{ labels_barras|json_script:"labels_barras" }}
+{{ data_barras|json_script:"data_barras" }}
+{{ labels_pastel|json_script:"labels_pastel" }}
+{{ data_pastel|json_script:"data_pastel" }}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'gestion/js/dashboard.js' %}"></script>
+{% endblock %}

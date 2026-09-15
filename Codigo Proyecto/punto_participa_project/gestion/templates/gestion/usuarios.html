@@ -1,0 +1,146 @@
+{% extends 'gestion/base.html' %}
+{% load static %}
+{% block title %}Usuarios{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Gestión de Usuarios</h2>
+
+<!-- Tabla de Usuarios -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Usuarios</h5>
+        <button class="btn btn-primary btn-sm" id="btnNuevoUsuario">
+            <i class="fas fa-plus"></i> Nuevo Usuario
+        </button>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Username</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>RUT</th>
+                    <th>Estado</th>
+                    <th>Fecha Registro</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr>
+                    <td>{{ u.user.username }}</td>
+                    <td>{{ u.user.first_name }}</td>
+                    <td>{{ u.user.email }}</td>
+                    <td>{{ u.rol.nombre }}</td>
+                    <td>{{ u.rut|default:"Sin RUT" }}</td>
+                    <td>
+                        {% if u.activo %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.user.date_joined|date:"d/m/Y" }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary btn-editar-usuario"
+                                data-id="{{ u.id }}"
+                                data-nombre="{{ u.user.first_name }}"
+                                data-username="{{ u.user.username }}"
+                                data-email="{{ u.user.email }}"
+                                data-rol="{{ u.rol.id }}"
+                                data-rut="{{ u.rut }}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger btn-eliminar-usuario" data-id="{{ u.id }}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Auditoría -->
+<h3 class="mb-3">Auditoría</h3>
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.usuario_sistema.username }}</td>
+                    <td>{{ log.accion }}</td>
+                    <td>{{ log.fecha_registro|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Usuario -->
+<div class="modal fade" id="modalUsuario" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalUsuarioLabel">Crear/Editar Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formUsuario">
+                    {% csrf_token %}
+                    <input type="hidden" id="user_id" name="user_id" value="">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">RUT</label>
+                        <input type="text" class="form-control" id="rut" name="rut" placeholder="Ej: 12345678-9">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rol</label>
+                        <select class="form-select" id="rol" name="rol" required>
+                            <option value="">Seleccionar rol</option>
+                            {% for rol in roles %}
+                                <option value="{{ rol.id }}">{{ rol.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="estado" name="estado" checked>
+                        <label class="form-check-label" for="estado">Activo</label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">Guardar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'gestion/js/usuarios.js' %}"></script>
+{% endblock %}

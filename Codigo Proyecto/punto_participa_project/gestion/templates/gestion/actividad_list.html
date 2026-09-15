@@ -1,0 +1,132 @@
+{% extends 'gestion/base.html' %}
+{% block title %}Actividades{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+    <h3>Gestión de Actividades</h3>
+    
+    {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
+    <button class="btn btn-primary" id="btnNuevaActividad" style="background: #003366;">
+        + Nueva Actividad
+    </button>
+    {% endif %}
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <!-- Formulario de filtrado con etiquetas -->
+        <form method="GET" action="" class="row g-3 mb-3">
+            
+            <!-- Filtro: Fecha de Creación -->
+            <div class="col-md-3">
+                <label for="fecha_creacion" class="form-label fw-bold small">Fecha de Creación</label>
+                <input type="date" class="form-control" id="fecha_creacion" name="fecha_creacion" value="{{ request.GET.fecha_creacion }}">
+            </div>
+
+            <!-- Filtro: Tipo de Actividad -->
+            <div class="col-md-3">
+                <label for="tipo" class="form-label fw-bold small">Tipo de Actividad</label>
+                <select name="tipo" id="tipo" class="form-select">
+                    {% for value, label in tipos %}
+                        <option value="{{ value }}" {% if request.GET.tipo == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Filtro: Fecha de Inicio -->
+            <div class="col-md-3">
+                <label for="fecha" class="form-label fw-bold small">Fecha de Inicio</label>
+                <input type="date" class="form-control" id="fecha" name="fecha" value="{{ request.GET.fecha }}">
+            </div>
+
+            <!-- Filtro: Estado -->
+            <div class="col-md-3">
+                <label for="estado" class="form-label fw-bold small">Estado</label>
+                <select name="estado" id="estado" class="form-select">
+                    {% for value, label in estados %}
+                        <option value="{{ value }}" {% if request.GET.estado == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+                <button type="submit" class="btn btn-dark">Filtrar</button>
+                <a href="{% url 'lista_actividades' %}" class="btn btn-outline-secondary">Limpiar</a>
+            </div>
+        </form>
+
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Fecha de creación</th>
+                    <th>Imagen</th>
+                    <th>Nombre</th>
+                    <th>Tipo</th>
+                    <th>Fecha Inicio</th>
+                    <th>Cupos Totales</th>
+                    <th>Inscritos</th>
+                    <th>Total Asistentes</th>
+                    <th>Invitaciones Enviadas</th>
+                    <th>Fallos de Envío</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for actividad in actividades %}
+                <tr>
+                    <td>{{ actividad.id }}</td>
+                    <td>{{ actividad.fecha_creacion|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if actividad.imagen %}
+                            <img src="{{ actividad.imagen.url }}" alt="{{ actividad.titulo }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">
+                        {% else %}
+                            <div style="width: 50px; height: 50px; background-color: #e9ecef; border-radius: 5px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-image text-muted"></i>
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td>{{ actividad.titulo }}</td>
+                    <td>{{ actividad.get_tipo_display }}</td>
+                    <td>{{ actividad.fecha_inicio|date:"d/m/Y" }}</td>
+                    <td>{{ actividad.cupos_totales|default:"Sin límite" }}</td>
+                    <td>{{ actividad.total_inscritos }}</td>
+                    <td>{{ actividad.total_asistentes }}</td>
+                    <td>{{ actividad.total_invitaciones_exito }}</td>
+                    <td>{{ actividad.total_invitaciones_fallo }}</td>
+                    <td><span class="badge bg-success">{{ actividad.get_estado_display }}</span></td>
+                    <td>
+                        {% if actividad.tipo == 'TALLER' %}
+                            <a href="{% url 'inscripcion_taller' actividad.pk %}" class="btn btn-sm btn-success" title="Ver inscripción">
+                                <i class="fas fa-user-plus"></i>
+                            </a>
+                        {% endif %}
+
+                        {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
+                        <button class="btn btn-sm btn-outline-secondary btn-editar"
+                                data-url="{% url 'editar_actividad' actividad.pk %}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        
+                        <a href="{% url 'eliminar_actividad' actividad.pk %}" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="13" class="text-center">No se encontraron actividades con esos filtros.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Incluir el modal desde el archivo parcial -->
+{% include 'gestion/includes/modal_actividad.html' %}
+
+{% endblock %}

@@ -1,0 +1,128 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es-cl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Iniciar sesión en Punto Participa - Sistema de gestión de actividades del Punto Estudiantil">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <title>Iniciar sesión - Punto Participa</title>
+
+    <link rel="icon" href="{% static 'gestion/img/logo_duoc.png' %}" type="image/png">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'gestion/css/login.css' %}">
+</head>
+
+<body>
+
+    <!-- ============================================================ -->
+    <!-- HEADER -->
+    <!-- ============================================================ -->
+    <header class="header">
+        <img src="{% static 'gestion/img/duoc.png' %}"
+             alt="Punto Participa Duoc"
+             width="180" height="75">
+        <img src="{% static 'gestion/img/logo_duoc.png' %}"
+             alt="Duoc UC"
+             width="120" height="70">
+    </header>
+
+    <!-- ============================================================ -->
+    <!-- CONTENIDO -->
+    <!-- ============================================================ -->
+    <main class="contenido" id="main-content">
+        <div class="contenedor-grid">
+
+            <!-- Círculo de Bienvenida -->
+            <div class="circulo-bienvenida" aria-hidden="true">
+                Bienvenido<br>al sistema de<br>gestión de<br>actividades
+            </div>
+
+            <!-- Formulario de Login -->
+            <div class="card-login">
+                <h1>Iniciar sesión</h1>
+
+                <!-- Mensajes de error/éxito -->
+                {% if messages %}
+                    <div class="mb-3">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Formulario -->
+                <form method="POST" action="{% url 'login' %}" id="login-form" novalidate>
+                    {% csrf_token %}
+
+                    <!-- Campo Usuario -->
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Usuario</label>
+                        <input type="text"
+                               class="form-control"
+                               id="username"
+                               name="username"
+                               placeholder="pa.rebolledoa"
+                               autocomplete="username"
+                               required
+                               autofocus>
+                    </div>
+
+                    <!-- Campo Contraseña -->
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <div class="input-group">
+                            <input type="password"
+                                   class="form-control"
+                                   id="password"
+                                   name="password"
+                                   placeholder=""
+                                   autocomplete="current-password"
+                                   minlength="8"
+                                   required>
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
+                                    id="toggle-password"
+                                    aria-label="Mostrar contraseña">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Botón de envío -->
+                    <button type="submit" class="btn btn-login">Ingresar</button>
+
+                    <!-- Enlace de recuperación -->
+                    <a href="#" class="link-password">¿Olvidaste tu contraseña?</a>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- ============================================================ -->
+    <!-- FOOTER -->
+    <!-- ============================================================ -->
+    <footer class="footer">
+        <div>Punto Estudiantil - Sede Alameda Duoc UC</div>
+        <div class="enlaces">
+            <a href="#">Soporte Técnico</a>
+            <span>2026</span>
+            <a href="https://www.duoc.cl" target="_blank" rel="noopener">www.duoc.cl</a>
+        </div>
+    </footer>
+
+    <!-- ============================================================ -->
+    <!-- SCRIPTS -->
+    <!-- ============================================================ -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'gestion/js/login.js' %}"></script>
+</body>
+
+</html>

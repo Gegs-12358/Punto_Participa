@@ -1,0 +1,38 @@
+<!-- MODAL PARA CREAR/EDITAR ACTIVIDAD -->
+<div class="modal fade" id="actividadModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <!-- ID OBLIGATORIO -->
+                <h4 class="modal-title" id="modalLabel">Crear/Editar Actividad</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <!-- ID OBLIGATORIO -->
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN DE INVITACIONES -->
+<div class="modal fade" id="modalConfirmarInvitaciones" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Enviar Invitaciones</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="invitacion-message" class="alert alert-info">
+                    <strong>Actividad guardada correctamente.</strong><br>
+                    <span id="invitacion-texto">¿Deseas enviar invitaciones por correo?</span>
+                </div>
+                <div id="invitacion-resultado"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="btnEliminarActividad" style="display: none;">Cancelar y eliminar</button>
+                <button type="button" class="btn btn-secondary" id="btnCancelarEnvio">Ahora no</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmarEnvio">Enviar</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,51 @@
+{% extends 'gestion/base.html' %}
+{% block title %}Cambiar Contraseña{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center" style="margin-top: 60px;">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Cambio de Contraseña Obligatorio</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Por tu seguridad, debes cambiar la contraseña inicial antes de continuar.</p>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label>Contraseña actual</label>
+                        <input type="password" name="contrasena_actual" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Nueva contraseña</label>
+                        <input type="password" name="nueva_contrasena" class="form-control" required>
+                        
+                        <!-- NUEVO: Panel de requisitos y ejemplo -->
+                        <div class="alert alert-info mt-2 mb-0" style="font-size: 0.9rem;">
+                            <strong>La contraseña debe cumplir:</strong>
+                            <ul class="mb-1 mt-1">
+                                <li>Mínimo <strong>8 caracteres</strong>.</li>
+                                <li>Al menos <strong>una letra</strong> y <strong>un número</strong>.</li>
+                                <li>No puede ser una contraseña común (ej: 12345678).</li>
+                            </ul>
+                            <strong>Ejemplo:</strong> <em>Juanito2026!</em> o <em>Duoc#Segura99</em>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label>Confirmar nueva contraseña</label>
+                        <input type="password" name="confirmar_contrasena" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Cambiar contraseña</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

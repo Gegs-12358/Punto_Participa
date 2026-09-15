@@ -1,0 +1,102 @@
+{% extends 'gestion/base.html' %}
+{% block title %}Auditoría{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Auditoría del Sistema</h2>
+
+<!-- Botón de Exportar -->
+<div class="d-flex justify-content-end mt-3">
+    <a href="{% url 'exportar_auditoria' %}?{{ request.GET.urlencode }}" class="btn btn-success">
+        <i class="fas fa-file-excel"></i> Exportar a Excel
+    </a>
+</div>
+
+<!-- Formulario de Filtros (Con títulos arriba) -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="" class="row g-3">
+            
+            <!-- Filtro: Usuario -->
+            <div class="col-md-3">
+                <label for="usuario" class="form-label fw-bold small">Usuario</label>
+                <input type="text" class="form-control" id="usuario" name="usuario" placeholder="Buscar por usuario..." value="{{ request.GET.usuario }}">
+            </div>
+
+            <!-- Filtro: Acción -->
+            <div class="col-md-3">
+                <label for="accion" class="form-label fw-bold small">Acción</label>
+                <select name="accion" id="accion" class="form-select">
+                    <option value="">Todas las acciones</option>
+                    {% for accion in acciones_disponibles %}
+                        <option value="{{ accion }}" {% if request.GET.accion == accion %}selected{% endif %}>{{ accion }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Filtro: Módulo -->
+            <div class="col-md-2">
+                <label for="modulo" class="form-label fw-bold small">Módulo</label>
+                <select name="modulo" id="modulo" class="form-select">
+                    <option value="">Todos los módulos</option>
+                    {% for modulo in modulos_disponibles %}
+                        <option value="{{ modulo }}" {% if request.GET.modulo == modulo %}selected{% endif %}>{{ modulo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Filtro: Fecha -->
+            <div class="col-md-2">
+                <label for="fecha" class="form-label fw-bold small">Fecha</label>
+                <input type="date" class="form-control" id="fecha" name="fecha" value="{{ request.GET.fecha }}">
+            </div>
+
+            <!-- Botones -->
+            <div class="col-md-2 d-flex gap-2 align-items-end">
+                <button type="submit" class="btn btn-dark w-100">Filtrar</button>
+                <a href="{% url 'auditoria' %}" class="btn btn-outline-secondary" title="Limpiar"><i class="fas fa-eraser"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de Auditoría -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Usuario</th>
+                    <th>Módulo</th>
+                    <th>Objeto</th>
+                    <th>ID Objeto</th>
+                    <th>Acción</th>
+                    <th>Fecha y Hora</th>
+                    <th>IP</th>
+                    <th>Detalle</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.usuario_sistema.username|default:"Sistema/Anónimo" }}</td>
+                    <td>{{ log.modulo|default:"N/A" }}</td>
+                    <td>{{ log.objeto_tipo|default:"N/A" }}</td>
+                    <td>{{ log.objeto_id|default:"N/A" }}</td>
+                    <td>{{ log.accion }}</td>
+                    <td>{{ log.fecha_registro|date:"d/m/Y H:i" }}</td>
+                    <td>{{ log.ip_address|default:"N/A" }}</td>
+                    <td>{{ log.detalle }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center">No se encontraron registros con esos filtros.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+
+{% endblock %}

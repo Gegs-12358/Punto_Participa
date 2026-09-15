@@ -1,0 +1,27 @@
+/* Estilos del Dashboard */
+.card-grafico {
+    height: 350px;
+}
+
+.card-grafico canvas {
+    max-height: 300px !important;
+}
+
+/* Hacer los indicadores más compactos */
+.card-indicador {
+    border-left: 5px solid #003366;
+}
+
+.card-indicador .card-body {
+    padding: 10px 15px !important; /* Reduce el espacio interno */
+}
+
+.card-indicador h2 {
+    font-size: 2.2rem; /* Números más pequeños */
+    margin-bottom: 0.2rem;
+}
+
+.card-indicador h6 {
+    font-size: 0.85rem; /* Títulos más pequeños */
+    margin-bottom: 0;
+}
