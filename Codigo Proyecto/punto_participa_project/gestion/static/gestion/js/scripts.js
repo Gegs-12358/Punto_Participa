@@ -1,7 +1,15 @@
 // ============================================================
-// Punto Participa - Scripts personalizados
+// Punto Participa - Scripts personalizados (globales)
 // ============================================================
-console.log('Scripts cargados correctamente.');
+//
+// IMPORTANTE: Este archivo NO debe contener lógica del escáner.
+// La lógica del escáner vive únicamente en escaneo.js
+// (que solo se carga en /escaneo/, vía {% block extra_js %}).
+// ============================================================
+
+// ============================================================
+// UTILIDADES GLOBALES
+// ============================================================
 
 function getCookie(name) {
     let cookieValue = null;
@@ -17,11 +25,68 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
 const csrftoken = getCookie('csrftoken');
 
+function escapeHtml(texto) {
+    const div = document.createElement('div');
+    div.textContent = texto;
+    return div.innerHTML;
+}
+
 // ============================================================
-// LÓGICA DE CUPOS Y FECHAS
+// MODAL GLOBAL DE MENSAJES
 // ============================================================
+
+function abrirModalGlobal(titulo, mensaje, tipo) {
+    tipo = tipo || 'danger';
+    const modalGlobal = document.getElementById('globalMessageModal');
+    if (!modalGlobal) {
+        mostrarMensaje(mensaje, tipo);
+        return;
+    }
+
+    let headerClass = 'bg-primary text-white';
+    let tituloDefault = 'Aviso del Sistema';
+    if (tipo === 'danger') {
+        headerClass = 'bg-danger text-white';
+        tituloDefault = 'Error';
+    } else if (tipo === 'success') {
+        headerClass = 'bg-success text-white';
+        tituloDefault = 'Éxito';
+    } else if (tipo === 'warning') {
+        headerClass = 'bg-warning text-dark';
+        tituloDefault = 'Advertencia';
+    }
+
+    const modalHeader = document.getElementById('globalMessageHeader');
+    const modalTitle = document.getElementById('globalMessageTitle');
+    const modalBody = document.getElementById('globalMessageBody');
+
+    if (modalHeader) modalHeader.className = 'modal-header ' + headerClass;
+    if (modalTitle) modalTitle.textContent = titulo || tituloDefault;
+    if (modalBody) modalBody.innerHTML = mensaje;
+
+    const modalInstance = bootstrap.Modal.getOrCreateInstance(modalGlobal);
+    modalInstance.show();
+}
+
+function mostrarMensaje(mensaje, tipo) {
+    const alerta = document.createElement('div');
+    alerta.className = 'alert alert-' + tipo + ' alert-dismissible fade show';
+    alerta.innerHTML = escapeHtml(mensaje) +
+        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>';
+    const container = document.querySelector('main') || document.body;
+    if (container) {
+        container.prepend(alerta);
+        setTimeout(function () { alerta.remove(); }, 4000);
+    }
+}
+
+// ============================================================
+// LÓGICA DEL FORMULARIO DE ACTIVIDAD (cupos y fechas)
+// ============================================================
+
 function toggleCamposCupos() {
     const tipoSelect = document.getElementById('id_tipo');
     const camposCupos = document.getElementById('campos-cupos');
@@ -40,7 +105,7 @@ function validarFechas() {
     const fechaFin = document.getElementById('id_fecha_fin');
     if (fechaInicio && fechaFin && fechaInicio.value && fechaFin.value) {
         if (fechaFin.value <= fechaInicio.value) {
-            alert('La fecha de fin debe ser posterior a la fecha de inicio.');
+            mostrarMensaje('La fecha de fin debe ser posterior a la fecha de inicio.', 'danger');
             fechaFin.value = '';
             fechaFin.focus();
             return false;
@@ -60,73 +125,48 @@ function inicializarFormularioActividad() {
 
 // ============================================================
 // LIMPIAR FONDO OSCURO AL CERRAR CUALQUIER MODAL
+// + Devolver el foco al body para evitar warnings de accesibilidad
 // ============================================================
-document.addEventListener('hidden.bs.modal', function(event) {
-    // Elimina cualquier backdrop residual que Bootstrap no haya quitado
-    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+
+document.addEventListener('hidden.bs.modal', function (e) {
+    // 1. Limpiar backdrops huérfanos
+    document.querySelectorAll('.modal-backdrop').forEach(function (backdrop) {
         backdrop.classList.remove('show');
         backdrop.remove();
     });
-    // Quita la clase 'modal-open' del body (evita que quede bloqueado)
+
+    // 2. Quitar la clase modal-open del body
     document.body.classList.remove('modal-open');
+
+    // 3. Devolver el foco al body si estaba dentro del modal que se cerró
+    //    Esto evita el warning "Blocked aria-hidden on an element because
+    //    its descendant retained focus".
+    if (document.activeElement && e.target.contains(document.activeElement)) {
+        document.activeElement.blur();
+    }
 });
 
 // ============================================================
-// FUNCIÓN PARA ABRIR MODAL GLOBAL (Corregido)
+// EVENTOS GLOBALES: change
 // ============================================================
-function abrirModalGlobal(titulo, mensaje, tipo = 'danger') {
-    const modalGlobal = document.getElementById('globalMessageModal');
-    if (!modalGlobal) {
-        // Si no existe el modal, mostrar alerta flotante
-        mostrarMensaje(mensaje, tipo);
-        return;
-    }
 
-    // Configurar colores y textos
-    let headerClass = 'bg-primary text-white';
-    let tituloDefault = 'Aviso del Sistema';
-    if (tipo === 'danger') {
-        headerClass = 'bg-danger text-white';
-        tituloDefault = 'Error';
-    } else if (tipo === 'success') {
-        headerClass = 'bg-success text-white';
-        tituloDefault = 'Éxito';
-    } else if (tipo === 'warning') {
-        headerClass = 'bg-warning text-dark';
-        tituloDefault = 'Advertencia';
-    }
-
-    const modalHeader = document.getElementById('globalMessageHeader');
-    const modalTitle = document.getElementById('globalMessageTitle');
-    const modalBody = document.getElementById('globalMessageBody');
-
-    if (modalHeader) modalHeader.className = `modal-header ${headerClass}`;
-    if (modalTitle) modalTitle.textContent = titulo || tituloDefault;
-    if (modalBody) modalBody.innerHTML = mensaje;
-
-    // Usar getOrCreateInstance para no crear instancias duplicadas
-    const modalInstance = bootstrap.Modal.getOrCreateInstance(modalGlobal);
-    modalInstance.show();
-}
-
-// ============================================================
-// EVENTOS GLOBALES (Cambio de inputs, clics)
-// ============================================================
-document.addEventListener('change', function(e) {
+document.addEventListener('change', function (e) {
     if (e.target && e.target.id === 'id_tipo') toggleCamposCupos();
+
     if (e.target && e.target.id === 'id_fecha_inicio') {
         const fechaInicio = e.target.value;
         const fechaFin = document.getElementById('id_fecha_fin');
-        if (fechaInicio) {
+        if (fechaInicio && fechaFin) {
             fechaFin.min = fechaInicio;
             if (fechaFin.value && fechaFin.value < fechaInicio) fechaFin.value = '';
         }
     }
+
     if (e.target && e.target.id === 'id_imagen') {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = function(event) {
+            reader.onload = function (event) {
                 let previewContainer = document.getElementById('preview-container');
                 if (!previewContainer) {
                     previewContainer = document.createElement('div');
@@ -134,74 +174,131 @@ document.addEventListener('change', function(e) {
                     previewContainer.className = 'mt-2 text-center';
                     e.target.closest('.mb-3').appendChild(previewContainer);
                 }
-                previewContainer.innerHTML = `<img src="${event.target.result}" style="max-width: 100%; max-height: 150px; border-radius: 5px;">`;
+                previewContainer.innerHTML =
+                    '<img src="' + event.target.result + '" class="img-preview-actividad" alt="Vista previa de la imagen">';
             };
             reader.readAsDataURL(file);
         }
     }
 });
 
-document.addEventListener('click', function(e) {
+// ============================================================
+// EVENTOS GLOBALES: click
+// ============================================================
+
+document.addEventListener('click', function (e) {
+
+    // ------------------------------------------------------------
+    // Seleccionar todas las carreras de una escuela
+    // ------------------------------------------------------------
     if (e.target.closest('.btn-select-all')) {
         const btn = e.target.closest('.btn-select-all');
         const group = btn.getAttribute('data-group');
-        const checkboxes = document.querySelectorAll(`.carrera-checkbox[data-group="${group}"]`);
+        const checkboxes = document.querySelectorAll('.carrera-checkbox[data-group="' + group + '"]');
         let allChecked = true;
-        checkboxes.forEach(cb => { if (!cb.checked) allChecked = false; });
-        checkboxes.forEach(cb => { cb.checked = !allChecked; });
+        checkboxes.forEach(function (cb) { if (!cb.checked) allChecked = false; });
+        checkboxes.forEach(function (cb) { cb.checked = !allChecked; });
     }
+
+    // ------------------------------------------------------------
+    // Checkbox "todas las jornadas"
+    // ------------------------------------------------------------
     if (e.target && e.target.id === 'check_all_jornadas') {
         const checkAll = e.target.checked;
-        document.querySelectorAll('.jornada-checkbox').forEach(checkbox => { checkbox.checked = checkAll; });
+        document.querySelectorAll('.jornada-checkbox').forEach(function (checkbox) {
+            checkbox.checked = checkAll;
+        });
     }
+
+    // ------------------------------------------------------------
+    // Drop area de imagen (clic)
+    // ------------------------------------------------------------
     if (e.target.closest('#drop-area')) {
         const input = document.getElementById('id_imagen');
         if (input) input.click();
     }
+
+    // ------------------------------------------------------------
+    // Botón "Nueva Actividad"
+    // ------------------------------------------------------------
     if (e.target.closest('#btnNuevaActividad')) {
         e.preventDefault();
         cargarFormulario('/actividades/nueva/', 'Crear Actividad');
     }
+
+    // ------------------------------------------------------------
+    // Botón "Editar" (en lista de actividades)
+    // ------------------------------------------------------------
     if (e.target.closest('.btn-editar')) {
         e.preventDefault();
         const btn = e.target.closest('.btn-editar');
         const url = btn.getAttribute('data-url');
         cargarFormulario(url, 'Editar Actividad');
     }
+
+    // ------------------------------------------------------------
+    // Botón "Ahora no" en modal de invitaciones
+    // ------------------------------------------------------------
     if (e.target.closest('#btnCancelarEnvio')) {
         const modalInv = document.getElementById('modalConfirmarInvitaciones');
         const tipo = modalInv.dataset.tipo;
+        const esNueva = modalInv.dataset.esNueva === '1';
         const msg = document.getElementById('invitacion-message');
         const btnEliminar = document.getElementById('btnEliminarActividad');
+
+        // Si es EDICIÓN → solo cerrar el modal, los cambios ya están guardados
+        if (!esNueva) {
+            const modal = bootstrap.Modal.getInstance(modalInv);
+            if (modal) modal.hide();
+            setTimeout(function () { window.location.reload(); }, 300);
+            return;
+        }
+
+        // Si es CREACIÓN de TALLER → forzar eliminar o enviar
         if (tipo === 'TALLER') {
             msg.className = 'alert alert-danger';
-            msg.innerHTML = `<strong>Es obligatorio enviar invitaciones para talleres.</strong><br>Si no deseas enviarlas, debes eliminar la actividad recién creada.`;
-            btnEliminar.style.display = 'inline-block';
-            document.getElementById('btnCancelarEnvio').style.display = 'none';
+            msg.innerHTML = '<strong>Es obligatorio enviar invitaciones para talleres.</strong><br>Si no deseas enviarlas, debes eliminar la actividad recién creada.';
+            btnEliminar.classList.remove('d-none');
+            document.getElementById('btnCancelarEnvio').classList.add('d-none');
         } else {
+            // Creación MASIVA → solo cerrar y recargar
             window.location.reload();
         }
     }
+
+    // ------------------------------------------------------------
+    // Botón "Eliminar actividad" en modal de invitaciones
+    // ------------------------------------------------------------
     if (e.target.closest('#btnEliminarActividad')) {
         const modalInv = document.getElementById('modalConfirmarInvitaciones');
         const actividadId = modalInv.dataset.actividadId;
         if (confirm('¿Estás seguro de eliminar esta actividad? Esta acción no se puede deshacer.')) {
-            fetch(`/actividades/eliminar-ajax/${actividadId}/`, {
-                method: 'POST', headers: { 'X-CSRFToken': csrftoken }
+            fetch('/actividades/eliminar-ajax/' + actividadId + '/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrftoken },
+                credentials: 'same-origin'
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const modalConfirm = bootstrap.Modal.getInstance(modalInv);
-                    if (modalConfirm) modalConfirm.hide();
-                    mostrarMensaje('Actividad eliminada correctamente.', 'success');
-                    setTimeout(() => { window.location.reload(); }, 1500);
-                } else {
-                    mostrarMensaje('Error al eliminar la actividad.', 'danger');
-                }
-            });
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        const modalConfirm = bootstrap.Modal.getInstance(modalInv);
+                        if (modalConfirm) modalConfirm.hide();
+                        mostrarMensaje('Actividad eliminada correctamente.', 'success');
+                        setTimeout(function () { window.location.reload(); }, 1500);
+                    } else {
+                        mostrarMensaje(data.message || 'Error al eliminar la actividad.', 'danger');
+                    }
+                })
+                .catch(function (error) {
+                    console.error('Error al eliminar actividad:', error);
+                    mostrarMensaje('Error al conectar con el servidor.', 'danger');
+                });
         }
     }
+
+    // ------------------------------------------------------------
+    // Botón "Enviar" en modal de invitaciones
+    // ------------------------------------------------------------
     if (e.target.closest('#btnConfirmarEnvio')) {
         const modalInv = document.getElementById('modalConfirmarInvitaciones');
         const actividadId = modalInv.dataset.actividadId;
@@ -210,76 +307,162 @@ document.addEventListener('click', function(e) {
         btnEnviar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
         enviarInvitaciones(actividadId);
     }
+
+    // ------------------------------------------------------------
+    // PREVISUALIZAR / OCULTAR INVITACIÓN
+    // ------------------------------------------------------------
+    if (e.target.closest('#btnVerPrevisualizacion')) {
+        const modalInv = document.getElementById('modalConfirmarInvitaciones');
+        const actividadId = modalInv.dataset.actividadId;
+        const btn = e.target.closest('#btnVerPrevisualizacion');
+        const container = document.getElementById('invitacion-preview-container');
+        const iframe = document.getElementById('invitacion-preview-iframe');
+        const ejemplo = document.getElementById('invitacion-ejemplo');
+        const info = document.getElementById('invitacion-info-destinatarios');
+        const total = document.getElementById('invitacion-total');
+
+        // Si ya está visible → ocultar
+        if (!container.classList.contains('d-none')) {
+            container.classList.add('d-none');
+            iframe.srcdoc = '';
+            btn.innerHTML = '<i class="fas fa-eye"></i> Ver cómo se verá el correo';
+            return;
+        }
+
+        if (!actividadId) return;
+
+        // Mostrar previsualización
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
+
+        fetch('/actividades/previsualizar-invitacion/' + actividadId + '/', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin'
+        })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                btn.disabled = false;
+
+                if (data.success) {
+                    iframe.srcdoc = data.html;
+                    container.classList.remove('d-none');
+
+                    if (data.total_destinatarios && data.total_destinatarios > 0) {
+                        total.textContent = data.total_destinatarios;
+                        info.classList.remove('d-none');
+                    }
+
+                    if (data.alumno_ejemplo) {
+                        ejemplo.textContent = '(ejemplo con: ' + data.alumno_ejemplo + ')';
+                    }
+
+                    btn.innerHTML = '<i class="fas fa-eye-slash"></i> Ocultar previsualización';
+                } else {
+                    btn.innerHTML = '<i class="fas fa-eye"></i> Ver cómo se verá el correo';
+                    mostrarMensaje(data.message || 'No se pudo previsualizar.', 'danger');
+                }
+            })
+            .catch(function (error) {
+                console.error('Error al previsualizar:', error);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-eye"></i> Ver cómo se verá el correo';
+                mostrarMensaje('Error al conectar con el servidor.', 'danger');
+            });
+    }
 });
 
 // ============================================================
-// ENVÍO DEL FORMULARIO (ACTIVIDADES) - CON MODAL DE INVITACIONES
+// ENVÍO DEL FORMULARIO DE ACTIVIDAD (modal) + INVITACIONES
 // ============================================================
-document.addEventListener('submit', function(e) {
+
+document.addEventListener('submit', function (e) {
     const form = e.target;
     if (form.closest('#actividadModal') && form.id !== 'formEscaneo') {
-        if (!validarFechas()) { e.preventDefault(); return; }
+        if (!validarFechas()) {
+            e.preventDefault();
+            return;
+        }
         e.preventDefault();
+
         const formData = new FormData(form);
         fetch(form.action, {
-            method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // 1. Cerrar el modal de crear/editar
-                const modal = bootstrap.Modal.getInstance(document.getElementById('actividadModal'));
-                if (modal) modal.hide();
-                
-                // 2. Si la actividad fue guardada correctamente
-                if (data.id) {
-                    // Configurar el modal de invitaciones
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('actividadModal'));
+                    if (modal) modal.hide();
+
+                    // Guardar si es nueva o edición en el modal de invitaciones
                     const modalInv = document.getElementById('modalConfirmarInvitaciones');
                     modalInv.dataset.actividadId = data.id;
                     modalInv.dataset.tipo = data.tipo;
-                    
-                    // Resetear el modal de invitaciones
-                    document.getElementById('invitacion-texto').innerHTML = '¿Deseas enviar invitaciones por correo a los participantes?';
+                    modalInv.dataset.esNueva = data.es_nueva ? '1' : '0';
+
+                    // Cambiar el texto según sea creación o edición
+                    if (data.es_nueva) {
+                        document.getElementById('invitacion-texto').innerHTML =
+                            '¿Deseas enviar invitaciones por correo a los participantes?';
+                    } else {
+                        document.getElementById('invitacion-texto').innerHTML =
+                            'Actividad actualizada correctamente. ¿Deseas reenviar las invitaciones por correo?';
+                    }
+
+                    // Resetear el estado del modal
                     document.getElementById('invitacion-resultado').innerHTML = '';
-                    document.getElementById('btnEliminarActividad').style.display = 'none';
-                    document.getElementById('btnCancelarEnvio').style.display = 'inline-block';
-                    document.getElementById('btnConfirmarEnvio').style.display = 'inline-block';
+                    document.getElementById('btnEliminarActividad').classList.add('d-none');
+                    document.getElementById('btnCancelarEnvio').classList.remove('d-none');
+                    document.getElementById('btnConfirmarEnvio').classList.remove('d-none');
                     document.getElementById('btnConfirmarEnvio').disabled = false;
                     document.getElementById('btnConfirmarEnvio').innerHTML = '<i class="fas fa-paper-plane"></i> Enviar';
                     document.getElementById('invitacion-message').className = 'alert alert-info';
-                    
-                    // Abrir el modal de invitaciones
+
+                    // Resetear la previsualización si estaba abierta
+                    const previewContainer = document.getElementById('invitacion-preview-container');
+                    const previewIframe = document.getElementById('invitacion-preview-iframe');
+                    const previewBtn = document.getElementById('btnVerPrevisualizacion');
+                    if (previewContainer) previewContainer.classList.add('d-none');
+                    if (previewIframe) previewIframe.srcdoc = '';
+                    if (previewBtn) previewBtn.innerHTML = '<i class="fas fa-eye"></i> Ver cómo se verá el correo';
+                    const infoDest = document.getElementById('invitacion-info-destinatarios');
+                    if (infoDest) infoDest.classList.add('d-none');
+
                     const modalConfirm = new bootstrap.Modal(modalInv);
                     modalConfirm.show();
                 } else {
-                    // Si no hay ID, recargar la página
-                    setTimeout(() => { window.location.reload(); }, 1500);
-                }
-            } else {
-                // Manejo de errores de validación
-                if (data.errors) {
-                    let errores = JSON.parse(data.errors);
-                    let mensaje = '<ul>';
-                    const nombresCampos = {
-                        'titulo': 'Nombre', 'descripcion': 'Descripción', 'tipo': 'Tipo',
-                        'lugar': 'Lugar', 'estado': 'Estado', 'fecha_inicio': 'Fecha Inicio',
-                        'fecha_fin': 'Fecha Término', 'cupos_totales': 'Cupo Máximo',
-                        'cupos_disponibles': 'Cupos Disponibles', 'carreras': 'Carreras',
-                        'jornadas': 'Jornadas'
-                    };
-                    for (let campo in errores) {
-                        let nombreCampo = nombresCampos[campo] || campo;
-                        mensaje += '<li><strong>' + nombreCampo + ':</strong> ' + errores[campo][0].message + '</li>';
+                    if (data.errors) {
+                        const errores = JSON.parse(data.errors);
+                        let mensaje = '<ul class="mb-0">';
+                        const nombresCampos = {
+                            titulo: 'Nombre', descripcion: 'Descripción', tipo: 'Tipo',
+                            lugar: 'Lugar', fecha_inicio: 'Fecha Inicio',
+                            fecha_fin: 'Fecha Término', cupos_totales: 'Cupo Máximo',
+                            carreras: 'Carreras', jornadas: 'Jornadas'
+                        };
+                        for (const campo in errores) {
+                            const nombreCampo = nombresCampos[campo] || campo;
+                            mensaje += '<li><strong>' + escapeHtml(nombreCampo) + ':</strong> ' +
+                                escapeHtml(errores[campo][0].message) + '</li>';
+                        }
+                        mensaje += '</ul>';
+                        abrirModalGlobal('Error de validación', mensaje, 'danger');
+                    } else {
+                        const modalBody = document.querySelector('#actividadModal .modal-body');
+                        if (modalBody) modalBody.innerHTML = data.html;
+                        inicializarFormularioActividad();
                     }
-                    mensaje += '</ul>';
-                    abrirModalGlobal('Error de validación', mensaje, 'danger');
-                } else {
-                    const modalBody = document.querySelector('#actividadModal .modal-body');
-                    if (modalBody) modalBody.innerHTML = data.html;
-                    inicializarFormularioActividad();
                 }
-            }
-        });
+            })
+            .catch(function (error) {
+                console.error('Error al guardar actividad:', error);
+                mostrarMensaje('Error al conectar con el servidor.', 'danger');
+            });
     }
 });
 
@@ -288,250 +471,161 @@ function enviarInvitaciones(actividadId) {
     formData.append('actividad_id', actividadId);
 
     fetch('/actividades/enviar-invitaciones/', {
-        method: 'POST', body: formData, headers: { 'X-CSRFToken': csrftoken }
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': csrftoken },
+        credentials: 'same-origin'
     })
-    .then(response => response.json())
-    .then(data => {
-        const resultado = document.getElementById('invitacion-resultado');
-        if (data.success) {
-            resultado.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
-            const modal = document.getElementById('modalConfirmarInvitaciones');
-            bootstrap.Modal.getInstance(modal).hide();
-            setTimeout(() => window.location.reload(), 2000);
-        } else {
-            resultado.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
-        }
-    });
-}
-
-function mostrarMensaje(mensaje, tipo) {
-    const alerta = document.createElement('div');
-    alerta.className = `alert alert-${tipo} alert-dismissible fade show`;
-    alerta.innerHTML = `${mensaje}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
-    const container = document.querySelector('main') || document.body;
-    if (container) {
-        container.prepend(alerta);
-        setTimeout(() => { alerta.remove(); }, 4000);
-    }
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+            const resultado = document.getElementById('invitacion-resultado');
+            if (data.success) {
+                resultado.innerHTML = '<div class="alert alert-success">' + escapeHtml(data.message) + '</div>';
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarInvitaciones'));
+                if (modal) modal.hide();
+                setTimeout(function () { window.location.reload(); }, 2000);
+            } else {
+                resultado.innerHTML = '<div class="alert alert-danger">' + escapeHtml(data.message) + '</div>';
+            }
+        })
+        .catch(function (error) {
+            console.error('Error al enviar invitaciones:', error);
+            const resultado = document.getElementById('invitacion-resultado');
+            if (resultado) {
+                resultado.innerHTML = '<div class="alert alert-danger">Error al conectar con el servidor.</div>';
+            }
+        });
 }
 
 // ============================================================
-// CARGAR FORMULARIO EN MODAL (CORREGIDO para usar abrirModalGlobal)
+// CARGAR FORMULARIO DE ACTIVIDAD EN MODAL
 // ============================================================
+
 function cargarFormulario(url, titulo) {
     const separator = url.includes('?') ? '&' : '?';
     const urlConPartial = url + separator + 'partial=1';
-    
+
     const label = document.getElementById('modalLabel');
     const body = document.getElementById('modalBody');
-    if (!label || !body) { console.error("Modal no encontrado"); return; }
+    if (!label || !body) {
+        console.error('Modal no encontrado');
+        return;
+    }
 
     label.textContent = titulo;
+
     fetch(urlConPartial, {
-        // ¡CLAVE! Este encabezado permite que Django devuelva JSON en vez de redirigir
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
-    .then(response => response.text())
-    .then(html => {
-        // 1. Verificar si el servidor devolvió un JSON de error (bloqueo por registros)
-        if (html.trim().startsWith('{')) {
-            let data = JSON.parse(html);
-            if (data.success === false) {
-                // Mostrar el mensaje usando la nueva función (evita el bug de pantalla oscura)
-                abrirModalGlobal('Error', data.message, 'danger');
-                return; // Detener el proceso, no abrir el modal de edición
-            }
-        }
+        .then(function (response) { return response.text(); })
+        .then(function (html) {
+            // Detectar si el backend devolvió JSON en vez de HTML
+            if (html.trim().startsWith('{')) {
+                let data;
+                try {
+                    data = JSON.parse(html);
+                } catch (error) {
+                    console.error('Error al parsear respuesta JSON:', error);
+                    mostrarMensaje('Error al cargar el formulario.', 'danger');
+                    return;
+                }
 
-        // 2. Si es HTML normal, procedemos a abrir el modal de edición
-        body.innerHTML = html;
-        inicializarFormularioActividad();
-        const modal = new bootstrap.Modal(document.getElementById('actividadModal'));
-        modal.show();
-    });
+                // Caso: requiere confirmación porque la actividad tiene datos
+                if (data.requiere_confirmacion) {
+                    if (confirm(data.mensaje)) {
+                        // Usuario aceptó: recargar con forzar_edicion=true
+                        const urlForzada = urlConPartial + '&forzar_edicion=true';
+                        fetch(urlForzada, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        })
+                            .then(function (resp) { return resp.text(); })
+                            .then(function (htmlForzado) {
+                                body.innerHTML = htmlForzado;
+                                inicializarFormularioActividad();
+                                const modal = new bootstrap.Modal(document.getElementById('actividadModal'));
+                                modal.show();
+
+                                // Guardar el flag para que el submit sepa que es forzado
+                                const form = document.getElementById('formActividad');
+                                if (form) {
+                                    const hidden = document.createElement('input');
+                                    hidden.type = 'hidden';
+                                    hidden.name = 'forzar_edicion';
+                                    hidden.value = 'true';
+                                    form.appendChild(hidden);
+                                }
+                            })
+                            .catch(function (error) {
+                                console.error('Error al cargar formulario forzado:', error);
+                                mostrarMensaje('Error al cargar el formulario.', 'danger');
+                            });
+                    }
+                    return;
+                }
+
+                // Caso: error general
+                if (data.success === false) {
+                    abrirModalGlobal('Error', data.message, 'danger');
+                    return;
+                }
+            }
+
+            // HTML normal: inyectar directamente
+            body.innerHTML = html;
+            inicializarFormularioActividad();
+            const modal = new bootstrap.Modal(document.getElementById('actividadModal'));
+            modal.show();
+        })
+        .catch(function (error) {
+            console.error('Error al cargar formulario:', error);
+            mostrarMensaje('Error al cargar el formulario.', 'danger');
+        });
 }
 
 // ============================================================
-// ESCÁNER (Validación + Confirmación con Modal + Avisos en Modal)
+// VALIDACIÓN DINÁMICA DEL FORMULARIO DE ACTIVIDAD
 // ============================================================
-function limpiarRUT(valor) { return valor.replace(/[^0-9kK]/g, '').toUpperCase(); }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const formEscaneo = document.getElementById('formEscaneo');
-    const inputRut = document.getElementById('rutInput');
-    
-    // Elementos del Modal de Confirmación
-    const modalConfirmar = document.getElementById('modalConfirmarAsistencia');
-    const infoAlumno = document.getElementById('info-alumno');
-    const btnAceptar = document.getElementById('btnAceptarConfirmacion');
-    const btnCancelar = document.getElementById('btnCancelarConfirmacion');
-    const btnCerrarModal = document.getElementById('btnCerrarModalAsistencia');
-    
-    // Elementos del Modal de Aviso
-    const modalAviso = document.getElementById('modalAviso');
-    const modalAvisoBody = document.getElementById('modalAvisoBody');
-    const btnAceptarAviso = document.getElementById('btnAceptarAviso');
-    
-    let rutPendiente = '';
-
-    // Función para procesar el envío
-    function procesarEnvio() {
-        let valorLimpio = limpiarRUT(inputRut.value);
-        if (valorLimpio.length >= 9) valorLimpio = valorLimpio.slice(0, 9);
-        inputRut.value = valorLimpio;
-        
-        if (!inputRut.value) { 
-            inputRut.focus();
-            return; 
-        }
-
-        const formData = new FormData(formEscaneo);
-        formData.append('rut', inputRut.value);
-
-        fetch('/escaneo/', {
-            method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.confirmar) {
-                rutPendiente = inputRut.value;
-                infoAlumno.innerHTML = `
-                    <strong>${data.alumno.nombre}</strong><br>
-                    <span class="text-muted">RUT: ${data.alumno.rut}</span><br>
-                    <span class="text-muted">Carrera: ${data.alumno.carrera} - ${data.alumno.jornada}</span>
-                `;
-                const modal = new bootstrap.Modal(modalConfirmar);
-                modal.show();
-            } else if (!data.success) {
-                mostrarAviso(data.message);
-            } else {
-                mostrarMensaje(data.message, 'success');
-                inputRut.value = '';
-                inputRut.focus();
-                setTimeout(() => window.location.reload(), 1500);
-            }
-        });
-    }
-
-    // Enfocar el campo al cargar
-    if (inputRut) inputRut.focus();
-
-    // Listener GLOBAL para el escáner físico
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Tab' || e.key === 'Enter') {
-            if (document.activeElement === inputRut) {
-                e.preventDefault();
-                procesarEnvio();
-            } else {
-                e.preventDefault();
-                inputRut.focus();
-                procesarEnvio();
-            }
-        }
-    });
-
-    // Submit del formulario
-    if (formEscaneo && inputRut) {
-        formEscaneo.addEventListener('submit', function(e) {
-            e.preventDefault();
-            procesarEnvio();
-        });
-
-        btnAceptar.addEventListener('click', function() {
-            if (!rutPendiente) return;
-            const formData = new FormData(formEscaneo);
-            formData.append('rut', rutPendiente);
-            formData.append('confirmar', 'true');
-
-            fetch('/escaneo/', {
-                method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                const modal = bootstrap.Modal.getInstance(modalConfirmar);
-                modal.hide();
-                if (data.success) {
-                    mostrarMensaje(data.message, 'success');
-                    inputRut.value = '';
-                    inputRut.focus();
-                    setTimeout(() => window.location.reload(), 1500);
-                } else {
-                    mostrarAviso(data.message);
-                }
-            });
-        });
-
-        btnAceptarAviso.addEventListener('click', function() {
-            const modal = bootstrap.Modal.getInstance(modalAviso);
-            modal.hide();
-            inputRut.value = '';
-            inputRut.focus();
-        });
-
-        btnCerrarModal.addEventListener('click', function() {
-            inputRut.value = '';
-            inputRut.focus();
-        });
-
-        btnCancelar.addEventListener('click', function() {
-            inputRut.value = '';
-            inputRut.focus();
-        });
-
-        modalAviso.addEventListener('hidden.bs.modal', function() {
-            inputRut.value = '';
-            inputRut.focus();
-        });
-    }
-
-    function mostrarAviso(mensaje) {
-        modalAvisoBody.innerHTML = `<p class="mb-0">${mensaje}</p>`;
-        const modal = new bootstrap.Modal(modalAviso);
-        modal.show();
-    }
-});
-
-// ============================================================
-// Validación dinámica del formulario de actividad
-// ============================================================
-document.addEventListener('submit', function(e) {
+document.addEventListener('submit', function (e) {
     const form = e.target;
     if (form.id === 'formActividad') {
         const carrerasMarcadas = document.querySelectorAll('input[name="carreras"]:checked').length;
         const jornadasMarcadas = document.querySelectorAll('input[name="jornadas"]:checked').length;
+
         if (carrerasMarcadas === 0) {
             e.preventDefault();
-            alert('Debes seleccionar al menos una Carrera.');
+            mostrarMensaje('Debes seleccionar al menos una Carrera.', 'warning');
             return;
         }
         if (jornadasMarcadas === 0) {
             e.preventDefault();
-            alert('Debes seleccionar al menos una Jornada.');
+            mostrarMensaje('Debes seleccionar al menos una Jornada.', 'warning');
             return;
         }
-        const tipo = document.getElementById('id_tipo').value;
+
+        const tipoEl = document.getElementById('id_tipo');
         const cupo = document.getElementById('id_cupos_totales');
-        if (tipo === 'TALLER' && (!cupo.value || cupo.value <= 0)) {
+        if (tipoEl && tipoEl.value === 'TALLER' && cupo && (!cupo.value || cupo.value <= 0)) {
             e.preventDefault();
-            alert('Si es un TALLER, debes indicar el Cupo Máximo.');
+            mostrarMensaje('Si es un TALLER, debes indicar el Cupo Máximo.', 'warning');
             return;
         }
-        if (tipo === 'MASIVA') cupo.value = '';
+        if (tipoEl && tipoEl.value === 'MASIVA' && cupo) cupo.value = '';
     }
 });
 
 // ============================================================
-// MODAL GLOBAL PARA MENSAJES DE DJANGO (CORREGIDO)
+// MODAL GLOBAL PARA MENSAJES DE DJANGO (messages framework)
 // ============================================================
-document.addEventListener('DOMContentLoaded', function() {
+
+document.addEventListener('DOMContentLoaded', function () {
     const messageContainer = document.getElementById('django-messages-data');
-    
+
     if (messageContainer && messageContainer.children.length > 0) {
         const firstMessage = messageContainer.querySelector('.msg');
         const messageText = firstMessage.textContent.trim();
         const messageType = firstMessage.getAttribute('data-type');
-        
-        // Usa la función abrirModalGlobal para abrir el modal sin dejar pantalla oscura
+
         if (messageType === 'error') {
             abrirModalGlobal('Error', messageText, 'danger');
         } else if (messageType === 'success') {

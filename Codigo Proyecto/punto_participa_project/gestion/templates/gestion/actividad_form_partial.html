@@ -1,146 +1,191 @@
 {% load static %}
-<form method="post" action="{{ request.path }}" id="formActividad" enctype="multipart/form-data" novalidate>
+<form method="post"
+      action="{{ request.path }}"
+      id="formActividad"
+      enctype="multipart/form-data"
+      novalidate>
     {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger" role="alert">
+            {% for error in form.non_field_errors %}
+                <div><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <div class="row">
         <!-- Columna Izquierda -->
         <div class="col-md-6">
             <div class="mb-3">
-                <label for="id_titulo" class="form-label fw-bold">Nombre</label>
+                <label for="{{ form.titulo.id_for_label }}" class="form-label fw-bold">
+                    Nombre <span class="text-danger">*</span>
+                </label>
                 {{ form.titulo }}
+                {% if form.titulo.errors %}
+                    <div class="text-danger small mt-1">{{ form.titulo.errors.0 }}</div>
+                {% endif %}
             </div>
-            
+
             <div class="mb-3">
-                <label for="id_descripcion" class="form-label fw-bold">Descripción</label>
+                <label for="{{ form.descripcion.id_for_label }}" class="form-label fw-bold">
+                    Descripción <span class="text-danger">*</span>
+                </label>
                 {{ form.descripcion }}
+                {% if form.descripcion.errors %}
+                    <div class="text-danger small mt-1">{{ form.descripcion.errors.0 }}</div>
+                {% endif %}
             </div>
 
             <div class="mb-3">
-                <label for="id_tipo" class="form-label fw-bold">Tipo</label>
-                <select name="tipo" id="id_tipo" class="form-select">
-                    <option value="">-- Seleccione un tipo --</option>
-                    {% for value, label in form.tipo.field.choices %}
-                        <!-- ✅ CORREGIDO: Todo en una sola línea y con espacios -->
-                        <option value="{{ value }}" {% if form.tipo.value == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
+                <label for="{{ form.tipo.id_for_label }}" class="form-label fw-bold">
+                    Tipo <span class="text-danger">*</span>
+                </label>
+                {{ form.tipo }}
+                {% if form.tipo.errors %}
+                    <div class="text-danger small mt-1">{{ form.tipo.errors.0 }}</div>
+                {% endif %}
             </div>
 
-            <!-- AGREGADO: Lugar y Estado -->
             <div class="mb-3">
-                <label for="id_lugar" class="form-label fw-bold">Lugar</label>
+                <label for="{{ form.lugar.id_for_label }}" class="form-label fw-bold">
+                    Lugar <span class="text-danger">*</span>
+                </label>
                 {{ form.lugar }}
-            </div>
-
-            <div class="mb-3">
-                <label for="id_estado" class="form-label fw-bold">Estado</label>
-                {{ form.estado }}
+                {% if form.lugar.errors %}
+                    <div class="text-danger small mt-1">{{ form.lugar.errors.0 }}</div>
+                {% endif %}
             </div>
 
             <div class="row">
                 <div class="col-6 mb-3">
-                    <label for="id_fecha_inicio" class="form-label fw-bold">Fecha Inicio</label>
-                    <input type="datetime-local" name="fecha_inicio" id="id_fecha_inicio" 
-                           class="form-control" 
-                           value="{{ form.fecha_inicio.value|date:'Y-m-d\TH:i' }}"
-                           min="{% now 'Y-m-d\TH:i' %}" required>
+                    <label for="{{ form.fecha_inicio.id_for_label }}" class="form-label fw-bold">
+                        Fecha Inicio <span class="text-danger">*</span>
+                    </label>
+                    {{ form.fecha_inicio }}
+                    {% if form.fecha_inicio.errors %}
+                        <div class="text-danger small mt-1">{{ form.fecha_inicio.errors.0 }}</div>
+                    {% endif %}
                 </div>
                 <div class="col-6 mb-3">
-                    <label for="id_fecha_fin" class="form-label fw-bold">Fecha Término</label>
-                    <input type="datetime-local" name="fecha_fin" id="id_fecha_fin" 
-                           class="form-control" 
-                           value="{{ form.fecha_fin.value|date:'Y-m-d\TH:i' }}"
-                           required>
+                    <label for="{{ form.fecha_fin.id_for_label }}" class="form-label fw-bold">
+                        Fecha Término <span class="text-danger">*</span>
+                    </label>
+                    {{ form.fecha_fin }}
+                    {% if form.fecha_fin.errors %}
+                        <div class="text-danger small mt-1">{{ form.fecha_fin.errors.0 }}</div>
+                    {% endif %}
                 </div>
             </div>
 
-            <!-- Campos de cupos (ocultos para MASIVA) -->
+            <!-- Campos de cupos (ocultos para MASIVA vía JS) -->
             <div id="campos-cupos">
                 <div class="mb-3">
-                    <label for="id_cupos_totales" class="form-label fw-bold">Cupo Máximo</label>
+                    <label for="{{ form.cupos_totales.id_for_label }}" class="form-label fw-bold">
+                        Cupo Máximo
+                    </label>
                     {{ form.cupos_totales }}
+                    <small class="text-muted">Solo aplica para TALLER.</small>
+                    {% if form.cupos_totales.errors %}
+                        <div class="text-danger small mt-1">{{ form.cupos_totales.errors.0 }}</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
         <!-- Columna Derecha -->
         <div class="col-md-6">
+            <!-- Imagen -->
             <div class="mb-3">
                 <label class="form-label fw-bold">Imagen/Banner Taller</label>
-                <div id="drop-area" style="border: 2px dashed #ccc; border-radius: 5px; padding: 20px; text-align: center; background: #f8f9fa; cursor: pointer;">
+                <div id="drop-area" class="zona-drop">
                     <i class="fas fa-cloud-upload-alt fa-2x text-muted"></i>
                     <p class="mb-0 text-muted small">Arrastra imagen aquí o<br>clic para seleccionar</p>
                     <small class="text-muted">200x150px</small>
-                    <input type="file" name="imagen" id="id_imagen" accept="image/*" style="display: none;">
+                    <input type="file"
+                           name="imagen"
+                           id="id_imagen"
+                           accept="image/*"
+                           class="d-none">
                 </div>
                 <div id="preview-container" class="mt-2 text-center"></div>
+                {% if form.imagen.errors %}
+                    <div class="text-danger small mt-1">{{ form.imagen.errors.0 }}</div>
+                {% endif %}
             </div>
 
-            <!-- CARRERAS ASOCIADAS (Agrupadas por Escuela) -->
+            <!-- CARRERAS ASOCIADAS (agrupadas dinámicamente por escuela) -->
             <div class="mb-3">
-                <label class="form-label fw-bold mb-2">Carreras Asociadas</label>
-                
-                <!-- Escuela de Construcción -->
-                <div class="border rounded p-2 mb-2" style="background: #fcfcfc;">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <strong class="small text-primary">Escuela de Construcción</strong>
-                        <button type="button" class="btn btn-sm btn-outline-primary btn-select-all" data-group="construccion">Agregar todas</button>
-                    </div>
-                    {% for carrera in form.carreras.field.queryset %}
-                        {% if carrera.nombre in "Ingeniería en Construcción, Ingeniería en Prevención de Riesgos, Restauración de Bienes Patrimoniales, Técnico en Construcción, Dibujo y Modelamiento Arquitectónico y Estructural, Técnico en Instalaciones y Proyectos Eléctricos, Técnico Topógrafo Geomático" %}
+                <label class="form-label fw-bold mb-2">
+                    Carreras Asociadas <span class="text-danger">*</span>
+                </label>
+                {% if form.carreras.errors %}
+                    <div class="text-danger small mb-1">{{ form.carreras.errors.0 }}</div>
+                {% endif %}
+
+                {% regroup form.carreras.field.queryset by escuela as carreras_por_escuela %}
+                {% for grupo in carreras_por_escuela %}
+                    <div class="border rounded p-2 mb-2 grupo-carreras">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong class="small text-primary">
+                                {{ grupo.grouper|default:"Sin escuela asignada" }}
+                            </strong>
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary btn-select-all"
+                                    data-group="escuela-{{ forloop.counter }}"
+                                    aria-label="Seleccionar todas las carreras de {{ grupo.grouper|default:'esta escuela' }}">
+                                Agregar todas
+                            </button>
+                        </div>
+                        {% for carrera in grupo.list %}
                             <div class="form-check">
-                                <input class="form-check-input carrera-checkbox" type="checkbox" name="carreras" value="{{ carrera.id }}" id="id_carreras_{{ carrera.id }}" data-group="construccion" {% if carrera.id in form.carreras.value %}checked{% endif %}>
-                                <label class="form-check-label" for="id_carreras_{{ carrera.id }}">{{ carrera.nombre }}</label>
+                                <input class="form-check-input carrera-checkbox"
+                                       type="checkbox"
+                                       name="carreras"
+                                       value="{{ carrera.id }}"
+                                       id="id_carreras_{{ carrera.id }}"
+                                       data-group="escuela-{{ forloop.parentloop.counter }}"
+                                       {% if form.carreras.value and carrera.id in form.carreras.value %}checked{% endif %}>
+                                <label class="form-check-label" for="id_carreras_{{ carrera.id }}">
+                                    {{ carrera.nombre }}
+                                </label>
                             </div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-                <!-- Escuela de Administración y Negocios -->
-                <div class="border rounded p-2 mb-2" style="background: #fcfcfc;">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <strong class="small text-primary">Escuela de Administración y Negocios</strong>
-                        <button type="button" class="btn btn-sm btn-outline-primary btn-select-all" data-group="administracion">Agregar todas</button>
+                        {% endfor %}
                     </div>
-                    {% for carrera in form.carreras.field.queryset %}
-                        {% if carrera.nombre in "Ingeniería en Administración, Ingeniería en Gestión Logística, Ingeniería en Comercio Exterior, Ingeniería en Marketing Digital, Auditoría" %}
-                            <div class="form-check">
-                                <input class="form-check-input carrera-checkbox" type="checkbox" name="carreras" value="{{ carrera.id }}" id="id_carreras_{{ carrera.id }}" data-group="administracion" {% if carrera.id in form.carreras.value %}checked{% endif %}>
-                                <label class="form-check-label" for="id_carreras_{{ carrera.id }}">{{ carrera.nombre }}</label>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-                <!-- Escuela de Informática y Telecomunicaciones -->
-                <div class="border rounded p-2 mb-2" style="background: #fcfcfc;">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <strong class="small text-primary">Escuela de Informática y Telecomunicaciones</strong>
-                        <button type="button" class="btn btn-sm btn-outline-primary btn-select-all" data-group="informatica">Agregar todas</button>
-                    </div>
-                    {% for carrera in form.carreras.field.queryset %}
-                        {% if carrera.nombre in "Ingeniería en Informática" %}
-                            <div class="form-check">
-                                <input class="form-check-input carrera-checkbox" type="checkbox" name="carreras" value="{{ carrera.id }}" id="id_carreras_{{ carrera.id }}" data-group="informatica" {% if carrera.id in form.carreras.value %}checked{% endif %}>
-                                <label class="form-check-label" for="id_carreras_{{ carrera.id }}">{{ carrera.nombre }}</label>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
+                {% empty %}
+                    <small class="text-muted">No hay carreras registradas.</small>
+                {% endfor %}
             </div>
 
             <!-- JORNADAS ASOCIADAS -->
             <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                    <label class="form-label fw-bold mb-0">Jornadas Asociadas</label>
+                    <label class="form-label fw-bold mb-0">
+                        Jornadas Asociadas <span class="text-danger">*</span>
+                    </label>
                     <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" id="check_all_jornadas">
-                        <label class="form-check-label small fw-bold" for="check_all_jornadas">Agregar todas</label>
+                        <label class="form-check-label small fw-bold" for="check_all_jornadas">
+                            Agregar todas
+                        </label>
                     </div>
                 </div>
-                <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px;">
+                {% if form.jornadas.errors %}
+                    <div class="text-danger small mb-1">{{ form.jornadas.errors.0 }}</div>
+                {% endif %}
+                <div class="caja-jornadas">
                     <div class="d-flex flex-wrap gap-3">
                         {% for jornada in form.jornadas.field.queryset %}
                             <div class="form-check">
-                                <input class="form-check-input jornada-checkbox" type="checkbox" name="jornadas" value="{{ jornada.id }}" id="id_jornadas_{{ jornada.id }}" {% if jornada.id in form.jornadas.value %}checked{% endif %}>
-                                <label class="form-check-label" for="id_jornadas_{{ jornada.id }}">{{ jornada.nombre }}</label>
+                                <input class="form-check-input jornada-checkbox"
+                                       type="checkbox"
+                                       name="jornadas"
+                                       value="{{ jornada.id }}"
+                                       id="id_jornadas_{{ jornada.id }}"
+                                       {% if form.jornadas.value and jornada.id in form.jornadas.value %}checked{% endif %}>
+                                <label class="form-check-label" for="id_jornadas_{{ jornada.id }}">
+                                    {{ jornada.nombre }}
+                                </label>
                             </div>
                         {% empty %}
                             <small class="text-muted">No hay jornadas registradas.</small>
@@ -151,33 +196,15 @@
         </div>
     </div>
 
-    <!-- Sección Inferior: Invitaciones (SOLO en edición) -->
-    {% if form.instance.pk %}
-    <div class="row mt-3 pt-3 border-top">
-        <div class="col-md-12">
-            <div class="bg-light p-3 rounded">
-                <label class="fw-bold mb-2"><i class="fas fa-envelope"></i> Invitaciones por Correo Electrónico</label>
-                <div class="d-flex gap-2 align-items-center">
-                    <button type="button" id="btnEnviarInvitaciones" class="btn btn-warning fw-bold text-white" data-actividad-id="{{ form.instance.pk }}">
-                        Enviar Invitación/Aviso por Correo
-                    </button>
-                    <span class="text-muted small" id="estadoInvitaciones">Último envío: 15 destinatarios exitosos, 2 fallidos</span>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% else %}
-    <div class="row mt-3 pt-3 border-top">
-        <div class="col-md-12">
-            <div class="bg-light p-3 rounded">
-                <span class="text-muted"><i class="fas fa-envelope"></i> Las invitaciones se podrán enviar después de guardar la actividad.</span>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
+    <!-- Botones -->
     <div class="mt-4 d-flex gap-2 justify-content-end">
-        <button type="submit" class="btn btn-primary" style="background-color: #003366; border: none; padding: 10px 30px;">Guardar</button>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="padding: 10px 30px;">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-guardar-actividad">
+            <i class="fas fa-save"></i> Guardar
+        </button>
+        <button type="button"
+                class="btn btn-secondary btn-cancelar-modal"
+                data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancelar
+        </button>
     </div>
 </form>

@@ -6,7 +6,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <meta name="description" content="Punto Participa - Gestión de actividades del Punto Estudiantil Duoc UC Sede Alameda">
+    <meta name="description"
+        content="Punto Participa - Gestión de actividades del Punto Estudiantil Duoc UC Sede Alameda">
 
     <title>Punto Participa - {% block title %}Inicio{% endblock %}</title>
 
@@ -26,19 +27,12 @@
     <!-- HEADER -->
     <!-- ============================================================ -->
     <header class="header">
-        <img src="{% static 'gestion/img/duoc.png' %}"
-             alt="Punto Participa Duoc"
-             width="180" height="75">
+        <img src="{% static 'gestion/img/duoc.png' %}" alt="Punto Participa Duoc" width="180" height="75">
 
         <nav class="navbar navbar-expand-lg navbar-custom" role="navigation" aria-label="Navegación principal">
             <div class="container-fluid">
-                <button class="navbar-toggler"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#navbarNav"
-                        aria-controls="navbarNav"
-                        aria-expanded="false"
-                        aria-label="Alternar navegación">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Alternar navegación">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
@@ -50,7 +44,7 @@
                         {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
-                               href="{% url 'dashboard' %}">
+                                href="{% url 'dashboard' %}">
                                 <i class="fas fa-home"></i> Inicio
                             </a>
                         </li>
@@ -60,7 +54,7 @@
                         {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
                         <li class="nav-item">
                             <a class="nav-link {% if 'actividades' in request.path %}active{% endif %}"
-                               href="{% url 'lista_actividades' %}">
+                                href="{% url 'lista_actividades' %}">
                                 <i class="fas fa-calendar-alt"></i> Actividades
                             </a>
                         </li>
@@ -70,7 +64,7 @@
                         {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
                         <li class="nav-item">
                             <a class="nav-link {% if 'reportes' in request.path %}active{% endif %}"
-                               href="{% url 'reportes' %}">
+                                href="{% url 'reportes' %}">
                                 <i class="fas fa-chart-bar"></i> Reportes
                             </a>
                         </li>
@@ -80,17 +74,17 @@
                         {% if rol_usuario == 'Administrador' %}
                         <li class="nav-item">
                             <a class="nav-link {% if 'usuarios' in request.path %}active{% endif %}"
-                               href="{% url 'usuarios' %}">
+                                href="{% url 'usuarios' %}">
                                 <i class="fas fa-users"></i> Usuarios
                             </a>
                         </li>
                         {% endif %}
 
-                        <!-- Escáner: Admin y Encargado -->
-                        {% if rol_usuario == 'Administrador' or rol_usuario == 'Encargado de Registrar' %}
+                        <!-- Escáner: Admin, Creador y Encargado -->
+                        {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' or rol_usuario == 'Encargado de Registrar' %}
                         <li class="nav-item">
                             <a class="nav-link {% if 'escaneo' in request.path %}active{% endif %}"
-                               href="{% url 'escaneo' %}">
+                                href="{% url 'escaneo' %}">
                                 <i class="fas fa-qrcode"></i> Escáner
                             </a>
                         </li>
@@ -100,7 +94,7 @@
                         {% if rol_usuario == 'Administrador' %}
                         <li class="nav-item">
                             <a class="nav-link {% if 'auditoria' in request.path %}active{% endif %}"
-                               href="{% url 'auditoria' %}">
+                                href="{% url 'auditoria' %}">
                                 <i class="fas fa-clipboard-list"></i> Auditoría
                             </a>
                         </li>
@@ -130,10 +124,8 @@
             </div>
         </nav>
 
-        <img src="{% static 'gestion/img/logo_duoc.png' %}"
-             class="d-none d-md-block logo-duoc"
-             alt="Duoc UC"
-             width="120" height="70">
+        <img src="{% static 'gestion/img/logo_duoc.png' %}" class="d-none d-md-block logo-duoc" alt="Duoc UC"
+            width="120" height="70">
     </header>
 
     <!-- ============================================================ -->
@@ -169,7 +161,8 @@
     <!-- ============================================================ -->
     <!-- MODAL GLOBAL DE MENSAJES -->
     <!-- ============================================================ -->
-    <div class="modal fade" id="globalMessageModal" tabindex="-1" aria-labelledby="globalMessageTitle" aria-hidden="true">
+    <div class="modal fade" id="globalMessageModal" tabindex="-1" aria-labelledby="globalMessageTitle"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header" id="globalMessageHeader">

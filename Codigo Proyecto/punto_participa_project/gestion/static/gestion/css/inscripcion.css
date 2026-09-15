@@ -15,9 +15,11 @@
     padding: 30px;
 }
 
+/* Imagen: aplica tanto para <img> como para <div> placeholder */
 .imagen-taller {
     width: 100%;
     max-height: 300px;
+    min-height: 200px;
     object-fit: cover;
     border-radius: 8px;
     margin-bottom: 20px;
@@ -27,6 +29,7 @@
     color: #003366;
     font-weight: bold;
     margin-bottom: 10px;
+    font-size: 1.75rem;
 }
 
 .descripcion-workshop {
@@ -42,6 +45,9 @@
     margin-bottom: 5px;
 }
 
+/* ============================================================ */
+/* Badge de cupos */
+/* ============================================================ */
 .badge-cupos {
     background-color: #28a745;
     color: white;
@@ -53,6 +59,15 @@
     margin-bottom: 20px;
 }
 
+/* Variante cuando quedan pocos cupos (≤ 2) */
+.badge-cupos.bg-warning {
+    background-color: #ffc107 !important;
+    color: #003366 !important;
+}
+
+/* ============================================================ */
+/* Formulario */
+/* ============================================================ */
 .formulario-inscripcion {
     max-width: 400px;
     margin: 0 auto;
@@ -64,8 +79,24 @@
     border-radius: 5px;
     width: 100%;
     margin-bottom: 15px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.input-rut:focus {
+    border-color: #003366;
+    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.15);
+    outline: none;
+}
+
+.input-rut:focus-visible {
+    outline: 2px solid #003366;
+    outline-offset: 1px;
+}
+
+/* ============================================================ */
+/* Botón de inscripción */
+/* ============================================================ */
 .btn-registrar {
     background-color: #003366;
     color: white;
@@ -75,18 +106,35 @@
     font-weight: bold;
     width: 100%;
     cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
 }
 
 .btn-registrar:hover {
     background-color: #002244;
 }
 
+.btn-registrar:active {
+    transform: translateY(1px);
+}
+
+.btn-registrar:focus-visible {
+    outline: 2px solid #ffc107;
+    outline-offset: 2px;
+}
+
+/* ============================================================ */
+/* Mensajes de estado */
+/* ============================================================ */
 .mensaje-sin-cupos {
     color: #dc3545;
     font-size: 24px;
     font-weight: bold;
     text-align: center;
     padding: 40px 0;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 8px;
+    margin-top: 1rem;
 }
 
 .mensaje-finalizado {
@@ -95,12 +143,51 @@
     font-weight: bold;
     text-align: center;
     padding: 40px 0;
+    background-color: #e2e3e5;
+    border: 1px solid #d3d6d8;
+    border-radius: 8px;
+    margin-top: 1rem;
 }
 
+/* ============================================================ */
+/* Footer del taller */
+/* ============================================================ */
 .footer-workshop {
     padding: 15px;
     text-align: center;
     font-size: 14px;
     color: #888;
     border-top: 1px solid #eee;
+}
+
+.footer-workshop a {
+    color: #003366;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer-workshop a:hover {
+    color: #002244;
+    text-decoration: underline;
+}
+
+/* ============================================================ */
+/* Mensajes de error/éxito del formulario */
+/* ============================================================ */
+.formulario-inscripcion .alert {
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 0.95rem;
+}
+
+.formulario-inscripcion .alert-danger {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.formulario-inscripcion .alert-success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
 }

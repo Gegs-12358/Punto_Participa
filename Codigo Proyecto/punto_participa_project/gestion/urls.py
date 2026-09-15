@@ -33,6 +33,7 @@ urlpatterns = [
     path('actividades/editar/<int:pk>/', views.editar_actividad, name='editar_actividad'),
     path('actividades/eliminar/<int:pk>/', views.eliminar_actividad, name='eliminar_actividad'),
     path('actividades/enviar-invitaciones/', views.enviar_invitaciones, name='enviar_invitaciones'),
+    path('actividades/previsualizar-invitacion/<int:pk>/', views.previsualizar_invitacion, name='previsualizar_invitacion'),
     path('actividades/eliminar-ajax/<int:pk>/', views.eliminar_ajax, name='eliminar_ajax'),
 
     # ============================================================
@@ -50,4 +51,5 @@ urlpatterns = [
     # INSCRIPCIÓN PÚBLICA
     # ============================================================
     path('taller/<int:actividad_id>/', views.inscripcion_taller, name='inscripcion_taller'),
+
 ]

@@ -225,10 +225,10 @@ def dashboard(request):
         'talleres_proximos': talleres_proximos,
         'asistencias_hoy': asistencias_hoy,
         'actividades': ultimas_actividades,
-        'labels_barras': json.dumps(labels_barras),
-        'data_barras': json.dumps(data_barras),
-        'labels_pastel': json.dumps(labels_pastel),
-        'data_pastel': json.dumps(data_pastel),
+        'labels_barras': labels_barras,
+        'data_barras': data_barras,
+        'labels_pastel': labels_pastel,
+        'data_pastel': data_pastel,
     }
     return render(request, 'gestion/dashboard.html', context)
 
@@ -364,15 +364,15 @@ def reportes(request):
 
     context = {
         'actividades': actividades_qs,
-        'labels_barras': json.dumps(labels_barras),
-        'data_barras': json.dumps(data_barras),
-        'labels_pastel': json.dumps(labels_pastel),
-        'data_pastel': json.dumps(data_pastel),
+        'labels_barras': labels_barras,
+        'data_barras': data_barras,
+        'labels_pastel': labels_pastel,
+        'data_pastel': data_pastel,
         'detalle_data': detalle_data,
-        'labels_barras_detalle': json.dumps(labels_barras_detalle),
-        'data_barras_detalle': json.dumps(data_barras_detalle),
-        'labels_pastel_detalle': json.dumps(labels_pastel_detalle),
-        'data_pastel_detalle': json.dumps(data_pastel_detalle),
+        'labels_barras_detalle': labels_barras_detalle,
+        'data_barras_detalle': data_barras_detalle,
+        'labels_pastel_detalle': labels_pastel_detalle,
+        'data_pastel_detalle': data_pastel_detalle,
         'actividades_opciones': actividades_opciones,
         'carreras_opciones': Carrera.objects.all(),
         'jornadas_opciones': Jornada.objects.all(),
@@ -513,30 +513,50 @@ def guardar_usuario(request):
 
     try:
         usuario_sistema_id = request.POST.get('user_id')
+        username = request.POST.get('username', '').strip()
         nombre = request.POST.get('nombre', '').strip()
         email = request.POST.get('email', '').strip()
         rol_id = request.POST.get('rol')
         estado = request.POST.get('estado') == 'on'
         rut = request.POST.get('rut', '').strip()
 
-        # Validaciones básicas
-        if not nombre or not email or not rol_id:
-            return JsonResponse({'success': False, 'message': 'Faltan campos obligatorios'})
-
         usuario_sistema = None
         rol_anterior = None
         estado_anterior = None
 
+        # ============================================================
+        # PROTECCIÓN PRIMERO: No permitir bloquearse a sí mismo
+        # (antes de cualquier otra validación)
+        # ============================================================
         if usuario_sistema_id:
             usuario_sistema = UsuarioSistema.objects.get(pk=usuario_sistema_id)
             user = usuario_sistema.user
+
+            if usuario_sistema.user == request.user and not estado:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No puedes bloquear tu propia cuenta.'
+                })
+        # ============================================================
+
+        # Validaciones básicas (después de la protección)
+        if not username or not nombre or not email or not rol_id:
+            return JsonResponse({'success': False, 'message': 'Faltan campos obligatorios'})
+
+        if usuario_sistema_id:
+            # Si cambia el username, verificar que no exista otro con ese nombre
+            if user.username != username and User.objects.filter(username=username).exclude(pk=user.pk).exists():
+                return JsonResponse({'success': False, 'message': 'Ese nombre de usuario ya está en uso'})
+
+            user.username = username
+
             if usuario_sistema.rol:
                 rol_anterior = usuario_sistema.rol.nombre
             estado_anterior = usuario_sistema.activo
         else:
-            if User.objects.filter(username=email).exists():
-                return JsonResponse({'success': False, 'message': 'El usuario ya existe'})
-            user = User(username=email)
+            if User.objects.filter(username=username).exists():
+                return JsonResponse({'success': False, 'message': 'Ese nombre de usuario ya está en uso'})
+            user = User(username=username)
             user.set_password('Duoc12345')
 
         user.email = email
@@ -572,7 +592,7 @@ def guardar_usuario(request):
                           'Usuario', user.id, user.username)
 
         registrar_log(request, 'Usuarios', 'Guardar usuario',
-                      f'Usuario: {nombre} ({email})', 'Usuario', user.id, nombre)
+                      f'Usuario: {nombre} ({username})', 'Usuario', user.id, nombre)
 
         return JsonResponse({'success': True})
     except Exception as e:
@@ -595,8 +615,16 @@ def lista_actividades(request):
     actividades = Actividad.objects.annotate(
         total_inscritos=Count('inscripciones', distinct=True),
         total_asistentes=Count('asistencias', distinct=True),
-        total_invitaciones_exito=Count('notificacioncorreo', filter=Q(notificacioncorreo__estado_envio='EXITO'), distinct=True),
-        total_invitaciones_fallo=Count('notificacioncorreo', filter=Q(notificacioncorreo__estado_envio='FALLO'), distinct=True)
+        total_invitaciones_exito=Count(
+            'notificaciones',
+            filter=Q(notificaciones__estado_envio='EXITO'),
+            distinct=True
+        ),
+        total_invitaciones_fallo=Count(
+            'notificaciones',
+            filter=Q(notificaciones__estado_envio='FALLO'),
+            distinct=True
+        )
     ).order_by('-fecha_inicio')
 
     if tiene_rol(request.user, ['Creador de Evento']) and not tiene_rol(request.user, ['Administrador']):
@@ -611,11 +639,17 @@ def lista_actividades(request):
     if estado:
         actividades = actividades.filter(estado=estado)
 
+    # Paginación: 20 actividades por página
+    from django.core.paginator import Paginator
+    paginator = Paginator(actividades, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     tipos = [('', 'Todos los tipos')] + list(Actividad.TIPO_CHOICES)
     estados = [('', 'Todos los estados')] + list(Actividad.ESTADO_CHOICES)
 
     return render(request, 'gestion/actividad_list.html', {
-        'actividades': actividades,
+        'actividades': page_obj,
         'tipos': tipos,
         'estados': estados
     })
@@ -662,7 +696,7 @@ def crear_actividad(request):
                           'Actividad', actividad.id, actividad.titulo)
 
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({'success': True, 'id': actividad.id, 'tipo': actividad.tipo})
+                return JsonResponse({ 'success': True, 'id': actividad.id, 'tipo': actividad.tipo,'es_nueva': True,})
             messages.success(request, 'Actividad creada exitosamente.')
             return redirect('lista_actividades')
         else:
@@ -686,15 +720,50 @@ def editar_actividad(request, pk):
 
     actividad = get_object_or_404(Actividad, pk=pk)
 
-    if Inscripcion.objects.filter(actividad=actividad).exists() or Asistencia.objects.filter(actividad=actividad).exists():
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'message': 'No puedes editar esta actividad porque ya tiene inscritos o asistentes registrados.'
-            })
-        messages.error(request, 'No puedes editar esta actividad porque ya tiene inscritos o asistentes registrados.')
-        return redirect('lista_actividades')
+    # ============================================================
+    # Detectar si tiene datos asociados
+    # ============================================================
+    tiene_inscripciones = Inscripcion.objects.filter(actividad=actividad).exists()
+    tiene_asistencias = Asistencia.objects.filter(actividad=actividad).exists()
+    tiene_datos = tiene_inscripciones or tiene_asistencias
 
+    # El frontend puede forzar la edición enviando este flag
+    forzar_edicion = request.POST.get('forzar_edicion') == 'true' or request.GET.get('forzar_edicion') == 'true'
+
+    # ============================================================
+    # Si tiene datos y NO se ha forzado, pedir confirmación al usuario
+    # ============================================================
+    if tiene_datos and not forzar_edicion:
+        # Construir mensaje contextual
+        partes = []
+        if tiene_inscripciones:
+            count_insc = Inscripcion.objects.filter(actividad=actividad).count()
+            partes.append(f'{count_insc} inscrito{"s" if count_insc != 1 else ""}')
+        if tiene_asistencias:
+            count_asis = Asistencia.objects.filter(actividad=actividad).count()
+            partes.append(f'{count_asis} asistente{"s" if count_asis != 1 else ""}')
+
+        detalle = ' y '.join(partes)
+
+        mensaje = (
+            f'Esta actividad ya tiene {detalle} registrado{"s" if len(partes) > 1 else ""}. '
+            f'Si la editas, podrías crear inconsistencias en los datos históricos. '
+            f'¿Estás seguro de que quieres editarla de todos modos?'
+        )
+
+        # Si es AJAX y no hay POST todavía, solo pedir confirmación
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' and not request.POST:
+            return JsonResponse({
+                'success': True,
+                'requiere_confirmacion': True,
+                'mensaje': mensaje,
+                'total_inscritos': Inscripcion.objects.filter(actividad=actividad).count(),
+                'total_asistentes': Asistencia.objects.filter(actividad=actividad).count(),
+            })
+
+    # ============================================================
+    # Procesar POST (con o sin forzar_edicion)
+    # ============================================================
     if request.method == 'POST':
         form = ActividadForm(request.POST, request.FILES, instance=actividad)
         if form.is_valid():
@@ -719,12 +788,27 @@ def editar_actividad(request, pk):
             actividad.save()
             form.save_m2m()
 
+            # Registrar en auditoría con detalle de si fue forzada
+            if forzar_edicion and tiene_datos:
+                detalle_log = (
+                    f'Actividad "{actividad.titulo}" (ID: {actividad.id}) editada FORZADAMENTE '
+                    f'a pesar de tener {Inscripcion.objects.filter(actividad=actividad).count()} inscritos '
+                    f'y {Asistencia.objects.filter(actividad=actividad).count()} asistentes.'
+                )
+            else:
+                detalle_log = f'Actividad "{actividad.titulo}" (ID: {actividad.id}) editada'
+
             registrar_log(request, 'Actividades', 'Edición de actividad',
-                          f'Actividad "{actividad.titulo}" (ID: {actividad.id}) editada',
+                          detalle_log,
                           'Actividad', actividad.id, actividad.titulo)
 
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({'success': True, 'id': actividad.id, 'tipo': actividad.tipo})
+                return JsonResponse({
+                    'success': True,
+                    'id': actividad.id,
+                    'tipo': actividad.tipo,
+                    'es_nueva': False,
+                })
             messages.success(request, 'Actividad actualizada exitosamente.')
             return redirect('lista_actividades')
     else:
@@ -843,6 +927,53 @@ def enviar_invitaciones(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'Error al enviar: {str(e)}'})
 
+@login_required
+def previsualizar_invitacion(request, pk):
+    """
+    Devuelve el HTML renderizado del correo de invitación
+    para previsualizarlo antes de enviarlo.
+    """
+    if not tiene_rol(request.user, ['Administrador', 'Creador de Evento']):
+        return JsonResponse({'success': False, 'message': 'No autorizado'})
+
+    try:
+        actividad = get_object_or_404(Actividad, pk=pk)
+
+        # Tomar un alumno de ejemplo (el primero que coincida con los filtros)
+        carreras_asociadas = [c.nombre for c in actividad.carreras.all()]
+        jornadas_asociadas = [j.nombre for j in actividad.jornadas.all()]
+
+        alumnos_qs = Alumno.objects.all()
+        if carreras_asociadas:
+            alumnos_qs = alumnos_qs.filter(carrera__in=carreras_asociadas)
+        if jornadas_asociadas:
+            alumnos_qs = alumnos_qs.filter(jornada__in=jornadas_asociadas)
+
+        alumno = alumnos_qs.first()
+
+        if not alumno:
+            return JsonResponse({
+                'success': False,
+                'message': 'No hay alumnos que coincidan con los filtros de esta actividad.'
+            })
+
+        # Renderizar el HTML del correo
+        html = render_to_string('gestion/email_invitacion.html', {
+            'actividad': actividad,
+            'alumno': alumno,
+            'site_url': settings.SITE_URL,
+        })
+
+        return JsonResponse({
+            'success': True,
+            'html': html,
+            'alumno_ejemplo': f'{alumno.nombres} {alumno.apellidos}',
+            'total_destinatarios': alumnos_qs.count(),
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})    
+
 
 @login_required
 def eliminar_ajax(request, pk):
@@ -876,7 +1007,7 @@ def eliminar_ajax(request, pk):
 @login_required
 @ratelimit(key='ip', rate='30/1m', method='POST')
 def escaneo(request):
-    if not tiene_rol(request.user, ['Administrador', 'Encargado de Registrar']):
+    if not tiene_rol(request.user, ['Administrador', 'Creador de Evento', 'Encargado de Registrar']):
         messages.error(request, 'No tienes permisos para registrar asistencia.')
         return redirect('dashboard')
 
@@ -1042,8 +1173,14 @@ def lista_auditoria(request):
     acciones_disponibles = LogAuditoria.objects.values_list('accion', flat=True).distinct().order_by('accion')
     modulos_disponibles = LogAuditoria.objects.values_list('modulo', flat=True).distinct().order_by('modulo')
 
+        # Paginación: 50 registros por página
+    from django.core.paginator import Paginator
+    paginator = Paginator(logs, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     return render(request, 'gestion/auditoria_list.html', {
-        'logs': logs,
+        'logs': page_obj,
         'acciones_disponibles': acciones_disponibles,
         'modulos_disponibles': modulos_disponibles,
     })

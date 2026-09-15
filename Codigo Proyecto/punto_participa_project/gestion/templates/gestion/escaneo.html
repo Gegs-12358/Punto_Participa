@@ -5,11 +5,17 @@
 {% block content %}
 <div class="row">
     <div class="col-md-8">
-        <!-- Tarjeta de Actividad Actual -->
+        <!-- ============================================================ -->
+        <!-- TARJETA DE ACTIVIDAD ACTUAL -->
+        <!-- ============================================================ -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-white d-flex justify-content-between align-items-center border-bottom-0">
-                <h5 class="mb-0"><i class="fas fa-calendar-check text-primary me-2"></i> Actividad actual</h5>
-                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-check text-primary me-2"></i> Actividad actual
+                </h5>
+                <button type="button"
+                        class="btn btn-sm btn-outline-primary"
+                        data-bs-toggle="modal"
                         data-bs-target="#cambiarActividadModal">
                     <i class="fas fa-exchange-alt"></i> Cambiar
                 </button>
@@ -19,13 +25,13 @@
                 <div class="row">
                     <div class="col-md-4">
                         {% if actividad_seleccionada.imagen %}
-                        <img src="{{ actividad_seleccionada.imagen.url }}" class="img-fluid rounded"
-                             style="max-height: 150px; width: 100%; object-fit: cover;"
-                             alt="Imagen de {{ actividad_seleccionada.titulo }}">
+                            <img src="{{ actividad_seleccionada.imagen.url }}"
+                                 class="img-fluid rounded img-actividad-escaneo"
+                                 alt="Imagen de {{ actividad_seleccionada.titulo }}">
                         {% else %}
-                        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;">
-                            <i class="fas fa-image fa-3x text-muted"></i>
-                        </div>
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center placeholder-actividad-escaneo">
+                                <i class="fas fa-image fa-3x text-muted"></i>
+                            </div>
                         {% endif %}
                     </div>
                     <div class="col-md-8">
@@ -36,11 +42,18 @@
                             {{ actividad_seleccionada.fecha_fin|date:"d/m/Y H:i" }}
                             <br>
                             <i class="fas fa-users"></i> Cupos disponibles:
-                            {{ actividad_seleccionada.cupos_disponibles|default:"N/A" }}
+                            {% if actividad_seleccionada.cupos_disponibles is not None %}
+                                <strong>{{ actividad_seleccionada.cupos_disponibles }}</strong>
+                            {% else %}
+                                <span class="text-muted">Sin límite</span>
+                            {% endif %}
                         </p>
                         <form method="post" action="{% url 'escaneo' %}" class="d-inline">
                             {% csrf_token %}
-                            <button type="submit" name="finalizar_turno" value="1" class="btn btn-sm btn-outline-danger">
+                            <button type="submit"
+                                    name="finalizar_turno"
+                                    value="1"
+                                    class="btn btn-sm btn-outline-danger">
                                 <i class="fas fa-sign-out-alt"></i> Finalizar turno
                             </button>
                         </form>
@@ -56,7 +69,9 @@
             </div>
         </div>
 
-        <!-- Formulario de Registro -->
+        <!-- ============================================================ -->
+        <!-- FORMULARIO DE REGISTRO -->
+        <!-- ============================================================ -->
         {% if actividad_seleccionada %}
         <div class="card shadow-sm p-4">
             <!-- Indicador de estado del lector -->
@@ -67,9 +82,6 @@
                     </span>
                     <small class="text-muted">Pistola o ingreso manual</small>
                 </div>
-                <small class="text-muted">
-                    <i class="fas fa-barcode"></i> Well 9322
-                </small>
             </div>
 
             <form id="formEscaneo" class="w-100" autocomplete="off">
@@ -87,12 +99,13 @@
                            placeholder="Escanea con la pistola o escribe el RUT"
                            maxlength="12"
                            autocomplete="off"
-                           inputmode="numeric"
+                           aria-describedby="rut-help"
                            required
                            autofocus>
-                    <small class="form-text text-muted">
+                    <small class="form-text text-muted" id="rut-help">
                         <i class="fas fa-info-circle"></i>
-                        Presiona el gatillo de la pistola sobre el código QR de la cédula o escribe el RUT manualmente y presiona Enter.
+                        Presiona el gatillo de la pistola sobre el código QR de la cédula
+                        o escribe el RUT manualmente y presiona Enter.
                     </small>
                 </div>
 
@@ -106,16 +119,28 @@
         {% endif %}
     </div>
 
+    <!-- ============================================================ -->
+    <!-- ÚLTIMOS REGISTROS -->
+    <!-- ============================================================ -->
     <div class="col-md-4">
-        <div class="card shadow-sm p-3" style="border-left: 4px solid #003366;">
+        <div class="card shadow-sm p-3 card-ultimos-registros">
             <h4><i class="fas fa-history"></i> Últimos registros</h4>
-            <div id="ultimosRegistros" style="max-height: 500px; overflow-y: auto;">
+            <div id="ultimosRegistros" class="lista-ultimos-registros">
                 <ul class="list-unstyled mb-0">
                     {% for asistencia in ultimas_asistencias %}
                     <li class="border-bottom py-2">
                         <strong>{{ asistencia.alumno.nombres }} {{ asistencia.alumno.apellidos }}</strong>
                         <small class="text-muted d-block">
-                            {{ asistencia.fecha_ingreso|date:"H:i" }}
+                            <i class="fas fa-clock"></i> {{ asistencia.fecha_ingreso|date:"H:i" }}
+                            <span class="badge bg-secondary ms-1">
+                                {% if asistencia.metodo_ingreso == 'QR' %}
+                                    <i class="fas fa-qrcode"></i> QR
+                                {% elif asistencia.metodo_ingreso == 'CODIGO' %}
+                                    <i class="fas fa-barcode"></i> Código
+                                {% else %}
+                                    <i class="fas fa-keyboard"></i> RUT
+                                {% endif %}
+                            </span>
                         </small>
                     </li>
                     {% empty %}
@@ -127,49 +152,88 @@
     </div>
 </div>
 
-<!-- Modal para cambiar actividad -->
-<div class="modal fade" id="cambiarActividadModal" tabindex="-1" aria-hidden="true">
+<!-- ============================================================ -->
+<!-- MODAL CAMBIAR ACTIVIDAD -->
+<!-- ============================================================ -->
+<div class="modal fade" id="cambiarActividadModal" tabindex="-1" aria-labelledby="cambiarActividadLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form method="post" action="{% url 'escaneo' %}">
                 {% csrf_token %}
-                <div class="modal-header">
-                    <h5 class="modal-title">Cambiar Actividad</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="cambiarActividadLabel">
+                        <i class="fas fa-exchange-alt"></i> Cambiar Actividad
+                    </h5>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
-                    <select name="actividad_id" id="actividadSelect" class="form-select" required>
+                    <label for="actividadSelect" class="form-label fw-bold">
+                        Selecciona la actividad:
+                    </label>
+                    <select name="actividad_id"
+                            id="actividadSelect"
+                            class="form-select"
+                            required>
                         <option value="">-- Seleccionar --</option>
                         {% for actividad in actividades_disponibles %}
-                        <option value="{{ actividad.id }}" {% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %}selected{% endif %}>
-                            {{ actividad.titulo }} - {{ actividad.fecha_inicio|date:"d/m/Y H:i" }}
+                        <option value="{{ actividad.id }}"
+                                {% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %}selected{% endif %}>
+                            {{ actividad.titulo }}
+                            — {{ actividad.fecha_inicio|date:"d/m/Y H:i" }}
+                            ({{ actividad.get_tipo_display }})
                         </option>
                         {% endfor %}
                     </select>
+                    <small class="text-muted d-block mt-2">
+                        Solo se listan actividades en estado <strong>ACTIVA</strong>.
+                    </small>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" name="cambiar_actividad" value="1" class="btn btn-primary">Seleccionar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            name="cambiar_actividad"
+                            value="1"
+                            class="btn btn-primary">
+                        <i class="fas fa-check"></i> Seleccionar
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Modal de Confirmación de Asistencia -->
-<div class="modal fade" id="modalConfirmarAsistencia" tabindex="-1" aria-hidden="true">
+<!-- ============================================================ -->
+<!-- MODAL CONFIRMACIÓN ASISTENCIA -->
+<!-- ============================================================ -->
+<div class="modal fade" id="modalConfirmarAsistencia" tabindex="-1" aria-labelledby="confirmarAsistenciaLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title"><i class="fas fa-check-circle"></i> Confirmar Registro</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" id="btnCerrarModalAsistencia"></button>
+                <h5 class="modal-title" id="confirmarAsistenciaLabel">
+                    <i class="fas fa-check-circle"></i> Confirmar Registro
+                </h5>
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar"
+                        id="btnCerrarModalAsistencia"></button>
             </div>
             <div class="modal-body">
                 <p>¿Confirmas el registro de asistencia?</p>
-                <div id="info-alumno" class="alert alert-info"></div>
+                <div id="info-alumno" class="alert alert-info" aria-live="polite"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="btnCancelarConfirmacion">Cancelar</button>
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal"
+                        id="btnCancelarConfirmacion">
+                    Cancelar
+                </button>
                 <button type="button" class="btn btn-primary" id="btnAceptarConfirmacion">
                     <i class="fas fa-check"></i> Aceptar
                 </button>
@@ -178,17 +242,26 @@
     </div>
 </div>
 
-<!-- Modal de Aviso / Error -->
-<div class="modal fade" id="modalAviso" tabindex="-1" aria-hidden="true">
+<!-- ============================================================ -->
+<!-- MODAL AVISO / ERROR -->
+<!-- ============================================================ -->
+<div class="modal fade" id="modalAviso" tabindex="-1" aria-labelledby="modalAvisoLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Aviso</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="modalAvisoLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Aviso
+                </h5>
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
             </div>
-            <div class="modal-body" id="modalAvisoBody"></div>
+            <div class="modal-body" id="modalAvisoBody" aria-live="polite"></div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" id="btnAceptarAviso">Aceptar</button>
+                <button type="button" class="btn btn-primary" id="btnAceptarAviso">
+                    Aceptar
+                </button>
             </div>
         </div>
     </div>
@@ -196,6 +269,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://unpkg.com/html5-qrcode"></script>
 <script src="{% static 'gestion/js/escaneo.js' %}"></script>
 {% endblock %}

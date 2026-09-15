@@ -1,51 +1,146 @@
 {% extends 'gestion/base.html' %}
+{% load static %}
 {% block title %}Cambiar Contraseña{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'gestion/css/cambiar_contrasena.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center" style="margin-top: 60px;">
-    <div class="col-md-6">
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-5">
         <div class="card shadow">
             <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">Cambio de Contraseña Obligatorio</h4>
+                <h1 class="h4 mb-0">
+                    <i class="fas fa-key"></i> Cambio de Contraseña Obligatorio
+                </h1>
             </div>
             <div class="card-body">
-                <p class="text-muted">Por tu seguridad, debes cambiar la contraseña inicial antes de continuar.</p>
+                <p class="text-muted">
+                    <i class="fas fa-info-circle"></i>
+                    Por tu seguridad, debes cambiar la contraseña inicial antes de continuar.
+                </p>
 
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
+                <!-- Mensajes de Django -->
+                <div aria-live="polite">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
 
-                <form method="POST">
+                <!-- Formulario -->
+                <form method="POST" id="formCambiarContrasena" novalidate>
                     {% csrf_token %}
+
+                    <!-- Contraseña actual -->
                     <div class="mb-3">
-                        <label>Contraseña actual</label>
-                        <input type="password" name="contrasena_actual" class="form-control" required>
+                        <label for="contrasena_actual" class="form-label">
+                            Contraseña actual <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <input type="password"
+                                   name="contrasena_actual"
+                                   id="contrasena_actual"
+                                   class="form-control"
+                                   autocomplete="current-password"
+                                   required
+                                   autofocus>
+                            <button type="button"
+                                    class="btn btn-outline-secondary toggle-password"
+                                    data-target="contrasena_actual"
+                                    aria-label="Mostrar contraseña">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
+
+                    <!-- Nueva contraseña -->
                     <div class="mb-3">
-                        <label>Nueva contraseña</label>
-                        <input type="password" name="nueva_contrasena" class="form-control" required>
-                        
-                        <!-- NUEVO: Panel de requisitos y ejemplo -->
-                        <div class="alert alert-info mt-2 mb-0" style="font-size: 0.9rem;">
+                        <label for="nueva_contrasena" class="form-label">
+                            Nueva contraseña <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <input type="password"
+                                   name="nueva_contrasena"
+                                   id="nueva_contrasena"
+                                   class="form-control"
+                                   autocomplete="new-password"
+                                   minlength="8"
+                                   required>
+                            <button type="button"
+                                    class="btn btn-outline-secondary toggle-password"
+                                    data-target="nueva_contrasena"
+                                    aria-label="Mostrar contraseña">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+
+                        <!-- Indicador de fortaleza -->
+                        <div class="progress mt-2" style="height: 6px;">
+                            <div id="fortalezaBarra"
+                                 class="progress-bar"
+                                 role="progressbar"
+                                 style="width: 0%;"
+                                 aria-valuenow="0"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100"></div>
+                        </div>
+                        <small id="fortalezaTexto" class="text-muted"></small>
+
+                        <!-- Requisitos -->
+                        <div class="alert alert-info mt-2 mb-0 small">
                             <strong>La contraseña debe cumplir:</strong>
                             <ul class="mb-1 mt-1">
                                 <li>Mínimo <strong>8 caracteres</strong>.</li>
                                 <li>Al menos <strong>una letra</strong> y <strong>un número</strong>.</li>
                                 <li>No puede ser una contraseña común (ej: 12345678).</li>
                             </ul>
-                            <strong>Ejemplo:</strong> <em>Juanito2026!</em> o <em>Duoc#Segura99</em>
+                            <strong>Ejemplo:</strong> <em>MiClave#2026</em>
                         </div>
                     </div>
+
+                    <!-- Confirmar nueva contraseña -->
                     <div class="mb-3">
-                        <label>Confirmar nueva contraseña</label>
-                        <input type="password" name="confirmar_contrasena" class="form-control" required>
+                        <label for="confirmar_contrasena" class="form-label">
+                            Confirmar nueva contraseña <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <input type="password"
+                                   name="confirmar_contrasena"
+                                   id="confirmar_contrasena"
+                                   class="form-control"
+                                   autocomplete="new-password"
+                                   minlength="8"
+                                   required>
+                            <button type="button"
+                                    class="btn btn-outline-secondary toggle-password"
+                                    data-target="confirmar_contrasena"
+                                    aria-label="Mostrar contraseña">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <small id="mensajeCoincidencia" class="d-block mt-1"></small>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">Cambiar contraseña</button>
+
+                    <!-- Botones -->
+                    <button type="submit" class="btn btn-primary w-100 mb-2">
+                        <i class="fas fa-save"></i> Cambiar contraseña
+                    </button>
+                    <a href="{% url 'logout' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                    </a>
                 </form>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'gestion/js/cambiar_contrasena.js' %}"></script>
 {% endblock %}

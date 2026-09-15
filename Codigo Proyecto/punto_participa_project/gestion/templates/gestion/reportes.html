@@ -20,16 +20,17 @@
     </div>
 </div>
 
-<!-- Filtros (sin cambios) -->
+<!-- Filtros -->
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form method="GET" action="" class="row g-2 align-items-end">
             <!-- Actividad -->
             <div class="col-md-2">
-                <select name="actividad" class="form-select form-select-sm">
+                <label for="filtro-actividad" class="visually-hidden">Actividad</label>
+                <select name="actividad" id="filtro-actividad" class="form-select form-select-sm">
                     <option value="">Actividad</option>
                     {% for act in actividades_opciones %}
-                    <option value="{{ act.id }}" {% if actividad_seleccionada == act.id %}selected{% endif %}>
+                    <option value="{{ act.id }}" {% if actividad_seleccionada == act.id|stringformat:"s" %}selected{% endif %}>
                         {{ act.titulo }}
                     </option>
                     {% endfor %}
@@ -37,7 +38,8 @@
             </div>
             <!-- Carrera -->
             <div class="col-md-2">
-                <select name="carrera" class="form-select form-select-sm">
+                <label for="filtro-carrera" class="visually-hidden">Carrera</label>
+                <select name="carrera" id="filtro-carrera" class="form-select form-select-sm">
                     <option value="">Carrera</option>
                     {% for car in carreras_opciones %}
                     <option value="{{ car.nombre }}" {% if request.GET.carrera == car.nombre %}selected{% endif %}>
@@ -48,7 +50,8 @@
             </div>
             <!-- Jornada -->
             <div class="col-md-2">
-                <select name="jornada" class="form-select form-select-sm">
+                <label for="filtro-jornada" class="visually-hidden">Jornada</label>
+                <select name="jornada" id="filtro-jornada" class="form-select form-select-sm">
                     <option value="">Jornada</option>
                     {% for jorn in jornadas_opciones %}
                     <option value="{{ jorn.nombre }}" {% if request.GET.jornada == jorn.nombre %}selected{% endif %}>
@@ -59,21 +62,23 @@
             </div>
             <!-- Fecha Inicio -->
             <div class="col-md-2">
-                <input type="date" class="form-control form-control-sm" name="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
+                <label for="filtro-fecha-inicio" class="visually-hidden">Fecha Inicio</label>
+                <input type="date" class="form-control form-control-sm" id="filtro-fecha-inicio" name="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
             </div>
             <!-- Fecha Fin -->
             <div class="col-md-2">
-                <input type="date" class="form-control form-control-sm" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
+                <label for="filtro-fecha-fin" class="visually-hidden">Fecha Fin</label>
+                <input type="date" class="form-control form-control-sm" id="filtro-fecha-fin" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
             </div>
             <!-- Botón Filtrar -->
             <div class="col-md-1">
-                <button type="submit" class="btn btn-primary w-100 btn-sm" style="background-color: #003366;">
+                <button type="submit" class="btn btn-primary w-100 btn-sm btn-filtrar-reportes">
                     <i class="fas fa-filter"></i> Filtrar
                 </button>
             </div>
             <!-- Botón Limpiar -->
             <div class="col-md-1">
-                <a href="{% url 'reportes' %}" class="btn btn-secondary w-100 btn-sm">
+                <a href="{% url 'reportes' %}" class="btn btn-secondary w-100 btn-sm" aria-label="Limpiar filtros">
                     <i class="fas fa-broom"></i>
                 </a>
             </div>
@@ -113,8 +118,7 @@
                         <h5 class="mb-0 text-primary">Asistentes por Actividad</h5>
                     </div>
                     <div class="card-body">
-                        <canvas id="graficoBarrasReportes" data-labels='{{ labels_barras }}'
-                            data-data='{{ data_barras }}' height="200"></canvas>
+                        <canvas id="graficoBarrasReportes" role="img" aria-label="Gráfico de barras: asistentes por actividad" height="200"></canvas>
                     </div>
                 </div>
             </div>
@@ -124,8 +128,7 @@
                         <h5 class="mb-0 text-primary">Distribución por Carrera</h5>
                     </div>
                     <div class="card-body">
-                        <canvas id="graficoPastelReportes" data-labels='{{ labels_pastel }}'
-                            data-data='{{ data_pastel }}' height="200"></canvas>
+                        <canvas id="graficoPastelReportes" role="img" aria-label="Gráfico de pastel: distribución por carrera" height="200"></canvas>
                     </div>
                 </div>
             </div>
@@ -134,48 +137,51 @@
         <!-- Tabla General -->
         <div class="card shadow-sm">
             <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Actividad</th>
-                            <th>Tipo</th>
-                            <th>Creador</th>
-                            <th>Registrado por (cantidad)</th>
-                            <th>Fecha</th>
-                            <th>Carrera</th>
-                            <th>Jornada</th>
-                            <th>Inscritos</th>
-                            <th>Asistentes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for act in actividades %}
-                        <tr>
-                            <td>{{ act.titulo }}</td>
-                            <td>{{ act.get_tipo_display }}</td>
-                            <td>{{ act.creador }}</td>
-                            <td>{{ act.registrado_por_detalle }}</td>
-                            <td>{{ act.fecha_inicio|date:"d/m/Y" }}</td>
-                            <td>
-                                {% for carrera in act.carreras.all %}
-                                {{ carrera.nombre }}{% if not forloop.last %}, {% endif %}
-                                {% endfor %}
-                            </td>
-                            <td>
-                                {% for jornada in act.jornadas.all %}
-                                {{ jornada.nombre }}{% if not forloop.last %}, {% endif %}
-                                {% endfor %}
-                            </td>
-                            <td>{{ act.total_inscritos }}</td>
-                            <td>{{ act.total_asistentes }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="9" class="text-center">No se encontraron actividades con esos filtros.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <caption class="visually-hidden">Reporte general de actividades</caption>
+                        <thead class="table-light">
+                            <tr>
+                                <th>Actividad</th>
+                                <th>Tipo</th>
+                                <th>Creador</th>
+                                <th>Registrado por (cantidad)</th>
+                                <th>Fecha</th>
+                                <th>Carrera</th>
+                                <th>Jornada</th>
+                                <th>Inscritos</th>
+                                <th>Asistentes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for act in actividades %}
+                            <tr>
+                                <td>{{ act.titulo }}</td>
+                                <td>{{ act.get_tipo_display }}</td>
+                                <td>{{ act.creador }}</td>
+                                <td>{{ act.registrado_por_detalle }}</td>
+                                <td>{{ act.fecha_inicio|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% for carrera in act.carreras.all %}
+                                    {{ carrera.nombre }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for jornada in act.jornadas.all %}
+                                    {{ jornada.nombre }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>{{ act.total_inscritos }}</td>
+                                <td>{{ act.total_asistentes }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center py-4 text-muted">No se encontraron actividades con esos filtros.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -192,8 +198,7 @@
                         <h5 class="mb-0 text-primary">Asistentes por Escuela</h5>
                     </div>
                     <div class="card-body">
-                        <canvas id="graficoBarrasDetalle" data-labels='{{ labels_barras_detalle }}'
-                            data-data='{{ data_barras_detalle }}' height="200"></canvas>
+                        <canvas id="graficoBarrasDetalle" role="img" aria-label="Gráfico de barras: asistentes por escuela" height="200"></canvas>
                     </div>
                 </div>
             </div>
@@ -203,8 +208,7 @@
                         <h5 class="mb-0 text-primary">Distribución por Carrera</h5>
                     </div>
                     <div class="card-body">
-                        <canvas id="graficoPastelDetalle" data-labels='{{ labels_pastel_detalle }}'
-                            data-data='{{ data_pastel_detalle }}' height="200"></canvas>
+                        <canvas id="graficoPastelDetalle" role="img" aria-label="Gráfico de pastel: distribución detallada por carrera" height="200"></canvas>
                     </div>
                 </div>
             </div>
@@ -213,43 +217,57 @@
         <!-- Tabla Detallada -->
         <div class="card shadow-sm">
             <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Actividad</th>
-                            <th>Tipo</th>
-                            <th>Fecha</th>
-                            <th>Escuela</th>
-                            <th>Carrera</th>
-                            <th>Jornada</th>
-                            <th>Asistentes</th>
-                            <th>Registrado por (cantidad)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in detalle_data %}
-                        <tr>
-                            <td>{{ item.actividad }}</td>
-                            <td>{{ item.tipo }}</td>
-                            <td>{{ item.fecha }}</td>
-                            <td>{{ item.escuela }}</td>
-                            <td>{{ item.carrera }}</td>
-                            <td>{{ item.jornada }}</td>
-                            <td>{{ item.asistentes }}</td>
-                            <td>{{ item.registrado_por }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" class="text-center">No hay datos detallados para mostrar con los filtros
-                                seleccionados.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <caption class="visually-hidden">Reporte detallado de participación</caption>
+                        <thead class="table-light">
+                            <tr>
+                                <th>Actividad</th>
+                                <th>Tipo</th>
+                                <th>Fecha</th>
+                                <th>Escuela</th>
+                                <th>Carrera</th>
+                                <th>Jornada</th>
+                                <th>Asistentes</th>
+                                <th>Registrado por (cantidad)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in detalle_data %}
+                            <tr>
+                                <td>{{ item.actividad }}</td>
+                                <td>{{ item.tipo }}</td>
+                                <td>{{ item.fecha }}</td>
+                                <td>{{ item.escuela }}</td>
+                                <td>{{ item.carrera }}</td>
+                                <td>{{ item.jornada }}</td>
+                                <td>{{ item.asistentes }}</td>
+                                <td>{{ item.registrado_por }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">No hay datos detallados para mostrar con los filtros seleccionados.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- ============================================================ -->
+<!-- DATOS PARA GRÁFICOS (JSON seguro) -->
+<!-- ============================================================ -->
+{{ labels_barras|json_script:"labels_barras" }}
+{{ data_barras|json_script:"data_barras" }}
+{{ labels_pastel|json_script:"labels_pastel" }}
+{{ data_pastel|json_script:"data_pastel" }}
+{{ labels_barras_detalle|json_script:"labels_barras_detalle" }}
+{{ data_barras_detalle|json_script:"data_barras_detalle" }}
+{{ labels_pastel_detalle|json_script:"labels_pastel_detalle" }}
+{{ data_pastel_detalle|json_script:"data_pastel_detalle" }}
 
 {% endblock %}
 

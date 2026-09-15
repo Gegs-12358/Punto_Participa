@@ -7,10 +7,12 @@ from .models import Actividad
 class ActividadForm(forms.ModelForm):
     """
     Formulario para crear y editar actividades.
-    
+
     - Si es TALLER: cupos_totales es obligatorio.
     - Si es MASIVA: cupos_totales se ignora.
     - El estado se gestiona desde el admin, no desde el CRUD.
+    - Las fechas se formatean como ISO 8601 para que el input datetime-local
+      las acepte correctamente.
     """
 
     class Meta:
@@ -32,7 +34,10 @@ class ActividadForm(forms.ModelForm):
                 'maxlength': '2000',
                 'required': True,
             }),
-            'tipo': forms.Select(attrs={'class': 'form-select', 'required': True}),
+            'tipo': forms.Select(attrs={
+                'class': 'form-select',
+                'required': True,
+            }),
             'lugar': forms.TextInput(attrs={
                 'class': 'form-control',
                 'maxlength': '200',
@@ -43,26 +48,48 @@ class ActividadForm(forms.ModelForm):
                 'min': '1',
                 'step': '1',
             }),
-            'fecha_inicio': forms.DateTimeInput(attrs={
-                'type': 'datetime-local',
-                'class': 'form-control',
-                'required': True,
-            }),
-            'fecha_fin': forms.DateTimeInput(attrs={
-                'type': 'datetime-local',
-                'class': 'form-control',
-                'required': True,
-            }),
+            'fecha_inicio': forms.DateTimeInput(
+                attrs={
+                    'type': 'datetime-local',
+                    'class': 'form-control',
+                    'required': True,
+                },
+                format='%Y-%m-%dT%H:%M',
+            ),
+            'fecha_fin': forms.DateTimeInput(
+                attrs={
+                    'type': 'datetime-local',
+                    'class': 'form-control',
+                    'required': True,
+                },
+                format='%Y-%m-%dT%H:%M',
+            ),
             'imagen': forms.ClearableFileInput(attrs={
                 'class': 'form-control',
                 'accept': 'image/*',
             }),
-            'carreras': forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
-            'jornadas': forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+            'carreras': forms.CheckboxSelectMultiple(attrs={
+                'class': 'form-check-input',
+            }),
+            'jornadas': forms.CheckboxSelectMultiple(attrs={
+                'class': 'form-check-input',
+            }),
         }
 
     # ============================================================
-    # VALIDACIONES
+    # INICIALIZACIÓN
+    # ============================================================
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Forzar formato ISO 8601 para datetime-local en entrada y salida.
+        # Esto evita que Django use DD/MM/YYYY HH:MM:SS al renderizar
+        # y que el navegador muestre el valor correctamente.
+        self.fields['fecha_inicio'].input_formats = ['%Y-%m-%dT%H:%M']
+        self.fields['fecha_fin'].input_formats = ['%Y-%m-%dT%H:%M']
+
+    # ============================================================
+    # VALIDACIONES POR CAMPO
     # ============================================================
 
     def clean_fecha_inicio(self):
@@ -103,6 +130,10 @@ class ActividadForm(forms.ModelForm):
             raise ValidationError('Debes seleccionar al menos una jornada.')
         return jornadas
 
+    # ============================================================
+    # VALIDACIONES CRUZADAS
+    # ============================================================
+
     def clean(self):
         """Validaciones cruzadas entre campos."""
         cleaned_data = super().clean()
@@ -118,6 +149,10 @@ class ActividadForm(forms.ModelForm):
             self.add_error('cupos_totales', 'Debes indicar el cupo máximo del taller.')
 
         return cleaned_data
+
+    # ============================================================
+    # GUARDADO
+    # ============================================================
 
     def save(self, commit=True):
         """

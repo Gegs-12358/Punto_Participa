@@ -1,6 +1,30 @@
 /* ============================================================
-   Estilos base del sistema (Header, Navbar y Footer)
+   Punto Participa - Estilos globales
+   ============================================================
+   Orden:
+   1. Reset y base
+   2. Header y Navbar
+   3. Main y Footer
+   4. Botones personalizados
+   5. Miniaturas y placeholders
+   6. Formulario de Actividad
+   7. Escáner
+   8. Reportes
+   9. Auditoría
+   10. Vista previa de imágenes
+   11. Utilidades varias
    ============================================================ */
+
+/* ============================================================ */
+/* 1. RESET Y BASE */
+/* ============================================================ */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 body {
     background-color: #fcfcfc;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -8,7 +32,12 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    margin: 0;
 }
+
+/* ============================================================ */
+/* 2. HEADER Y NAVBAR */
+/* ============================================================ */
 
 .header {
     background: #fff;
@@ -18,22 +47,37 @@ body {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    overflow: hidden; /* Evita que el logo se corte feo */
+    position: relative; /* Necesario para el dropdown en móvil */
+    z-index: 100;
 }
 
 .header img {
     height: 75px;
     width: auto;
     max-width: 100%;
-    flex-shrink: 0; /* Evita que el logo del pingüino se encoja */
+    flex-shrink: 0;
 }
 
-/* Regla específica para el logo Duoc UC: Se encoge en vez de cortarse */
 .header img.logo-duoc {
     height: 70px;
-    max-width: 160px; /* Ancho máximo para que no empuje el menú */
+    max-width: 160px;
     object-fit: contain;
-    flex-shrink: 1; /* Permitir que se encoja si no hay espacio */
+    flex-shrink: 1;
+}
+
+/* Botón hamburguesa personalizado */
+.navbar-toggler {
+    border-color: #003366;
+    padding: 6px 10px;
+}
+
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.3);
+    outline: none;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%23003366' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
 .navbar-custom {
@@ -41,7 +85,7 @@ body {
     border-bottom: none;
     flex-grow: 1;
     padding: 0;
-    flex-shrink: 1; /* El menú puede encogerse si no cabe */
+    flex-shrink: 1;
 }
 
 .navbar-custom .navbar-nav {
@@ -51,16 +95,23 @@ body {
 .navbar-custom .navbar-nav .nav-link {
     color: #003366;
     font-weight: 600;
-    /* Reducir padding para que quepan más elementos */
     padding: 10px 12px;
     font-size: 14px;
     border-bottom: 3px solid transparent;
+    transition: color 0.2s, background-color 0.2s, border-color 0.2s;
 }
 
 .navbar-custom .navbar-nav .nav-link:hover {
     color: #00509e;
     background-color: #e9ecef;
     border-bottom: 3px solid #003366;
+}
+
+.navbar-custom .navbar-nav .nav-link.active {
+    color: #00509e;
+    background-color: #f0f4f8;
+    border-bottom: 3px solid #FFC107;
+    font-weight: 700;
 }
 
 .navbar-custom .navbar-nav .nav-link i {
@@ -72,7 +123,12 @@ body {
     font-weight: 600;
     margin-right: 15px;
     font-size: 14px;
+    padding: 8px 12px;
 }
+
+/* ============================================================ */
+/* 3. MAIN Y FOOTER */
+/* ============================================================ */
 
 main {
     flex: 1;
@@ -94,10 +150,12 @@ main {
     color: #003366;
     text-decoration: none;
     font-weight: 600;
+    transition: color 0.2s;
 }
 
 .footer a:hover {
     text-decoration: underline;
+    color: #00509e;
 }
 
 .footer .enlaces {
@@ -105,26 +163,243 @@ main {
     gap: 15px;
 }
 
+/* ============================================================ */
+/* 4. BOTONES PERSONALIZADOS */
+/* ============================================================ */
+
+.btn-nueva-actividad,
+.btn-guardar-actividad,
+.btn-filtrar-reportes {
+    background-color: #003366;
+    border-color: #003366;
+}
+
+.btn-nueva-actividad:hover,
+.btn-guardar-actividad:hover,
+.btn-filtrar-reportes:hover {
+    background-color: #002347;
+    border-color: #002347;
+}
+
+.btn-nueva-actividad:focus-visible,
+.btn-guardar-actividad:focus-visible,
+.btn-filtrar-reportes:focus-visible {
+    outline: 3px solid #FFC107;
+    outline-offset: 2px;
+    box-shadow: none;
+}
+
+.btn-guardar-actividad {
+    padding: 10px 30px;
+    border: none;
+}
+
+.btn-cancelar-modal {
+    padding: 10px 30px;
+}
+
+/* ============================================================ */
+/* 5. MINIATURAS Y PLACEHOLDERS */
+/* ============================================================ */
+
+.img-miniatura {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 5px;
+    display: block;
+}
+
+.img-miniatura-placeholder {
+    width: 50px;
+    height: 50px;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ============================================================ */
+/* 6. FORMULARIO DE ACTIVIDAD */
+/* ============================================================ */
+
+.zona-drop {
+    border: 2px dashed #ccc;
+    border-radius: 5px;
+    padding: 20px;
+    text-align: center;
+    background: #f8f9fa;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.zona-drop:hover {
+    border-color: #003366;
+    background: #f0f4f8;
+}
+
+.zona-drop:focus-within {
+    outline: 3px solid #FFC107;
+    outline-offset: 2px;
+}
+
+.grupo-carreras {
+    background: #fcfcfc;
+}
+
+.caja-jornadas {
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+/* ============================================================ */
+/* 7. ESCÁNER */
+/* ============================================================ */
+
+.img-actividad-escaneo {
+    max-height: 150px;
+    width: 100%;
+    object-fit: cover;
+}
+
+.placeholder-actividad-escaneo {
+    height: 150px;
+}
+
+.card-ultimos-registros {
+    border-left: 4px solid #003366;
+    position: sticky;
+    top: 20px;
+}
+
+.lista-ultimos-registros {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* ============================================================ */
+/* 8. REPORTES */
+/* ============================================================ */
+
+/* (Sin estilos específicos por ahora) */
+
+/* ============================================================ */
+/* 9. AUDITORÍA */
+/* ============================================================ */
+
+.detalle-cell {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ============================================================ */
+/* 10. VISTA PREVIA DE IMÁGENES */
+/* ============================================================ */
+
+.img-preview-actividad {
+    max-width: 100%;
+    max-height: 150px;
+    border-radius: 5px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================ */
+/* 11. UTILIDADES VARIAS */
+/* ============================================================ */
+
+/* Indicador de fortaleza de contraseña */
+#fortalezaBarra {
+    transition: width 0.3s, background-color 0.3s;
+}
+
+/* Focus visible para accesibilidad (navegación con Tab) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid #FFC107;
+    outline-offset: 2px;
+}
+
+/* ============================================================ */
+/* RESPONSIVE */
+/* ============================================================ */
+
 @media (max-width: 991px) {
     .header {
         flex-wrap: wrap;
         justify-content: center;
         padding: 10px;
     }
+
     .header img {
         height: 60px;
     }
+
     .header img.logo-duoc {
         max-width: 120px;
         height: 50px;
     }
+
     .navbar-custom {
         flex-grow: 0;
         width: 100%;
     }
+
+    .navbar-custom .navbar-nav {
+        margin-left: 0;
+        text-align: center;
+    }
+
+    .navbar-custom .navbar-nav .nav-link {
+        border-bottom: none;
+        border-left: 3px solid transparent;
+        padding: 12px 15px;
+    }
+
+    .navbar-custom .navbar-nav .nav-link:hover,
+    .navbar-custom .navbar-nav .nav-link.active {
+        border-bottom: none;
+        border-left: 3px solid #FFC107;
+        background-color: #f0f4f8;
+    }
+
     .footer {
         flex-direction: column;
         gap: 10px;
         text-align: center;
+    }
+
+    main {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 576px) {
+    .header img {
+        height: 50px;
+    }
+
+    .header img.logo-duoc {
+        max-width: 100px;
+        height: 40px;
+    }
+
+    main {
+        padding: 10px;
+    }
+
+    .table-responsive {
+        font-size: 13px;
+    }
+
+    .btn {
+        font-size: 13px;
+        padding: 6px 12px;
     }
 }

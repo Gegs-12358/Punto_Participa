@@ -1,37 +1,112 @@
+{% load static %}
+
+<!-- ============================================================ -->
 <!-- MODAL PARA CREAR/EDITAR ACTIVIDAD -->
-<div class="modal fade" id="actividadModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
+<!-- ============================================================ -->
+<div class="modal fade"
+     id="actividadModal"
+     tabindex="-1"
+     aria-labelledby="modalLabel"
+     aria-hidden="true"
+     data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header">
-                <!-- ID OBLIGATORIO -->
-                <h4 class="modal-title" id="modalLabel">Crear/Editar Actividad</h4>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header bg-primary text-white">
+                <h4 class="modal-title" id="modalLabel">
+                    <i class="fas fa-calendar-plus"></i> Crear/Editar Actividad
+                </h4>
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
             </div>
-            <!-- ID OBLIGATORIO -->
-            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-body" id="modalBody">
+                <!-- Aquí se inyecta actividad_form_partial.html -->
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p class="mt-2 mb-0">Cargando formulario...</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- ============================================================ -->
 <!-- MODAL DE CONFIRMACIÓN DE INVITACIONES -->
-<div class="modal fade" id="modalConfirmarInvitaciones" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+<!-- ============================================================ -->
+<div class="modal fade"
+     id="modalConfirmarInvitaciones"
+     tabindex="-1"
+     aria-labelledby="modalConfirmarInvitacionesLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Enviar Invitaciones</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalConfirmarInvitacionesLabel">
+                    <i class="fas fa-envelope"></i> Enviar Invitaciones
+                </h5>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
+
                 <div id="invitacion-message" class="alert alert-info">
                     <strong>Actividad guardada correctamente.</strong><br>
                     <span id="invitacion-texto">¿Deseas enviar invitaciones por correo?</span>
                 </div>
-                <div id="invitacion-resultado"></div>
+
+                <!-- Info de destinatarios -->
+                <div id="invitacion-info-destinatarios" class="mb-3 d-none">
+                    <small class="text-muted">
+                        <i class="fas fa-users"></i>
+                        Destinatarios estimados: <strong id="invitacion-total">0</strong>
+                    </small>
+                </div>
+
+                <!-- Botón para cargar la previsualización -->
+                <div class="text-center mb-3">
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            id="btnVerPrevisualizacion">
+                        <i class="fas fa-eye"></i> Ver cómo se verá el correo
+                    </button>
+                </div>
+
+                <!-- Área de previsualización (oculta hasta que se cargue) -->
+                <div id="invitacion-preview-container" class="d-none">
+                    <h6 class="border-top pt-3 mb-2">
+                        <i class="fas fa-envelope-open-text"></i> Previsualización
+                        <small class="text-muted" id="invitacion-ejemplo"></small>
+                    </h6>
+                    <div class="border rounded bg-light" style="max-height: 400px; overflow-y: auto;">
+                        <iframe id="invitacion-preview-iframe"
+                                style="width: 100%; min-height: 400px; border: none;"
+                                sandbox="allow-same-origin"
+                                title="Previsualización del correo de invitación"></iframe>
+                    </div>
+                </div>
+
+                <!-- Resultado de envío -->
+                <div id="invitacion-resultado" aria-live="polite"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger" id="btnEliminarActividad" style="display: none;">Cancelar y eliminar</button>
-                <button type="button" class="btn btn-secondary" id="btnCancelarEnvio">Ahora no</button>
-                <button type="button" class="btn btn-primary" id="btnConfirmarEnvio">Enviar</button>
+                <button type="button"
+                        class="btn btn-danger d-none"
+                        id="btnEliminarActividad">
+                    <i class="fas fa-trash"></i> Eliminar actividad
+                </button>
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="btnCancelarEnvio">
+                    <i class="fas fa-times"></i> Ahora no
+                </button>
+                <button type="button"
+                        class="btn btn-primary"
+                        id="btnConfirmarEnvio">
+                    <i class="fas fa-paper-plane"></i> Enviar
+                </button>
             </div>
         </div>
     </div>

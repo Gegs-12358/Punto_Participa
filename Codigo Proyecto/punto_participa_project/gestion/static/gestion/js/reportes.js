@@ -9,21 +9,37 @@ let chartDetalleBar = null;
 let chartDetallePie = null;
 
 /**
+ * Obtiene datos serializados de forma segura desde un <script type="application/json">
+ * generado con el filtro {% json_script %} de Django.
+ */
+function obtenerDatosJson(id) {
+    const elemento = document.getElementById(id);
+    if (!elemento) return [];
+    try {
+        return JSON.parse(elemento.textContent);
+    } catch (error) {
+        console.error(`Error al parsear datos de "${id}":`, error);
+        return [];
+    }
+}
+
+/**
  * Función auxiliar para crear un gráfico Chart.js
  */
-function crearGrafico(canvasId, tipo, labels, data, label, opcionesExtra) {
+function crearGrafico(canvasId, tipo, labelsData, dataData, label, opcionesExtra) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return null;
 
-    // Si ya existe un gráfico en este canvas (por si se llama varias veces), lo destruimos
-    // (pero usaremos variables globales para controlar mejor)
+    if (!labelsData || labelsData.length === 0) {
+        mostrarSinDatos(canvas);
+        return null;
+    }
+
+    // Si ya existe un gráfico en este canvas, lo destruimos antes de crear uno nuevo
     const existingChart = Chart.getChart(canvasId);
     if (existingChart) {
         existingChart.destroy();
     }
-
-    const labelsData = JSON.parse(labels);
-    const dataData = JSON.parse(data);
 
     // Definir colores base
     const coloresBase = [
@@ -33,8 +49,8 @@ function crearGrafico(canvasId, tipo, labels, data, label, opcionesExtra) {
     ];
 
     // Para gráficos de barras, usamos un solo color con opacidad
-    const backgroundColor = tipo === 'bar' 
-        ? 'rgba(0, 51, 102, 0.7)' 
+    const backgroundColor = tipo === 'bar'
+        ? 'rgba(0, 51, 102, 0.7)'
         : coloresBase.slice(0, dataData.length);
 
     const borderColor = tipo === 'bar'
@@ -67,7 +83,7 @@ function crearGrafico(canvasId, tipo, labels, data, label, opcionesExtra) {
                 }
             },
             scales: tipo === 'bar' ? {
-                y: { 
+                y: {
                     beginAtZero: true,
                     ticks: { stepSize: 1 }
                 }
@@ -84,30 +100,29 @@ function crearGrafico(canvasId, tipo, labels, data, label, opcionesExtra) {
 }
 
 /**
+ * Muestra un mensaje cuando no hay datos para un gráfico.
+ */
+function mostrarSinDatos(canvas) {
+    if (canvas && canvas.parentElement) {
+        canvas.parentElement.innerHTML =
+            '<p class="text-muted text-center py-5">No hay datos disponibles.</p>';
+    }
+}
+
+/**
  * Inicializar gráficos de la pestaña GENERAL
  */
 function initGeneralCharts() {
-    const barCanvas = document.getElementById('graficoBarrasReportes');
-    const pieCanvas = document.getElementById('graficoPastelReportes');
-
-    if (barCanvas && !chartGeneralBar) {
-        chartGeneralBar = crearGrafico(
-            'graficoBarrasReportes',
-            'bar',
-            barCanvas.dataset.labels,
-            barCanvas.dataset.data,
-            'Asistentes'
-        );
+    if (!chartGeneralBar) {
+        const labels = obtenerDatosJson('labels_barras');
+        const data = obtenerDatosJson('data_barras');
+        chartGeneralBar = crearGrafico('graficoBarrasReportes', 'bar', labels, data, 'Asistentes');
     }
 
-    if (pieCanvas && !chartGeneralPie) {
-        chartGeneralPie = crearGrafico(
-            'graficoPastelReportes',
-            'pie',
-            pieCanvas.dataset.labels,
-            pieCanvas.dataset.data,
-            'Distribución por Carrera'
-        );
+    if (!chartGeneralPie) {
+        const labels = obtenerDatosJson('labels_pastel');
+        const data = obtenerDatosJson('data_pastel');
+        chartGeneralPie = crearGrafico('graficoPastelReportes', 'pie', labels, data, 'Distribución por Carrera');
     }
 }
 
@@ -115,27 +130,16 @@ function initGeneralCharts() {
  * Inicializar gráficos de la pestaña DETALLADO
  */
 function initDetalleCharts() {
-    const barCanvas = document.getElementById('graficoBarrasDetalle');
-    const pieCanvas = document.getElementById('graficoPastelDetalle');
-
-    if (barCanvas && !chartDetalleBar) {
-        chartDetalleBar = crearGrafico(
-            'graficoBarrasDetalle',
-            'bar',
-            barCanvas.dataset.labels,
-            barCanvas.dataset.data,
-            'Asistentes por Escuela'
-        );
+    if (!chartDetalleBar) {
+        const labels = obtenerDatosJson('labels_barras_detalle');
+        const data = obtenerDatosJson('data_barras_detalle');
+        chartDetalleBar = crearGrafico('graficoBarrasDetalle', 'bar', labels, data, 'Asistentes por Escuela');
     }
 
-    if (pieCanvas && !chartDetallePie) {
-        chartDetallePie = crearGrafico(
-            'graficoPastelDetalle',
-            'pie',
-            pieCanvas.dataset.labels,
-            pieCanvas.dataset.data,
-            'Distribución por Carrera'
-        );
+    if (!chartDetallePie) {
+        const labels = obtenerDatosJson('labels_pastel_detalle');
+        const data = obtenerDatosJson('data_pastel_detalle');
+        chartDetallePie = crearGrafico('graficoPastelDetalle', 'pie', labels, data, 'Distribución por Carrera');
     }
 }
 
@@ -153,24 +157,28 @@ function destroyAllCharts() {
 // EVENTOS
 // =============================================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js no está cargado.');
+        return;
+    }
+
     // Inicializar gráficos generales (visibles por defecto)
     initGeneralCharts();
 
     // Escuchar el cambio de pestaña para inicializar los gráficos detallados
     const detalleTab = document.getElementById('detallado-tab');
     if (detalleTab) {
-        detalleTab.addEventListener('shown.bs.tab', function (e) {
-            // Esperar un poco para que el contenedor se renderice
-            setTimeout(() => {
+        detalleTab.addEventListener('shown.bs.tab', function () {
+            setTimeout(function () {
                 initDetalleCharts();
             }, 200);
         });
     }
 
-    // Si la pestaña detallado ya está activa al cargar (por si se guarda estado),
-    // también la inicializamos.
-    if (document.getElementById('detallado') && document.getElementById('detallado').classList.contains('active')) {
+    // Si la pestaña detallado ya está activa al cargar (por si se guarda estado)
+    const tabDetallado = document.getElementById('detallado');
+    if (tabDetallado && tabDetallado.classList.contains('active')) {
         setTimeout(initDetalleCharts, 300);
     }
 });

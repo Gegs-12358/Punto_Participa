@@ -183,7 +183,7 @@ class NotificacionCorreo(models.Model):
 
     actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, related_name='notificaciones')
     alumno = models.ForeignKey('Alumno', on_delete=models.CASCADE, null=True, blank=True, related_name='notificaciones')
-    filtro_aplicado = models.CharField(max_length=500, blank=True)
+    filtro_aplicado = models.CharField(max_length=2000, blank=True)
     fecha_envio = models.DateTimeField(auto_now_add=True)
     estado_envio = models.CharField(max_length=10, choices=ESTADO_CHOICES)
 
