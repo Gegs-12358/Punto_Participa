@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // ============================================================
+        // ============================================================
     // Enviar formulario para guardar
     // ============================================================
     if (form) {
@@ -137,7 +137,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(function (response) { return response.json(); })
                 .then(function (data) {
                     if (data.success) {
-                        window.location.reload();
+                        if (data.password_temporal) {
+                            mostrarPasswordTemporal(data.password_temporal);
+                        } else {
+                            window.location.reload();
+                        }
                     } else {
                         mostrarMensaje(data.message || 'Error al guardar el usuario.', 'danger');
                     }
@@ -147,5 +151,31 @@ document.addEventListener('DOMContentLoaded', function () {
                     mostrarMensaje('Error al conectar con el servidor.', 'danger');
                 });
         });
+    }
+
+    // ============================================================
+    // Mostrar la contraseña temporal generada al crear un usuario
+    // ============================================================
+    function mostrarPasswordTemporal(password) {
+        const mensaje =
+            '<p>El usuario fue creado correctamente. Esta es su contraseña temporal:</p>' +
+            '<div class="alert alert-warning text-center">' +
+            '<strong style="font-size: 1.3rem; letter-spacing: 1px;">' + password + '</strong>' +
+            '</div>' +
+            '<p class="small text-muted mb-0">' +
+            'Cópiala y entrégasela de forma segura a la persona. No podrás volver a verla después de cerrar este mensaje. ' +
+            'Deberá cambiarla al iniciar sesión por primera vez.' +
+            '</p>';
+
+        abrirModalGlobal('Usuario creado', mensaje, 'success');
+
+        // Recargar la tabla al cerrar el modal, para que se vea el usuario nuevo
+        const modalGlobal = document.getElementById('globalMessageModal');
+        if (modalGlobal) {
+            modalGlobal.addEventListener('hidden.bs.modal', function handler() {
+                modalGlobal.removeEventListener('hidden.bs.modal', handler);
+                window.location.reload();
+            });
+        }
     }
 });

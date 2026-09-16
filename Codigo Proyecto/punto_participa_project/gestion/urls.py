@@ -25,6 +25,9 @@ urlpatterns = [
     path('usuarios/', views.usuarios, name='usuarios'),
     path('usuarios/guardar/', views.guardar_usuario, name='guardar_usuario'),
 
+    path('recuperar-contrasena/', views.solicitar_recuperacion, name='recuperar_contrasena'),
+    path('restablecer-contrasena/<uidb64>/<token>/', views.restablecer_contrasena, name='restablecer_contrasena'),
+
     # ============================================================
     # ACTIVIDADES
     # ============================================================
@@ -35,6 +38,7 @@ urlpatterns = [
     path('actividades/enviar-invitaciones/', views.enviar_invitaciones, name='enviar_invitaciones'),
     path('actividades/previsualizar-invitacion/<int:pk>/', views.previsualizar_invitacion, name='previsualizar_invitacion'),
     path('actividades/eliminar-ajax/<int:pk>/', views.eliminar_ajax, name='eliminar_ajax'),
+
 
     # ============================================================
     # ESCÁNER

@@ -19,7 +19,7 @@ class Rol(models.Model):
 class UsuarioSistema(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='usuariosistema')
     rut = models.CharField(max_length=12, unique=True, null=True, blank=True, db_index=True)
-    rol = models.ForeignKey(Rol, on_delete=models.SET_NULL, null=True, related_name='usuarios')
+    rol = models.ForeignKey(Rol, on_delete=models.PROTECT, related_name='usuarios')
     activo = models.BooleanField(default=True)
     must_change_password = models.BooleanField(default=True)
 

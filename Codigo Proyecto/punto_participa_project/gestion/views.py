@@ -30,6 +30,11 @@ from .models import (
     NotificacionCorreo, Carrera, Jornada, Rol, UsuarioSistema
 )
 from django_ratelimit.decorators import ratelimit
+from django.utils.crypto import get_random_string
+
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
 
 
 # ==================== FUNCIONES AUXILIARES ====================
@@ -60,6 +65,17 @@ def tiene_rol(user, roles_permitidos):
     except Exception:
         return False
 
+def puede_gestionar_actividad(user, actividad):
+    """
+    Determina si el usuario puede editar/eliminar/gestionar una actividad específica.
+    - Administrador: puede gestionar cualquier actividad.
+    - Creador de Evento: solo puede gestionar las que él mismo creó.
+    """
+    if tiene_rol(user, ['Administrador']):
+        return True
+    if tiene_rol(user, ['Creador de Evento']):
+        return actividad.creado_por_id == user.id
+    return False
 
 def registrar_log(request, modulo, accion, detalle, objeto_tipo=None, objeto_id=None,
                   objeto_nombre=None, cambios_json=None):
@@ -170,6 +186,88 @@ def logout_view(request):
         pass
     logout(request)
     return redirect('login')
+
+# ==================== RECUPERACIÓN DE CONTRASEÑA ====================
+
+@ratelimit(key='ip', rate='5/15m', method='POST')
+def solicitar_recuperacion(request):
+    if request.method == 'POST':
+        identificador = request.POST.get('identificador', '').strip()
+
+        # Buscar por username o email, sin revelar si existe o no
+        user = User.objects.filter(username=identificador).first() or \
+               User.objects.filter(email__iexact=identificador).first()
+
+        if user and user.is_active:
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = PasswordResetTokenGenerator().make_token(user)
+            enlace = f"{settings.SITE_URL}/restablecer-contrasena/{uid}/{token}/"
+
+            html_contenido = render_to_string('gestion/email_recuperacion.html', {
+                'user': user,
+                'enlace': enlace,
+            })
+            send_mail(
+                subject='Recuperación de contraseña - Punto Participa',
+                message=f'Para restablecer tu contraseña, visita: {enlace}',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                html_message=html_contenido,
+                fail_silently=True,
+            )
+
+        # Mensaje genérico siempre, exista o no el usuario (evita enumeración de cuentas)
+        messages.success(
+            request,
+            'Si el usuario existe, te enviamos un correo con instrucciones para restablecer tu contraseña.'
+        )
+        return redirect('login')
+
+    return render(request, 'gestion/recuperar_contrasena.html')
+
+
+def restablecer_contrasena(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    token_valido = user is not None and PasswordResetTokenGenerator().check_token(user, token)
+
+    if not token_valido:
+        return render(request, 'gestion/restablecer_contrasena.html', {'token_valido': False})
+
+    if request.method == 'POST':
+        nueva_contrasena = request.POST.get('nueva_contrasena')
+        confirmar = request.POST.get('confirmar_contrasena')
+
+        if not nueva_contrasena or len(nueva_contrasena) < 8:
+            messages.error(request, 'La contraseña debe tener al menos 8 caracteres.')
+            return render(request, 'gestion/restablecer_contrasena.html', {'token_valido': True})
+
+        if nueva_contrasena != confirmar:
+            messages.error(request, 'Las contraseñas no coinciden.')
+            return render(request, 'gestion/restablecer_contrasena.html', {'token_valido': True})
+
+        user.set_password(nueva_contrasena)
+        user.save()
+
+        try:
+            perfil = user.usuariosistema
+            perfil.must_change_password = False
+            perfil.save()
+        except UsuarioSistema.DoesNotExist:
+            pass
+
+        registrar_log(request, 'Seguridad', 'Restablecimiento de contraseña',
+                      f'Usuario "{user.username}" restableció su contraseña vía enlace de recuperación',
+                      'Usuario', user.id, user.username)
+
+        messages.success(request, 'Tu contraseña fue restablecida correctamente. Ya puedes iniciar sesión.')
+        return redirect('login')
+
+    return render(request, 'gestion/restablecer_contrasena.html', {'token_valido': True})
 
 
 # ==================== DASHBOARD ====================
@@ -595,7 +693,11 @@ def guardar_usuario(request):
             if User.objects.filter(username=username).exists():
                 return JsonResponse({'success': False, 'message': 'Ese nombre de usuario ya está en uso'})
             user = User(username=username)
-            user.set_password('Duoc12345')
+            password_temporal = get_random_string(
+                length=12,
+                allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'
+            )
+            user.set_password(password_temporal)
 
         user.email = email
         user.first_name = nombre
@@ -632,7 +734,12 @@ def guardar_usuario(request):
         registrar_log(request, 'Usuarios', 'Guardar usuario',
                       f'Usuario: {nombre} ({username})', 'Usuario', user.id, nombre)
 
-        return JsonResponse({'success': True})
+        respuesta = {'success': True}
+        if not usuario_sistema_id:
+            # Solo se muestra la contraseña temporal al CREAR un usuario nuevo.
+            # No se puede volver a mostrar después (queda hasheada en la base de datos).
+            respuesta['password_temporal'] = password_temporal
+        return JsonResponse(respuesta)
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})
 
@@ -758,6 +865,12 @@ def editar_actividad(request, pk):
 
     actividad = get_object_or_404(Actividad, pk=pk)
 
+    if not puede_gestionar_actividad(request.user, actividad):
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'message': 'No tienes permisos sobre esta actividad.'})
+        messages.error(request, 'No tienes permisos para editar esta actividad.')
+        return redirect('lista_actividades')
+
     # ============================================================
     # Detectar si tiene datos asociados
     # ============================================================
@@ -867,6 +980,10 @@ def eliminar_actividad(request, pk):
 
     actividad = get_object_or_404(Actividad, pk=pk)
 
+    if not puede_gestionar_actividad(request.user, actividad):
+        messages.error(request, 'No tienes permisos para eliminar esta actividad.')
+        return redirect('lista_actividades')
+
     if Inscripcion.objects.filter(actividad=actividad).exists() or Asistencia.objects.filter(actividad=actividad).exists():
         messages.error(request, 'No puedes eliminar esta actividad porque tiene inscritos o asistentes registrados.')
         return redirect('lista_actividades')
@@ -907,10 +1024,10 @@ def enviar_invitaciones(request):
         if jornadas_asociadas:
             alumnos_qs = alumnos_qs.filter(jornada__in=jornadas_asociadas)
 
-        # LÍMITE DE 15 PARA PRUEBAS
-        alumnos = alumnos_qs[:15]
-        # Para envío masivo: descomentar la línea de abajo y comentar la de arriba
-        # alumnos = alumnos_qs
+        # Límite configurable desde settings/.env (MAX_INVITACIONES_POR_ENVIO)
+        # 0 o negativo = sin límite
+        limite = settings.MAX_INVITACIONES_POR_ENVIO
+        alumnos = alumnos_qs if limite <= 0 else alumnos_qs[:limite]
 
         filtro_descripcion = "Todas las asociadas"
         if carreras_asociadas or jornadas_asociadas:

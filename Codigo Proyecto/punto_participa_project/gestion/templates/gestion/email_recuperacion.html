@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es-cl">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+    <div style="max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #003366; padding: 20px; text-align: center;">
+            <h2 style="color: #ffffff; margin: 0;">Punto Participa</h2>
+        </div>
+        <div style="padding: 30px;">
+            <p>Hola {{ user.first_name|default:user.username }},</p>
+            <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta. Si no fuiste tú, puedes ignorar este correo.</p>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{ enlace }}"
+                   style="background-color: #FFC107; color: #003366; padding: 15px 30px; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 16px;">
+                   Restablecer contraseña
+                </a>
+            </div>
+
+            <p style="font-size: 12px; color: #888888;">
+                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
+                {{ enlace }}
+            </p>
+            <p style="font-size: 12px; color: #888888;">
+                Este enlace expirará en unos días por seguridad.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

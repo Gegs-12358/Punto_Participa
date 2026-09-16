@@ -145,6 +145,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # URL del sitio (para correos y enlaces absolutos)
 SITE_URL = config('SITE_URL', default='http://127.0.0.1:8000')
 
+# Límite de destinatarios por envío de invitaciones (0 = sin límite)
+MAX_INVITACIONES_POR_ENVIO = config('MAX_INVITACIONES_POR_ENVIO', default=15, cast=int)
+
 # =============================================================
 # CONFIGURACIÓN PARA PRODUCCIÓN (DESCOMENTAR AL DESPLEGAR)
 # =============================================================
