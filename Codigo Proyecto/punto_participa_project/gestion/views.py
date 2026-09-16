@@ -1140,6 +1140,13 @@ def eliminar_ajax(request, pk):
 
     try:
         actividad = get_object_or_404(Actividad, pk=pk)
+
+        if not puede_gestionar_actividad(request.user, actividad):
+            return JsonResponse({
+                'success': False,
+                'message': 'No tienes permisos sobre esta actividad.'
+            }, status=403)
+
         if Inscripcion.objects.filter(actividad=actividad).exists() or Asistencia.objects.filter(actividad=actividad).exists():
             return JsonResponse({
                 'success': False,
