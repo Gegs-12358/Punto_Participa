@@ -3,150 +3,160 @@
 {% block title %}Escáner{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <!-- ============================================================ -->
-        <!-- TARJETA DE ACTIVIDAD ACTUAL -->
-        <!-- ============================================================ -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center border-bottom-0">
-                <h5 class="mb-0">
-                    <i class="fas fa-calendar-check text-primary me-2"></i> Actividad actual
-                </h5>
+
+<!-- ============================================================ -->
+<!-- TÍTULO + ACTIVIDAD ACTUAL -->
+<!-- ============================================================ -->
+<div class="scanner-header">
+    <div class="scanner-title">
+        <span class="eyebrow">REGISTRO DE ASISTENCIA</span>
+        <h1>Escáner</h1>
+        <p>Registra la asistencia de los estudiantes con la pistola o manualmente.</p>
+    </div>
+
+    <div class="scanner-activity">
+        <span class="eyebrow">ACTIVIDAD ACTUAL</span>
+
+        {% if actividad_seleccionada %}
+            <div class="scanner-activity-info">
+                <h2>{{ actividad_seleccionada.titulo }}</h2>
+                <p>
+                    ▦ {{ actividad_seleccionada.fecha_inicio|date:"d/m/Y H:i" }} —
+                    {{ actividad_seleccionada.fecha_fin|date:"d/m/Y H:i" }}
+                </p>
+                <p>
+                    ◎ Cupos disponibles:
+                    {% if actividad_seleccionada.cupos_disponibles is not None %}
+                        <strong>{{ actividad_seleccionada.cupos_disponibles }}</strong>
+                    {% else %}
+                        <span class="text-muted">Sin límite</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="scanner-activity-actions">
                 <button type="button"
-                        class="btn btn-sm btn-outline-primary"
-                        data-bs-toggle="modal"
-                        data-bs-target="#cambiarActividadModal">
-                    <i class="fas fa-exchange-alt"></i> Cambiar
+                        class="btn secondary"
+                        id="btnCambiarActividad">
+                    ⇄ Cambiar
+                </button>
+                <form method="post" action="{% url 'escaneo' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit"
+                            name="finalizar_turno"
+                            value="1"
+                            class="btn danger">
+                        ⇥ Finalizar turno
+                    </button>
+                </form>
+            </div>
+        {% else %}
+            <div class="scanner-activity-empty">
+                <p>⚠ No hay actividad seleccionada.</p>
+                <button type="button"
+                        class="btn"
+                        id="btnCambiarActividad">
+                    ⇄ Seleccionar actividad
                 </button>
             </div>
-            <div class="card-body pt-0">
-                {% if actividad_seleccionada %}
-                <div class="row">
-                    <div class="col-md-4">
-                        {% if actividad_seleccionada.imagen %}
-                            <img src="{{ actividad_seleccionada.imagen.url }}"
-                                 class="img-fluid rounded img-actividad-escaneo"
-                                 alt="Imagen de {{ actividad_seleccionada.titulo }}">
-                        {% else %}
-                            <div class="bg-light rounded d-flex align-items-center justify-content-center placeholder-actividad-escaneo">
-                                <i class="fas fa-image fa-3x text-muted"></i>
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-8">
-                        <h4 class="mb-1">{{ actividad_seleccionada.titulo }}</h4>
-                        <p class="text-muted mb-2">
-                            <i class="fas fa-calendar-alt"></i>
-                            {{ actividad_seleccionada.fecha_inicio|date:"d/m/Y H:i" }} -
-                            {{ actividad_seleccionada.fecha_fin|date:"d/m/Y H:i" }}
-                            <br>
-                            <i class="fas fa-users"></i> Cupos disponibles:
-                            {% if actividad_seleccionada.cupos_disponibles is not None %}
-                                <strong>{{ actividad_seleccionada.cupos_disponibles }}</strong>
-                            {% else %}
-                                <span class="text-muted">Sin límite</span>
-                            {% endif %}
-                        </p>
-                        <form method="post" action="{% url 'escaneo' %}" class="d-inline">
-                            {% csrf_token %}
-                            <button type="submit"
-                                    name="finalizar_turno"
-                                    value="1"
-                                    class="btn btn-sm btn-outline-danger">
-                                <i class="fas fa-sign-out-alt"></i> Finalizar turno
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                {% else %}
-                <div class="alert alert-warning text-center mb-0">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <strong>No hay actividad seleccionada.</strong>
-                    <p class="mb-0">Haz clic en "Cambiar" para seleccionar una actividad activa.</p>
-                </div>
-                {% endif %}
-            </div>
-        </div>
+        {% endif %}
+    </div>
+</div>
 
-        <!-- ============================================================ -->
-        <!-- FORMULARIO DE REGISTRO -->
-        <!-- ============================================================ -->
+<!-- ============================================================ -->
+<!-- GRID PRINCIPAL: FORMULARIO + ÚLTIMOS REGISTROS -->
+<!-- ============================================================ -->
+<div class="scanner-grid">
+
+    <!-- ============================================================ -->
+    <!-- COLUMNA IZQUIERDA: FORMULARIO DE REGISTRO -->
+    <!-- ============================================================ -->
+    <div>
         {% if actividad_seleccionada %}
-        <div class="card shadow-sm p-4">
-            <!-- Indicador de estado del lector -->
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="d-flex align-items-center">
-                    <span class="badge bg-success me-2">
-                        <i class="fas fa-check-circle"></i> Listo para escanear
-                    </span>
+            <div class="scan-card panel">
+                <div class="scan-symbol">▢</div>
+                <h2>Registrar asistencia</h2>
+                <p class="text-muted">
+                    Escanea el código QR de la cédula o escribe el RUT manualmente.
+                </p>
+
+                <div class="scanner-status">
+                    <span class="badge">◉ Listo para escanear</span>
                     <small class="text-muted">Pistola o ingreso manual</small>
                 </div>
-            </div>
 
-            <form id="formEscaneo" class="w-100" autocomplete="off">
-                {% csrf_token %}
-                <input type="hidden" name="metodo_ingreso" id="metodo_ingreso" value="RUT">
+                <form id="formEscaneo" autocomplete="off">
+                    {% csrf_token %}
+                    <input type="hidden" name="metodo_ingreso" id="metodo_ingreso" value="RUT">
 
-                <div class="mb-3">
-                    <label for="rutInput" class="form-label fw-bold">
+                    <label for="rutInput">
                         RUT del estudiante
+                        <input type="text"
+                               id="rutInput"
+                               name="rut"
+                               placeholder="Escanea con la pistola o escribe el RUT"
+                               maxlength="12"
+                               autocomplete="off"
+                               aria-describedby="rut-help"
+                               required
+                               autofocus>
                     </label>
-                    <input type="text"
-                           class="form-control form-control-lg"
-                           id="rutInput"
-                           name="rut"
-                           placeholder="Escanea con la pistola o escribe el RUT"
-                           maxlength="12"
-                           autocomplete="off"
-                           aria-describedby="rut-help"
-                           required
-                           autofocus>
-                    <small class="form-text text-muted" id="rut-help">
-                        <i class="fas fa-info-circle"></i>
-                        Presiona el gatillo de la pistola sobre el código QR de la cédula
-                        o escribe el RUT manualmente y presiona Enter.
+                    <small class="input-help" id="rut-help">
+                        ⓘ Presiona el gatillo de la pistola sobre el código QR o
+                        escribe el RUT manualmente y presiona Enter.
                     </small>
+
+                    <button type="submit" class="btn" style="width: 100%; margin-top: 12px;">
+                        ✓ Registrar asistencia
+                    </button>
+                </form>
+
+                <div id="resultado" aria-live="polite"></div>
+            </div>
+        {% else %}
+            <div class="panel">
+                <div class="empty-state">
+                    <span>▢</span>
+                    <h3>Sin actividad seleccionada</h3>
+                    <p>Selecciona una actividad para comenzar a registrar asistencia.</p>
                 </div>
-
-                <button type="submit" class="btn btn-primary btn-lg w-100">
-                    <i class="fas fa-check-circle"></i> Registrar asistencia
-                </button>
-            </form>
-
-            <div id="resultado" class="mt-3" aria-live="polite"></div>
-        </div>
+            </div>
         {% endif %}
     </div>
 
     <!-- ============================================================ -->
-    <!-- ÚLTIMOS REGISTROS -->
+    <!-- COLUMNA DERECHA: ÚLTIMOS REGISTROS -->
     <!-- ============================================================ -->
-    <div class="col-md-4">
-        <div class="card shadow-sm p-3 card-ultimos-registros">
-            <h4><i class="fas fa-history"></i> Últimos registros</h4>
-            <div id="ultimosRegistros" class="lista-ultimos-registros">
-                <ul class="list-unstyled mb-0">
-                    {% for asistencia in ultimas_asistencias %}
-                    <li class="border-bottom py-2">
-                        <strong>{{ asistencia.alumno.nombres }} {{ asistencia.alumno.apellidos }}</strong>
-                        <small class="text-muted d-block">
-                            <i class="fas fa-clock"></i> {{ asistencia.fecha_ingreso|date:"H:i" }}
-                            <span class="badge bg-secondary ms-1">
+    <div>
+        <div class="session">
+            <span class="live">● EN VIVO</span>
+            <h3 style="margin: 12px 0 6px;">Últimos registros</h3>
+            <p style="color: #adc8db; font-size: 13px; margin-bottom: 20px;">
+                Los últimos 10 estudiantes registrados en esta actividad.
+            </p>
+
+            <div class="lista-ultimos-registros">
+                {% for asistencia in ultimas_asistencias %}
+                    <div class="person">
+                        <span class="avatar">{{ asistencia.alumno.nombres|slice:":1" }}{{ asistencia.alumno.apellidos|slice:":1" }}</span>
+                        <p>
+                            <strong>{{ asistencia.alumno.nombres }} {{ asistencia.alumno.apellidos }}</strong>
+                            <small>
                                 {% if asistencia.metodo_ingreso == 'QR' %}
-                                    <i class="fas fa-qrcode"></i> QR
+                                    ▢ QR
                                 {% elif asistencia.metodo_ingreso == 'CODIGO' %}
-                                    <i class="fas fa-barcode"></i> Código
+                                    ▥ Código
                                 {% else %}
-                                    <i class="fas fa-keyboard"></i> RUT
+                                    ⌨ RUT
                                 {% endif %}
-                            </span>
-                        </small>
-                    </li>
-                    {% empty %}
-                    <li class="text-muted text-center py-3">Sin registros aún</li>
-                    {% endfor %}
-                </ul>
+                            </small>
+                        </p>
+                        <time>{{ asistencia.fecha_ingreso|date:"H:i" }}</time>
+                    </div>
+                {% empty %}
+                    <p style="color: #adc8db; text-align: center; padding: 20px 0;">
+                        Sin registros aún
+                    </p>
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -155,117 +165,94 @@
 <!-- ============================================================ -->
 <!-- MODAL CAMBIAR ACTIVIDAD -->
 <!-- ============================================================ -->
-<div class="modal fade" id="cambiarActividadModal" tabindex="-1" aria-labelledby="cambiarActividadLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form method="post" action="{% url 'escaneo' %}">
-                {% csrf_token %}
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="cambiarActividadLabel">
-                        <i class="fas fa-exchange-alt"></i> Cambiar Actividad
-                    </h5>
-                    <button type="button"
-                            class="btn-close btn-close-white"
-                            data-bs-dismiss="modal"
-                            aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <label for="actividadSelect" class="form-label fw-bold">
-                        Selecciona la actividad:
-                    </label>
-                    <select name="actividad_id"
-                            id="actividadSelect"
-                            class="form-select"
-                            required>
+<div class="modal-backdrop" id="cambiarActividadModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="cambiarActividadLabel">
+        <header class="modal-header">
+            <h2 id="cambiarActividadLabel">Cambiar Actividad</h2>
+            <button type="button"
+                    class="close-button"
+                    data-modal-close
+                    aria-label="Cerrar">×</button>
+        </header>
+
+        <form method="post" action="{% url 'escaneo' %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="form-field">
+                    <label for="actividadSelect">Selecciona la actividad</label>
+                    <select name="actividad_id" id="actividadSelect" required>
                         <option value="">-- Seleccionar --</option>
                         {% for actividad in actividades_disponibles %}
-                        <option value="{{ actividad.id }}"
-                                {% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %}selected{% endif %}>
-                            {{ actividad.titulo }}
-                            — {{ actividad.fecha_inicio|date:"d/m/Y H:i" }}
-                            ({{ actividad.get_tipo_display }})
-                        </option>
+                            <option value="{{ actividad.id }}"
+                                    {% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %}selected{% endif %}>
+                                {{ actividad.titulo }} — {{ actividad.fecha_inicio|date:"d/m/Y H:i" }} ({{ actividad.get_tipo_display }})
+                            </option>
                         {% endfor %}
                     </select>
-                    <small class="text-muted d-block mt-2">
-                        Solo se listan actividades en estado <strong>ACTIVA</strong>.
-                    </small>
+                    <small class="input-help">Solo se listan actividades en estado ACTIVA.</small>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        Cancelar
-                    </button>
-                    <button type="submit"
-                            name="cambiar_actividad"
-                            value="1"
-                            class="btn btn-primary">
-                        <i class="fas fa-check"></i> Seleccionar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+            </div>
+            <footer class="modal-footer">
+                <button type="button" class="btn secondary" data-modal-close>Cancelar</button>
+                <button type="submit" name="cambiar_actividad" value="1" class="btn">
+                    ✓ Seleccionar
+                </button>
+            </footer>
+        </form>
+    </section>
 </div>
 
 <!-- ============================================================ -->
 <!-- MODAL CONFIRMACIÓN ASISTENCIA -->
 <!-- ============================================================ -->
-<div class="modal fade" id="modalConfirmarAsistencia" tabindex="-1" aria-labelledby="confirmarAsistenciaLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="confirmarAsistenciaLabel">
-                    <i class="fas fa-check-circle"></i> Confirmar Registro
-                </h5>
-                <button type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                        aria-label="Cerrar"
-                        id="btnCerrarModalAsistencia"></button>
-            </div>
-            <div class="modal-body">
-                <p>¿Confirmas el registro de asistencia?</p>
-                <div id="info-alumno" class="alert alert-info" aria-live="polite"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal"
-                        id="btnCancelarConfirmacion">
-                    Cancelar
-                </button>
-                <button type="button" class="btn btn-primary" id="btnAceptarConfirmacion">
-                    <i class="fas fa-check"></i> Aceptar
-                </button>
-            </div>
+<div class="modal-backdrop" id="modalConfirmarAsistencia" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmarAsistenciaLabel">
+        <header class="modal-header">
+            <h2 id="confirmarAsistenciaLabel">Confirmar Registro</h2>
+            <button type="button"
+                    class="close-button"
+                    data-modal-close
+                    aria-label="Cerrar"
+                    id="btnCerrarModalAsistencia">×</button>
+        </header>
+
+        <div class="modal-body">
+            <p>¿Confirmas el registro de asistencia?</p>
+            <div id="info-alumno" class="alert alert-info" aria-live="polite"></div>
         </div>
-    </div>
+
+        <footer class="modal-footer">
+            <button type="button" class="btn secondary" data-modal-close id="btnCancelarConfirmacion">
+                × Cancelar
+            </button>
+            <button type="button" class="btn" id="btnAceptarConfirmacion">
+                ✓ Aceptar
+            </button>
+        </footer>
+    </section>
 </div>
 
 <!-- ============================================================ -->
 <!-- MODAL AVISO / ERROR -->
 <!-- ============================================================ -->
-<div class="modal fade" id="modalAviso" tabindex="-1" aria-labelledby="modalAvisoLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="modalAvisoLabel">
-                    <i class="fas fa-exclamation-triangle"></i> Aviso
-                </h5>
-                <button type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                        aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body" id="modalAvisoBody" aria-live="polite"></div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" id="btnAceptarAviso">
-                    Aceptar
-                </button>
-            </div>
-        </div>
-    </div>
+<div class="modal-backdrop" id="modalAviso" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalAvisoLabel">
+        <header class="modal-header">
+            <h2 id="modalAvisoLabel">Aviso</h2>
+            <button type="button"
+                    class="close-button"
+                    data-modal-close
+                    aria-label="Cerrar">×</button>
+        </header>
+
+        <div class="modal-body" id="modalAvisoBody" aria-live="polite"></div>
+
+        <footer class="modal-footer">
+            <button type="button" class="btn" id="btnAceptarAviso">Aceptar</button>
+        </footer>
+    </section>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}

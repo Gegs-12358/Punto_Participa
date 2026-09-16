@@ -1,16 +1,18 @@
 // =============================================================
 // reportes.js - Manejo de gráficos con pestañas (General y Detallado)
+// Sin Bootstrap: tabs propias con data-tab
 // =============================================================
 
 // Variables para almacenar las instancias de los gráficos
 let chartGeneralBar = null;
 let chartGeneralPie = null;
+let chartGeneralJornada = null;
 let chartDetalleBar = null;
 let chartDetallePie = null;
+let chartDetalleJornada = null;
 
 /**
  * Obtiene datos serializados de forma segura desde un <script type="application/json">
- * generado con el filtro {% json_script %} de Django.
  */
 function obtenerDatosJson(id) {
     const elemento = document.getElementById(id);
@@ -35,20 +37,17 @@ function crearGrafico(canvasId, tipo, labelsData, dataData, label, opcionesExtra
         return null;
     }
 
-    // Si ya existe un gráfico en este canvas, lo destruimos antes de crear uno nuevo
     const existingChart = Chart.getChart(canvasId);
     if (existingChart) {
         existingChart.destroy();
     }
 
-    // Definir colores base
     const coloresBase = [
         '#003366', '#FFC107', '#28a745', '#dc3545',
         '#6c757d', '#17a2b8', '#fd7e14', '#6f42c1',
         '#20c997', '#e83e8c', '#6610f2', '#007bff'
     ];
 
-    // Para gráficos de barras, usamos un solo color con opacidad
     const backgroundColor = tipo === 'bar'
         ? 'rgba(0, 51, 102, 0.7)'
         : coloresBase.slice(0, dataData.length);
@@ -91,7 +90,6 @@ function crearGrafico(canvasId, tipo, labelsData, dataData, label, opcionesExtra
         }
     };
 
-    // Mezclar opciones extra si se proporcionan
     if (opcionesExtra) {
         config.options = { ...config.options, ...opcionesExtra };
     }
@@ -124,6 +122,12 @@ function initGeneralCharts() {
         const data = obtenerDatosJson('data_pastel');
         chartGeneralPie = crearGrafico('graficoPastelReportes', 'pie', labels, data, 'Distribución por Carrera');
     }
+
+    if (!chartGeneralJornada) {
+        const labels = obtenerDatosJson('labels_jornada');
+        const data = obtenerDatosJson('data_jornada');
+        chartGeneralJornada = crearGrafico('graficoJornadaReportes', 'bar', labels, data, 'Asistentes por Jornada');
+    }
 }
 
 /**
@@ -141,6 +145,12 @@ function initDetalleCharts() {
         const data = obtenerDatosJson('data_pastel_detalle');
         chartDetallePie = crearGrafico('graficoPastelDetalle', 'pie', labels, data, 'Distribución por Carrera');
     }
+
+    if (!chartDetalleJornada) {
+        const labels = obtenerDatosJson('labels_jornada_detalle');
+        const data = obtenerDatosJson('data_jornada_detalle');
+        chartDetalleJornada = crearGrafico('graficoJornadaDetalle', 'bar', labels, data, 'Asistentes por Jornada');
+    }
 }
 
 /**
@@ -149,8 +159,10 @@ function initDetalleCharts() {
 function destroyAllCharts() {
     if (chartGeneralBar) { chartGeneralBar.destroy(); chartGeneralBar = null; }
     if (chartGeneralPie) { chartGeneralPie.destroy(); chartGeneralPie = null; }
+    if (chartGeneralJornada) { chartGeneralJornada.destroy(); chartGeneralJornada = null; }
     if (chartDetalleBar) { chartDetalleBar.destroy(); chartDetalleBar = null; }
     if (chartDetallePie) { chartDetallePie.destroy(); chartDetallePie = null; }
+    if (chartDetalleJornada) { chartDetalleJornada.destroy(); chartDetalleJornada = null; }
 }
 
 // =============================================================
@@ -163,22 +175,38 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    // Inicializar gráficos generales (visibles por defecto)
     initGeneralCharts();
 
-    // Escuchar el cambio de pestaña para inicializar los gráficos detallados
-    const detalleTab = document.getElementById('detallado-tab');
-    if (detalleTab) {
-        detalleTab.addEventListener('shown.bs.tab', function () {
-            setTimeout(function () {
-                initDetalleCharts();
-            }, 200);
-        });
-    }
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
 
-    // Si la pestaña detallado ya está activa al cargar (por si se guarda estado)
-    const tabDetallado = document.getElementById('detallado');
-    if (tabDetallado && tabDetallado.classList.contains('active')) {
-        setTimeout(initDetalleCharts, 300);
-    }
+    tabButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const targetId = this.dataset.tab;
+
+            tabButtons.forEach(function (b) {
+                b.classList.remove('active');
+                b.setAttribute('aria-selected', 'false');
+            });
+            tabContents.forEach(function (c) {
+                c.classList.remove('active');
+                c.hidden = true;
+            });
+
+            this.classList.add('active');
+            this.setAttribute('aria-selected', 'true');
+
+            const targetContent = document.getElementById(targetId);
+            if (targetContent) {
+                targetContent.classList.add('active');
+                targetContent.hidden = false;
+            }
+
+            if (targetId === 'detallado-tab') {
+                setTimeout(function () {
+                    initDetalleCharts();
+                }, 100);
+            }
+        });
+    });
 });

@@ -1,4 +1,5 @@
 {% load static %}
+
 <form method="post"
       action="{{ request.path }}"
       id="formActividad"
@@ -9,202 +10,221 @@
     {% if form.non_field_errors %}
         <div class="alert alert-danger" role="alert">
             {% for error in form.non_field_errors %}
-                <div><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+                <div>⚠ {{ error }}</div>
             {% endfor %}
         </div>
     {% endif %}
 
-    <div class="row">
-        <!-- Columna Izquierda -->
-        <div class="col-md-6">
-            <div class="mb-3">
-                <label for="{{ form.titulo.id_for_label }}" class="form-label fw-bold">
-                    Nombre <span class="text-danger">*</span>
+    <div class="form-2col">
+
+        <!-- ============================================================ -->
+        <!-- COLUMNA IZQUIERDA -->
+        <!-- ============================================================ -->
+        <div class="form-col">
+
+            <div class="form-field">
+                <label for="{{ form.titulo.id_for_label }}">
+                    Nombre <span class="required">*</span>
                 </label>
                 {{ form.titulo }}
                 {% if form.titulo.errors %}
-                    <div class="text-danger small mt-1">{{ form.titulo.errors.0 }}</div>
+                    <span class="field-error">{{ form.titulo.errors.0 }}</span>
                 {% endif %}
             </div>
 
-            <div class="mb-3">
-                <label for="{{ form.descripcion.id_for_label }}" class="form-label fw-bold">
-                    Descripción <span class="text-danger">*</span>
+            <div class="form-field">
+                <label for="{{ form.descripcion.id_for_label }}">
+                    Descripción <span class="required">*</span>
                 </label>
                 {{ form.descripcion }}
                 {% if form.descripcion.errors %}
-                    <div class="text-danger small mt-1">{{ form.descripcion.errors.0 }}</div>
+                    <span class="field-error">{{ form.descripcion.errors.0 }}</span>
                 {% endif %}
             </div>
 
-            <div class="mb-3">
-                <label for="{{ form.tipo.id_for_label }}" class="form-label fw-bold">
-                    Tipo <span class="text-danger">*</span>
+            <div class="form-field">
+                <label for="{{ form.tipo.id_for_label }}">
+                    Tipo <span class="required">*</span>
                 </label>
                 {{ form.tipo }}
                 {% if form.tipo.errors %}
-                    <div class="text-danger small mt-1">{{ form.tipo.errors.0 }}</div>
+                    <span class="field-error">{{ form.tipo.errors.0 }}</span>
                 {% endif %}
             </div>
 
-            <div class="mb-3">
-                <label for="{{ form.lugar.id_for_label }}" class="form-label fw-bold">
-                    Lugar <span class="text-danger">*</span>
+            <div class="form-field">
+                <label for="{{ form.lugar.id_for_label }}">
+                    Lugar <span class="required">*</span>
                 </label>
                 {{ form.lugar }}
                 {% if form.lugar.errors %}
-                    <div class="text-danger small mt-1">{{ form.lugar.errors.0 }}</div>
+                    <span class="field-error">{{ form.lugar.errors.0 }}</span>
                 {% endif %}
             </div>
 
-            <div class="row">
-                <div class="col-6 mb-3">
-                    <label for="{{ form.fecha_inicio.id_for_label }}" class="form-label fw-bold">
-                        Fecha Inicio <span class="text-danger">*</span>
+            <div class="form-row-2">
+                <div class="form-field">
+                    <label for="{{ form.fecha_inicio.id_for_label }}">
+                        Fecha Inicio <span class="required">*</span>
                     </label>
                     {{ form.fecha_inicio }}
                     {% if form.fecha_inicio.errors %}
-                        <div class="text-danger small mt-1">{{ form.fecha_inicio.errors.0 }}</div>
+                        <span class="field-error">{{ form.fecha_inicio.errors.0 }}</span>
                     {% endif %}
                 </div>
-                <div class="col-6 mb-3">
-                    <label for="{{ form.fecha_fin.id_for_label }}" class="form-label fw-bold">
-                        Fecha Término <span class="text-danger">*</span>
+                <div class="form-field">
+                    <label for="{{ form.fecha_fin.id_for_label }}">
+                        Fecha Término <span class="required">*</span>
                     </label>
                     {{ form.fecha_fin }}
                     {% if form.fecha_fin.errors %}
-                        <div class="text-danger small mt-1">{{ form.fecha_fin.errors.0 }}</div>
+                        <span class="field-error">{{ form.fecha_fin.errors.0 }}</span>
                     {% endif %}
                 </div>
             </div>
 
-            <!-- Campos de cupos (ocultos para MASIVA vía JS) -->
-            <div id="campos-cupos">
-                <div class="mb-3">
-                    <label for="{{ form.cupos_totales.id_for_label }}" class="form-label fw-bold">
-                        Cupo Máximo
-                    </label>
-                    {{ form.cupos_totales }}
-                    <small class="text-muted">Solo aplica para TALLER.</small>
-                    {% if form.cupos_totales.errors %}
-                        <div class="text-danger small mt-1">{{ form.cupos_totales.errors.0 }}</div>
-                    {% endif %}
-                </div>
+            <div class="form-field" id="campos-cupos">
+                <label for="{{ form.cupos_totales.id_for_label }}">
+                    Cupo Máximo
+                </label>
+                {{ form.cupos_totales }}
+                <small class="input-help">Solo aplica para TALLER.</small>
+                {% if form.cupos_totales.errors %}
+                    <span class="field-error">{{ form.cupos_totales.errors.0 }}</span>
+                {% endif %}
             </div>
+
         </div>
 
-        <!-- Columna Derecha -->
-        <div class="col-md-6">
-            <!-- Imagen -->
-            <div class="mb-3">
-                <label class="form-label fw-bold">Imagen/Banner Taller</label>
+        <!-- ============================================================ -->
+        <!-- COLUMNA DERECHA -->
+        <!-- ============================================================ -->
+        <div class="form-col">
+
+            <div class="form-field">
+                <label>Imagen / Banner</label>
                 <div id="drop-area" class="zona-drop">
-                    <i class="fas fa-cloud-upload-alt fa-2x text-muted"></i>
-                    <p class="mb-0 text-muted small">Arrastra imagen aquí o<br>clic para seleccionar</p>
-                    <small class="text-muted">200x150px</small>
+                    <div class="drop-icon">▣</div>
+                    <p>Arrastra una imagen aquí o haz clic para seleccionar</p>
+                    <small>Formato recomendado: 200x150px</small>
                     <input type="file"
                            name="imagen"
                            id="id_imagen"
                            accept="image/*"
-                           class="d-none">
+                           hidden>
                 </div>
-                <div id="preview-container" class="mt-2 text-center"></div>
+                <div id="preview-container"></div>
                 {% if form.imagen.errors %}
-                    <div class="text-danger small mt-1">{{ form.imagen.errors.0 }}</div>
+                    <span class="field-error">{{ form.imagen.errors.0 }}</span>
                 {% endif %}
             </div>
 
-            <!-- CARRERAS ASOCIADAS (agrupadas dinámicamente por escuela) -->
-            <div class="mb-3">
-                <label class="form-label fw-bold mb-2">
-                    Carreras Asociadas <span class="text-danger">*</span>
+            <div class="form-field">
+                <label>
+                    Carreras Asociadas <span class="required">*</span>
                 </label>
                 {% if form.carreras.errors %}
-                    <div class="text-danger small mb-1">{{ form.carreras.errors.0 }}</div>
+                    <span class="field-error">{{ form.carreras.errors.0 }}</span>
                 {% endif %}
 
-                {% regroup form.carreras.field.queryset by escuela as carreras_por_escuela %}
-                {% for grupo in carreras_por_escuela %}
-                    <div class="border rounded p-2 mb-2 grupo-carreras">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <strong class="small text-primary">
-                                {{ grupo.grouper|default:"Sin escuela asignada" }}
-                            </strong>
-                            <button type="button"
-                                    class="btn btn-sm btn-outline-primary btn-select-all"
-                                    data-group="escuela-{{ forloop.counter }}"
-                                    aria-label="Seleccionar todas las carreras de {{ grupo.grouper|default:'esta escuela' }}">
-                                Agregar todas
-                            </button>
-                        </div>
-                        {% for carrera in grupo.list %}
-                            <div class="form-check">
-                                <input class="form-check-input carrera-checkbox"
-                                       type="checkbox"
-                                       name="carreras"
-                                       value="{{ carrera.id }}"
-                                       id="id_carreras_{{ carrera.id }}"
-                                       data-group="escuela-{{ forloop.parentloop.counter }}"
-                                       {% if form.carreras.value and carrera.id in form.carreras.value %}checked{% endif %}>
-                                <label class="form-check-label" for="id_carreras_{{ carrera.id }}">
-                                    {{ carrera.nombre }}
-                                </label>
+                <div class="career-selector-body">
+                    {% regroup form.carreras.field.queryset by escuela as carreras_por_escuela %}
+                    {% for grupo in carreras_por_escuela %}
+                        <div class="career-group">
+                            <div class="career-group-head">
+                                <strong>{{ grupo.grouper|default:"Sin escuela asignada" }}</strong>
+                                <button type="button"
+                                        class="career-action secondary btn-select-all"
+                                        data-group="escuela-{{ forloop.counter }}">
+                                    Agregar todas
+                                </button>
                             </div>
-                        {% endfor %}
-                    </div>
-                {% empty %}
-                    <small class="text-muted">No hay carreras registradas.</small>
-                {% endfor %}
+                            {% for carrera in grupo.list %}
+                                <label class="career-option">
+                                    <input type="checkbox"
+                                           name="carreras"
+                                           value="{{ carrera.id }}"
+                                           class="carrera-checkbox"
+                                           data-group="escuela-{{ forloop.parentloop.counter }}"
+                                           {% if form.carreras.value and carrera.id in form.carreras.value %}checked{% endif %}>
+                                    <span>{{ carrera.nombre }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    {% empty %}
+                        <p class="text-muted">No hay carreras registradas.</p>
+                    {% endfor %}
+                </div>
             </div>
 
-            <!-- JORNADAS ASOCIADAS -->
-            <div class="mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <label class="form-label fw-bold mb-0">
-                        Jornadas Asociadas <span class="text-danger">*</span>
+            <div class="form-field">
+                <div class="career-group-head">
+                    <label style="margin: 0;">
+                        Jornadas Asociadas <span class="required">*</span>
                     </label>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="check_all_jornadas">
-                        <label class="form-check-label small fw-bold" for="check_all_jornadas">
-                            Agregar todas
-                        </label>
-                    </div>
+                    <label class="check-line">
+                        <input type="checkbox" id="check_all_jornadas">
+                        <span>Agregar todas</span>
+                    </label>
                 </div>
                 {% if form.jornadas.errors %}
-                    <div class="text-danger small mb-1">{{ form.jornadas.errors.0 }}</div>
+                    <span class="field-error">{{ form.jornadas.errors.0 }}</span>
                 {% endif %}
-                <div class="caja-jornadas">
-                    <div class="d-flex flex-wrap gap-3">
-                        {% for jornada in form.jornadas.field.queryset %}
-                            <div class="form-check">
-                                <input class="form-check-input jornada-checkbox"
-                                       type="checkbox"
-                                       name="jornadas"
-                                       value="{{ jornada.id }}"
-                                       id="id_jornadas_{{ jornada.id }}"
-                                       {% if form.jornadas.value and jornada.id in form.jornadas.value %}checked{% endif %}>
-                                <label class="form-check-label" for="id_jornadas_{{ jornada.id }}">
-                                    {{ jornada.nombre }}
-                                </label>
-                            </div>
-                        {% empty %}
-                            <small class="text-muted">No hay jornadas registradas.</small>
-                        {% endfor %}
-                    </div>
+
+                <div class="schedule-options">
+                    {% for jornada in form.jornadas.field.queryset %}
+                        <label class="schedule-option">
+                            <input type="checkbox"
+                                   name="jornadas"
+                                   value="{{ jornada.id }}"
+                                   class="jornada-checkbox"
+                                   {% if form.jornadas.value and jornada.id in form.jornadas.value %}checked{% endif %}>
+                            <span>{{ jornada.nombre }}</span>
+                        </label>
+                    {% empty %}
+                        <p class="text-muted">No hay jornadas registradas.</p>
+                    {% endfor %}
                 </div>
             </div>
+
         </div>
     </div>
 
-    <!-- Botones -->
-    <div class="mt-4 d-flex gap-2 justify-content-end">
-        <button type="submit" class="btn btn-primary btn-guardar-actividad">
-            <i class="fas fa-save"></i> Guardar
-        </button>
+    <!-- ============================================================ -->
+    <!-- SECCIÓN DE INVITACIONES (solo en edición) -->
+    <!-- ============================================================ -->
+    {% if form.instance.pk %}
+    <div class="invitaciones-section">
+        <h3>✉ Invitaciones por Correo Electrónico</h3>
+        <div class="invitaciones-actions">
+            <button type="button"
+                    class="btn"
+                    id="btnEnviarInvitaciones"
+                    data-actividad-id="{{ form.instance.pk }}">
+                ✉ Enviar invitación / aviso por correo
+            </button>
+            <span class="text-muted" id="estadoInvitaciones"></span>
+        </div>
+    </div>
+    {% else %}
+    <div class="invitaciones-section info">
+        <p class="text-muted">
+            ✉ Las invitaciones se podrán enviar después de guardar la actividad.
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- ============================================================ -->
+    <!-- BOTONES DEL FORMULARIO -->
+    <!-- ============================================================ -->
+    <div class="form-actions">
         <button type="button"
-                class="btn btn-secondary btn-cancelar-modal"
-                data-bs-dismiss="modal">
-            <i class="fas fa-times"></i> Cancelar
+                class="btn secondary"
+                data-modal-close>
+            × Cancelar
+        </button>
+        <button type="submit" class="btn" id="btnGuardarActividad">
+            ✓ Guardar
         </button>
     </div>
 </form>

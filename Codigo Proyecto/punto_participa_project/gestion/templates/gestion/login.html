@@ -11,117 +11,119 @@
     <title>Iniciar sesión - Punto Participa</title>
 
     <link rel="icon" href="{% static 'gestion/img/logo_duoc.png' %}" type="image/png">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'gestion/css/login.css' %}">
+    <link rel="stylesheet" href="{% static 'gestion/css/styles.css' %}">
 </head>
 
 <body>
 
-    <!-- ============================================================ -->
-    <!-- HEADER -->
-    <!-- ============================================================ -->
-    <header class="header">
-        <img src="{% static 'gestion/img/duoc.png' %}"
-             alt="Punto Participa Duoc"
-             width="180" height="75">
-        <img src="{% static 'gestion/img/logo_duoc.png' %}"
-             alt="Duoc UC"
-             width="120" height="70">
-    </header>
+    <div id="app" class="site-shell">
 
-    <!-- ============================================================ -->
-    <!-- CONTENIDO -->
-    <!-- ============================================================ -->
-    <main class="contenido" id="main-content">
-        <div class="contenedor-grid">
+        <!-- ============================================================ -->
+        <!-- LOGIN VIEW -->
+        <!-- ============================================================ -->
+        <section id="login-view" class="view login-view" aria-labelledby="login-title">
 
-            <!-- Círculo de Bienvenida -->
-            <div class="circulo-bienvenida" aria-hidden="true">
-                Bienvenido<br>al sistema de<br>gestión de<br>actividades
-            </div>
+            <!-- Header -->
+            <header class="brand-header">
+                <img class="project-logo"
+                     src="{% static 'gestion/img/duoc.png' %}"
+                     alt="Punto Participa Duoc UC">
+                <img class="duoc-logo"
+                     src="{% static 'gestion/img/logo_duoc.png' %}"
+                     alt="Duoc UC">
+            </header>
 
-            <!-- Formulario de Login -->
-            <div class="card-login">
-                <h1>Iniciar sesión</h1>
+            <!-- Layout principal -->
+            <div class="login-layout">
 
-                <!-- Mensajes de error/éxito -->
-                {% if messages %}
-                    <div class="mb-3">
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-                            </div>
-                        {% endfor %}
+                <!-- Columna izquierda: copy -->
+                <div class="login-copy">
+                    <span class="eyebrow">SEDE ALAMEDA</span>
+                    <h1 id="login-title">Haz que cada encuentro cuente.</h1>
+                    <p>
+                        Organiza experiencias que conectan a la comunidad estudiantil
+                        y simplifica cada etapa de participación.
+                    </p>
+                    <div class="welcome-note">
+                        <strong>Todo en un mismo lugar</strong>
+                        <span>Planifica, convoca y acompaña la participación de tus estudiantes.</span>
                     </div>
-                {% endif %}
+                    <div class="welcome-features" aria-label="Funciones principales">
+                        <span>Actividades</span>
+                        <span>Inscripciones</span>
+                        <span>Asistencia</span>
+                    </div>
+                </div>
 
-                <!-- Formulario -->
-                <form method="POST" action="{% url 'login' %}" id="login-form" novalidate>
+                <!-- Columna derecha: card de login -->
+                <form id="login-form" class="card login-card" method="POST" action="{% url 'login' %}" novalidate>
                     {% csrf_token %}
 
+                    <!-- Mascota / ilustración -->
+                    <img class="login-guide"
+                         src="{% static 'gestion/img/acceso.png' %}"
+                         alt="Mascota de Punto Participa indicando el acceso"
+                         onerror="this.style.display='none'">
+
+                    <h2>Bienvenido</h2>
+                    <p>Ingresa con tu cuenta registrada</p>
+
+                    <!-- Mensajes de Django -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
                     <!-- Campo Usuario -->
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Usuario</label>
+                    <label for="username">
+                        Usuario
                         <input type="text"
-                               class="form-control"
                                id="username"
                                name="username"
                                placeholder="pa.rebolledoa"
                                autocomplete="username"
                                required
                                autofocus>
-                    </div>
+                    </label>
 
                     <!-- Campo Contraseña -->
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Contraseña</label>
-                        <div class="input-group">
+                    <label for="password">
+                        Contraseña
+                        <span class="password-wrapper">
                             <input type="password"
-                                   class="form-control"
                                    id="password"
                                    name="password"
-                                   placeholder=""
                                    autocomplete="current-password"
                                    minlength="8"
                                    required>
                             <button type="button"
-                                    class="btn btn-outline-secondary"
+                                    class="toggle-password"
                                     id="toggle-password"
-                                    aria-label="Mostrar contraseña">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
+                                    aria-label="Mostrar contraseña">◎</button>
+                        </span>
+                    </label>
 
                     <!-- Botón de envío -->
-                    <button type="submit" class="btn btn-login">Ingresar</button>
+                    <button class="btn" type="submit">
+                        Ingresar al sistema <span>→</span>
+                    </button>
 
                     <!-- Enlace de recuperación -->
-                    <a href="#" class="link-password">¿Olvidaste tu contraseña?</a>
+                    <a href="#">¿Olvidaste tu contraseña?</a>
                 </form>
-            </div>
-        </div>
-    </main>
 
-    <!-- ============================================================ -->
-    <!-- FOOTER -->
-    <!-- ============================================================ -->
-    <footer class="footer">
-        <div>Punto Estudiantil - Sede Alameda Duoc UC</div>
-        <div class="enlaces">
-            <a href="#">Soporte Técnico</a>
-            <span>2026</span>
-            <a href="https://www.duoc.cl" target="_blank" rel="noopener">www.duoc.cl</a>
-        </div>
-    </footer>
+            </div>
+
+        </section>
+
+    </div>
 
     <!-- ============================================================ -->
     <!-- SCRIPTS -->
     <!-- ============================================================ -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'gestion/js/login.js' %}"></script>
 </body>
 

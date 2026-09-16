@@ -273,9 +273,15 @@ def reportes(request):
 
     ids_actividades_filtradas = list(actividades_qs.values_list('id', flat=True))
 
+    # ============================================================
+    # Datos para el gráfico de barras (asistentes por actividad)
+    # ============================================================
     labels_barras = [act.titulo for act in actividades_qs]
     data_barras = [act.total_asistentes_calc for act in actividades_qs]
 
+    # ============================================================
+    # Datos para el gráfico de pastel (asistentes por carrera)
+    # ============================================================
     asistencias_por_carrera = (
         Asistencia.objects
         .filter(actividad_id__in=ids_actividades_filtradas)
@@ -286,6 +292,22 @@ def reportes(request):
     labels_pastel = [item['alumno__carrera'] for item in asistencias_por_carrera]
     data_pastel = [item['total'] for item in asistencias_por_carrera]
 
+    # ============================================================
+    # Datos para el gráfico de barras por JORNADA (pestaña General)
+    # ============================================================
+    asistencias_por_jornada = (
+        Asistencia.objects
+        .filter(actividad_id__in=ids_actividades_filtradas)
+        .values('alumno__jornada')
+        .annotate(total=Count('id'))
+        .order_by('-total')
+    )
+    labels_jornada = [item['alumno__jornada'] or 'Sin jornada' for item in asistencias_por_jornada]
+    data_jornada = [item['total'] for item in asistencias_por_jornada]
+
+    # ============================================================
+    # Registros por actividad (para columna "Registrado por")
+    # ============================================================
     registros_por_actividad = {}
     registros_qs = (
         Asistencia.objects
@@ -306,6 +328,9 @@ def reportes(request):
         act.creador = act.creado_por.username if act.creado_por else 'N/A'
         act.registrado_por_detalle = ", ".join(registros_por_actividad.get(act.id, [])) or "Sin registros"
 
+    # ============================================================
+    # Datos detallados por escuela y carrera
+    # ============================================================
     detalle_data = []
     detalle_escuelas = defaultdict(int)
     detalle_carreras = defaultdict(int)
@@ -357,6 +382,15 @@ def reportes(request):
     labels_pastel_detalle = list(detalle_carreras.keys())
     data_pastel_detalle = list(detalle_carreras.values())
 
+    # ============================================================
+    # Datos por JORNADA para el detallado
+    # ============================================================
+    labels_jornada_detalle = labels_jornada
+    data_jornada_detalle = data_jornada
+
+    # ============================================================
+    # Opciones para filtros
+    # ============================================================
     if es_creador and not es_admin:
         actividades_opciones = Actividad.objects.filter(creado_por=request.user).order_by('-fecha_inicio')
     else:
@@ -368,11 +402,15 @@ def reportes(request):
         'data_barras': data_barras,
         'labels_pastel': labels_pastel,
         'data_pastel': data_pastel,
+        'labels_jornada': labels_jornada,
+        'data_jornada': data_jornada,
         'detalle_data': detalle_data,
         'labels_barras_detalle': labels_barras_detalle,
         'data_barras_detalle': data_barras_detalle,
         'labels_pastel_detalle': labels_pastel_detalle,
         'data_pastel_detalle': data_pastel_detalle,
+        'labels_jornada_detalle': labels_jornada_detalle,
+        'data_jornada_detalle': data_jornada_detalle,
         'actividades_opciones': actividades_opciones,
         'carreras_opciones': Carrera.objects.all(),
         'jornadas_opciones': Jornada.objects.all(),

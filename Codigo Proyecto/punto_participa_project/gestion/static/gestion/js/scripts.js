@@ -2,9 +2,10 @@
 // Punto Participa - Scripts personalizados (globales)
 // ============================================================
 //
-// IMPORTANTE: Este archivo NO debe contener lógica del escáner.
-// La lógica del escáner vive únicamente en escaneo.js
-// (que solo se carga en /escaneo/, vía {% block extra_js %}).
+// IMPORTANTE:
+// - Este archivo NO debe contener lógica del escáner.
+//   La lógica del escáner vive únicamente en escaneo.js.
+// - Sistema de modales propio (sin Bootstrap).
 // ============================================================
 
 // ============================================================
@@ -35,7 +36,107 @@ function escapeHtml(texto) {
 }
 
 // ============================================================
-// MODAL GLOBAL DE MENSAJES
+// SISTEMA DE MODALES (sin Bootstrap)
+// ============================================================
+//
+// API:
+//   openModal(elemento o selector)  → Abre el modal
+//   closeModal(elemento o selector) → Cierra el modal
+//   closeAllModals()                → Cierra todos los modales
+//
+// El modal debe tener la estructura:
+//   <div class="modal-backdrop" id="miModal" hidden>
+//     <section class="modal" role="dialog" aria-modal="true">
+//       <header>
+//         <button data-modal-close>Cerrar</button>
+//       </header>
+//       <div>Contenido</div>
+//     </section>
+//   </div>
+// ============================================================
+
+let _ultimoFocoAntesDeModal = null;
+
+function openModal(modalOrSelector) {
+    const modal = typeof modalOrSelector === 'string'
+        ? document.querySelector(modalOrSelector)
+        : modalOrSelector;
+
+    if (!modal) {
+        console.warn('openModal: modal no encontrado', modalOrSelector);
+        return;
+    }
+
+    // Guardar el elemento que tenía el foco para restaurarlo al cerrar
+    _ultimoFocoAntesDeModal = document.activeElement;
+
+    // Mostrar el modal (quitar el atributo hidden)
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+
+    // Bloquear scroll del body
+    document.body.style.overflow = 'hidden';
+
+    // Foco al primer elemento focusable dentro del modal
+    const focusable = modal.querySelector('input, select, textarea, button, a[href]');
+    if (focusable) {
+        focusable.focus();
+    }
+}
+
+function closeModal(modalOrSelector) {
+    const modal = typeof modalOrSelector === 'string'
+        ? document.querySelector(modalOrSelector)
+        : modalOrSelector;
+
+    if (!modal) return;
+
+    // Ocultar el modal
+    modal.hidden = true;
+    modal.setAttribute('aria-hidden', 'true');
+
+    // Restaurar scroll del body
+    document.body.style.overflow = '';
+
+    // Restaurar el foco al elemento que lo tenía antes
+    if (_ultimoFocoAntesDeModal && document.body.contains(_ultimoFocoAntesDeModal)) {
+        _ultimoFocoAntesDeModal.focus();
+    }
+    _ultimoFocoAntesDeModal = null;
+}
+
+function closeAllModals() {
+    document.querySelectorAll('.modal-backdrop').forEach(function (modal) {
+        modal.hidden = true;
+        modal.setAttribute('aria-hidden', 'true');
+    });
+    document.body.style.overflow = '';
+}
+
+// Listener global: cerrar modales con click en backdrop o botón [data-modal-close]
+document.addEventListener('click', function (e) {
+    // Botón con data-modal-close
+    if (e.target.closest('[data-modal-close]')) {
+        const modal = e.target.closest('.modal-backdrop');
+        if (modal) closeModal(modal);
+    }
+
+    // Click directo en el backdrop (fuera del contenido del modal)
+    if (e.target.classList.contains('modal-backdrop')) {
+        closeModal(e.target);
+    }
+});
+
+// Listener global: cerrar con Escape
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        const abierto = document.querySelector('.modal-backdrop:not([hidden])');
+        if (abierto) closeModal(abierto);
+    }
+});
+
+// ============================================================
+// MOSTRAR MENSAJES (alertas y modal global)
 // ============================================================
 
 function abrirModalGlobal(titulo, mensaje, tipo) {
@@ -46,41 +147,51 @@ function abrirModalGlobal(titulo, mensaje, tipo) {
         return;
     }
 
-    let headerClass = 'bg-primary text-white';
+    let headerClass = '';
     let tituloDefault = 'Aviso del Sistema';
     if (tipo === 'danger') {
-        headerClass = 'bg-danger text-white';
+        headerClass = 'bg-danger';
         tituloDefault = 'Error';
     } else if (tipo === 'success') {
-        headerClass = 'bg-success text-white';
+        headerClass = 'bg-success';
         tituloDefault = 'Éxito';
     } else if (tipo === 'warning') {
-        headerClass = 'bg-warning text-dark';
+        headerClass = 'bg-warning';
         tituloDefault = 'Advertencia';
     }
 
-    const modalHeader = document.getElementById('globalMessageHeader');
     const modalTitle = document.getElementById('globalMessageTitle');
     const modalBody = document.getElementById('globalMessageBody');
 
-    if (modalHeader) modalHeader.className = 'modal-header ' + headerClass;
     if (modalTitle) modalTitle.textContent = titulo || tituloDefault;
     if (modalBody) modalBody.innerHTML = mensaje;
 
-    const modalInstance = bootstrap.Modal.getOrCreateInstance(modalGlobal);
-    modalInstance.show();
+    openModal(modalGlobal);
 }
 
 function mostrarMensaje(mensaje, tipo) {
-    const alerta = document.createElement('div');
-    alerta.className = 'alert alert-' + tipo + ' alert-dismissible fade show';
-    alerta.innerHTML = escapeHtml(mensaje) +
-        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>';
-    const container = document.querySelector('main') || document.body;
-    if (container) {
-        container.prepend(alerta);
-        setTimeout(function () { alerta.remove(); }, 4000);
+    // Buscar un toast global existente o crear uno
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        toast.className = 'toast';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        document.body.appendChild(toast);
     }
+
+    toast.textContent = mensaje;
+    toast.className = 'toast';
+    if (tipo === 'danger' || tipo === 'error') {
+        toast.classList.add('error');
+    }
+    toast.hidden = false;
+
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(function () {
+        toast.hidden = true;
+    }, 4000);
 }
 
 // ============================================================
@@ -124,29 +235,6 @@ function inicializarFormularioActividad() {
 }
 
 // ============================================================
-// LIMPIAR FONDO OSCURO AL CERRAR CUALQUIER MODAL
-// + Devolver el foco al body para evitar warnings de accesibilidad
-// ============================================================
-
-document.addEventListener('hidden.bs.modal', function (e) {
-    // 1. Limpiar backdrops huérfanos
-    document.querySelectorAll('.modal-backdrop').forEach(function (backdrop) {
-        backdrop.classList.remove('show');
-        backdrop.remove();
-    });
-
-    // 2. Quitar la clase modal-open del body
-    document.body.classList.remove('modal-open');
-
-    // 3. Devolver el foco al body si estaba dentro del modal que se cerró
-    //    Esto evita el warning "Blocked aria-hidden on an element because
-    //    its descendant retained focus".
-    if (document.activeElement && e.target.contains(document.activeElement)) {
-        document.activeElement.blur();
-    }
-});
-
-// ============================================================
 // EVENTOS GLOBALES: change
 // ============================================================
 
@@ -172,7 +260,7 @@ document.addEventListener('change', function (e) {
                     previewContainer = document.createElement('div');
                     previewContainer.id = 'preview-container';
                     previewContainer.className = 'mt-2 text-center';
-                    e.target.closest('.mb-3').appendChild(previewContainer);
+                    e.target.closest('.mb-3')?.appendChild(previewContainer);
                 }
                 previewContainer.innerHTML =
                     '<img src="' + event.target.result + '" class="img-preview-actividad" alt="Vista previa de la imagen">';
@@ -188,9 +276,7 @@ document.addEventListener('change', function (e) {
 
 document.addEventListener('click', function (e) {
 
-    // ------------------------------------------------------------
     // Seleccionar todas las carreras de una escuela
-    // ------------------------------------------------------------
     if (e.target.closest('.btn-select-all')) {
         const btn = e.target.closest('.btn-select-all');
         const group = btn.getAttribute('data-group');
@@ -200,9 +286,7 @@ document.addEventListener('click', function (e) {
         checkboxes.forEach(function (cb) { cb.checked = !allChecked; });
     }
 
-    // ------------------------------------------------------------
     // Checkbox "todas las jornadas"
-    // ------------------------------------------------------------
     if (e.target && e.target.id === 'check_all_jornadas') {
         const checkAll = e.target.checked;
         document.querySelectorAll('.jornada-checkbox').forEach(function (checkbox) {
@@ -210,25 +294,19 @@ document.addEventListener('click', function (e) {
         });
     }
 
-    // ------------------------------------------------------------
-    // Drop area de imagen (clic)
-    // ------------------------------------------------------------
+    // Drop area de imagen
     if (e.target.closest('#drop-area')) {
         const input = document.getElementById('id_imagen');
         if (input) input.click();
     }
 
-    // ------------------------------------------------------------
     // Botón "Nueva Actividad"
-    // ------------------------------------------------------------
     if (e.target.closest('#btnNuevaActividad')) {
         e.preventDefault();
         cargarFormulario('/actividades/nueva/', 'Crear Actividad');
     }
 
-    // ------------------------------------------------------------
-    // Botón "Editar" (en lista de actividades)
-    // ------------------------------------------------------------
+    // Botón "Editar"
     if (e.target.closest('.btn-editar')) {
         e.preventDefault();
         const btn = e.target.closest('.btn-editar');
@@ -236,9 +314,7 @@ document.addEventListener('click', function (e) {
         cargarFormulario(url, 'Editar Actividad');
     }
 
-    // ------------------------------------------------------------
     // Botón "Ahora no" en modal de invitaciones
-    // ------------------------------------------------------------
     if (e.target.closest('#btnCancelarEnvio')) {
         const modalInv = document.getElementById('modalConfirmarInvitaciones');
         const tipo = modalInv.dataset.tipo;
@@ -246,29 +322,23 @@ document.addEventListener('click', function (e) {
         const msg = document.getElementById('invitacion-message');
         const btnEliminar = document.getElementById('btnEliminarActividad');
 
-        // Si es EDICIÓN → solo cerrar el modal, los cambios ya están guardados
         if (!esNueva) {
-            const modal = bootstrap.Modal.getInstance(modalInv);
-            if (modal) modal.hide();
+            closeModal(modalInv);
             setTimeout(function () { window.location.reload(); }, 300);
             return;
         }
 
-        // Si es CREACIÓN de TALLER → forzar eliminar o enviar
         if (tipo === 'TALLER') {
             msg.className = 'alert alert-danger';
             msg.innerHTML = '<strong>Es obligatorio enviar invitaciones para talleres.</strong><br>Si no deseas enviarlas, debes eliminar la actividad recién creada.';
             btnEliminar.classList.remove('d-none');
             document.getElementById('btnCancelarEnvio').classList.add('d-none');
         } else {
-            // Creación MASIVA → solo cerrar y recargar
             window.location.reload();
         }
     }
 
-    // ------------------------------------------------------------
     // Botón "Eliminar actividad" en modal de invitaciones
-    // ------------------------------------------------------------
     if (e.target.closest('#btnEliminarActividad')) {
         const modalInv = document.getElementById('modalConfirmarInvitaciones');
         const actividadId = modalInv.dataset.actividadId;
@@ -281,8 +351,7 @@ document.addEventListener('click', function (e) {
                 .then(function (response) { return response.json(); })
                 .then(function (data) {
                     if (data.success) {
-                        const modalConfirm = bootstrap.Modal.getInstance(modalInv);
-                        if (modalConfirm) modalConfirm.hide();
+                        closeModal(modalInv);
                         mostrarMensaje('Actividad eliminada correctamente.', 'success');
                         setTimeout(function () { window.location.reload(); }, 1500);
                     } else {
@@ -296,21 +365,17 @@ document.addEventListener('click', function (e) {
         }
     }
 
-    // ------------------------------------------------------------
     // Botón "Enviar" en modal de invitaciones
-    // ------------------------------------------------------------
     if (e.target.closest('#btnConfirmarEnvio')) {
         const modalInv = document.getElementById('modalConfirmarInvitaciones');
         const actividadId = modalInv.dataset.actividadId;
         const btnEnviar = document.getElementById('btnConfirmarEnvio');
         btnEnviar.disabled = true;
-        btnEnviar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+        btnEnviar.innerHTML = '◌ Enviando...';
         enviarInvitaciones(actividadId);
     }
 
-    // ------------------------------------------------------------
-    // PREVISUALIZAR / OCULTAR INVITACIÓN
-    // ------------------------------------------------------------
+    // Previsualizar / ocultar invitación
     if (e.target.closest('#btnVerPrevisualizacion')) {
         const modalInv = document.getElementById('modalConfirmarInvitaciones');
         const actividadId = modalInv.dataset.actividadId;
@@ -321,24 +386,20 @@ document.addEventListener('click', function (e) {
         const info = document.getElementById('invitacion-info-destinatarios');
         const total = document.getElementById('invitacion-total');
 
-        // Si ya está visible → ocultar
         if (!container.classList.contains('d-none')) {
             container.classList.add('d-none');
             iframe.srcdoc = '';
-            btn.innerHTML = '<i class="fas fa-eye"></i> Ver cómo se verá el correo';
+            btn.innerHTML = '◎ Ver cómo se verá el correo';
             return;
         }
 
         if (!actividadId) return;
 
-        // Mostrar previsualización
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
+        btn.innerHTML = '◌ Cargando...';
 
         fetch('/actividades/previsualizar-invitacion/' + actividadId + '/', {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
             credentials: 'same-origin'
         })
             .then(function (response) { return response.json(); })
@@ -358,16 +419,16 @@ document.addEventListener('click', function (e) {
                         ejemplo.textContent = '(ejemplo con: ' + data.alumno_ejemplo + ')';
                     }
 
-                    btn.innerHTML = '<i class="fas fa-eye-slash"></i> Ocultar previsualización';
+                    btn.innerHTML = '◉ Ocultar previsualización';
                 } else {
-                    btn.innerHTML = '<i class="fas fa-eye"></i> Ver cómo se verá el correo';
+                    btn.innerHTML = '◎ Ver cómo se verá el correo';
                     mostrarMensaje(data.message || 'No se pudo previsualizar.', 'danger');
                 }
             })
             .catch(function (error) {
                 console.error('Error al previsualizar:', error);
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-eye"></i> Ver cómo se verá el correo';
+                btn.innerHTML = '◎ Ver cómo se verá el correo';
                 mostrarMensaje('Error al conectar con el servidor.', 'danger');
             });
     }
@@ -396,16 +457,13 @@ document.addEventListener('submit', function (e) {
             .then(function (response) { return response.json(); })
             .then(function (data) {
                 if (data.success) {
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('actividadModal'));
-                    if (modal) modal.hide();
+                    closeModal(document.getElementById('actividadModal'));
 
-                    // Guardar si es nueva o edición en el modal de invitaciones
                     const modalInv = document.getElementById('modalConfirmarInvitaciones');
                     modalInv.dataset.actividadId = data.id;
                     modalInv.dataset.tipo = data.tipo;
                     modalInv.dataset.esNueva = data.es_nueva ? '1' : '0';
 
-                    // Cambiar el texto según sea creación o edición
                     if (data.es_nueva) {
                         document.getElementById('invitacion-texto').innerHTML =
                             '¿Deseas enviar invitaciones por correo a los participantes?';
@@ -414,27 +472,24 @@ document.addEventListener('submit', function (e) {
                             'Actividad actualizada correctamente. ¿Deseas reenviar las invitaciones por correo?';
                     }
 
-                    // Resetear el estado del modal
                     document.getElementById('invitacion-resultado').innerHTML = '';
                     document.getElementById('btnEliminarActividad').classList.add('d-none');
                     document.getElementById('btnCancelarEnvio').classList.remove('d-none');
                     document.getElementById('btnConfirmarEnvio').classList.remove('d-none');
                     document.getElementById('btnConfirmarEnvio').disabled = false;
-                    document.getElementById('btnConfirmarEnvio').innerHTML = '<i class="fas fa-paper-plane"></i> Enviar';
+                    document.getElementById('btnConfirmarEnvio').innerHTML = '➤ Enviar';
                     document.getElementById('invitacion-message').className = 'alert alert-info';
 
-                    // Resetear la previsualización si estaba abierta
                     const previewContainer = document.getElementById('invitacion-preview-container');
                     const previewIframe = document.getElementById('invitacion-preview-iframe');
                     const previewBtn = document.getElementById('btnVerPrevisualizacion');
                     if (previewContainer) previewContainer.classList.add('d-none');
                     if (previewIframe) previewIframe.srcdoc = '';
-                    if (previewBtn) previewBtn.innerHTML = '<i class="fas fa-eye"></i> Ver cómo se verá el correo';
+                    if (previewBtn) previewBtn.innerHTML = '◎ Ver cómo se verá el correo';
                     const infoDest = document.getElementById('invitacion-info-destinatarios');
                     if (infoDest) infoDest.classList.add('d-none');
 
-                    const modalConfirm = new bootstrap.Modal(modalInv);
-                    modalConfirm.show();
+                    openModal(modalInv);
                 } else {
                     if (data.errors) {
                         const errores = JSON.parse(data.errors);
@@ -481,8 +536,7 @@ function enviarInvitaciones(actividadId) {
             const resultado = document.getElementById('invitacion-resultado');
             if (data.success) {
                 resultado.innerHTML = '<div class="alert alert-success">' + escapeHtml(data.message) + '</div>';
-                const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarInvitaciones'));
-                if (modal) modal.hide();
+                closeModal(document.getElementById('modalConfirmarInvitaciones'));
                 setTimeout(function () { window.location.reload(); }, 2000);
             } else {
                 resultado.innerHTML = '<div class="alert alert-danger">' + escapeHtml(data.message) + '</div>';
@@ -519,7 +573,6 @@ function cargarFormulario(url, titulo) {
     })
         .then(function (response) { return response.text(); })
         .then(function (html) {
-            // Detectar si el backend devolvió JSON en vez de HTML
             if (html.trim().startsWith('{')) {
                 let data;
                 try {
@@ -530,10 +583,8 @@ function cargarFormulario(url, titulo) {
                     return;
                 }
 
-                // Caso: requiere confirmación porque la actividad tiene datos
                 if (data.requiere_confirmacion) {
                     if (confirm(data.mensaje)) {
-                        // Usuario aceptó: recargar con forzar_edicion=true
                         const urlForzada = urlConPartial + '&forzar_edicion=true';
                         fetch(urlForzada, {
                             headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -542,10 +593,8 @@ function cargarFormulario(url, titulo) {
                             .then(function (htmlForzado) {
                                 body.innerHTML = htmlForzado;
                                 inicializarFormularioActividad();
-                                const modal = new bootstrap.Modal(document.getElementById('actividadModal'));
-                                modal.show();
+                                openModal(document.getElementById('actividadModal'));
 
-                                // Guardar el flag para que el submit sepa que es forzado
                                 const form = document.getElementById('formActividad');
                                 if (form) {
                                     const hidden = document.createElement('input');
@@ -563,18 +612,15 @@ function cargarFormulario(url, titulo) {
                     return;
                 }
 
-                // Caso: error general
                 if (data.success === false) {
                     abrirModalGlobal('Error', data.message, 'danger');
                     return;
                 }
             }
 
-            // HTML normal: inyectar directamente
             body.innerHTML = html;
             inicializarFormularioActividad();
-            const modal = new bootstrap.Modal(document.getElementById('actividadModal'));
-            modal.show();
+            openModal(document.getElementById('actividadModal'));
         })
         .catch(function (error) {
             console.error('Error al cargar formulario:', error);
@@ -615,7 +661,7 @@ document.addEventListener('submit', function (e) {
 });
 
 // ============================================================
-// MODAL GLOBAL PARA MENSAJES DE DJANGO (messages framework)
+// MODAL GLOBAL PARA MENSAJES DE DJANGO
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function () {

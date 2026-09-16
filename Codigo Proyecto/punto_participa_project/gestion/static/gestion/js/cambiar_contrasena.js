@@ -1,5 +1,6 @@
 // ============================================================
 // cambiar_contrasena.js - Validación y toggle de contraseña
+// Sin Bootstrap: usa estilos propios
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -18,17 +19,16 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.addEventListener('click', function () {
             const targetId = this.dataset.target;
             const input = document.getElementById(targetId);
-            const icon = this.querySelector('i');
 
             if (!input) return;
 
             if (input.type === 'password') {
                 input.type = 'text';
-                if (icon) icon.classList.replace('fa-eye', 'fa-eye-slash');
+                this.textContent = '◉'; // Ojo cerrado (contraseña visible)
                 this.setAttribute('aria-label', 'Ocultar contraseña');
             } else {
                 input.type = 'password';
-                if (icon) icon.classList.replace('fa-eye-slash', 'fa-eye');
+                this.textContent = '◎'; // Ojo abierto (contraseña oculta)
                 this.setAttribute('aria-label', 'Mostrar contraseña');
             }
         });
@@ -47,13 +47,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (/[^A-Za-z0-9]/.test(password)) puntos++;
 
         if (puntos <= 2) {
-            return { nivel: 'Débil', color: 'bg-danger', porcentaje: 25 };
+            return { nivel: 'Débil', color: '#b42318', porcentaje: 25 };
         } else if (puntos <= 4) {
-            return { nivel: 'Media', color: 'bg-warning', porcentaje: 60 };
+            return { nivel: 'Media', color: '#fbb800', porcentaje: 60 };
         } else if (puntos === 5) {
-            return { nivel: 'Fuerte', color: 'bg-success', porcentaje: 80 };
+            return { nivel: 'Fuerte', color: '#158149', porcentaje: 80 };
         } else {
-            return { nivel: 'Muy fuerte', color: 'bg-success', porcentaje: 100 };
+            return { nivel: 'Muy fuerte', color: '#158149', porcentaje: 100 };
         }
     }
 
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (valor.length === 0) {
                 fortalezaBarra.style.width = '0%';
-                fortalezaBarra.className = 'progress-bar';
+                fortalezaBarra.style.background = '#b42318';
                 fortalezaBarra.setAttribute('aria-valuenow', '0');
                 fortalezaTexto.textContent = '';
                 return;
@@ -71,10 +71,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const fortaleza = calcularFortaleza(valor);
             fortalezaBarra.style.width = fortaleza.porcentaje + '%';
-            fortalezaBarra.className = 'progress-bar ' + fortaleza.color;
+            fortalezaBarra.style.background = fortaleza.color;
             fortalezaBarra.setAttribute('aria-valuenow', fortaleza.porcentaje);
             fortalezaTexto.textContent = 'Fortaleza: ' + fortaleza.nivel;
-            fortalezaTexto.className = 'text-muted small';
+            fortalezaTexto.className = 'input-help';
         });
     }
 
@@ -89,16 +89,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (confirmar.length === 0) {
             mensajeCoincidencia.textContent = '';
-            mensajeCoincidencia.className = 'd-block mt-1';
+            mensajeCoincidencia.className = 'input-help';
             return;
         }
 
         if (nueva === confirmar) {
             mensajeCoincidencia.textContent = '✓ Las contraseñas coinciden.';
-            mensajeCoincidencia.className = 'd-block mt-1 text-success small';
+            mensajeCoincidencia.className = 'input-help text-success';
         } else {
             mensajeCoincidencia.textContent = '✗ Las contraseñas no coinciden.';
-            mensajeCoincidencia.className = 'd-block mt-1 text-danger small';
+            mensajeCoincidencia.className = 'input-help text-danger';
         }
     }
 
@@ -116,25 +116,21 @@ document.addEventListener('DOMContentLoaded', function () {
         form.addEventListener('submit', function (e) {
             let valido = true;
 
-            // 1. Contraseña actual no vacía
             if (!inputActual.value.trim()) {
                 mostrarMensaje('Debes ingresar tu contraseña actual.', 'danger');
                 valido = false;
             }
 
-            // 2. Nueva contraseña mínimo 8 caracteres
             if (inputNueva.value.length < 8) {
                 mostrarMensaje('La nueva contraseña debe tener al menos 8 caracteres.', 'danger');
                 valido = false;
             }
 
-            // 3. Contraseñas coinciden
             if (inputNueva.value !== inputConfirmar.value) {
                 mostrarMensaje('Las contraseñas no coinciden.', 'danger');
                 valido = false;
             }
 
-            // 4. La nueva no puede ser igual a la actual
             if (inputNueva.value && inputNueva.value === inputActual.value) {
                 mostrarMensaje('La nueva contraseña no puede ser igual a la actual.', 'danger');
                 valido = false;

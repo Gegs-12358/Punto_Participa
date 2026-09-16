@@ -3,10 +3,9 @@
 // Compatible con pistola Well 9322 (modo Keyboard Wedge)
 // ============================================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const formEscaneo = document.getElementById('formEscaneo');
     const inputRut = document.getElementById('rutInput');
-    const metodoInput = document.getElementById('metodo_ingreso');
 
     const modalConfirmar = document.getElementById('modalConfirmarAsistencia');
     const infoAlumno = document.getElementById('info-alumno');
@@ -18,9 +17,49 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalAvisoBody = document.getElementById('modalAvisoBody');
     const btnAceptarAviso = document.getElementById('btnAceptarAviso');
 
+    // Botón "Cambiar actividad"
+    const btnCambiarActividad = document.getElementById('btnCambiarActividad');
+
     let rutPendiente = '';
 
-    // Si no existe el formulario, no hacemos nada
+    // ============================================================
+    // LISTENERS DE MODALES (siempre, aunque no haya formulario)
+    // ============================================================
+
+    // Botón "Cambiar" → abre el modal de cambiar actividad
+    if (btnCambiarActividad) {
+        btnCambiarActividad.addEventListener('click', function (e) {
+            e.preventDefault();
+            openModal(document.getElementById('cambiarActividadModal'));
+        });
+    }
+
+    // Botón "Aceptar" del modal de aviso
+    if (btnAceptarAviso) {
+        btnAceptarAviso.addEventListener('click', function () {
+            closeModal(modalAviso);
+            if (inputRut) {
+                inputRut.value = '';
+                inputRut.focus();
+            }
+        });
+    }
+
+    // Botones "Cerrar" y "Cancelar" del modal de confirmación
+    [btnCerrarModal, btnCancelar].forEach(function (btn) {
+        if (btn) {
+            btn.addEventListener('click', function () {
+                if (inputRut) {
+                    inputRut.value = '';
+                    inputRut.focus();
+                }
+            });
+        }
+    });
+
+    // ============================================================
+    // SI NO HAY FORMULARIO, NO HACEMOS NADA MÁS
+    // ============================================================
     if (!formEscaneo || !inputRut) return;
 
     // ============================================================
@@ -33,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function mostrarAviso(mensaje) {
         if (!modalAviso || !modalAvisoBody) return;
         modalAvisoBody.innerHTML = '<p class="mb-0">' + mensaje + '</p>';
-        new bootstrap.Modal(modalAviso).show();
+        openModal(modalAviso);
     }
 
     // ============================================================
@@ -61,48 +100,47 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             credentials: 'same-origin'
         })
-        .then(function(response) { return response.json(); })
-        .then(function(data) {
-            if (data.confirmar) {
-                rutPendiente = inputRut.value;
-                if (infoAlumno) {
-                    infoAlumno.innerHTML =
-                        '<strong>' + data.alumno.nombre + '</strong><br>' +
-                        '<span class="text-muted">RUT: ' + data.alumno.rut + '</span><br>' +
-                        '<span class="text-muted">Carrera: ' + data.alumno.carrera + ' - ' + data.alumno.jornada + '</span>';
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (data.confirmar) {
+                    rutPendiente = inputRut.value;
+                    if (infoAlumno) {
+                        infoAlumno.innerHTML =
+                            '<strong>' + data.alumno.nombre + '</strong><br>' +
+                            'RUT: ' + data.alumno.rut + '<br>' +
+                            'Carrera: ' + data.alumno.carrera + ' — ' + data.alumno.jornada;
+                    }
+                    openModal(modalConfirmar);
+                } else if (!data.success) {
+                    mostrarAviso(data.message);
+                } else {
+                    mostrarMensaje(data.message, 'success');
+                    inputRut.value = '';
+                    inputRut.focus();
+                    setTimeout(function () { window.location.reload(); }, 1000);
                 }
-                new bootstrap.Modal(modalConfirmar).show();
-            } else if (!data.success) {
-                mostrarAviso(data.message);
-            } else {
-                mostrarMensaje(data.message, 'success');
-                inputRut.value = '';
-                inputRut.focus();
-                setTimeout(function() { window.location.reload(); }, 1000);
-            }
-        })
-        .catch(function(error) {
-            console.error('Error al registrar asistencia:', error);
-            mostrarAviso('Error al conectar con el servidor.');
-        });
+            })
+            .catch(function (error) {
+                console.error('Error al registrar asistencia:', error);
+                mostrarAviso('Error al conectar con el servidor.');
+            });
     }
 
     // ============================================================
-    // LISTENERS
+    // LISTENERS DEL FORMULARIO
     // ============================================================
     inputRut.focus();
 
     // Pistola Well 9322: detecta el "Enter" que envía la pistola
-    // También funciona con Enter manual
-    inputRut.addEventListener('keydown', function(e) {
+    inputRut.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === 'Tab') {
             e.preventDefault();
             procesarEnvio();
         }
     });
 
-    // Submit del formulario (por si el usuario presiona el botón)
-    formEscaneo.addEventListener('submit', function(e) {
+    // Submit del formulario
+    formEscaneo.addEventListener('submit', function (e) {
         e.preventDefault();
         procesarEnvio();
     });
@@ -111,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // CONFIRMAR ASISTENCIA
     // ============================================================
     if (btnAceptar) {
-        btnAceptar.addEventListener('click', function() {
+        btnAceptar.addEventListener('click', function () {
             if (!rutPendiente) return;
 
             const formData = new FormData(formEscaneo);
@@ -127,50 +165,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 credentials: 'same-origin'
             })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                const modal = bootstrap.Modal.getInstance(modalConfirmar);
-                if (modal) modal.hide();
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    closeModal(modalConfirmar);
 
-                if (data.success) {
-                    mostrarMensaje(data.message, 'success');
-                    inputRut.value = '';
-                    inputRut.focus();
-                    setTimeout(function() { window.location.reload(); }, 1000);
-                } else {
-                    mostrarAviso(data.message);
-                }
-            })
-            .catch(function(error) {
-                console.error('Error al confirmar:', error);
-                mostrarAviso('Error al conectar con el servidor.');
-            });
-        });
-    }
-
-    // ============================================================
-    // CIERRE DE MODALES Y LIMPIEZA
-    // ============================================================
-    [btnCerrarModal, btnCancelar].forEach(function(btn) {
-        if (btn) {
-            btn.addEventListener('click', function() {
-                inputRut.value = '';
-                inputRut.focus();
-            });
-        }
-    });
-
-    if (modalAviso) {
-        modalAviso.addEventListener('hidden.bs.modal', function() {
-            inputRut.value = '';
-            inputRut.focus();
-        });
-    }
-
-    if (btnAceptarAviso) {
-        btnAceptarAviso.addEventListener('click', function() {
-            const modal = bootstrap.Modal.getInstance(modalAviso);
-            if (modal) modal.hide();
+                    if (data.success) {
+                        mostrarMensaje(data.message, 'success');
+                        inputRut.value = '';
+                        inputRut.focus();
+                        setTimeout(function () { window.location.reload(); }, 1000);
+                    } else {
+                        mostrarAviso(data.message);
+                    }
+                })
+                .catch(function (error) {
+                    console.error('Error al confirmar:', error);
+                    mostrarAviso('Error al conectar con el servidor.');
+                });
         });
     }
 });

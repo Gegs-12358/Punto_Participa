@@ -3,111 +3,97 @@
 <!-- ============================================================ -->
 <!-- MODAL PARA CREAR/EDITAR ACTIVIDAD -->
 <!-- ============================================================ -->
-<div class="modal fade"
-     id="actividadModal"
-     tabindex="-1"
-     aria-labelledby="modalLabel"
-     aria-hidden="true"
-     data-bs-backdrop="static">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h4 class="modal-title" id="modalLabel">
-                    <i class="fas fa-calendar-plus"></i> Crear/Editar Actividad
-                </h4>
-                <button type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                        aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Aquí se inyecta actividad_form_partial.html -->
-                <div class="text-center py-5 text-muted">
-                    <i class="fas fa-spinner fa-spin fa-2x"></i>
-                    <p class="mt-2 mb-0">Cargando formulario...</p>
-                </div>
+<div class="modal-backdrop" id="actividadModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalLabel">
+
+        <header class="modal-header">
+            <h2 id="modalLabel">Crear/Editar Actividad</h2>
+            <button type="button"
+                    class="close-button"
+                    data-modal-close
+                    aria-label="Cerrar">×</button>
+        </header>
+
+        <div id="modalBody" class="modal-body">
+            <div class="empty-state">
+                <span>◌</span>
+                <p>Cargando formulario...</p>
             </div>
         </div>
-    </div>
+
+    </section>
 </div>
 
 <!-- ============================================================ -->
 <!-- MODAL DE CONFIRMACIÓN DE INVITACIONES -->
 <!-- ============================================================ -->
-<div class="modal fade"
-     id="modalConfirmarInvitaciones"
-     tabindex="-1"
-     aria-labelledby="modalConfirmarInvitacionesLabel"
-     aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title" id="modalConfirmarInvitacionesLabel">
-                    <i class="fas fa-envelope"></i> Enviar Invitaciones
-                </h5>
-                <button type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"
-                        aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body">
+<div class="modal-backdrop" id="modalConfirmarInvitaciones" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalConfirmarInvitacionesLabel">
 
-                <div id="invitacion-message" class="alert alert-info">
-                    <strong>Actividad guardada correctamente.</strong><br>
+        <header class="modal-header">
+            <h2 id="modalConfirmarInvitacionesLabel">Enviar Invitaciones</h2>
+            <button type="button"
+                    class="close-button"
+                    data-modal-close
+                    aria-label="Cerrar">×</button>
+        </header>
+
+        <div class="modal-body">
+
+            <div id="invitacion-message" class="alert alert-info">
+                <div>
+                    <strong>Actividad guardada correctamente.</strong>
                     <span id="invitacion-texto">¿Deseas enviar invitaciones por correo?</span>
                 </div>
-
-                <!-- Info de destinatarios -->
-                <div id="invitacion-info-destinatarios" class="mb-3 d-none">
-                    <small class="text-muted">
-                        <i class="fas fa-users"></i>
-                        Destinatarios estimados: <strong id="invitacion-total">0</strong>
-                    </small>
-                </div>
-
-                <!-- Botón para cargar la previsualización -->
-                <div class="text-center mb-3">
-                    <button type="button"
-                            class="btn btn-outline-secondary"
-                            id="btnVerPrevisualizacion">
-                        <i class="fas fa-eye"></i> Ver cómo se verá el correo
-                    </button>
-                </div>
-
-                <!-- Área de previsualización (oculta hasta que se cargue) -->
-                <div id="invitacion-preview-container" class="d-none">
-                    <h6 class="border-top pt-3 mb-2">
-                        <i class="fas fa-envelope-open-text"></i> Previsualización
-                        <small class="text-muted" id="invitacion-ejemplo"></small>
-                    </h6>
-                    <div class="border rounded bg-light" style="max-height: 400px; overflow-y: auto;">
-                        <iframe id="invitacion-preview-iframe"
-                                style="width: 100%; min-height: 400px; border: none;"
-                                sandbox="allow-same-origin"
-                                title="Previsualización del correo de invitación"></iframe>
-                    </div>
-                </div>
-
-                <!-- Resultado de envío -->
-                <div id="invitacion-resultado" aria-live="polite"></div>
             </div>
-            <div class="modal-footer">
+
+            <div id="invitacion-info-destinatarios" class="d-none" style="margin-bottom: 15px;">
+                <small class="text-muted">
+                    ◎ Destinatarios estimados: <strong id="invitacion-total">0</strong>
+                </small>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 15px;">
                 <button type="button"
-                        class="btn btn-danger d-none"
-                        id="btnEliminarActividad">
-                    <i class="fas fa-trash"></i> Eliminar actividad
-                </button>
-                <button type="button"
-                        class="btn btn-secondary"
-                        id="btnCancelarEnvio">
-                    <i class="fas fa-times"></i> Ahora no
-                </button>
-                <button type="button"
-                        class="btn btn-primary"
-                        id="btnConfirmarEnvio">
-                    <i class="fas fa-paper-plane"></i> Enviar
+                        class="btn secondary"
+                        id="btnVerPrevisualizacion">
+                    ◎ Ver cómo se verá el correo
                 </button>
             </div>
+
+            <div id="invitacion-preview-container" class="d-none">
+                <h3 style="border-top: 1px solid var(--line); padding-top: 15px; margin-top: 15px; margin-bottom: 10px; font-size: 15px; color: var(--navy);">
+                    ▣ Previsualización
+                    <small class="text-muted" id="invitacion-ejemplo"></small>
+                </h3>
+                <div style="border: 1px solid var(--line); border-radius: 8px; background: var(--surface); max-height: 400px; overflow-y: auto;">
+                    <iframe id="invitacion-preview-iframe"
+                            style="width: 100%; min-height: 400px; border: none;"
+                            sandbox="allow-same-origin"
+                            title="Previsualización del correo de invitación"></iframe>
+                </div>
+            </div>
+
+            <div id="invitacion-resultado" aria-live="polite"></div>
         </div>
-    </div>
+
+        <footer class="modal-footer">
+            <button type="button"
+                    class="btn danger d-none"
+                    id="btnEliminarActividad">
+                ✕ Eliminar actividad
+            </button>
+            <button type="button"
+                    class="btn secondary"
+                    id="btnCancelarEnvio">
+                × Ahora no
+            </button>
+            <button type="button"
+                    class="btn"
+                    id="btnConfirmarEnvio">
+                ➤ Enviar
+            </button>
+        </footer>
+
+    </section>
 </div>

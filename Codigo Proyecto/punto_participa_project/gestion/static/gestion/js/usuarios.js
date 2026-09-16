@@ -6,8 +6,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalElement = document.getElementById('modalUsuario');
     const form = document.getElementById('formUsuario');
 
-    // getCookie se asume definida globalmente en scripts.js
-
     // ============================================================
     // Abrir modal para NUEVO usuario
     // ============================================================
@@ -16,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('modalUsuarioLabel').textContent = 'Crear Usuario';
             form.reset();
             document.getElementById('user_id').value = '';
-            new bootstrap.Modal(modalElement).show();
+            openModal(modalElement);
         });
     }
 
@@ -33,13 +31,12 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('rol').value = this.dataset.rol || '';
             document.getElementById('rut').value = this.dataset.rut || '';
 
-            // Pre-marcar/desmarcar el checkbox "Activo" según el estado real
             const checkboxEstado = document.getElementById('estado');
             if (checkboxEstado) {
                 checkboxEstado.checked = this.dataset.activo === '1';
             }
 
-            new bootstrap.Modal(modalElement).show();
+            openModal(modalElement);
         });
     });
 
@@ -50,10 +47,8 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.addEventListener('click', function () {
             const usuarioId = this.dataset.id;
             const username = this.dataset.username;
-            const accion = this.dataset.accion; // 'bloquear' o 'desbloquear'
+            const accion = this.dataset.accion;
 
-            // Tomar los datos actuales del usuario desde el botón de editar
-            // de la misma fila (que ya tiene todos los data-*)
             const fila = this.closest('tr');
             const btnEditar = fila ? fila.querySelector('.btn-editar-usuario') : null;
 
@@ -69,7 +64,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const rutActual = btnEditar.dataset.rut || '';
             const activoActual = btnEditar.dataset.activo === '1';
 
-            // Confirmar la acción
             let mensajeConfirm;
             if (accion === 'bloquear') {
                 mensajeConfirm = '¿Bloquear a "' + usernameActual + '"?\n\n' +
@@ -83,7 +77,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            // Preparar datos para enviar a /usuarios/guardar/
             const formData = new FormData();
             formData.append('user_id', usuarioId);
             formData.append('username', usernameActual);
@@ -91,14 +84,12 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('email', emailActual);
             formData.append('rol', rolActual);
             formData.append('rut', rutActual);
-            // Invertir el estado actual
             formData.append('estado', activoActual ? 'off' : 'on');
 
-            // Deshabilitar el botón mientras se procesa
             const self = this;
             self.disabled = true;
             const iconOriginal = self.innerHTML;
-            self.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            self.innerHTML = '◌';
 
             fetch('/usuarios/guardar/', {
                 method: 'POST',

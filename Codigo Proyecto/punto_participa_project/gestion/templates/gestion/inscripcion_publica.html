@@ -6,126 +6,142 @@
 <meta name="description" content="Inscríbete en {{ actividad.titulo }} - Punto Estudiantil Duoc UC Sede Alameda">
 {% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'gestion/css/inscripcion.css' %}">
-{% endblock %}
-
 {% block content %}
-<div class="contenedor-workshop">
-    <div class="contenido-workshop">
-        <div class="row">
-            <!-- ============================================================ -->
-            <!-- IMAGEN DEL TALLER -->
-            <!-- ============================================================ -->
-            <div class="col-md-6">
-                {% if actividad.imagen %}
-                    <img src="{{ actividad.imagen.url }}"
-                         alt="Imagen del taller {{ actividad.titulo }}"
-                         class="imagen-taller">
-                {% else %}
-                    <div class="imagen-taller bg-light rounded d-flex align-items-center justify-content-center">
-                        <i class="fas fa-image fa-4x text-muted"></i>
-                    </div>
-                {% endif %}
+
+<div class="enrollment-wrap">
+
+    <div class="event-card card">
+
+        <!-- Logo del evento (opcional) -->
+        <img class="event-logo"
+             src="{% static 'gestion/img/logo.png' %}"
+             alt="Punto Participa Duoc UC"
+             onerror="this.style.display='none'">
+
+        <!-- Banner superior con tipo de actividad -->
+        <div class="event-banner">
+            <div>
+                <span>{{ actividad.get_tipo_display|upper }}</span>
+                <h2>{{ actividad.titulo }}</h2>
+            </div>
+        </div>
+
+        <!-- Cuerpo del evento -->
+        <div class="event-body">
+
+            <!-- Fecha como tile -->
+            <div class="date-tile">
+                <strong>{{ actividad.fecha_inicio|date:"d" }}</strong>
+                <span>{{ actividad.fecha_inicio|date:"M"|upper }}</span>
             </div>
 
-            <!-- ============================================================ -->
-            <!-- INFORMACIÓN DEL TALLER -->
-            <!-- ============================================================ -->
-            <div class="col-md-6">
-                <h1 class="titulo-workshop">{{ actividad.titulo }}</h1>
+            <!-- Info de la actividad -->
+            <div class="event-copy">
+                <h1>{{ actividad.titulo }}</h1>
+                <p>{{ actividad.descripcion }}</p>
+                <ul>
+                    <li><strong>▦ Fecha:</strong>
+                        {{ actividad.fecha_inicio|date:"d \d\e F \d\e Y, H:i" }} —
+                        {{ actividad.fecha_fin|date:"H:i" }}
+                    </li>
+                    <li><strong>⌖ Lugar:</strong> {{ actividad.lugar }}</li>
+                </ul>
+            </div>
 
-                <p class="descripcion-workshop">{{ actividad.descripcion }}</p>
-
-                <p class="info-fecha">
-                    <i class="fas fa-calendar-alt"></i>
-                    {{ actividad.fecha_inicio|date:"d \d\e F \d\e Y, H:i" }} -
-                    {{ actividad.fecha_fin|date:"H:i" }}
-                </p>
-                <p class="info-fecha">
-                    <i class="fas fa-map-marker-alt"></i>
-                    {{ actividad.lugar }}
-                </p>
+            <!-- Caja de inscripción -->
+            <div class="enroll-box">
 
                 {% if estado == 'con_cupos' %}
+
                     <!-- Indicador de cupos -->
-                    <div class="badge-cupos
-                        {% if actividad.cupos_disponibles <= 2 %}bg-warning text-dark{% endif %}">
-                        <i class="fas fa-users"></i>
-                        Cupos disponibles: <strong>{{ actividad.cupos_disponibles }}</strong>
+                    <div class="seat-note">
+                        <span>◎ CUPOS DISPONIBLES</span>
+                        <strong style="font-size: 22px;">{{ actividad.cupos_disponibles }}</strong>
+                        {% if actividad.cupos_disponibles <= 2 %}
+                            <small style="color: var(--red);">¡Últimos lugares!</small>
+                        {% endif %}
                     </div>
 
                     <!-- Mensajes de feedback -->
                     <div aria-live="polite">
                         {% if error %}
-                            <div class="alert alert-danger mt-2" role="alert">
-                                <i class="fas fa-exclamation-circle"></i> {{ error }}
+                            <div class="alert alert-danger" role="alert">
+                                <div>
+                                    <strong>⚠ Error</strong>
+                                    <span>{{ error }}</span>
+                                </div>
                             </div>
                         {% endif %}
                         {% if exito %}
-                            <div class="alert alert-success mt-2" role="alert">
-                                <i class="fas fa-check-circle"></i> {{ exito }}
-                                <hr>
-                                <small>
-                                    Guarda este mensaje como confirmación. Si tienes dudas,
-                                    contacta a Punto Estudiantil.
-                                </small>
+                            <div class="alert alert-success" role="alert">
+                                <div>
+                                    <strong>✓ Inscripción exitosa</strong>
+                                    <span>{{ exito }}</span>
+                                    <small>Guarda este mensaje como confirmación. Si tienes dudas, contacta a Punto Estudiantil.</small>
+                                </div>
                             </div>
                         {% endif %}
                     </div>
 
-                    <!-- Formulario de inscripción -->
-                    <form method="POST" class="formulario-inscripcion">
+                    <!-- Formulario -->
+                    <form method="POST" style="display: grid; gap: 12px;">
                         {% csrf_token %}
 
-                        <label for="rut" class="fw-bold">
-                            RUT <span class="text-danger">*</span>
-                        </label>
-                        <input type="text"
-                               name="rut"
-                               id="rut"
-                               class="input-rut"
-                               placeholder="Ej: 12345678-9"
-                               maxlength="12"
-                               autocomplete="off"
-                               aria-label="RUT del estudiante"
-                               required>
+                        <div class="form-field">
+                            <label for="rut">
+                                RUT <span class="required">*</span>
+                            </label>
+                            <input type="text"
+                                   name="rut"
+                                   id="rut"
+                                   placeholder="Ej: 12345678-9"
+                                   maxlength="12"
+                                   autocomplete="off"
+                                   aria-label="RUT del estudiante"
+                                   required>
+                            <small class="input-help">
+                                Ingresa tu RUT sin puntos, con guión y dígito verificador.
+                            </small>
+                        </div>
 
-                        <small class="text-muted d-block mt-1">
-                            Ingresa tu RUT sin puntos, con guión y dígito verificador.
-                        </small>
-
-                        <button type="submit" class="btn-registrar">
-                            <i class="fas fa-check-circle"></i> Inscribirme
+                        <button type="submit" class="btn" style="width: 100%;">
+                            ✓ Inscribirme
                         </button>
                     </form>
 
                 {% elif estado == 'sin_cupos' %}
-                    <div class="mensaje-sin-cupos" role="alert">
-                        <i class="fas fa-exclamation-triangle"></i><br>
-                        No quedan cupos disponibles para este taller.
+
+                    <div class="state-box error" role="alert">
+                        <div class="state-icon">⚠</div>
+                        <h3>Sin cupos</h3>
+                        <p>No quedan cupos disponibles para este taller.</p>
                     </div>
 
                 {% elif estado == 'finalizado' %}
-                    <div class="mensaje-finalizado" role="alert">
-                        <i class="fas fa-hourglass-end"></i><br>
-                        Este evento ya fue realizado.
+
+                    <div class="state-box neutral" role="alert">
+                        <div class="state-icon">⏳</div>
+                        <h3>Evento finalizado</h3>
+                        <p>Este evento ya fue realizado.</p>
                     </div>
+
                 {% endif %}
+
             </div>
         </div>
+
+        <!-- Footer propio -->
+        <div class="event-footer">
+            <div>Contacta Punto Estudiantil: <a href="mailto:puntoestu@duoc.cl">puntoestu@duoc.cl</a></div>
+            <div>
+                <a href="https://www.duoc.cl" target="_blank" rel="noopener">www.duoc.cl</a>
+                <span> | </span>
+                <a href="#">Aviso de Privacidad</a>
+            </div>
+        </div>
+
     </div>
 
-    <!-- ============================================================ -->
-    <!-- FOOTER PROPIO -->
-    <!-- ============================================================ -->
-    <footer class="footer-workshop">
-        <div>Contacta Punto Estudiantil: <a href="mailto:puntoestu@duoc.cl">puntoestu@duoc.cl</a></div>
-        <div>
-            <a href="https://www.duoc.cl" target="_blank" rel="noopener">www.duoc.cl</a>
-            <span class="mx-2">|</span>
-            <a href="#">Aviso de Privacidad</a>
-        </div>
-    </footer>
 </div>
+
 {% endblock %}

@@ -6,15 +6,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <meta name="description"
-        content="Punto Participa - Gestión de actividades del Punto Estudiantil Duoc UC Sede Alameda">
+    <meta name="description" content="Punto Participa - Gestión de actividades del Punto Estudiantil Duoc UC Sede Alameda">
 
     <title>Punto Participa - {% block title %}Inicio{% endblock %}</title>
 
     <link rel="icon" href="{% static 'gestion/img/logo_duoc.png' %}" type="image/png">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'gestion/css/styles.css' %}">
 
     {% block extra_css %}{% endblock %}
@@ -23,166 +19,153 @@
 
 <body>
 
-    <!-- ============================================================ -->
-    <!-- HEADER -->
-    <!-- ============================================================ -->
-    <header class="header">
-        <img src="{% static 'gestion/img/duoc.png' %}" alt="Punto Participa Duoc" width="180" height="75">
+    <div id="app" class="site-shell">
 
-        <nav class="navbar navbar-expand-lg navbar-custom" role="navigation" aria-label="Navegación principal">
-            <div class="container-fluid">
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                    aria-controls="navbarNav" aria-expanded="false" aria-label="Alternar navegación">
-                    <span class="navbar-toggler-icon"></span>
+        <!-- ============================================================ -->
+        <!-- HEADER PRIVADO -->
+        <!-- ============================================================ -->
+        <header class="app-header">
+            <img class="project-logo"
+                 src="{% static 'gestion/img/duoc.png' %}"
+                 alt="Punto Participa Duoc UC">
+
+            <div class="account">
+                <button class="icon-button" aria-label="Notificaciones" type="button">
+                    ◇<i id="notification-count">0</i>
                 </button>
 
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav">
-                        {% if user.is_authenticated %}
+                <button id="profile-button" class="profile" type="button">
+                    <span id="profile-initials">{{ user.username|slice:":2"|upper }}</span>
+                    <span>
+                        <b id="profile-name">{{ user.get_full_name|default:user.username }}</b>
+                        <small id="profile-role">{{ rol_usuario|default:"Usuario" }}</small>
+                    </span>
+                </button>
 
-                        <!-- Inicio: Admin y Creador -->
-                        {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
-                                href="{% url 'dashboard' %}">
-                                <i class="fas fa-home"></i> Inicio
-                            </a>
-                        </li>
-                        {% endif %}
+                <a href="{% url 'logout' %}" class="text-button">Salir</a>
 
-                        <!-- Actividades: Admin y Creador -->
-                        {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'actividades' in request.path %}active{% endif %}"
-                                href="{% url 'lista_actividades' %}">
-                                <i class="fas fa-calendar-alt"></i> Actividades
-                            </a>
-                        </li>
-                        {% endif %}
-
-                        <!-- Reportes: Admin y Creador -->
-                        {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'reportes' in request.path %}active{% endif %}"
-                                href="{% url 'reportes' %}">
-                                <i class="fas fa-chart-bar"></i> Reportes
-                            </a>
-                        </li>
-                        {% endif %}
-
-                        <!-- Usuarios: Solo Admin -->
-                        {% if rol_usuario == 'Administrador' %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'usuarios' in request.path %}active{% endif %}"
-                                href="{% url 'usuarios' %}">
-                                <i class="fas fa-users"></i> Usuarios
-                            </a>
-                        </li>
-                        {% endif %}
-
-                        <!-- Escáner: Admin, Creador y Encargado -->
-                        {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' or rol_usuario == 'Encargado de Registrar' %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'escaneo' in request.path %}active{% endif %}"
-                                href="{% url 'escaneo' %}">
-                                <i class="fas fa-qrcode"></i> Escáner
-                            </a>
-                        </li>
-                        {% endif %}
-
-                        <!-- Auditoría: Solo Admin -->
-                        {% if rol_usuario == 'Administrador' %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'auditoria' in request.path %}active{% endif %}"
-                                href="{% url 'auditoria' %}">
-                                <i class="fas fa-clipboard-list"></i> Auditoría
-                            </a>
-                        </li>
-                        {% endif %}
-
-                        <!-- Usuario y logout -->
-                        <li class="nav-item">
-                            <span class="navbar-text">
-                                <i class="fas fa-user"></i> {{ user.username }}
-                            </span>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'logout' %}">
-                                <i class="fas fa-sign-out-alt"></i> Cerrar sesión
-                            </a>
-                        </li>
-
-                        {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">
-                                <i class="fas fa-sign-in-alt"></i> Iniciar sesión
-                            </a>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </div>
+                <img class="duoc-logo"
+                     src="{% static 'gestion/img/logo_duoc.png' %}"
+                     alt="Duoc UC">
             </div>
+        </header>
+
+        <!-- ============================================================ -->
+        <!-- NAVEGACIÓN PRINCIPAL -->
+        <!-- ============================================================ -->
+        <nav id="main-nav" class="main-nav" aria-label="Navegación principal">
+
+            {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
+            <a href="{% url 'dashboard' %}"
+               class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                ⌂ Inicio
+            </a>
+            {% endif %}
+
+            {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
+            <a href="{% url 'lista_actividades' %}"
+               class="{% if 'actividades' in request.path %}active{% endif %}">
+                ▦ Actividades
+            </a>
+            {% endif %}
+
+            {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
+            <a href="{% url 'reportes' %}"
+               class="{% if 'reportes' in request.path %}active{% endif %}">
+                ▥ Reportes
+            </a>
+            {% endif %}
+
+            {% if rol_usuario == 'Administrador' %}
+            <a href="{% url 'usuarios' %}"
+               class="{% if 'usuarios' in request.path %}active{% endif %}">
+                ◎ Usuarios
+            </a>
+            {% endif %}
+
+            {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' or rol_usuario == 'Encargado de Registrar' %}
+            <a href="{% url 'escaneo' %}"
+               class="{% if 'escaneo' in request.path %}active{% endif %}">
+                ▢ Escáner
+            </a>
+            {% endif %}
+
+            {% if rol_usuario == 'Administrador' %}
+            <a href="{% url 'auditoria' %}"
+               class="{% if 'auditoria' in request.path %}active{% endif %}">
+                ☰ Auditoría
+            </a>
+            {% endif %}
+
         </nav>
 
-        <img src="{% static 'gestion/img/logo_duoc.png' %}" class="d-none d-md-block logo-duoc" alt="Duoc UC"
-            width="120" height="70">
-    </header>
+        <!-- ============================================================ -->
+        <!-- CONTENIDO PRINCIPAL -->
+        <!-- ============================================================ -->
+        <main id="main-content" tabindex="-1">
 
-    <!-- ============================================================ -->
-    <!-- MAIN -->
-    <!-- ============================================================ -->
-    <main class="container-fluid" id="main-content" tabindex="-1">
+            <!-- Mensajes de Django (para modales) -->
+            {% if messages %}
+            <div id="django-messages-data" style="display:none;">
+                {% for message in messages %}
+                <div class="msg" data-type="{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
 
-        <!-- Mensajes de Django (para modales) -->
-        {% if messages %}
-        <div id="django-messages-data" style="display:none;">
-            {% for message in messages %}
-            <div class="msg" data-type="{{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-        </div>
-        {% endif %}
+            {% block content %}
+            {% endblock %}
+        </main>
 
-        {% block content %}
-        {% endblock %}
-    </main>
+        <!-- ============================================================ -->
+        <!-- FOOTER -->
+        <!-- ============================================================ -->
+        <footer class="app-footer">
+            <div>Punto Estudiantil - Sede Alameda Duoc UC</div>
+            <div class="footer-links">
+                <a href="#">Soporte Técnico</a>
+                <span>2026</span>
+                <a href="https://www.duoc.cl" target="_blank" rel="noopener">www.duoc.cl</a>
+            </div>
+        </footer>
 
-    <!-- ============================================================ -->
-    <!-- FOOTER -->
-    <!-- ============================================================ -->
-    <footer class="footer">
-        <div>Punto Estudiantil - Sede Alameda Duoc UC</div>
-        <div class="enlaces">
-            <a href="#">Soporte Técnico</a>
-            <span>2026</span>
-            <a href="https://www.duoc.cl" target="_blank" rel="noopener">www.duoc.cl</a>
-        </div>
-    </footer>
+    </div>
 
     <!-- ============================================================ -->
     <!-- MODAL GLOBAL DE MENSAJES -->
     <!-- ============================================================ -->
-    <div class="modal fade" id="globalMessageModal" tabindex="-1" aria-labelledby="globalMessageTitle"
-        aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header" id="globalMessageHeader">
-                    <h5 class="modal-title" id="globalMessageTitle">Notificación</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body" id="globalMessageBody">
-                    <!-- Aquí se mostrará el mensaje -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                </div>
-            </div>
+    <div class="modal-backdrop" id="globalMessageModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="globalMessageTitle">
+
+        <header class="modal-header">
+            <h2 id="globalMessageTitle">Notificación</h2>
+            <button type="button"
+                    class="close-button"
+                    data-modal-close
+                    aria-label="Cerrar">×</button>
+        </header>
+
+        <div class="modal-body" id="globalMessageBody">
+            <!-- Aquí se muestra el mensaje -->
         </div>
-    </div>
+
+        <footer class="modal-footer">
+            <button type="button" class="btn secondary" data-modal-close>
+                Cerrar
+            </button>
+        </footer>
+
+    </section>
+</div>
+
+    <!-- ============================================================ -->
+    <!-- TOAST (notificaciones rápidas) -->
+    <!-- ============================================================ -->
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
     <!-- ============================================================ -->
     <!-- SCRIPTS -->
     <!-- ============================================================ -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'gestion/js/scripts.js' %}"></script>
 
     {% block extra_js %}{% endblock %}

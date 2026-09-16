@@ -7,212 +7,203 @@
 <!-- ============================================================ -->
 <!-- TÍTULO Y EXPORTAR -->
 <!-- ============================================================ -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">Auditoría del Sistema</h2>
+<div class="page-title">
+    <div>
+        <span class="eyebrow">AUDITORÍA</span>
+        <h1>Auditoría del Sistema</h1>
+        <p>Registro histórico de acciones realizadas en el sistema.</p>
+    </div>
     <a href="{% url 'exportar_auditoria' %}?{{ request.GET.urlencode }}"
-       class="btn btn-success">
-        <i class="fas fa-file-excel"></i> Exportar a Excel
+       class="btn secondary">
+        ⇩ Exportar a Excel
     </a>
 </div>
 
 <!-- ============================================================ -->
 <!-- FILTROS -->
 <!-- ============================================================ -->
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <form method="GET" action="" class="row g-3" role="search">
+<form method="GET" action="" class="filters" role="search">
 
-            <!-- Filtro: Usuario -->
-            <div class="col-md-3">
-                <label for="usuario" class="form-label fw-bold small">Usuario</label>
-                <input type="text"
-                       class="form-control"
-                       id="usuario"
-                       name="usuario"
-                       placeholder="Buscar por usuario..."
-                       value="{{ request.GET.usuario }}"
-                       aria-label="Filtrar por usuario">
-            </div>
-
-            <!-- Filtro: Acción -->
-            <div class="col-md-3">
-                <label for="accion" class="form-label fw-bold small">Acción</label>
-                <select name="accion"
-                        id="accion"
-                        class="form-select"
-                        aria-label="Filtrar por acción">
-                    <option value="">Todas las acciones</option>
-                    {% for accion in acciones_disponibles %}
-                        <option value="{{ accion }}" {% if request.GET.accion == accion %}selected{% endif %}>
-                            {{ accion }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Filtro: Módulo -->
-            <div class="col-md-2">
-                <label for="modulo" class="form-label fw-bold small">Módulo</label>
-                <select name="modulo"
-                        id="modulo"
-                        class="form-select"
-                        aria-label="Filtrar por módulo">
-                    <option value="">Todos los módulos</option>
-                    {% for modulo in modulos_disponibles %}
-                        <option value="{{ modulo }}" {% if request.GET.modulo == modulo %}selected{% endif %}>
-                            {{ modulo }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Filtro: Fecha -->
-            <div class="col-md-2">
-                <label for="fecha" class="form-label fw-bold small">Fecha</label>
-                <input type="date"
-                       class="form-control"
-                       id="fecha"
-                       name="fecha"
-                       value="{{ request.GET.fecha }}"
-                       aria-label="Filtrar por fecha">
-            </div>
-
-            <!-- Botones -->
-            <div class="col-md-2 d-flex gap-2 align-items-end">
-                <button type="submit" class="btn btn-dark w-100">
-                    <i class="fas fa-filter"></i> Filtrar
-                </button>
-                <a href="{% url 'auditoria' %}"
-                   class="btn btn-outline-secondary"
-                   title="Limpiar filtros"
-                   aria-label="Limpiar filtros">
-                    <i class="fas fa-eraser"></i>
-                </a>
-            </div>
-        </form>
+    <div>
+        <label for="usuario" class="form-label">Usuario</label>
+        <input type="text"
+               id="usuario"
+               name="usuario"
+               placeholder="Buscar por usuario..."
+               value="{{ request.GET.usuario }}"
+               aria-label="Filtrar por usuario">
     </div>
-</div>
+
+    <div>
+        <label for="accion" class="form-label">Acción</label>
+        <select name="accion"
+                id="accion"
+                aria-label="Filtrar por acción">
+            <option value="">Todas las acciones</option>
+            {% for accion in acciones_disponibles %}
+                <option value="{{ accion }}" {% if request.GET.accion == accion %}selected{% endif %}>
+                    {{ accion }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div>
+        <label for="modulo" class="form-label">Módulo</label>
+        <select name="modulo"
+                id="modulo"
+                aria-label="Filtrar por módulo">
+            <option value="">Todos los módulos</option>
+            {% for modulo in modulos_disponibles %}
+                <option value="{{ modulo }}" {% if request.GET.modulo == modulo %}selected{% endif %}>
+                    {{ modulo }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div>
+        <label for="fecha" class="form-label">Fecha</label>
+        <input type="date"
+               id="fecha"
+               name="fecha"
+               value="{{ request.GET.fecha }}"
+               aria-label="Filtrar por fecha">
+    </div>
+
+    <button type="submit" class="btn">
+        ▽ Filtrar
+    </button>
+    <a href="{% url 'auditoria' %}"
+       class="btn secondary"
+       title="Limpiar filtros"
+       aria-label="Limpiar filtros">
+        × Limpiar
+    </a>
+</form>
 
 <!-- ============================================================ -->
 <!-- INDICADOR DE FILTROS ACTIVOS -->
 <!-- ============================================================ -->
 {% if request.GET.usuario or request.GET.accion or request.GET.modulo or request.GET.fecha %}
-<div class="alert alert-info d-flex align-items-center mb-3 py-2" role="status">
-    <i class="fas fa-info-circle me-2"></i>
-    <span class="me-2">Filtros aplicados:</span>
-    {% if request.GET.usuario %}
-        <span class="badge bg-primary me-1">Usuario: {{ request.GET.usuario }}</span>
-    {% endif %}
-    {% if request.GET.accion %}
-        <span class="badge bg-primary me-1">Acción: {{ request.GET.accion }}</span>
-    {% endif %}
-    {% if request.GET.modulo %}
-        <span class="badge bg-primary me-1">Módulo: {{ request.GET.modulo }}</span>
-    {% endif %}
-    {% if request.GET.fecha %}
-        <span class="badge bg-primary me-1">Fecha: {{ request.GET.fecha }}</span>
-    {% endif %}
+<div class="alert alert-info" role="status">
+    <div>
+        <strong>Filtros aplicados:</strong>
+        {% if request.GET.usuario %}
+            <span class="role">Usuario: {{ request.GET.usuario }}</span>
+        {% endif %}
+        {% if request.GET.accion %}
+            <span class="role">Acción: {{ request.GET.accion }}</span>
+        {% endif %}
+        {% if request.GET.modulo %}
+            <span class="role">Módulo: {{ request.GET.modulo }}</span>
+        {% endif %}
+        {% if request.GET.fecha %}
+            <span class="role">Fecha: {{ request.GET.fecha }}</span>
+        {% endif %}
+    </div>
 </div>
 {% endif %}
 
 <!-- ============================================================ -->
 <!-- TABLA DE AUDITORÍA -->
 <!-- ============================================================ -->
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-                <caption class="visually-hidden">Registros de auditoría del sistema</caption>
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col">Fecha y Hora</th>
-                        <th scope="col">Usuario</th>
-                        <th scope="col">Módulo</th>
-                        <th scope="col">Acción</th>
-                        <th scope="col">Objeto</th>
-                        <th scope="col">ID</th>
-                        <th scope="col">IP</th>
-                        <th scope="col">Detalle</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for log in logs %}
-                    <tr>
-                        <td class="text-nowrap">
-                            {{ log.fecha_registro|date:"d/m/Y H:i" }}
-                        </td>
-                        <td>
-                            {% if log.usuario_sistema %}
-                                <strong>{{ log.usuario_sistema.username }}</strong>
-                            {% else %}
-                                <span class="text-muted">Sistema/Anónimo</span>
+<div class="panel">
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Registros de auditoría del sistema</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Fecha y Hora</th>
+                    <th scope="col">Usuario</th>
+                    <th scope="col">Módulo</th>
+                    <th scope="col">Acción</th>
+                    <th scope="col">Objeto</th>
+                    <th scope="col">ID</th>
+                    <th scope="col">IP</th>
+                    <th scope="col">Detalle</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="text-nowrap">
+                        {{ log.fecha_registro|date:"d/m/Y H:i" }}
+                    </td>
+                    <td>
+                        {% if log.usuario_sistema %}
+                            <strong>{{ log.usuario_sistema.username }}</strong>
+                        {% else %}
+                            <span class="text-muted">Sistema/Anónimo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.modulo %}
+                            <span class="role">{{ log.modulo }}</span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.accion == 'Eliminar Actividad' or log.accion == 'Eliminación rápida de actividad' %}
+                            <span class="badge inactive">{{ log.accion }}</span>
+                        {% elif log.accion == 'Crear Actividad' or log.accion == 'Guardar usuario' %}
+                            <span class="badge">{{ log.accion }}</span>
+                        {% elif log.accion == 'Edición de actividad' or log.accion == 'Cambio de rol' %}
+                            <span class="role">{{ log.accion }}</span>
+                        {% elif log.accion == 'Envío de invitaciones' %}
+                            <span class="badge draft">{{ log.accion }}</span>
+                        {% elif log.accion == 'Cambio de estado' %}
+                            <span class="badge draft">{{ log.accion }}</span>
+                        {% else %}
+                            <span class="badge draft">{{ log.accion }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.objeto_tipo %}
+                            {{ log.objeto_tipo }}
+                            {% if log.objeto_nombre %}
+                                <br><small class="text-muted">{{ log.objeto_nombre }}</small>
                             {% endif %}
-                        </td>
-                        <td>
-                            {% if log.modulo %}
-                                <span class="badge bg-secondary">{{ log.modulo }}</span>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if log.accion == 'Eliminar Actividad' or log.accion == 'Eliminación rápida de actividad' %}
-                                <span class="badge bg-danger">{{ log.accion }}</span>
-                            {% elif log.accion == 'Crear Actividad' or log.accion == 'Guardar usuario' %}
-                                <span class="badge bg-success">{{ log.accion }}</span>
-                            {% elif log.accion == 'Edición de actividad' or log.accion == 'Cambio de rol' %}
-                                <span class="badge bg-primary">{{ log.accion }}</span>
-                            {% elif log.accion == 'Envío de invitaciones' %}
-                                <span class="badge bg-info text-dark">{{ log.accion }}</span>
-                            {% elif log.accion == 'Cambio de estado' %}
-                                <span class="badge bg-warning text-dark">{{ log.accion }}</span>
-                            {% else %}
-                                <span class="badge bg-light text-dark border">{{ log.accion }}</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if log.objeto_tipo %}
-                                {{ log.objeto_tipo }}
-                                {% if log.objeto_nombre %}
-                                    <br><small class="text-muted">{{ log.objeto_nombre }}</small>
-                                {% endif %}
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if log.objeto_id %}
-                                <code>{{ log.objeto_id }}</code>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if log.ip_address %}
-                                <code class="small">{{ log.ip_address }}</code>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td class="detalle-cell">
-                            {% if log.detalle %}
-                                <span title="{{ log.detalle }}">{{ log.detalle|truncatechars:120 }}</span>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="8" class="text-center py-4 text-muted">
-                            <i class="fas fa-inbox fa-2x d-block mb-2"></i>
-                            No se encontraron registros con esos filtros.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.objeto_id %}
+                            <code>{{ log.objeto_id }}</code>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.ip_address %}
+                            <code>{{ log.ip_address }}</code>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="detalle-cell">
+                        {% if log.detalle %}
+                            <span title="{{ log.detalle }}">{{ log.detalle|truncatechars:120 }}</span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted" style="padding: 40px;">
+                        <div class="empty-state" style="min-height: auto;">
+                            <span>☰</span>
+                            <h3>Sin resultados</h3>
+                            <p>No se encontraron registros con esos filtros.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -220,22 +211,18 @@
 <!-- PAGINACIÓN -->
 <!-- ============================================================ -->
 {% if logs.has_other_pages %}
-<nav aria-label="Paginación de auditoría" class="mt-3">
-    <ul class="pagination justify-content-center mb-0">
+<nav aria-label="Paginación de auditoría" style="margin-top: 20px;">
+    <ul class="pagination">
         {% if logs.has_previous %}
             <li class="page-item">
                 <a class="page-link"
                    href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                   aria-label="Primera página">
-                    <i class="fas fa-angle-double-left"></i>
-                </a>
+                   aria-label="Primera página">««</a>
             </li>
             <li class="page-item">
                 <a class="page-link"
                    href="?page={{ logs.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                   aria-label="Página anterior">
-                    <i class="fas fa-angle-left"></i>
-                </a>
+                   aria-label="Página anterior">«</a>
             </li>
         {% endif %}
 
@@ -249,16 +236,12 @@
             <li class="page-item">
                 <a class="page-link"
                    href="?page={{ logs.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                   aria-label="Página siguiente">
-                    <i class="fas fa-angle-right"></i>
-                </a>
+                   aria-label="Página siguiente">»</a>
             </li>
             <li class="page-item">
                 <a class="page-link"
                    href="?page={{ logs.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                   aria-label="Última página">
-                    <i class="fas fa-angle-double-right"></i>
-                </a>
+                   aria-label="Última página">»»</a>
             </li>
         {% endif %}
     </ul>

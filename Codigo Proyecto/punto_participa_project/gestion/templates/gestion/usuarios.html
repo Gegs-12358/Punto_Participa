@@ -3,290 +3,353 @@
 {% block title %}Usuarios{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Gestión de Usuarios</h2>
+
+<!-- ============================================================ -->
+<!-- TÍTULO -->
+<!-- ============================================================ -->
+<div class="page-title">
+    <div>
+        <span class="eyebrow">ADMINISTRACIÓN</span>
+        <h1>Gestión de Usuarios</h1>
+        <p>Administra las cuentas del sistema y sus permisos.</p>
+    </div>
+    <button class="btn" id="btnNuevoUsuario" data-action="user-new">
+        + Nuevo Usuario
+    </button>
+</div>
 
 <!-- ============================================================ -->
 <!-- TABLA DE USUARIOS -->
 <!-- ============================================================ -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Usuarios</h5>
-        <button class="btn btn-primary btn-sm" id="btnNuevoUsuario" data-action="user-new">
-            <i class="fas fa-plus"></i> Nuevo Usuario
-        </button>
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">CUENTAS</span>
+            <h2>Usuarios del sistema</h2>
+        </div>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-                <caption class="visually-hidden">Listado de usuarios del sistema</caption>
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col">Username</th>
-                        <th scope="col">Nombre</th>
-                        <th scope="col">Email</th>
-                        <th scope="col">Rol</th>
-                        <th scope="col">RUT</th>
-                        <th scope="col">Estado</th>
-                        <th scope="col">Fecha Registro</th>
-                        <th scope="col">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for u in usuarios %}
-                    <tr>
-                        <td>
-                            <strong>{{ u.user.username }}</strong>
+
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Listado de usuarios del sistema</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Username</th>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Rol</th>
+                    <th scope="col">RUT</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Registro</th>
+                    <th scope="col">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr>
+                    <td>
+                        <strong>{{ u.user.username }}</strong>
+                        {% if u.user == request.user %}
+                            <span class="role" title="Eres tú">Tú</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.user.first_name|default:"—" }}</td>
+                    <td>
+                        {% if u.user.email %}
+                            <a href="mailto:{{ u.user.email }}">{{ u.user.email }}</a>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.rol %}
+                            <span class="role">{{ u.rol.nombre }}</span>
+                        {% else %}
+                            <span class="badge inactive">Sin rol</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.rut %}
+                            <code>{{ u.rut }}</code>
+                        {% else %}
+                            <span class="text-muted">Sin RUT</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.activo %}
+                            <span class="badge">Activo</span>
+                        {% else %}
+                            <span class="badge inactive">Bloqueado</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.user.date_joined|date:"d/m/Y" }}</td>
+                    <td>
+                        <div class="action-group">
+                            <!-- Botón Editar -->
+                            <button class="link-button btn-editar-usuario"
+                                    data-id="{{ u.id }}"
+                                    data-username="{{ u.user.username }}"
+                                    data-nombre="{{ u.user.first_name }}"
+                                    data-email="{{ u.user.email }}"
+                                    data-rol="{% if u.rol %}{{ u.rol.id }}{% endif %}"
+                                    data-rut="{{ u.rut|default:'' }}"
+                                    data-activo="{{ u.activo|yesno:'1,0' }}"
+                                    aria-label="Editar usuario {{ u.user.username }}"
+                                    title="Editar">
+                                ✎ Editar
+                            </button>
+
+                            <!-- Botón Bloquear/Desbloquear -->
                             {% if u.user == request.user %}
-                                <span class="badge bg-primary ms-1" title="Eres tú">Tú</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ u.user.first_name|default:"—" }}</td>
-                        <td>
-                            {% if u.user.email %}
-                                <a href="mailto:{{ u.user.email }}">{{ u.user.email }}</a>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if u.rol %}
-                                <span class="badge bg-info">{{ u.rol.nombre }}</span>
-                            {% else %}
-                                <span class="badge bg-secondary">Sin rol</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if u.rut %}
-                                <code>{{ u.rut }}</code>
-                            {% else %}
-                                <span class="text-muted">Sin RUT</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if u.activo %}
-                                <span class="badge bg-success">Activo</span>
-                            {% else %}
-                                <span class="badge bg-danger">Bloqueado</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ u.user.date_joined|date:"d/m/Y" }}</td>
-                        <td>
-                            <div class="d-flex gap-1">
-                                <!-- Botón Editar (siempre visible) -->
-                                <button class="btn btn-sm btn-outline-secondary btn-editar-usuario"
+                                <span class="link-button" style="opacity: 0.5; cursor: not-allowed;"
+                                      title="No puedes bloquearte a ti mismo">
+                                    ◉ Protegido
+                                </span>
+                            {% elif u.activo %}
+                                <button class="danger-button btn-bloquear-usuario"
                                         data-id="{{ u.id }}"
                                         data-username="{{ u.user.username }}"
-                                        data-nombre="{{ u.user.first_name }}"
-                                        data-email="{{ u.user.email }}"
-                                        data-rol="{% if u.rol %}{{ u.rol.id }}{% endif %}"
-                                        data-rut="{{ u.rut|default:'' }}"
-                                        data-activo="{{ u.activo|yesno:'1,0' }}"
-                                        aria-label="Editar usuario {{ u.user.username }}"
-                                        title="Editar">
-                                    <i class="fas fa-edit"></i>
+                                        data-accion="bloquear"
+                                        aria-label="Bloquear usuario {{ u.user.username }}"
+                                        title="Bloquear acceso al sistema">
+                                    ✕ Bloquear
                                 </button>
-
-                                <!-- Botón Bloquear/Desbloquear -->
-                                {% if u.user == request.user %}
-                                    <!-- No se puede bloquear a sí mismo -->
-                                    <button class="btn btn-sm btn-outline-secondary"
-                                            disabled
-                                            aria-label="No puedes bloquearte a ti mismo"
-                                            title="No puedes bloquearte a ti mismo">
-                                        <i class="fas fa-user-shield"></i>
-                                    </button>
-                                {% elif u.activo %}
-                                    <button class="btn btn-sm btn-outline-danger btn-bloquear-usuario"
-                                            data-id="{{ u.id }}"
-                                            data-username="{{ u.user.username }}"
-                                            data-accion="bloquear"
-                                            aria-label="Bloquear usuario {{ u.user.username }}"
-                                            title="Bloquear acceso al sistema">
-                                        <i class="fas fa-user-lock"></i>
-                                    </button>
-                                {% else %}
-                                    <button class="btn btn-sm btn-outline-success btn-bloquear-usuario"
-                                            data-id="{{ u.id }}"
-                                            data-username="{{ u.user.username }}"
-                                            data-accion="desbloquear"
-                                            aria-label="Desbloquear usuario {{ u.user.username }}"
-                                            title="Restaurar acceso al sistema">
-                                        <i class="fas fa-user-check"></i>
-                                    </button>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="8" class="text-center py-4 text-muted">
-                            <i class="fas fa-inbox fa-2x d-block mb-2"></i>
-                            No hay usuarios registrados.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                            {% else %}
+                                <button class="link-button btn-bloquear-usuario"
+                                        data-id="{{ u.id }}"
+                                        data-username="{{ u.user.username }}"
+                                        data-accion="desbloquear"
+                                        aria-label="Desbloquear usuario {{ u.user.username }}"
+                                        title="Restaurar acceso al sistema">
+                                    ✓ Desbloquear
+                                </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted" style="padding: 40px;">
+                        <div class="empty-state" style="min-height: auto;">
+                            <span>◎</span>
+                            <h3>Sin usuarios</h3>
+                            <p>No hay usuarios registrados en el sistema.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
 <!-- ============================================================ -->
 <!-- AUDITORÍA RECIENTE -->
 <!-- ============================================================ -->
-<h3 class="mb-3">
-    <i class="fas fa-clipboard-list"></i> Auditoría reciente
-</h3>
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-                <caption class="visually-hidden">Últimos 10 registros de auditoría</caption>
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col">Usuario</th>
-                        <th scope="col">Módulo</th>
-                        <th scope="col">Acción</th>
-                        <th scope="col">Fecha</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for log in logs %}
-                    <tr>
-                        <td>
-                            {% if log.usuario_sistema %}
-                                <strong>{{ log.usuario_sistema.username }}</strong>
-                            {% else %}
-                                <span class="text-muted">Sistema/Anónimo</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if log.modulo %}
-                                <span class="badge bg-secondary">{{ log.modulo }}</span>
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ log.accion }}</td>
-                        <td>{{ log.fecha_registro|date:"d/m/Y H:i" }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" class="text-center py-4 text-muted">
-                            <i class="fas fa-inbox fa-2x d-block mb-2"></i>
-                            Sin actividad registrada.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">ACTIVIDAD RECIENTE</span>
+            <h2>Últimos 10 registros de auditoría</h2>
         </div>
+        <a href="{% url 'auditoria' %}" class="link-button">
+            Ver todos →
+        </a>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Últimos 10 registros de auditoría</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Fecha y Hora</th>
+                    <th scope="col">Usuario</th>
+                    <th scope="col">Módulo</th>
+                    <th scope="col">Acción</th>
+                    <th scope="col">Objeto</th>
+                    <th scope="col">IP</th>
+                    <th scope="col">Detalle</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="text-nowrap">
+                        {{ log.fecha_registro|date:"d/m/Y H:i" }}
+                    </td>
+                    <td>
+                        {% if log.usuario_sistema %}
+                            <strong>{{ log.usuario_sistema.username }}</strong>
+                        {% else %}
+                            <span class="text-muted">Sistema/Anónimo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.modulo %}
+                            <span class="role">{{ log.modulo }}</span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.accion == 'Eliminar Actividad' or log.accion == 'Eliminación rápida de actividad' %}
+                            <span class="badge inactive">{{ log.accion }}</span>
+                        {% elif log.accion == 'Crear Actividad' or log.accion == 'Guardar usuario' %}
+                            <span class="badge">{{ log.accion }}</span>
+                        {% elif log.accion == 'Edición de actividad' or log.accion == 'Cambio de rol' %}
+                            <span class="role">{{ log.accion }}</span>
+                        {% elif log.accion == 'Envío de invitaciones' %}
+                            <span class="badge draft">{{ log.accion }}</span>
+                        {% elif log.accion == 'Cambio de estado' %}
+                            <span class="badge draft">{{ log.accion }}</span>
+                        {% else %}
+                            <span class="badge draft">{{ log.accion }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.objeto_tipo %}
+                            {{ log.objeto_tipo }}
+                            {% if log.objeto_nombre %}
+                                <br><small class="text-muted">{{ log.objeto_nombre }}</small>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.ip_address %}
+                            <code>{{ log.ip_address }}</code>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="detalle-cell">
+                        {% if log.detalle %}
+                            <span title="{{ log.detalle }}">{{ log.detalle|truncatechars:120 }}</span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted" style="padding: 40px;">
+                        <div class="empty-state" style="min-height: auto;">
+                            <span>☰</span>
+                            <h3>Sin actividad registrada</h3>
+                            <p>No hay eventos de auditoría aún.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
 <!-- ============================================================ -->
 <!-- MODAL CREAR/EDITAR USUARIO -->
 <!-- ============================================================ -->
-<div class="modal fade" id="modalUsuario" tabindex="-1" aria-labelledby="modalUsuarioLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="modalUsuarioLabel">Crear/Editar Usuario</h5>
-                <button type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                        aria-label="Cerrar"></button>
-            </div>
+<div class="modal-backdrop" id="modalUsuario" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalUsuarioLabel">
+
+        <header class="modal-header">
+            <h2 id="modalUsuarioLabel">Crear / Editar Usuario</h2>
+            <button type="button"
+                    class="close-button"
+                    data-modal-close
+                    aria-label="Cerrar">×</button>
+        </header>
+
+        <form id="formUsuario" novalidate autocomplete="off">
+            {% csrf_token %}
+            <input type="hidden" id="user_id" name="user_id" value="">
+
             <div class="modal-body">
-                <form id="formUsuario" novalidate autocomplete="off">
-                    {% csrf_token %}
-                    <input type="hidden" id="user_id" name="user_id" value="">
 
-                    <div class="mb-3">
-                        <label for="username" class="form-label">
-                            Usuario <span class="text-danger">*</span>
-                        </label>
-                        <input type="text"
-                               class="form-control"
-                               id="username"
-                               name="username"
-                               placeholder="Ej: pa.rebolledoa"
-                               autocomplete="username"
-                               required>
-                        <small class="text-muted">
-                            Se usará para iniciar sesión. No usar espacios.
-                        </small>
-                    </div>
+                <div class="form-field">
+                    <label for="username">
+                        Usuario <span class="required">*</span>
+                    </label>
+                    <input type="text"
+                           id="username"
+                           name="username"
+                           placeholder="Ej: pa.rebolledoa"
+                           autocomplete="username"
+                           required>
+                    <small class="input-help">
+                        Se usará para iniciar sesión. No usar espacios.
+                    </small>
+                </div>
 
-                    <div class="mb-3">
-                        <label for="nombre" class="form-label">
-                            Nombre completo <span class="text-danger">*</span>
-                        </label>
-                        <input type="text"
-                               class="form-control"
-                               id="nombre"
-                               name="nombre"
-                               placeholder="Ej: Pablo Rebolledo"
-                               autocomplete="name"
-                               required>
-                    </div>
+                <div class="form-field">
+                    <label for="nombre">
+                        Nombre completo <span class="required">*</span>
+                    </label>
+                    <input type="text"
+                           id="nombre"
+                           name="nombre"
+                           placeholder="Ej: Pablo Rebolledo"
+                           autocomplete="name"
+                           required>
+                </div>
 
-                    <div class="mb-3">
-                        <label for="email" class="form-label">
-                            Email <span class="text-danger">*</span>
-                        </label>
-                        <input type="email"
-                               class="form-control"
-                               id="email"
-                               name="email"
-                               placeholder="usuario@duocuc.cl"
-                               autocomplete="email"
-                               required>
-                    </div>
+                <div class="form-field">
+                    <label for="email">
+                        Email <span class="required">*</span>
+                    </label>
+                    <input type="email"
+                           id="email"
+                           name="email"
+                           placeholder="usuario@duocuc.cl"
+                           autocomplete="email"
+                           required>
+                </div>
 
-                    <div class="mb-3">
-                        <label for="rut" class="form-label">RUT (opcional)</label>
-                        <input type="text"
-                               class="form-control"
-                               id="rut"
-                               name="rut"
-                               placeholder="Ej: 12345678-9"
-                               autocomplete="off">
-                    </div>
+                <div class="form-field">
+                    <label for="rut">RUT (opcional)</label>
+                    <input type="text"
+                           id="rut"
+                           name="rut"
+                           placeholder="Ej: 12345678-9"
+                           autocomplete="off">
+                </div>
 
-                    <div class="mb-3">
-                        <label for="rol" class="form-label">
-                            Rol <span class="text-danger">*</span>
-                        </label>
-                        <select class="form-select" id="rol" name="rol" required>
-                            <option value="">Seleccionar rol</option>
-                            {% for rol in roles %}
-                                <option value="{{ rol.id }}">{{ rol.nombre }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                <div class="form-field">
+                    <label for="rol">
+                        Rol <span class="required">*</span>
+                    </label>
+                    <select id="rol" name="rol" required>
+                        <option value="">Seleccionar rol</option>
+                        {% for rol in roles %}
+                            <option value="{{ rol.id }}">{{ rol.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                    <div class="form-check mb-3">
-                        <input class="form-check-input"
-                               type="checkbox"
-                               id="estado"
-                               name="estado"
-                               checked>
-                        <label class="form-check-label" for="estado">
-                            Usuario activo
-                        </label>
-                        <small class="text-muted d-block">
-                            Si se desmarca, el usuario no podrá iniciar sesión.
-                        </small>
-                    </div>
+                <div class="form-field">
+                    <label class="check-line">
+                        <input type="checkbox" id="estado" name="estado" checked>
+                        <span>Usuario activo</span>
+                    </label>
+                    <small class="input-help">
+                        Si se desmarca, el usuario no podrá iniciar sesión.
+                    </small>
+                </div>
 
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-save"></i> Guardar
-                    </button>
-                </form>
             </div>
-        </div>
-    </div>
+
+            <footer class="modal-footer">
+                <button type="button" class="btn secondary" data-modal-close>
+                    × Cancelar
+                </button>
+                <button type="submit" class="btn">
+                    ✓ Guardar
+                </button>
+            </footer>
+        </form>
+
+    </section>
 </div>
 
 {% endblock %}
