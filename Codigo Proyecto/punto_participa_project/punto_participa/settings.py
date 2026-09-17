@@ -54,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'gestion.middleware.ForzarCambioContrasenaMiddleware',
 ]
 
 ROOT_URLCONF = 'punto_participa.urls'

@@ -153,14 +153,18 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ============================================================
+        // ============================================================
     // Mostrar la contraseña temporal generada al crear un usuario
     // ============================================================
     function mostrarPasswordTemporal(password) {
+        // 1. Cerrar primero el modal de crear/editar usuario,
+        //    para que no quede abierto detrás del mensaje.
+        closeModal(modalElement);
+
         const mensaje =
             '<p>El usuario fue creado correctamente. Esta es su contraseña temporal:</p>' +
             '<div class="alert alert-warning text-center">' +
-            '<strong style="font-size: 1.3rem; letter-spacing: 1px;">' + password + '</strong>' +
+            '<strong style="font-size: 1.3rem; letter-spacing: 1px;">' + escapeHtml(password) + '</strong>' +
             '</div>' +
             '<p class="small text-muted mb-0">' +
             'Cópiala y entrégasela de forma segura a la persona. No podrás volver a verla después de cerrar este mensaje. ' +
@@ -169,11 +173,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         abrirModalGlobal('Usuario creado', mensaje, 'success');
 
-        // Recargar la tabla al cerrar el modal, para que se vea el usuario nuevo
+        // 2. Recargar la tabla cuando el usuario cierre este mensaje,
+        //    sin importar si lo cerró con el botón, la "x" o Escape.
         const modalGlobal = document.getElementById('globalMessageModal');
         if (modalGlobal) {
-            modalGlobal.addEventListener('hidden.bs.modal', function handler() {
-                modalGlobal.removeEventListener('hidden.bs.modal', handler);
+            modalGlobal.addEventListener('modal:hidden', function handler() {
+                modalGlobal.removeEventListener('modal:hidden', handler);
                 window.location.reload();
             });
         }

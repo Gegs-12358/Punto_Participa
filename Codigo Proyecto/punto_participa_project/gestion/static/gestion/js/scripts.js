@@ -103,6 +103,10 @@ function closeModal(modalOrSelector) {
         _ultimoFocoAntesDeModal.focus();
     }
     _ultimoFocoAntesDeModal = null;
+
+    // Avisar a quien esté escuchando que este modal se cerró,
+    // sin importar si fue por botón, click en el fondo o Escape.
+    modal.dispatchEvent(new Event('modal:hidden'));
 }
 
 function closeAllModals() {
