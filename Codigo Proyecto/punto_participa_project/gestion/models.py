@@ -156,36 +156,83 @@ class Inscripcion(models.Model):
 
 
 class Asistencia(models.Model):
-    METODO_CHOICES = [
-        ('RUT', 'RUT'),
-        ('QR', 'Código QR'),
-        ('CODIGO', 'Código de barras')
-    ]
+    METODO_CHOICES = [ ('RUT', 'RUT'), ('QR', 'Código QR'), ('CODIGO', 'Código de barras'),]
 
-    actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_index=True, related_name='asistencias')
-    alumno = models.ForeignKey('Alumno', on_delete=models.CASCADE, related_name='asistencias')
-    fecha_ingreso = models.DateTimeField(auto_now_add=True, db_index=True)
-    metodo_ingreso = models.CharField(max_length=10, choices=METODO_CHOICES)
-    registrado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='asistencias_registradas')
+    actividad = models.ForeignKey(
+        Actividad,
+        on_delete=models.CASCADE,
+        db_index=True,
+        related_name='asistencias'
+    )
+
+    alumno = models.ForeignKey(
+        'Alumno',
+        on_delete=models.CASCADE,
+        related_name='asistencias'
+    )
+
+    fecha_ingreso = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True
+    )
+
+    metodo_ingreso = models.CharField(
+        max_length=10,
+        choices=METODO_CHOICES
+    )
+
+    registrado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='asistencias_registradas'
+    )
 
     class Meta:
         verbose_name = 'Asistencia'
         verbose_name_plural = 'Asistencias'
-        unique_together = ('actividad', 'alumno')
         ordering = ['-fecha_ingreso']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['actividad', 'alumno'],
+                name='unique_asistencia_actividad_alumno'
+            )
+        ]
 
     def __str__(self):
-        return f"{self.alumno} - {self.actividad}"
+        return f'{self.alumno} - {self.actividad}'
+
 
 
 class NotificacionCorreo(models.Model):
-    ESTADO_CHOICES = [('EXITO', 'Éxito'), ('FALLO', 'Fallo')]
+    ESTADO_CHOICES = [ ('EXITO', 'Éxito'), ('FALLO', 'Fallo'), ]
 
-    actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, related_name='notificaciones')
-    alumno = models.ForeignKey('Alumno', on_delete=models.CASCADE, null=True, blank=True, related_name='notificaciones')
-    filtro_aplicado = models.CharField(max_length=2000, blank=True)
+    actividad = models.ForeignKey(
+        Actividad,
+        on_delete=models.CASCADE,
+        related_name='notificaciones'
+    )
+
+    alumno = models.ForeignKey(
+        'Alumno',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='notificaciones'
+    )
+
+    filtro_aplicado = models.CharField(
+        max_length=2000,
+        blank=True
+    )
+
     fecha_envio = models.DateTimeField(auto_now_add=True)
-    estado_envio = models.CharField(max_length=10, choices=ESTADO_CHOICES)
+
+    estado_envio = models.CharField(
+        max_length=10,
+        choices=ESTADO_CHOICES
+    )
 
     class Meta:
         verbose_name = 'Notificación de correo'
@@ -193,7 +240,8 @@ class NotificacionCorreo(models.Model):
         ordering = ['-fecha_envio']
 
     def __str__(self):
-        return f"{self.actividad} - {self.estado_envio}"
+        return f'{self.actividad} - {self.estado_envio}'
+
 
 
 class LogAuditoria(models.Model):

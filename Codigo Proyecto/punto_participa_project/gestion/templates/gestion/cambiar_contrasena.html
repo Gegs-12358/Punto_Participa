@@ -1,6 +1,9 @@
 {% extends 'gestion/base.html' %}
 {% load static %}
-{% block title %}Cambiar Contraseña{% endblock %}
+
+{% block title %}
+    Cambiar contraseña
+{% endblock %}
 
 {% block content %}
 
@@ -8,122 +11,184 @@
 
     <div class="password-card card">
 
-        <!-- Header -->
         <div class="password-card-header">
             <span class="eyebrow">SEGURIDAD</span>
-            <h1>Cambio de Contraseña Obligatorio</h1>
+
+            <h1 id="titulo-cambiar-contrasena">
+                Cambiar contraseña
+            </h1>
+
             <p class="text-muted">
-                Por tu seguridad, debes cambiar la contraseña inicial antes de continuar.
+                Actualiza tu contraseña para mantener segura tu cuenta.
             </p>
         </div>
 
-        <!-- Mensajes de Django -->
         <div aria-live="polite">
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}" role="alert">
-                        <div>
-                            <span>{{ message }}</span>
-                        </div>
+                    <div class="alert alert-{{ message.tags }}"
+                         role="alert">
+                        {{ message }}
                     </div>
                 {% endfor %}
             {% endif %}
         </div>
 
-        <!-- Formulario -->
-        <form method="POST" id="formCambiarContrasena" novalidate>
+        <form method="post"
+              id="formCambiarContrasena"
+              action="{% url 'cambiar_contrasena' %}">
+
             {% csrf_token %}
 
             <!-- Contraseña actual -->
             <div class="form-field">
                 <label for="contrasena_actual">
-                    Contraseña actual <span class="required">*</span>
+                    Contraseña actual
+                    <span class="required" aria-hidden="true">*</span>
                 </label>
+
                 <div class="password-wrapper">
-                    <input type="password"
-                           name="contrasena_actual"
-                           id="contrasena_actual"
-                           autocomplete="current-password"
-                           required
-                           autofocus>
-                    <button type="button"
-                            class="toggle-password"
-                            data-target="contrasena_actual"
-                            aria-label="Mostrar contraseña">◎</button>
+                    <input
+                        type="password"
+                        name="contrasena_actual"
+                        id="contrasena_actual"
+                        autocomplete="current-password"
+                        required
+                        autofocus
+                    >
+
+                    <button
+                        type="button"
+                        class="toggle-password"
+                        data-target="contrasena_actual"
+                        aria-label="Mostrar contraseña"
+                        aria-pressed="false">
+
+                        <span aria-hidden="true">◎</span>
+                    </button>
                 </div>
             </div>
 
             <!-- Nueva contraseña -->
             <div class="form-field">
                 <label for="nueva_contrasena">
-                    Nueva contraseña <span class="required">*</span>
+                    Nueva contraseña
+                    <span class="required" aria-hidden="true">*</span>
                 </label>
+
                 <div class="password-wrapper">
-                    <input type="password"
-                           name="nueva_contrasena"
-                           id="nueva_contrasena"
-                           autocomplete="new-password"
-                           minlength="8"
-                           required>
-                    <button type="button"
-                            class="toggle-password"
-                            data-target="nueva_contrasena"
-                            aria-label="Mostrar contraseña">◎</button>
+                    <input
+                        type="password"
+                        name="nueva_contrasena"
+                        id="nueva_contrasena"
+                        autocomplete="new-password"
+                        minlength="8"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        class="toggle-password"
+                        data-target="nueva_contrasena"
+                        aria-label="Mostrar contraseña"
+                        aria-pressed="false">
+
+                        <span aria-hidden="true">◎</span>
+                    </button>
                 </div>
 
                 <!-- Indicador de fortaleza -->
-                <div class="strength-bar">
-                    <div id="fortalezaBarra" role="progressbar"
-                         style="width: 0%;"
-                         aria-valuenow="0"
-                         aria-valuemin="0"
-                         aria-valuemax="100"></div>
-                </div>
-                <small id="fortalezaTexto" class="text-muted"></small>
-
-                <!-- Requisitos -->
-                <div class="alert alert-info" style="margin-top: 10px;">
-                    <div>
-                        <strong>La contraseña debe cumplir:</strong>
-                        <ul>
-                            <li>Mínimo <strong>8 caracteres</strong>.</li>
-                            <li>Al menos <strong>una letra</strong> y <strong>un número</strong>.</li>
-                            <li>No puede ser una contraseña común (ej: 12345678).</li>
-                        </ul>
-                        <strong>Ejemplo:</strong> <em>MiClave#2026</em>
+                <div class="strength-bar"
+                     aria-hidden="true">
+                    <div
+                        id="fortalezaBarra"
+                        role="progressbar"
+                        style="width: 0%;"
+                        aria-valuenow="0"
+                        aria-valuemin="0"
+                        aria-valuemax="100">
                     </div>
+                </div>
+
+                <small id="fortalezaTexto"
+                       class="text-muted"
+                       aria-live="polite">
+                </small>
+
+                <!-- Requisitos informativos -->
+                <div class="alert alert-info"
+                     style="margin-top: 10px;">
+
+                    <strong>La contraseña debe cumplir:</strong>
+
+                    <ul>
+                        <li>Mínimo 8 caracteres.</li>
+                        <li>Evita contraseñas comunes.</li>
+                        <li>No debe ser demasiado parecida a tu usuario.</li>
+                        <li>No debe ser solamente numérica.</li>
+                    </ul>
+
+                    <strong>Ejemplo:</strong>
+                    <em>MiClave#2026</em>
                 </div>
             </div>
 
             <!-- Confirmar nueva contraseña -->
             <div class="form-field">
                 <label for="confirmar_contrasena">
-                    Confirmar nueva contraseña <span class="required">*</span>
+                    Confirmar nueva contraseña
+                    <span class="required" aria-hidden="true">*</span>
                 </label>
+
                 <div class="password-wrapper">
-                    <input type="password"
-                           name="confirmar_contrasena"
-                           id="confirmar_contrasena"
-                           autocomplete="new-password"
-                           minlength="8"
-                           required>
-                    <button type="button"
-                            class="toggle-password"
-                            data-target="confirmar_contrasena"
-                            aria-label="Mostrar contraseña">◎</button>
+                    <input
+                        type="password"
+                        name="confirmar_contrasena"
+                        id="confirmar_contrasena"
+                        autocomplete="new-password"
+                        minlength="8"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        class="toggle-password"
+                        data-target="confirmar_contrasena"
+                        aria-label="Mostrar contraseña"
+                        aria-pressed="false">
+
+                        <span aria-hidden="true">◎</span>
+                    </button>
                 </div>
-                <small id="mensajeCoincidencia" class="input-help"></small>
+
+                <small
+                    id="mensajeCoincidencia"
+                    class="input-help"
+                    aria-live="polite">
+                </small>
             </div>
 
             <!-- Botones -->
             <div class="form-actions-buttons">
-                <button type="submit" class="btn" style="width: 100%;">
-                    ✓ Cambiar contraseña
+
+                <button
+                    type="submit"
+                    class="btn"
+                    style="width: 100%;">
+
+                    Cambiar contraseña
                 </button>
-                <a href="{% url 'logout' %}" class="btn secondary" style="width: 100%;">
-                    ⇥ Cerrar sesión
+
+                <a
+                    href="{% url 'logout' %}"
+                    class="btn secondary"
+                    style="width: 100%;">
+
+                    Cerrar sesión
                 </a>
+
             </div>
+
         </form>
 
     </div>

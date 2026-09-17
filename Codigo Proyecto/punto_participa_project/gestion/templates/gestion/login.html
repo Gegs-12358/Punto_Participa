@@ -1,85 +1,111 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="es-cl">
+<html lang="es-CL">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Iniciar sesión en Punto Participa - Sistema de gestión de actividades del Punto Estudiantil">
-    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <meta name="description"
+          content="Iniciar sesión en Punto Participa - Sistema de gestión de actividades del Punto Estudiantil">
 
     <title>Iniciar sesión - Punto Participa</title>
 
-    <link rel="icon" href="{% static 'gestion/img/logo_duoc.png' %}" type="image/png">
-    <link rel="stylesheet" href="{% static 'gestion/css/styles.css' %}">
+    <link rel="icon"
+          href="{% static 'gestion/img/logo_duoc.png' %}"
+          type="image/png">
+
+    <link rel="stylesheet"
+          href="{% static 'gestion/css/styles.css' %}">
 </head>
 
 <body>
 
     <div id="app" class="site-shell">
 
-        <!-- ============================================================ -->
-        <!-- LOGIN VIEW -->
-        <!-- ============================================================ -->
-        <section id="login-view" class="view login-view" aria-labelledby="login-title">
+        <section id="login-view"
+                 class="view login-view"
+                 aria-labelledby="login-title">
 
-            <!-- Header -->
             <header class="brand-header">
                 <img class="project-logo"
                      src="{% static 'gestion/img/duoc.png' %}"
-                     alt="Punto Participa Duoc UC">
+                     alt="Punto Participa Duoc UC"
+                     onerror="this.style.display='none'">
+
                 <img class="duoc-logo"
                      src="{% static 'gestion/img/logo_duoc.png' %}"
-                     alt="Duoc UC">
+                     alt="Duoc UC"
+                     onerror="this.style.display='none'">
             </header>
 
-            <!-- Layout principal -->
             <div class="login-layout">
 
-                <!-- Columna izquierda: copy -->
                 <div class="login-copy">
                     <span class="eyebrow">SEDE ALAMEDA</span>
-                    <h1 id="login-title">Haz que cada encuentro cuente.</h1>
+
+                    <h1 id="login-title">
+                        Haz que cada encuentro cuente.
+                    </h1>
+
                     <p>
-                        Organiza experiencias que conectan a la comunidad estudiantil
-                        y simplifica cada etapa de participación.
+                        Organiza experiencias que conectan a la comunidad
+                        estudiantil y simplifica cada etapa de participación.
                     </p>
+
                     <div class="welcome-note">
                         <strong>Todo en un mismo lugar</strong>
-                        <span>Planifica, convoca y acompaña la participación de tus estudiantes.</span>
+                        <span>
+                            Planifica, convoca y acompaña la participación
+                            de tus estudiantes.
+                        </span>
                     </div>
-                    <div class="welcome-features" aria-label="Funciones principales">
+
+                    <div class="welcome-features"
+                         aria-label="Funciones principales">
                         <span>Actividades</span>
                         <span>Inscripciones</span>
                         <span>Asistencia</span>
                     </div>
                 </div>
 
-                <!-- Columna derecha: card de login -->
-                <form id="login-form" class="card login-card" method="POST" action="{% url 'login' %}" novalidate>
+                <form id="login-form"
+                      class="card login-card"
+                      method="post"
+                      action="{% url 'login' %}">
+
                     {% csrf_token %}
 
-                    <!-- Mascota / ilustración -->
                     <img class="login-guide"
                          src="{% static 'gestion/img/acceso.png' %}"
                          alt="Mascota de Punto Participa indicando el acceso"
                          onerror="this.style.display='none'">
 
                     <h2>Bienvenido</h2>
-                    <p>Ingresa con tu cuenta registrada</p>
 
-                    <!-- Mensajes de Django -->
+                    <p>
+                        Ingresa con tu cuenta registrada.
+                    </p>
+
                     {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }}" role="alert">
-                                {{ message }}
-                            </div>
-                        {% endfor %}
+                        <div class="login-messages"
+                             aria-live="polite">
+
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }}"
+                                     role="alert">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+
+                        </div>
                     {% endif %}
 
-                    <!-- Campo Usuario -->
-                    <label for="username">
-                        Usuario
+                    <div class="form-group">
+                        <label for="username">
+                            Usuario
+                        </label>
+
                         <input type="text"
                                id="username"
                                name="username"
@@ -87,32 +113,42 @@
                                autocomplete="username"
                                required
                                autofocus>
-                    </label>
+                    </div>
 
-                    <!-- Campo Contraseña -->
-                    <label for="password">
-                        Contraseña
-                        <span class="password-wrapper">
+                    <div class="form-group">
+                        <label for="password">
+                            Contraseña
+                        </label>
+
+                        <div class="password-wrapper">
                             <input type="password"
                                    id="password"
                                    name="password"
                                    autocomplete="current-password"
-                                   minlength="8"
                                    required>
+
                             <button type="button"
                                     class="toggle-password"
                                     id="toggle-password"
-                                    aria-label="Mostrar contraseña">◎</button>
-                        </span>
-                    </label>
+                                    aria-label="Mostrar contraseña"
+                                    aria-pressed="false">
 
-                    <!-- Botón de envío -->
-                    <button class="btn" type="submit">
-                        Ingresar al sistema <span>→</span>
+                                <span aria-hidden="true">◎</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="btn"
+                            type="submit">
+                        Ingresar al sistema
+                        <span aria-hidden="true">→</span>
                     </button>
 
-                    <!-- Enlace de recuperación -->
-                    <a href="{% url 'recuperar_contrasena' %}" class="link-password">¿Olvidaste tu contraseña?</a>
+                    <a href="{% url 'recuperar_contrasena' %}"
+                       class="link-password">
+                        ¿Olvidaste tu contraseña?
+                    </a>
+
                 </form>
 
             </div>
@@ -121,10 +157,8 @@
 
     </div>
 
-    <!-- ============================================================ -->
-    <!-- SCRIPTS -->
-    <!-- ============================================================ -->
     <script src="{% static 'gestion/js/login.js' %}"></script>
+
 </body>
 
 </html>

@@ -6,7 +6,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <meta name="description" content="Punto Participa - Gestión de actividades del Punto Estudiantil Duoc UC Sede Alameda">
+    <meta name="description"
+        content="Punto Participa - Gestión de actividades del Punto Estudiantil Duoc UC Sede Alameda">
 
     <title>Punto Participa - {% block title %}Inicio{% endblock %}</title>
 
@@ -25,9 +26,7 @@
         <!-- HEADER PRIVADO -->
         <!-- ============================================================ -->
         <header class="app-header">
-            <img class="project-logo"
-                 src="{% static 'gestion/img/duoc.png' %}"
-                 alt="Punto Participa Duoc UC">
+            <img class="project-logo" src="{% static 'gestion/img/duoc.png' %}" alt="Punto Participa Duoc UC">
 
             <div class="account">
                 <button class="icon-button" aria-label="Notificaciones" type="button">
@@ -42,11 +41,13 @@
                     </span>
                 </button>
 
-                <a href="{% url 'logout' %}" class="text-button">Salir</a>
+                <form method="post" action="{% url 'logout' %}"> 
+                    {% csrf_token %}
+                    <button type="submit"> Cerrar sesión </button>
+                </form>
 
-                <img class="duoc-logo"
-                     src="{% static 'gestion/img/logo_duoc.png' %}"
-                     alt="Duoc UC">
+
+                <img class="duoc-logo" src="{% static 'gestion/img/logo_duoc.png' %}" alt="Duoc UC">
             </div>
         </header>
 
@@ -57,42 +58,37 @@
 
             {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
             <a href="{% url 'dashboard' %}"
-               class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                 ⌂ Inicio
             </a>
             {% endif %}
 
             {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
-            <a href="{% url 'lista_actividades' %}"
-               class="{% if 'actividades' in request.path %}active{% endif %}">
+            <a href="{% url 'lista_actividades' %}" class="{% if 'actividades' in request.path %}active{% endif %}">
                 ▦ Actividades
             </a>
             {% endif %}
 
             {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
-            <a href="{% url 'reportes' %}"
-               class="{% if 'reportes' in request.path %}active{% endif %}">
+            <a href="{% url 'reportes' %}" class="{% if 'reportes' in request.path %}active{% endif %}">
                 ▥ Reportes
             </a>
             {% endif %}
 
             {% if rol_usuario == 'Administrador' %}
-            <a href="{% url 'usuarios' %}"
-               class="{% if 'usuarios' in request.path %}active{% endif %}">
+            <a href="{% url 'usuarios' %}" class="{% if 'usuarios' in request.path %}active{% endif %}">
                 ◎ Usuarios
             </a>
             {% endif %}
 
             {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' or rol_usuario == 'Encargado de Registrar' %}
-            <a href="{% url 'escaneo' %}"
-               class="{% if 'escaneo' in request.path %}active{% endif %}">
+            <a href="{% url 'escaneo' %}" class="{% if 'escaneo' in request.path %}active{% endif %}">
                 ▢ Escáner
             </a>
             {% endif %}
 
             {% if rol_usuario == 'Administrador' %}
-            <a href="{% url 'auditoria' %}"
-               class="{% if 'auditoria' in request.path %}active{% endif %}">
+            <a href="{% url 'auditoria' %}" class="{% if 'auditoria' in request.path %}active{% endif %}">
                 ☰ Auditoría
             </a>
             {% endif %}
@@ -135,28 +131,25 @@
     <!-- MODAL GLOBAL DE MENSAJES -->
     <!-- ============================================================ -->
     <div class="modal-backdrop" id="globalMessageModal" hidden>
-    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="globalMessageTitle">
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="globalMessageTitle">
 
-        <header class="modal-header">
-            <h2 id="globalMessageTitle">Notificación</h2>
-            <button type="button"
-                    class="close-button"
-                    data-modal-close
-                    aria-label="Cerrar">×</button>
-        </header>
+            <header class="modal-header">
+                <h2 id="globalMessageTitle">Notificación</h2>
+                <button type="button" class="close-button" data-modal-close aria-label="Cerrar">×</button>
+            </header>
 
-        <div class="modal-body" id="globalMessageBody">
-            <!-- Aquí se muestra el mensaje -->
-        </div>
+            <div class="modal-body" id="globalMessageBody">
+                <!-- Aquí se muestra el mensaje -->
+            </div>
 
-        <footer class="modal-footer">
-            <button type="button" class="btn secondary" data-modal-close>
-                Cerrar
-            </button>
-        </footer>
+            <footer class="modal-footer">
+                <button type="button" class="btn secondary" data-modal-close>
+                    Cerrar
+                </button>
+            </footer>
 
-    </section>
-</div>
+        </section>
+    </div>
 
     <!-- ============================================================ -->
     <!-- TOAST (notificaciones rápidas) -->

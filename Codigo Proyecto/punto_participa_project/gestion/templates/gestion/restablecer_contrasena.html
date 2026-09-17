@@ -1,95 +1,226 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="es-cl">
+<html lang="es-CL">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <meta name="description" content="Restablecer contraseña - Punto Participa">
 
     <title>Restablecer contraseña - Punto Participa</title>
 
     <link rel="icon" href="{% static 'gestion/img/logo_duoc.png' %}" type="image/png">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'gestion/css/login.css' %}">
+    <link rel="stylesheet" href="{% static 'gestion/css/styles.css' %}">
 </head>
 
 <body>
-    <header class="header">
-        <img src="{% static 'gestion/img/duoc.png' %}" alt="Punto Participa Duoc" width="180" height="75">
-        <img src="{% static 'gestion/img/logo_duoc.png' %}" alt="Duoc UC" width="120" height="70">
-    </header>
 
-    <main class="contenido" id="main-content">
-        <div class="contenedor-grid">
-            <div class="circulo-bienvenida" aria-hidden="true">
-                Crea<br>tu nueva<br>contraseña
-            </div>
+    <div class="site-shell">
 
-            <div class="card-login">
-                {% if token_valido %}
-                    <h1>Nueva contraseña</h1>
+        <section class="login-view" aria-labelledby="titulo-restablecer">
+
+            <!-- Encabezado con la misma estética del login -->
+            <header class="brand-header">
+
+                <img class="project-logo" src="{% static 'gestion/img/duoc.png' %}" alt="Punto Participa Duoc UC">
+
+                <img class="duoc-logo" src="{% static 'gestion/img/logo_duoc.png' %}" alt="Duoc UC">
+
+            </header>
+
+            <!-- Contenido principal -->
+            <div class="login-layout">
+
+                <!-- Columna informativa -->
+                <div class="login-copy">
+
+                    <span class="eyebrow">
+                        SEGURIDAD DE LA CUENTA
+                    </span>
+
+                    <h1>
+                        Crea tu nueva contraseña.
+                    </h1>
+
+                    <p>
+                        Define una contraseña segura para recuperar el acceso
+                        a tu cuenta de Punto Participa.
+                    </p>
+
+                    <div class="welcome-note">
+                        <strong>Protege tu cuenta</strong>
+
+                        <span>
+                            Utiliza una contraseña que no compartas con otras
+                            personas y evita usar datos fáciles de adivinar.
+                        </span>
+                    </div>
+
+                    <div class="welcome-features" aria-label="Recomendaciones de seguridad">
+
+                        <span>Mínimo 8 caracteres</span>
+                        <span>No usar contraseñas comunes</span>
+                        <span>No compartir tu contraseña</span>
+
+                    </div>
+
+                </div>
+
+                <!-- Tarjeta de restablecimiento -->
+                <section class="card login-card" aria-labelledby="titulo-restablecer">
+
+                    {% if token_valido %}
+
+                    <h2 id="titulo-restablecer">
+                        Nueva contraseña
+                    </h2>
+
+                    <p>
+                        Ingresa y confirma tu nueva contraseña.
+                    </p>
 
                     {% if messages %}
-                        <div class="mb-3">
-                            {% for message in messages %}
-                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                    {{ message }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-                                </div>
-                            {% endfor %}
+                    <div aria-live="polite">
+
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}" role="alert">
+
+                            {{ message }}
+
                         </div>
+                        {% endfor %}
+
+                    </div>
                     {% endif %}
 
-                    <form method="POST" novalidate>
+                    <form method="post" id="formRestablecerContrasena">
+
                         {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="nueva_contrasena" class="form-label">Nueva contraseña</label>
-                            <input type="password"
-                                   class="form-control"
-                                   id="nueva_contrasena"
-                                   name="nueva_contrasena"
-                                   autocomplete="new-password"
-                                   minlength="8"
-                                   required
-                                   autofocus>
-                        </div>
-                        <div class="mb-3">
-                            <label for="confirmar_contrasena" class="form-label">Confirmar contraseña</label>
-                            <input type="password"
-                                   class="form-control"
-                                   id="confirmar_contrasena"
-                                   name="confirmar_contrasena"
-                                   autocomplete="new-password"
-                                   minlength="8"
-                                   required>
-                        </div>
 
-                        <button type="submit" class="btn btn-login">Restablecer contraseña</button>
+                        <label for="nueva_contrasena">
+                            Nueva contraseña
+
+                            <span class="password-wrapper">
+
+                                <input type="password" id="nueva_contrasena" name="nueva_contrasena"
+                                    autocomplete="new-password" minlength="8" required autofocus>
+
+                                <button type="button" class="toggle-password" data-target="nueva_contrasena"
+                                    aria-label="Mostrar contraseña" aria-pressed="false">
+
+                                    <span aria-hidden="true">◎</span>
+
+                                </button>
+
+                            </span>
+                        </label>
+
+                        <small>
+                            Usa al menos 8 caracteres y evita contraseñas
+                            comunes.
+                        </small>
+
+                        <label for="confirmar_contrasena">
+                            Confirmar contraseña
+
+                            <span class="password-wrapper">
+
+                                <input type="password" id="confirmar_contrasena" name="confirmar_contrasena"
+                                    autocomplete="new-password" minlength="8" required>
+
+                                <button type="button" class="toggle-password" data-target="confirmar_contrasena"
+                                    aria-label="Mostrar contraseña" aria-pressed="false">
+
+                                    <span aria-hidden="true">◎</span>
+
+                                </button>
+
+                            </span>
+                        </label>
+
+                        <small id="mensajeCoincidencia" aria-live="polite">
+                        </small>
+
+                        <button type="submit" class="btn">
+
+                            Restablecer contraseña
+                            <span aria-hidden="true">→</span>
+
+                        </button>
+
                     </form>
-                {% else %}
-                    <h1>Enlace inválido</h1>
-                    <div class="alert alert-danger">
-                        Este enlace de recuperación no es válido o ya expiró. Solicita uno nuevo.
+
+                    <a href="{% url 'login' %}" class="link-password">
+
+                        Volver al inicio de sesión
+
+                    </a>
+
+                    {% else %}
+
+                    <h2 id="titulo-restablecer">
+                        Enlace inválido
+                    </h2>
+
+                    <div class="alert alert-danger" role="alert">
+
+                        Este enlace de recuperación no es válido o ya
+                        expiró. Solicita uno nuevo.
+
                     </div>
-                    <a href="{% url 'recuperar_contrasena' %}" class="btn btn-login">Solicitar nuevo enlace</a>
-                {% endif %}
+
+                    <a href="{% url 'recuperar_contrasena' %}" class="btn">
+
+                        Solicitar nuevo enlace
+
+                    </a>
+
+                    <a href="{% url 'login' %}" class="link-password">
+
+                        Volver al inicio de sesión
+
+                    </a>
+
+                    {% endif %}
+
+                </section>
+
             </div>
-        </div>
-    </main>
 
-    <footer class="footer">
-        <div>Punto Estudiantil - Sede Alameda Duoc UC</div>
-        <div class="enlaces">
-            <a href="#">Soporte Técnico</a>
-            <span>2026</span>
-            <a href="https://www.duoc.cl" target="_blank" rel="noopener">www.duoc.cl</a>
-        </div>
-    </footer>
+            <!-- Pie de página -->
+            <footer class="app-footer">
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+                <div>
+                    Punto Estudiantil - Sede Alameda Duoc UC
+                </div>
+
+                <div class="footer-links">
+
+                    <a href="mailto:soporte@duoc.cl">
+                        Soporte Técnico
+                    </a>
+
+                    <span>2026</span>
+
+                    <a href="https://www.duoc.cl" target="_blank" rel="noopener noreferrer">
+
+                        www.duoc.cl
+
+                    </a>
+
+                </div>
+
+            </footer>
+
+        </section>
+
+    </div>
+
+    <script src="{% static 'gestion/js/restablecer_contrasena.js' %}">
+    </script>
+
 </body>
 
 </html>

@@ -1,40 +1,69 @@
 # ==================== IMPORTS ESTÁNDAR DE PYTHON ====================
-import re
-import json
+
 import csv
+import json
+import logging
+import re
 from collections import defaultdict
 
-# ==================== IMPORTS DE TERCEROS ====================
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment
 
-# ==================== IMPORTS DE DJANGO CORE ====================
-from django.shortcuts import render, redirect, get_object_or_404
+# ==================== IMPORTS DE TERCEROS ====================
+
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, PatternFill
+
+
+# ==================== IMPORTS DE DJANGO ====================
+
+from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.contrib.auth import (
+    authenticate,
+    login,
+    logout,
+    update_session_auth_hash,
+)
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.contrib.messages import get_messages
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
-from django.conf import settings
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
-from django.http import JsonResponse, HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.encoding import force_bytes, force_str
+from django.utils.crypto import get_random_string
+from django.utils.http import (
+    urlsafe_base64_decode,
+    urlsafe_base64_encode,
+)
 
-# ==================== IMPORTS LOCALES (TU APP) ====================
+
+# ==================== IMPORTS LOCALES ====================
+
+from django_ratelimit.decorators import ratelimit
+
+from .decorators import role_required
 from .forms import ActividadForm
 from .models import (
-    Actividad, Asistencia, Alumno, LogAuditoria, Inscripcion,
-    NotificacionCorreo, Carrera, Jornada, Rol, UsuarioSistema
+    Actividad,
+    Alumno,
+    Asistencia,
+    Carrera,
+    Inscripcion,
+    Jornada,
+    LogAuditoria,
+    NotificacionCorreo,
+    Rol,
+    UsuarioSistema,
 )
-from django_ratelimit.decorators import ratelimit
-from django.utils.crypto import get_random_string
 
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_str
+
+logger = logging.getLogger(__name__)
 
 
 # ==================== FUNCIONES AUXILIARES ====================
@@ -57,13 +86,18 @@ def extraer_rut_de_carnet(texto):
 
 
 def tiene_rol(user, roles_permitidos):
+    """Comprueba si el usuario autenticado tiene uno de los roles indicados."""
     if not user.is_authenticated:
         return False
+
     try:
-        rol_usuario = user.usuariosistema.rol.nombre
-        return rol_usuario in roles_permitidos
-    except Exception:
+        perfil = user.usuariosistema
+        if not perfil.activo or perfil.rol is None:
+            return False
+        return perfil.rol.nombre in roles_permitidos
+    except UsuarioSistema.DoesNotExist:
         return False
+
 
 def puede_gestionar_actividad(user, actividad):
     """
@@ -100,41 +134,74 @@ def registrar_log(request, modulo, accion, detalle, objeto_tipo=None, objeto_id=
 def cambiar_contrasena(request):
     try:
         perfil = request.user.usuariosistema
-        if not perfil.must_change_password:
-            return redirect('dashboard')
     except UsuarioSistema.DoesNotExist:
-        return redirect('dashboard')
+        messages.error(
+            request,
+            'Tu cuenta no tiene un perfil válido en el sistema.'
+        )
+        return redirect('login')
+
+    if not perfil.activo:
+        messages.error(request, 'Tu cuenta está desactivada.')
+        return redirect('login')
+
+    if perfil.rol is None:
+        messages.error(request, 'Tu cuenta no tiene un rol asignado.')
+        return redirect('login')
 
     if request.method == 'POST':
-        contrasena_actual = request.POST.get('contrasena_actual')
-        nueva_contrasena = request.POST.get('nueva_contrasena')
-        confirmar = request.POST.get('confirmar_contrasena')
+        contrasena_actual = request.POST.get('contrasena_actual', '')
+        nueva_contrasena = request.POST.get('nueva_contrasena', '')
+        confirmar_contrasena = request.POST.get('confirmar_contrasena', '')
 
         if not request.user.check_password(contrasena_actual):
             messages.error(request, 'La contraseña actual es incorrecta.')
             return render(request, 'gestion/cambiar_contrasena.html')
 
-        if len(nueva_contrasena) < 8:
-            messages.error(request, 'La nueva contraseña debe tener al menos 8 caracteres.')
+        if not nueva_contrasena:
+            messages.error(request, 'Debes ingresar una nueva contraseña.')
             return render(request, 'gestion/cambiar_contrasena.html')
 
-        if nueva_contrasena != confirmar:
+        if request.user.check_password(nueva_contrasena):
+            messages.error(
+                request,
+                'La nueva contraseña debe ser diferente de la actual.'
+            )
+            return render(request, 'gestion/cambiar_contrasena.html')
+
+        if nueva_contrasena != confirmar_contrasena:
             messages.error(request, 'Las contraseñas no coinciden.')
             return render(request, 'gestion/cambiar_contrasena.html')
 
+        try:
+            validate_password(nueva_contrasena, user=request.user)
+        except ValidationError as error:
+            for mensaje in error.messages:
+                messages.error(request, mensaje)
+            return render(request, 'gestion/cambiar_contrasena.html')
+
         request.user.set_password(nueva_contrasena)
-        request.user.save()
+        request.user.save(update_fields=['password'])
         update_session_auth_hash(request, request.user)
+
         perfil.must_change_password = False
-        perfil.save()
+        perfil.save(update_fields=['must_change_password'])
 
-        login(request, request.user)
+        registrar_log(
+            request,
+            'Seguridad',
+            'Cambio de contraseña',
+            f'Usuario "{request.user.username}" cambió su contraseña',
+            'Usuario',
+            request.user.id,
+            request.user.username,
+        )
 
-        registrar_log(request, 'Seguridad', 'Cambio de contraseña',
-                      f'Usuario "{request.user.username}" cambió su contraseña inicial',
-                      'Usuario', request.user.id, request.user.username)
+        messages.success(request, 'Contraseña actualizada correctamente.')
 
-        messages.success(request, 'Contraseña actualizada correctamente. Ya puedes usar el sistema.')
+        if perfil.rol.nombre == 'Encargado de Registrar':
+            return redirect('escaneo')
+
         return redirect('dashboard')
 
     return render(request, 'gestion/cambiar_contrasena.html')
@@ -142,141 +209,451 @@ def cambiar_contrasena(request):
 
 # ==================== AUTENTICACIÓN ====================
 
-@ratelimit(key='ip', rate='5/15m', method='POST')
+@ratelimit( key='ip', rate='5/15m', method='POST', block=True)
 def login_view(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
+    if request.method != 'POST':
+        return render( request, 'gestion/login.html' )
 
-        if user is not None:
-            try:
-                perfil = user.usuariosistema
-                if not perfil.activo:
-                    messages.error(request, 'Tu cuenta ha sido desactivada por un administrador.')
-                    return render(request, 'gestion/login.html')
-            except UsuarioSistema.DoesNotExist:
-                pass
+    username = request.POST.get(
+        'username',
+        ''
+    ).strip()
 
-            login(request, user)
+    password = request.POST.get(
+        'password',
+        ''
+    )
 
-            try:
-                perfil = user.usuariosistema
-                if perfil.must_change_password:
-                    return redirect('cambiar_contrasena')
-            except UsuarioSistema.DoesNotExist:
-                pass
+    if not username or not password:
+        messages.error(
+            request,
+            'Debes ingresar usuario y contraseña.'
+        )
 
-            try:
-                rol = user.usuariosistema.rol.nombre
-                if rol == 'Encargado de Registrar':
-                    return redirect('escaneo')
-                return redirect('dashboard')
-            except Exception:
-                return redirect('dashboard')
-        else:
-            messages.error(request, 'Usuario o contraseña incorrectos.')
+        return render(
+            request,
+            'gestion/login.html'
+        )
 
-    return render(request, 'gestion/login.html')
+    user = authenticate(
+        request,
+        username=username,
+        password=password
+    )
 
+    if user is None:
+        messages.error(
+            request,
+            'Usuario o contraseña incorrectos.'
+        )
 
+        return render(
+            request,
+            'gestion/login.html'
+        )
+
+    if not user.is_active:
+        messages.error(
+            request,
+            'Usuario o contraseña incorrectos.'
+        )
+
+        return render(
+            request,
+            'gestion/login.html'
+        )
+
+    try:
+        perfil = user.usuariosistema
+
+    except UsuarioSistema.DoesNotExist:
+        messages.error(
+            request,
+            'La cuenta no tiene un perfil válido en el sistema.'
+        )
+
+        return render(
+            request,
+            'gestion/login.html'
+        )
+
+    if not perfil.activo:
+        messages.error(
+            request,
+            'Usuario o contraseña incorrectos.'
+        )
+
+        return render(
+            request,
+            'gestion/login.html'
+        )
+
+    if perfil.rol is None:
+        messages.error(
+            request,
+            'La cuenta no tiene un rol asignado.'
+        )
+
+        return render(
+            request,
+            'gestion/login.html'
+        )
+
+    rol = perfil.rol.nombre
+
+    roles_validos = {
+        'Administrador',
+        'Creador de Evento',
+        'Encargado de Registrar',
+    }
+
+    if rol not in roles_validos:
+        messages.error(
+            request,
+            'La cuenta tiene un rol no válido.'
+        )
+
+        return render(
+            request,
+            'gestion/login.html'
+        )
+
+    login(
+        request,
+        user
+    )
+
+    if perfil.must_change_password:
+        return redirect(
+            'cambiar_contrasena'
+        )
+
+    if rol == 'Encargado de Registrar':
+        return redirect(
+            'escaneo'
+        )
+
+    return redirect(
+        'dashboard'
+    )
+
+@login_required
 def logout_view(request):
-    storage = get_messages(request)
-    for _ in storage:
-        pass
+    if request.method != 'POST':
+        return redirect('dashboard')
+
     logout(request)
     return redirect('login')
 
+
 # ==================== RECUPERACIÓN DE CONTRASEÑA ====================
 
-@ratelimit(key='ip', rate='5/15m', method='POST')
+@ratelimit(
+    key='ip',
+    rate='5/15m',
+    method='POST',
+    block=True
+)
 def solicitar_recuperacion(request):
-    if request.method == 'POST':
-        identificador = request.POST.get('identificador', '').strip()
+    """
+    Solicita un enlace de recuperación de contraseña.
 
-        # Buscar por username o email, sin revelar si existe o no
-        user = User.objects.filter(username=identificador).first() or \
-               User.objects.filter(email__iexact=identificador).first()
+    El mensaje final es siempre genérico para no revelar
+    si un usuario o correo existe en el sistema.
+    """
 
-        if user and user.is_active:
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            token = PasswordResetTokenGenerator().make_token(user)
-            enlace = f"{settings.SITE_URL}/restablecer-contrasena/{uid}/{token}/"
+    if request.method != 'POST':
+        return render(
+            request,
+            'gestion/recuperar_contrasena.html'
+        )
 
-            html_contenido = render_to_string('gestion/email_recuperacion.html', {
-                'user': user,
-                'enlace': enlace,
-            })
-            send_mail(
-                subject='Recuperación de contraseña - Punto Participa',
-                message=f'Para restablecer tu contraseña, visita: {enlace}',
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
-                html_message=html_contenido,
-                fail_silently=True,
+    identificador = request.POST.get(
+        'identificador',
+        ''
+    ).strip()
+
+    if not identificador:
+        messages.error(
+            request,
+            'Ingresa tu usuario o correo electrónico.'
+        )
+
+        return render(
+            request,
+            'gestion/recuperar_contrasena.html'
+        )
+
+    usuario = (
+        User.objects
+        .filter(username=identificador)
+        .first()
+    )
+
+    if usuario is None:
+        usuario = (
+            User.objects
+            .filter(email__iexact=identificador)
+            .first()
+        )
+
+    tiene_correo = bool(
+        usuario is not None
+        and usuario.email
+        and usuario.email.strip()
+    )
+
+    if (
+        usuario is not None
+        and usuario.is_active
+        and tiene_correo
+    ):
+        try:
+            uid = urlsafe_base64_encode(
+                force_bytes(usuario.pk)
             )
 
-        # Mensaje genérico siempre, exista o no el usuario (evita enumeración de cuentas)
-        messages.success(
-            request,
-            'Si el usuario existe, te enviamos un correo con instrucciones para restablecer tu contraseña.'
+            token = PasswordResetTokenGenerator().make_token(
+                usuario
+            )
+
+            enlace = (
+                f'{settings.SITE_URL.rstrip("/")}'
+                f'/restablecer-contrasena/{uid}/{token}/'
+            )
+
+            html_contenido = render_to_string(
+                'gestion/email_recuperacion.html',
+                {
+                    'user': usuario,
+                    'enlace': enlace,
+                }
+            )
+
+            mensaje_plano = (
+                'Para restablecer tu contraseña, visita el siguiente '
+                'enlace:\n\n'
+                f'{enlace}\n\n'
+                'Si no solicitaste este cambio, puedes ignorar este mensaje.'
+            )
+
+            cantidad_enviada = send_mail(
+                subject=(
+                    'Recuperación de contraseña - Punto Participa'
+                ),
+                message=mensaje_plano,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[
+                    usuario.email.strip()
+                ],
+                html_message=html_contenido,
+                fail_silently=False,
+            )
+
+            if cantidad_enviada != 1:
+                raise RuntimeError(
+                    'El servidor de correo no aceptó el mensaje.'
+                )
+
+            registrar_log(
+                request,
+                'Seguridad',
+                'Solicitud de recuperación de contraseña',
+                (
+                    'Se envió un enlace de recuperación para el '
+                    f'usuario "{usuario.username}".'
+                ),
+                'Usuario',
+                usuario.id,
+                usuario.username
+            )
+
+        except Exception:
+            logger.exception(
+                'Error enviando correo de recuperación '
+                'para el usuario ID %s',
+                usuario.id
+            )
+
+    # Este mensaje debe ser igual para usuario existente,
+    # inexistente, inactivo o sin correo.
+    messages.success(
+        request,
+        (
+            'Si el usuario existe y tiene un correo registrado, '
+            'recibirá instrucciones para restablecer su contraseña.'
         )
-        return redirect('login')
+    )
 
-    return render(request, 'gestion/recuperar_contrasena.html')
+    return redirect('login')
 
 
-def restablecer_contrasena(request, uidb64, token):
+
+def restablecer_contrasena(request, uidb64, token ):
+    """
+    Valida un enlace de recuperación y permite establecer
+    una nueva contraseña.
+    """
+
     try:
-        uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
+        uid = force_str(
+            urlsafe_base64_decode(uidb64)
+        )
 
-    token_valido = user is not None and PasswordResetTokenGenerator().check_token(user, token)
+        usuario = User.objects.get(
+            pk=uid,
+            is_active=True
+        )
+
+    except (
+        TypeError,
+        ValueError,
+        OverflowError,
+        UnicodeDecodeError,
+        User.DoesNotExist
+    ):
+        usuario = None
+
+    token_generator = PasswordResetTokenGenerator()
+
+    token_valido = (
+        usuario is not None
+        and token_generator.check_token(usuario, token)
+    )
 
     if not token_valido:
-        return render(request, 'gestion/restablecer_contrasena.html', {'token_valido': False})
+        return render(
+            request,
+            'gestion/restablecer_contrasena.html',
+            {
+                'token_valido': False
+            }
+        )
 
     if request.method == 'POST':
-        nueva_contrasena = request.POST.get('nueva_contrasena')
-        confirmar = request.POST.get('confirmar_contrasena')
+        nueva_contrasena = request.POST.get(
+            'nueva_contrasena',
+            ''
+        )
 
-        if not nueva_contrasena or len(nueva_contrasena) < 8:
-            messages.error(request, 'La contraseña debe tener al menos 8 caracteres.')
-            return render(request, 'gestion/restablecer_contrasena.html', {'token_valido': True})
+        confirmar_contrasena = request.POST.get(
+            'confirmar_contrasena',
+            ''
+        )
 
-        if nueva_contrasena != confirmar:
-            messages.error(request, 'Las contraseñas no coinciden.')
-            return render(request, 'gestion/restablecer_contrasena.html', {'token_valido': True})
+        contexto = {
+            'token_valido': True
+        }
 
-        user.set_password(nueva_contrasena)
-        user.save()
+        if not nueva_contrasena:
+            messages.error(
+                request,
+                'Debes ingresar una nueva contraseña.'
+            )
+
+            return render(
+                request,
+                'gestion/restablecer_contrasena.html',
+                contexto
+            )
+
+        if nueva_contrasena != confirmar_contrasena:
+            messages.error(
+                request,
+                'Las contraseñas no coinciden.'
+            )
+
+            return render(
+                request,
+                'gestion/restablecer_contrasena.html',
+                contexto
+            )
+
+        if usuario.check_password(nueva_contrasena):
+            messages.error(
+                request,
+                'La nueva contraseña debe ser diferente de la anterior.'
+            )
+
+            return render(
+                request,
+                'gestion/restablecer_contrasena.html',
+                contexto
+            )
 
         try:
-            perfil = user.usuariosistema
+            validate_password(
+                nueva_contrasena,
+                user=usuario
+            )
+
+        except ValidationError as error:
+            for mensaje in error.messages:
+                messages.error(request, mensaje)
+
+            return render(
+                request,
+                'gestion/restablecer_contrasena.html',
+                contexto
+            )
+
+        # Guardar la nueva contraseña de forma segura.
+        usuario.set_password(nueva_contrasena)
+        usuario.save(
+            update_fields=['password']
+        )
+
+        # Desactivar la obligación de cambiar contraseña.
+        try:
+            perfil = usuario.usuariosistema
             perfil.must_change_password = False
-            perfil.save()
+            perfil.save(
+                update_fields=['must_change_password']
+            )
+
         except UsuarioSistema.DoesNotExist:
+            # La cuenta puede existir sin perfil por datos antiguos.
+            # No se expone ese detalle al usuario.
             pass
 
-        registrar_log(request, 'Seguridad', 'Restablecimiento de contraseña',
-                      f'Usuario "{user.username}" restableció su contraseña vía enlace de recuperación',
-                      'Usuario', user.id, user.username)
+        registrar_log(
+            request,
+            'Seguridad',
+            'Restablecimiento de contraseña',
+            (
+                f'Usuario "{usuario.username}" restableció '
+                'su contraseña mediante enlace de recuperación.'
+            ),
+            'Usuario',
+            usuario.id,
+            usuario.username
+        )
 
-        messages.success(request, 'Tu contraseña fue restablecida correctamente. Ya puedes iniciar sesión.')
+        messages.success(
+            request,
+            (
+                'Tu contraseña fue restablecida correctamente. '
+                'Ya puedes iniciar sesión.'
+            )
+        )
+
         return redirect('login')
 
-    return render(request, 'gestion/restablecer_contrasena.html', {'token_valido': True})
+    return render(
+        request,
+        'gestion/restablecer_contrasena.html',
+        {
+            'token_valido': True
+        }
+    )
+
 
 
 # ==================== DASHBOARD ====================
 
 @login_required
+@role_required( 'Administrador', 'Creador de Evento', redirect_name='escaneo' )
 def dashboard(request):
-    if not tiene_rol(request.user, ['Administrador', 'Creador de Evento']):
-        messages.error(request, 'No tienes permisos para ver el panel principal.')
-        return redirect('login')
 
     es_admin = tiene_rol(request.user, ['Administrador'])
     es_creador = tiene_rol(request.user, ['Creador de Evento'])
@@ -334,10 +711,8 @@ def dashboard(request):
 # ==================== REPORTES ====================
 
 @login_required
+@role_required('Administrador', 'Creador de Evento')
 def reportes(request):
-    if not tiene_rol(request.user, ['Administrador', 'Creador de Evento']):
-        messages.error(request, 'No tienes permisos para consultar reportes.')
-        return redirect('dashboard')
 
     actividad_seleccionada = request.GET.get('actividad', '')
     carrera = request.GET.get('carrera', '')
@@ -622,11 +997,8 @@ def exportar_reportes(request, formato):
 # ==================== USUARIOS ====================
 
 @login_required
+@role_required('Administrador')
 def usuarios(request):
-    if not tiene_rol(request.user, ['Administrador']):
-        messages.error(request, 'No tienes permisos para gestionar usuarios.')
-        return redirect('dashboard')
-
     usuarios = UsuarioSistema.objects.all().order_by('-id')
     logs_recientes = LogAuditoria.objects.all().order_by('-fecha_registro')[:10]
     roles = Rol.objects.all()
@@ -636,14 +1008,14 @@ def usuarios(request):
         'logs': logs_recientes,
         'roles': roles,
     }
+
     return render(request, 'gestion/usuarios.html', context)
 
 
-@login_required
-def guardar_usuario(request):
-    if not tiene_rol(request.user, ['Administrador']):
-        return JsonResponse({'success': False, 'message': 'No autorizado'})
 
+@login_required
+@role_required('Administrador', json_response=True)
+def guardar_usuario(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Método no permitido'})
 
@@ -747,10 +1119,8 @@ def guardar_usuario(request):
 # ==================== CRUD ACTIVIDADES ====================
 
 @login_required
+@role_required('Administrador', 'Creador de Evento')
 def lista_actividades(request):
-    if not tiene_rol(request.user, ['Administrador', 'Creador de Evento']):
-        messages.error(request, 'No tienes permisos para ver actividades.')
-        return redirect('dashboard')
 
     tipo = request.GET.get('tipo', '')
     fecha = request.GET.get('fecha', '')
@@ -801,10 +1171,8 @@ def lista_actividades(request):
 
 
 @login_required
+@role_required('Administrador', 'Creador de Evento')
 def crear_actividad(request):
-    if not tiene_rol(request.user, ['Administrador', 'Creador de Evento']):
-        messages.error(request, 'No tienes permisos para crear actividades.')
-        return redirect('dashboard')
 
     if request.method == 'POST':
         request.POST = request.POST.copy()
@@ -1004,32 +1372,76 @@ def eliminar_actividad(request, pk):
 # ==================== INVITACIONES Y ELIMINACIÓN RÁPIDA ====================
 
 @login_required
+@role_required(
+    'Administrador',
+    'Creador de Evento',
+    json_response=True
+)
 def enviar_invitaciones(request):
-    if not tiene_rol(request.user, ['Administrador', 'Creador de Evento']):
-        return JsonResponse({'success': False, 'message': 'No autorizado'})
-
     if request.method != 'POST':
-        return JsonResponse({'success': False, 'message': 'Método no permitido'})
+        return JsonResponse(
+            {
+                'success': False,
+                'message': 'Método no permitido.'
+            },
+            status=405
+        )
 
     try:
         actividad_id = request.POST.get('actividad_id')
-        actividad = get_object_or_404(Actividad, pk=actividad_id)
 
-        carreras_asociadas = [c.nombre for c in actividad.carreras.all()]
-        jornadas_asociadas = [j.nombre for j in actividad.jornadas.all()]
+        if not actividad_id:
+            return JsonResponse(
+                {
+                    'success': False,
+                    'message': 'No se recibió la actividad.'
+                },
+                status=400
+            )
+
+        actividad = get_object_or_404(
+            Actividad,
+            pk=actividad_id
+        )
+
+        # El Administrador puede gestionar cualquiera.
+        # El Creador solo puede gestionar las actividades propias.
+        if not puede_gestionar_actividad(request.user, actividad):
+            return JsonResponse(
+                {
+                    'success': False,
+                    'message': 'No tienes permisos sobre esta actividad.'
+                },
+                status=403
+            )
+
+        carreras_asociadas = list(
+            actividad.carreras.values_list('nombre', flat=True)
+        )
+
+        jornadas_asociadas = list(
+            actividad.jornadas.values_list('nombre', flat=True)
+        )
 
         alumnos_qs = Alumno.objects.all()
+
         if carreras_asociadas:
-            alumnos_qs = alumnos_qs.filter(carrera__in=carreras_asociadas)
+            alumnos_qs = alumnos_qs.filter(
+                carrera__in=carreras_asociadas
+            )
+
         if jornadas_asociadas:
-            alumnos_qs = alumnos_qs.filter(jornada__in=jornadas_asociadas)
+            alumnos_qs = alumnos_qs.filter(
+                jornada__in=jornadas_asociadas
+            )
 
-        # Límite configurable desde settings/.env (MAX_INVITACIONES_POR_ENVIO)
-        # 0 o negativo = sin límite
         limite = settings.MAX_INVITACIONES_POR_ENVIO
-        alumnos = alumnos_qs if limite <= 0 else alumnos_qs[:limite]
 
-        filtro_descripcion = "Todas las asociadas"
+        if limite > 0:
+            alumnos_qs = alumnos_qs[:limite]
+
+        filtro_descripcion = 'Todas las asociadas'
+
         if carreras_asociadas or jornadas_asociadas:
             filtro_descripcion = (
                 f"Carreras: {', '.join(carreras_asociadas) or 'Todas'} | "
@@ -1039,57 +1451,95 @@ def enviar_invitaciones(request):
         enviados = 0
         fallidos = 0
 
-        for alumno in alumnos:
+        for alumno in alumnos_qs:
             try:
-                html_contenido = render_to_string('gestion/email_invitacion.html', {
-                    'actividad': actividad,
-                    'alumno': alumno,
-                    'site_url': settings.SITE_URL,
-                })
-                send_mail(
+                html_contenido = render_to_string(
+                    'gestion/email_invitacion.html',
+                    {
+                        'actividad': actividad,
+                        'alumno': alumno,
+                        'site_url': settings.SITE_URL,
+                    }
+                )
+
+                cantidad_enviada = send_mail(
                     subject=f'Invitación: {actividad.titulo}',
-                    message=f'Hola {alumno.nombres}, te invitamos a participar en {actividad.titulo}.',
+                    message=(
+                        f'Hola {alumno.nombres}, te invitamos a participar '
+                        f'en {actividad.titulo}.'
+                    ),
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[alumno.correo],
                     html_message=html_contenido,
-                    fail_silently=True,
+                    fail_silently=False,
                 )
+
+                if cantidad_enviada != 1:
+                    raise RuntimeError(
+                        'El servidor de correo no aceptó el mensaje.'
+                    )
+
                 NotificacionCorreo.objects.create(
                     actividad=actividad,
                     alumno=alumno,
                     estado_envio='EXITO',
                     filtro_aplicado=filtro_descripcion
                 )
+
                 enviados += 1
-            except Exception as e:
+
+            except Exception:
                 NotificacionCorreo.objects.create(
                     actividad=actividad,
                     alumno=alumno,
                     estado_envio='FALLO',
                     filtro_aplicado=filtro_descripcion
                 )
+
                 fallidos += 1
 
-        registrar_log(request, 'Actividades', 'Envío de invitaciones',
-                      f'Actividad "{actividad.titulo}": {enviados} exitosos, {fallidos} fallidos. '
-                      f'Filtro: {filtro_descripcion}',
-                      'Actividad', actividad.id, actividad.titulo)
+        registrar_log(
+            request,
+            'Actividades',
+            'Envío de invitaciones',
+            (
+                f'Actividad "{actividad.titulo}": '
+                f'{enviados} exitosos, {fallidos} fallidos. '
+                f'Filtro: {filtro_descripcion}'
+            ),
+            'Actividad',
+            actividad.id,
+            actividad.titulo
+        )
 
         return JsonResponse({
-            'success': True,
-            'message': f'{enviados} invitaciones enviadas exitosamente, {fallidos} fallidas.'
+            'success': fallidos == 0,
+            'enviados': enviados,
+            'fallidos': fallidos,
+            'message': (
+                f'{enviados} invitaciones enviadas exitosamente, '
+                f'{fallidos} fallidas.'
+            )
         })
-    except Exception as e:
-        return JsonResponse({'success': False, 'message': f'Error al enviar: {str(e)}'})
+
+    except Exception:
+        return JsonResponse(
+            {
+                'success': False,
+                'message': 'Ocurrió un error al procesar las invitaciones.'
+            },
+            status=500
+        )
+
 
 @login_required
+@role_required('Administrador', 'Creador de Evento', json_response=True)
 def previsualizar_invitacion(request, pk):
+
     """
     Devuelve el HTML renderizado del correo de invitación
     para previsualizarlo antes de enviarlo.
     """
-    if not tiene_rol(request.user, ['Administrador', 'Creador de Evento']):
-        return JsonResponse({'success': False, 'message': 'No autorizado'})
 
     try:
         actividad = get_object_or_404(Actividad, pk=pk)
@@ -1167,154 +1617,338 @@ def eliminar_ajax(request, pk):
 # ==================== ESCÁNER ====================
 
 @login_required
+@role_required( 'Administrador', 'Creador de Evento','Encargado de Registrar')
 @ratelimit(key='ip', rate='30/1m', method='POST')
 def escaneo(request):
-    if not tiene_rol(request.user, ['Administrador', 'Creador de Evento', 'Encargado de Registrar']):
-        messages.error(request, 'No tienes permisos para registrar asistencia.')
-        return redirect('dashboard')
 
     # 1. CAMBIAR ACTIVIDAD
     if request.method == 'POST' and 'cambiar_actividad' in request.POST:
         actividad_id = request.POST.get('actividad_id')
-        if actividad_id:
-            try:
-                actividad = Actividad.objects.get(pk=actividad_id, estado='ACTIVA')
-                request.session['actividad_escaneo_id'] = actividad.id
-                messages.success(request, f'Actividad seleccionada: {actividad.titulo}')
-            except Actividad.DoesNotExist:
-                messages.error(request, 'Actividad no válida o inactiva.')
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'success': True, 'redirect_url': '/escaneo/'})
-        return redirect('escaneo')
+
+        if not actividad_id:
+            mensaje = 'Debes seleccionar una actividad.'
+
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': mensaje
+                }, status=400)
+
+            messages.error(request, mensaje)
+            return redirect('escaneo')
+
+        try:
+            actividad = Actividad.objects.get(
+                pk=actividad_id,
+                estado='ACTIVA'
+            )
+
+            request.session['actividad_escaneo_id'] = actividad.id
+
+            messages.success(
+                request,
+                f'Actividad seleccionada: {actividad.titulo}'
+            )
+
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'redirect_url': '/escaneo/'
+                })
+
+            return redirect('escaneo')
+
+        except Actividad.DoesNotExist:
+            mensaje = 'Actividad no válida o inactiva.'
+
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': mensaje
+                }, status=404)
+
+            messages.error(request, mensaje)
+            return redirect('escaneo')
 
     # 2. FINALIZAR TURNO
     if request.method == 'POST' and 'finalizar_turno' in request.POST:
-        if 'actividad_escaneo_id' in request.session:
-            del request.session['actividad_escaneo_id']
-        messages.info(request, 'Turno finalizado. Selecciona una nueva actividad.')
+        request.session.pop('actividad_escaneo_id', None)
+
+        messages.info(
+            request,
+            'Turno finalizado. Selecciona una nueva actividad.'
+        )
+
         return redirect('escaneo')
 
     # 3. REGISTRAR ASISTENCIA
     if request.method == 'POST' and 'rut' in request.POST:
-        rut_original = request.POST.get('rut')
-        confirmar = request.POST.get('confirmar', 'false') == 'true'
+        rut_original = request.POST.get('rut', '').strip()
 
-        if 'portal.sidiv.registrocivil.cl' in rut_original or 'RUN=' in rut_original:
+        if not rut_original:
+            return JsonResponse({
+                'success': False,
+                'message': 'Debes ingresar un RUT.'
+            }, status=400)
+
+        confirmar = (
+            request.POST.get('confirmar', 'false').lower() == 'true'
+        )
+
+        # Detectar el método de ingreso
+        if (
+            'portal.sidiv.registrocivil.cl' in rut_original
+            or 'RUN=' in rut_original.upper()
+        ):
             metodo_ingreso = 'QR'
-            match = re.search(r'[?&]RUN=([0-9kK-]+)', rut_original)
+
+            match = re.search(
+                r'[?&]RUN=([0-9kK-]+)',
+                rut_original,
+                re.IGNORECASE
+            )
+
             if match:
                 rut_original = match.group(1)
-        elif "'" in rut_original or "-" in rut_original:
+
+        elif "'" in rut_original or '-' in rut_original:
             metodo_ingreso = 'CODIGO'
-            rut_original = rut_original.replace("'", "").replace("-", "")
+            rut_original = (
+                rut_original
+                .replace("'", "")
+                .replace("-", "")
+            )
+
         else:
             metodo_ingreso = 'RUT'
 
-        texto_limpio = re.sub(r'[^0-9kK]', '', str(rut_original)).upper()
-        if len(texto_limpio) >= 9:
-            rut = texto_limpio[:9]
-        else:
-            rut = texto_limpio
+        rut = normalizar_rut(rut_original)
 
-        actividad_id = request.session.get('actividad_escaneo_id')
-        if not actividad_id:
-            return JsonResponse({'success': False, 'message': 'Primero selecciona una actividad.'})
         if not rut:
-            return JsonResponse({'success': False, 'message': 'Debes ingresar un RUT.'})
+            return JsonResponse({
+                'success': False,
+                'message': 'Debes ingresar un RUT válido.'
+            }, status=400)
+
+        actividad_id = request.session.get(
+            'actividad_escaneo_id'
+        )
+
+        if not actividad_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Primero selecciona una actividad.'
+            }, status=400)
 
         try:
             alumno = Alumno.objects.get(rut=rut)
-            actividad = Actividad.objects.get(pk=actividad_id)
-
-            if confirmar is False:
-                if Asistencia.objects.filter(actividad=actividad, alumno=alumno).exists():
-                    registrar_log(request, 'Escáner', 'Intento de asistencia duplicada',
-                                  f'Alumno {alumno.nombres} {alumno.apellidos} (RUT: {alumno.rut}) '
-                                  f'intentó registrar asistencia en {actividad.titulo}',
-                                  'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
-                    return JsonResponse({'success': False, 'message': 'Ya registrado anteriormente'})
-                if actividad.cupos_disponibles is not None and actividad.cupos_disponibles <= 0:
-                    return JsonResponse({'success': False, 'message': 'No quedan cupos disponibles para esta actividad.'})
-                return JsonResponse({
-                    'success': True,
-                    'confirmar': True,
-                    'alumno': {
-                        'nombre': f'{alumno.nombres} {alumno.apellidos}',
-                        'rut': alumno.rut,
-                        'carrera': alumno.carrera,
-                        'jornada': alumno.jornada
-                    }
-                })
-
-            elif confirmar is True:
-                with transaction.atomic():
-                    actividad = Actividad.objects.select_for_update().get(pk=actividad_id)
-                    if Asistencia.objects.filter(actividad=actividad, alumno=alumno).exists():
-                        registrar_log(request, 'Escáner', 'Intento de asistencia duplicada',
-                                      f'Alumno {alumno.nombres} {alumno.apellidos} intentó registrar '
-                                      f'asistencia en {actividad.titulo}',
-                                      'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
-                        return JsonResponse({'success': False, 'message': 'Ya registrado anteriormente'})
-                    if actividad.cupos_disponibles is not None and actividad.cupos_disponibles <= 0:
-                        return JsonResponse({'success': False, 'message': 'No quedan cupos disponibles para esta actividad.'})
-                    if actividad.cupos_disponibles is not None:
-                        actividad.cupos_disponibles -= 1
-                        actividad.save()
-                    Asistencia.objects.create(
-                        actividad=actividad,
-                        alumno=alumno,
-                        metodo_ingreso=metodo_ingreso,
-                        registrado_por=request.user
-                    )
-                    registrar_log(request, 'Escáner', 'Registro de asistencia',
-                                  f'{alumno.nombres} {alumno.apellidos} - {actividad.titulo}',
-                                  'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
-                return JsonResponse({
-                    'success': True,
-                    'confirmar': False,
-                    'message': f'Asistencia registrada para {alumno.nombres} {alumno.apellidos}'
-                })
 
         except Alumno.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Estudiante no encontrado'})
-        except Actividad.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Actividad no válida'})
-        except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Error inesperado: {str(e)}'})
+            return JsonResponse({
+                'success': False,
+                'message': 'Estudiante no encontrado.'
+            }, status=404)
 
-    # 4. GET
-    actividad_seleccionada_id = request.session.get('actividad_escaneo_id')
+        try:
+            actividad = Actividad.objects.get(
+                pk=actividad_id,
+                estado='ACTIVA'
+            )
+
+        except Actividad.DoesNotExist:
+            request.session.pop('actividad_escaneo_id', None)
+
+            return JsonResponse({
+                'success': False,
+                'message': 'La actividad no existe o ya no está activa.'
+            }, status=404)
+
+        # Primera etapa: mostrar datos y solicitar confirmación
+        if not confirmar:
+            asistencia_existente = Asistencia.objects.filter(
+                actividad=actividad,
+                alumno=alumno
+            ).exists()
+
+            if asistencia_existente:
+                registrar_log(
+                    request,
+                    'Escáner',
+                    'Intento de asistencia duplicada',
+                    (
+                        f'Alumno {alumno.nombres} {alumno.apellidos} '
+                        f'(RUT: {alumno.rut}) intentó registrar asistencia '
+                        f'en {actividad.titulo}'
+                    ),
+                    'Alumno',
+                    alumno.id,
+                    f'{alumno.nombres} {alumno.apellidos}'
+                )
+
+                return JsonResponse({
+                    'success': False,
+                    'message': 'La asistencia ya fue registrada anteriormente.'
+                }, status=409)
+
+            return JsonResponse({
+                'success': True,
+                'confirmar': True,
+                'alumno': {
+                    'nombre': (
+                        f'{alumno.nombres} '
+                        f'{alumno.apellidos}'
+                    ),
+                    'rut': alumno.rut,
+                    'carrera': alumno.carrera,
+                    'jornada': alumno.jornada
+                }
+            })
+
+        # Segunda etapa: registrar asistencia de forma segura
+        try:
+            with transaction.atomic():
+                actividad = (
+                    Actividad.objects
+                    .select_for_update()
+                    .get(
+                        pk=actividad_id,
+                        estado='ACTIVA'
+                    )
+                )
+
+                asistencia_existente = Asistencia.objects.filter(
+                    actividad=actividad,
+                    alumno=alumno
+                ).exists()
+
+                if asistencia_existente:
+                    registrar_log(
+                        request,
+                        'Escáner',
+                        'Intento de asistencia duplicada',
+                        (
+                            f'Alumno {alumno.nombres} '
+                            f'{alumno.apellidos} intentó registrar '
+                            f'asistencia en {actividad.titulo}'
+                        ),
+                        'Alumno',
+                        alumno.id,
+                        f'{alumno.nombres} {alumno.apellidos}'
+                    )
+
+                    return JsonResponse({
+                        'success': False,
+                        'message': (
+                            'La asistencia ya fue registrada '
+                            'anteriormente.'
+                        )
+                    }, status=409)
+
+                # No se descuentan cupos aquí.
+                # Los cupos se descuentan al realizar la inscripción.
+                Asistencia.objects.create(
+                    actividad=actividad,
+                    alumno=alumno,
+                    metodo_ingreso=metodo_ingreso,
+                    registrado_por=request.user
+                )
+
+                registrar_log(
+                    request,
+                    'Escáner',
+                    'Registro de asistencia',
+                    (
+                        f'{alumno.nombres} {alumno.apellidos} - '
+                        f'{actividad.titulo}'
+                    ),
+                    'Alumno',
+                    alumno.id,
+                    f'{alumno.nombres} {alumno.apellidos}'
+                )
+
+        except Actividad.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'La actividad no existe o ya no está activa.'
+            }, status=404)
+
+        except IntegrityError:
+            return JsonResponse({
+                'success': False,
+                'message': (
+                    'La asistencia ya fue registrada '
+                    'por otro operador.'
+                )
+            }, status=409)
+
+        except Exception:
+            return JsonResponse({
+                'success': False,
+                'message': (
+                    'Ocurrió un error al registrar la asistencia.'
+                )
+            }, status=500)
+
+        return JsonResponse({
+            'success': True,
+            'confirmar': False,
+            'message': (
+                f'Asistencia registrada para '
+                f'{alumno.nombres} {alumno.apellidos}.'
+            )
+        })
+
+    # 4. MOSTRAR LA PÁGINA DEL ESCÁNER
+    actividad_seleccionada_id = request.session.get(
+        'actividad_escaneo_id'
+    )
+
     actividad_seleccionada = None
+
     if actividad_seleccionada_id:
         try:
-            actividad_seleccionada = Actividad.objects.get(pk=actividad_seleccionada_id)
-        except Actividad.DoesNotExist:
-            del request.session['actividad_escaneo_id']
+            actividad_seleccionada = Actividad.objects.get(
+                pk=actividad_seleccionada_id,
+                estado='ACTIVA'
+            )
 
-    actividades_disponibles = Actividad.objects.filter(estado='ACTIVA').order_by('-fecha_inicio')
+        except Actividad.DoesNotExist:
+            request.session.pop('actividad_escaneo_id', None)
+
+    actividades_disponibles = (
+        Actividad.objects
+        .filter(estado='ACTIVA')
+        .order_by('-fecha_inicio')
+    )
+
     ultimas_asistencias = []
+
     if actividad_seleccionada:
         ultimas_asistencias = (
             Asistencia.objects
             .filter(actividad=actividad_seleccionada)
+            .select_related('alumno', 'registrado_por')
             .order_by('-fecha_ingreso')[:10]
         )
 
     context = {
         'actividad_seleccionada': actividad_seleccionada,
         'actividades_disponibles': actividades_disponibles,
-        'ultimas_asistencias': ultimas_asistencias
+        'ultimas_asistencias': ultimas_asistencias,
     }
-    return render(request, 'gestion/escaneo.html', context)
+
+    return render(
+        request,
+        'gestion/escaneo.html',
+        context
+    )
 
 
 # ==================== AUDITORÍA ====================
 
 @login_required
+@role_required('Administrador')
 def lista_auditoria(request):
-    if not tiene_rol(request.user, ['Administrador']):
-        messages.error(request, 'No tienes permisos para ver la auditoría.')
-        return redirect('dashboard')
 
     filtro_usuario = request.GET.get('usuario', '')
     filtro_accion = request.GET.get('accion', '')
@@ -1349,10 +1983,8 @@ def lista_auditoria(request):
 
 
 @login_required
+@role_required('Administrador', json_response=True)
 def exportar_auditoria(request):
-    if not tiene_rol(request.user, ['Administrador']):
-        messages.error(request, 'No tienes permisos para exportar.')
-        return redirect('dashboard')
 
     filtro_usuario = request.GET.get('usuario', '')
     filtro_accion = request.GET.get('accion', '')
@@ -1410,63 +2042,190 @@ def exportar_auditoria(request):
 # ==================== INSCRIPCIÓN A TALLERES (Pública) ====================
 
 def inscripcion_taller(request, actividad_id):
-    actividad = get_object_or_404(Actividad, pk=actividad_id, tipo='TALLER')
-    cupos = actividad.cupos_disponibles if actividad.cupos_disponibles is not None else 0
+    actividad = get_object_or_404( Actividad, pk=actividad_id, tipo='TALLER')
 
-    if actividad.fecha_fin < timezone.now():
-        return render(request, 'gestion/inscripcion_publica.html',
-                      {'actividad': actividad, 'estado': 'finalizado'})
+    ahora = timezone.now()
+
+    if actividad.estado != 'ACTIVA' or actividad.fecha_fin <= ahora:
+        return render(
+            request,
+            'gestion/inscripcion_publica.html',
+            {
+                'actividad': actividad,
+                'estado': 'finalizado'
+            }
+        )
+
+    cupos = actividad.cupos_disponibles or 0
+
     if cupos <= 0:
-        return render(request, 'gestion/inscripcion_publica.html',
-                      {'actividad': actividad, 'estado': 'sin_cupos'})
+        return render(
+            request,
+            'gestion/inscripcion_publica.html',
+            {
+                'actividad': actividad,
+                'estado': 'sin_cupos'
+            }
+        )
 
-    if request.method == 'POST':
-        rut_original = request.POST.get('rut')
-        rut = normalizar_rut(rut_original)
-        if not rut:
-            return render(request, 'gestion/inscripcion_publica.html',
-                          {'actividad': actividad, 'estado': 'con_cupos',
-                           'error': 'Debes ingresar tu RUT.'})
-        try:
-            alumno = Alumno.objects.get(rut=rut)
-        except Alumno.DoesNotExist:
-            return render(request, 'gestion/inscripcion_publica.html',
-                          {'actividad': actividad, 'estado': 'con_cupos',
-                           'error': 'No estás registrado en el sistema.'})
+    if request.method != 'POST':
+        return render(
+            request,
+            'gestion/inscripcion_publica.html',
+            {
+                'actividad': actividad,
+                'estado': 'con_cupos'
+            }
+        )
 
-        if Inscripcion.objects.filter(actividad=actividad, alumno=alumno).exists():
-            return render(request, 'gestion/inscripcion_publica.html',
-                          {'actividad': actividad, 'estado': 'con_cupos',
-                           'error': 'Ya estás inscrito en este taller.'})
+    rut_original = request.POST.get('rut', '')
+    rut = normalizar_rut(rut_original)
 
+    if not rut:
+        return render(
+            request,
+            'gestion/inscripcion_publica.html',
+            {
+                'actividad': actividad,
+                'estado': 'con_cupos',
+                'error': 'Debes ingresar tu RUT.'
+            }
+        )
+
+    try:
+        alumno = Alumno.objects.get(rut=rut)
+    except Alumno.DoesNotExist:
+        return render(
+            request,
+            'gestion/inscripcion_publica.html',
+            {
+                'actividad': actividad,
+                'estado': 'con_cupos',
+                'error': 'No estás registrado en el sistema.'
+            }
+        )
+
+    try:
         with transaction.atomic():
-            actividad = Actividad.objects.select_for_update().get(pk=actividad_id)
-            cupos_actuales = actividad.cupos_disponibles if actividad.cupos_disponibles is not None else 0
+            actividad_bloqueada = (
+                Actividad.objects
+                .select_for_update()
+                .get(pk=actividad_id)
+            )
+
+            ahora = timezone.now()
+
+            if actividad_bloqueada.tipo != 'TALLER':
+                return render(
+                    request,
+                    'gestion/inscripcion_publica.html',
+                    {
+                        'actividad': actividad_bloqueada,
+                        'estado': 'finalizado',
+                        'error': 'Esta actividad no corresponde a un taller.'
+                    }
+                )
+
+            if (
+                actividad_bloqueada.estado != 'ACTIVA'
+                or actividad_bloqueada.fecha_fin <= ahora
+            ):
+                return render(
+                    request,
+                    'gestion/inscripcion_publica.html',
+                    {
+                        'actividad': actividad_bloqueada,
+                        'estado': 'finalizado'
+                    }
+                )
+
+            inscripcion_existente = Inscripcion.objects.filter(
+                actividad=actividad_bloqueada,
+                alumno=alumno
+            ).first()
+
+            if inscripcion_existente:
+                return render(
+                    request,
+                    'gestion/inscripcion_publica.html',
+                    {
+                        'actividad': actividad_bloqueada,
+                        'estado': 'con_cupos',
+                        'error': 'Ya estás inscrito en este taller.'
+                    }
+                )
+
+            cupos_actuales = actividad_bloqueada.cupos_disponibles or 0
+
             if cupos_actuales <= 0:
-                return render(request, 'gestion/inscripcion_publica.html',
-                              {'actividad': actividad, 'estado': 'sin_cupos'})
-            actividad.cupos_disponibles -= 1
-            actividad.save()
-            Inscripcion.objects.create(actividad=actividad, alumno=alumno, estado='CONFIRMADA')
-            registrar_log(request, 'Inscripciones', 'Inscripción a taller',
-                          f'{alumno.nombres} {alumno.apellidos} - {actividad.titulo}',
-                          'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
+                return render(
+                    request,
+                    'gestion/inscripcion_publica.html',
+                    {
+                        'actividad': actividad_bloqueada,
+                        'estado': 'sin_cupos'
+                    }
+                )
 
-        actividad.cupos_disponibles = (actividad.cupos_disponibles if actividad.cupos_disponibles is not None else 0)
-        return render(request, 'gestion/inscripcion_publica.html',
-                      {'actividad': actividad, 'estado': 'con_cupos',
-                       'exito': f'¡Inscripción exitosa! Cupos disponibles: {actividad.cupos_disponibles}'})
+            actividad_bloqueada.cupos_disponibles = cupos_actuales - 1
+            actividad_bloqueada.save(
+                update_fields=['cupos_disponibles']
+            )
 
-    return render(request, 'gestion/inscripcion_publica.html',
-                  {'actividad': actividad, 'estado': 'con_cupos'})
+            Inscripcion.objects.create(
+                actividad=actividad_bloqueada,
+                alumno=alumno,
+                estado='CONFIRMADA'
+            )
+
+            registrar_log(
+                request,
+                'Inscripciones',
+                'Inscripción a taller',
+                (
+                    f'{alumno.nombres} {alumno.apellidos} - '
+                    f'{actividad_bloqueada.titulo}'
+                ),
+                'Alumno',
+                alumno.id,
+                f'{alumno.nombres} {alumno.apellidos}'
+            )
+
+            cupos_restantes = actividad_bloqueada.cupos_disponibles
+
+    except IntegrityError:
+        return render(
+            request,
+            'gestion/inscripcion_publica.html',
+            {
+                'actividad': actividad,
+                'estado': 'con_cupos',
+                'error': 'Ya estás inscrito en este taller.'
+            }
+        )
+
+    actividad.cupos_disponibles = cupos_restantes
+
+    return render(
+        request,
+        'gestion/inscripcion_publica.html',
+        {
+            'actividad': actividad,
+            'estado': 'con_cupos',
+            'exito': (
+                f'¡Inscripción exitosa! '
+                f'Cupos disponibles: {cupos_restantes}'
+            )
+        }
+    )
+
 
 
 # ==================== EXPORTAR REPORTE DETALLADO ====================
 
 @login_required
+@role_required( 'Administrador', 'Creador de Evento', json_response=True)
 def exportar_reportes_detalle(request, formato):
-    if not tiene_rol(request.user, ['Administrador', 'Creador de Evento']):
-        return JsonResponse({'success': False, 'message': 'No autorizado'})
 
     actividad_id = request.GET.get('actividad', '')
     carrera = request.GET.get('carrera', '')

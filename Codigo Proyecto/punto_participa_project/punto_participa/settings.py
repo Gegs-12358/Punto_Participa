@@ -126,13 +126,16 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # ==================== CONFIGURACIÓN DE CORREO ====================
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = 'Punto Participa <casicasi1723@gmail.com>'
+# URL del sitio (para correos y enlaces absolutos)
+SITE_URL = config('SITE_URL', default='http://127.0.0.1:8000')
 
 # ==================== AUTENTICACIÓN ====================
 LOGIN_URL = '/login/'
@@ -142,8 +145,7 @@ LOGOUT_REDIRECT_URL = '/login/'
 # ==================== CONFIGURACIÓN GENERAL ====================
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# URL del sitio (para correos y enlaces absolutos)
-SITE_URL = config('SITE_URL', default='http://127.0.0.1:8000')
+
 
 # Límite de destinatarios por envío de invitaciones (0 = sin límite)
 MAX_INVITACIONES_POR_ENVIO = config('MAX_INVITACIONES_POR_ENVIO', default=15, cast=int)
