@@ -53,77 +53,67 @@
                     <td>
                         <strong>{{ u.user.username }}</strong>
                         {% if u.user == request.user %}
-                            <span class="role" title="Eres tú">Tú</span>
+                        <span class="role" title="Eres tú">Tú</span>
                         {% endif %}
                     </td>
                     <td>{{ u.user.first_name|default:"—" }}</td>
                     <td>
                         {% if u.user.email %}
-                            <a href="mailto:{{ u.user.email }}">{{ u.user.email }}</a>
+                        <a href="mailto:{{ u.user.email }}">{{ u.user.email }}</a>
                         {% else %}
-                            <span class="text-muted">—</span>
+                        <span class="text-muted">—</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if u.rol %}
-                            <span class="role">{{ u.rol.nombre }}</span>
+                        <span class="role">{{ u.rol.nombre }}</span>
                         {% else %}
-                            <span class="badge inactive">Sin rol</span>
+                        <span class="badge inactive">Sin rol</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if u.rut %}
-                            <code>{{ u.rut }}</code>
+                        <code>{{ u.rut }}</code>
                         {% else %}
-                            <span class="text-muted">Sin RUT</span>
+                        <span class="text-muted">Sin RUT</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if u.activo %}
-                            <span class="badge">Activo</span>
+                        <span class="badge">Activo</span>
                         {% else %}
-                            <span class="badge inactive">Bloqueado</span>
+                        <span class="badge inactive">Bloqueado</span>
                         {% endif %}
                     </td>
                     <td>{{ u.user.date_joined|date:"d/m/Y" }}</td>
                     <td>
                         <div class="action-group">
-                            <button class="link-button btn-editar-usuario"
-                                    data-id="{{ u.id }}"
-                                    data-username="{{ u.user.username }}"
-                                    data-nombre="{{ u.user.first_name }}"
-                                    data-email="{{ u.user.email }}"
-                                    data-rol="{% if u.rol %}{{ u.rol.id }}{% endif %}"
-                                    data-rut="{{ u.rut|default:'' }}"
-                                    data-activo="{{ u.activo|yesno:'1,0' }}"
-                                    aria-label="Editar usuario {{ u.user.username }}"
-                                    title="Editar">
+                            <button class="link-button btn-editar-usuario" data-id="{{ u.id }}"
+                                data-username="{{ u.user.username }}" data-nombre="{{ u.user.first_name }}"
+                                data-email="{{ u.user.email }}" data-rol="{% if u.rol %}{{ u.rol.id }}{% endif %}"
+                                data-rut="{{ u.rut|default:'' }}" data-activo="{{ u.activo|yesno:'1,0' }}"
+                                aria-label="Editar usuario {{ u.user.username }}" title="Editar">
                                 ✎ Editar
                             </button>
 
                             {% if u.user == request.user %}
-                                <span class="link-button" style="opacity: 0.5; cursor: not-allowed;"
-                                      title="No puedes bloquearte a ti mismo">
-                                    ◉ Protegido
-                                </span>
+                            <span class="link-button" style="opacity: 0.5; cursor: not-allowed;"
+                                title="No puedes bloquearte a ti mismo">
+                                ◉ Protegido
+                            </span>
                             {% elif u.activo %}
-                                <button class="danger-button btn-bloquear-usuario"
-                                        data-id="{{ u.id }}"
-                                        data-username="{{ u.user.username }}"
-                                        data-accion="bloquear"
-                                        aria-label="Bloquear usuario {{ u.user.username }}"
-                                        title="Bloquear acceso al sistema">
-                                    ✕ Bloquear
-                                </button>
+                            <button class="danger-button btn-bloquear-usuario" data-id="{{ u.id }}"
+                                data-username="{{ u.user.username }}" data-accion="bloquear"
+                                aria-label="Bloquear usuario {{ u.user.username }}" title="Bloquear acceso al sistema">
+                                ✕ Bloquear
+                            </button>
                             {% else %}
-                                <button class="link-button btn-bloquear-usuario"
-                                        data-id="{{ u.id }}"
-                                        data-username="{{ u.user.username }}"
-                                        data-accion="desbloquear"
-                                        aria-label="Desbloquear usuario {{ u.user.username }}"
-                                        title="Restaurar acceso al sistema">
-                                    ✓ Desbloquear
-                                </button>
+                            <button class="link-button btn-bloquear-usuario" data-id="{{ u.id }}"
+                                data-username="{{ u.user.username }}" data-accion="desbloquear"
+                                aria-label="Desbloquear usuario {{ u.user.username }}"
+                                title="Restaurar acceso al sistema">
+                                ✓ Desbloquear
+                            </button>
                             {% endif %}
                         </div>
                     </td>
@@ -182,55 +172,55 @@
                     </td>
                     <td>
                         {% if log.usuario_sistema %}
-                            <strong>{{ log.usuario_sistema.username }}</strong>
+                        <strong>{{ log.usuario_sistema.username }}</strong>
                         {% else %}
-                            <span class="text-muted">Sistema/Anónimo</span>
+                        <span class="text-muted">Sistema/Anónimo</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if log.modulo %}
-                            <span class="role">{{ log.modulo }}</span>
+                        <span class="role">{{ log.modulo }}</span>
                         {% else %}
-                            <span class="text-muted">—</span>
+                        <span class="text-muted">—</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if log.accion == 'Eliminar Actividad' or log.accion == 'Eliminación rápida de actividad' %}
-                            <span class="badge inactive">{{ log.accion }}</span>
+                        <span class="badge inactive">{{ log.accion }}</span>
                         {% elif log.accion == 'Crear Actividad' or log.accion == 'Guardar usuario' %}
-                            <span class="badge">{{ log.accion }}</span>
+                        <span class="badge">{{ log.accion }}</span>
                         {% elif log.accion == 'Edición de actividad' or log.accion == 'Cambio de rol' %}
-                            <span class="role">{{ log.accion }}</span>
+                        <span class="role">{{ log.accion }}</span>
                         {% elif log.accion == 'Envío de invitaciones' %}
-                            <span class="badge draft">{{ log.accion }}</span>
+                        <span class="badge draft">{{ log.accion }}</span>
                         {% elif log.accion == 'Cambio de estado' %}
-                            <span class="badge draft">{{ log.accion }}</span>
+                        <span class="badge draft">{{ log.accion }}</span>
                         {% else %}
-                            <span class="badge draft">{{ log.accion }}</span>
+                        <span class="badge draft">{{ log.accion }}</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if log.objeto_tipo %}
-                            {{ log.objeto_tipo }}
-                            {% if log.objeto_nombre %}
-                                <br><small class="text-muted">{{ log.objeto_nombre }}</small>
-                            {% endif %}
+                        {{ log.objeto_tipo }}
+                        {% if log.objeto_nombre %}
+                        <br><small class="text-muted">{{ log.objeto_nombre }}</small>
+                        {% endif %}
                         {% else %}
-                            <span class="text-muted">—</span>
+                        <span class="text-muted">—</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if log.ip_address %}
-                            <code>{{ log.ip_address }}</code>
+                        <code>{{ log.ip_address }}</code>
                         {% else %}
-                            <span class="text-muted">—</span>
+                        <span class="text-muted">—</span>
                         {% endif %}
                     </td>
                     <td class="detalle-cell">
                         {% if log.detalle %}
-                            <span title="{{ log.detalle }}">{{ log.detalle|truncatechars:120 }}</span>
+                        <span title="{{ log.detalle }}">{{ log.detalle|truncatechars:120 }}</span>
                         {% else %}
-                            <span class="text-muted">—</span>
+                        <span class="text-muted">—</span>
                         {% endif %}
                     </td>
                 </tr>
@@ -253,15 +243,12 @@
 <!-- ============================================================ -->
 <!-- MODAL CREAR/EDITAR USUARIO -->
 <!-- ============================================================ -->
-<div class="modal-backdrop" id="modalUsuario" hidden>
+<div class="modal-backdrop" id="modalUsuario" data-modal-persistent hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalUsuarioLabel">
 
         <header class="modal-header">
             <h2 id="modalUsuarioLabel">Crear / Editar Usuario</h2>
-            <button type="button"
-                    class="close-button"
-                    data-modal-close
-                    aria-label="Cerrar">×</button>
+            <button type="button" class="close-button" data-modal-close aria-label="Cerrar">×</button>
         </header>
 
         <form id="formUsuario" novalidate autocomplete="off">
@@ -274,12 +261,8 @@
                     <label for="username">
                         Usuario <span class="required">*</span>
                     </label>
-                    <input type="text"
-                           id="username"
-                           name="username"
-                           placeholder="Ej: pa.rebolledoa"
-                           autocomplete="username"
-                           required>
+                    <input type="text" id="username" name="username" placeholder="Ej: pa.rebolledoa"
+                        autocomplete="username" required>
                     <small class="input-help">
                         Se usará para iniciar sesión. No usar espacios.
                     </small>
@@ -289,33 +272,21 @@
                     <label for="nombre">
                         Nombre completo <span class="required">*</span>
                     </label>
-                    <input type="text"
-                           id="nombre"
-                           name="nombre"
-                           placeholder="Ej: Pablo Rebolledo"
-                           autocomplete="name"
-                           required>
+                    <input type="text" id="nombre" name="nombre" placeholder="Ej: Pablo Rebolledo" autocomplete="name"
+                        required>
                 </div>
 
                 <div class="form-field">
                     <label for="email">
                         Email <span class="required">*</span>
                     </label>
-                    <input type="email"
-                           id="email"
-                           name="email"
-                           placeholder="usuario@duocuc.cl"
-                           autocomplete="email"
-                           required>
+                    <input type="email" id="email" name="email" placeholder="usuario@duocuc.cl" autocomplete="email"
+                        required>
                 </div>
 
                 <div class="form-field">
                     <label for="rut">RUT (opcional)</label>
-                    <input type="text"
-                           id="rut"
-                           name="rut"
-                           placeholder="Ej: 12345678-9"
-                           autocomplete="off">
+                    <input type="text" id="rut" name="rut" placeholder="Ej: 12345678-9" autocomplete="off">
                 </div>
 
                 <div class="form-field">
@@ -325,7 +296,7 @@
                     <select id="rol" name="rol" required>
                         <option value="">Seleccionar rol</option>
                         {% for rol in roles %}
-                            <option value="{{ rol.id }}">{{ rol.nombre }}</option>
+                        <option value="{{ rol.id }}">{{ rol.nombre }}</option>
                         {% endfor %}
                     </select>
                 </div>

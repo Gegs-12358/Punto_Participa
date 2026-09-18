@@ -119,23 +119,29 @@ function closeAllModals() {
 
 // Listener global: cerrar modales con click en backdrop o botón [data-modal-close]
 document.addEventListener('click', function (e) {
-    // Botón con data-modal-close
+    // Botón con data-modal-close: siempre cierra, es una acción explícita del usuario
     if (e.target.closest('[data-modal-close]')) {
         const modal = e.target.closest('.modal-backdrop');
         if (modal) closeModal(modal);
+        return;
     }
 
-    // Click directo en el backdrop (fuera del contenido del modal)
+    // Click directo en el backdrop (fuera del contenido del modal).
+    // Los modales marcados como "persistentes" (formularios largos, por ejemplo)
+    // no se cierran así, para evitar perder datos por un clic accidental.
     if (e.target.classList.contains('modal-backdrop')) {
+        if (e.target.hasAttribute('data-modal-persistent')) return;
         closeModal(e.target);
     }
 });
 
-// Listener global: cerrar con Escape
+// Listener global: cerrar con Escape (mismo criterio que el click en el backdrop)
 document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
         const abierto = document.querySelector('.modal-backdrop:not([hidden])');
-        if (abierto) closeModal(abierto);
+        if (abierto && !abierto.hasAttribute('data-modal-persistent')) {
+            closeModal(abierto);
+        }
     }
 });
 

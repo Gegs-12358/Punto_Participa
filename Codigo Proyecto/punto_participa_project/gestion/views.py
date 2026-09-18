@@ -42,8 +42,8 @@ from django.utils.http import (
     urlsafe_base64_decode,
     urlsafe_base64_encode,
 )
-
-
+from django.db.models.functions import TruncMonth
+from django.db.models.functions import Trim, Lower
 # ==================== IMPORTS LOCALES ====================
 
 from django_ratelimit.decorators import ratelimit
@@ -547,12 +547,18 @@ def dashboard(request):
         asistencias_qs = asistencias_qs.filter(actividad__tipo=tipo_filtro)
 
     if carrera_filtro:
+        carrera_normalizada = carrera_filtro.strip().lower()
         actividades_qs = actividades_qs.filter(carreras__nombre=carrera_filtro)
-        asistencias_qs = asistencias_qs.filter(alumno__carrera=carrera_filtro)
+        asistencias_qs = asistencias_qs.annotate(
+            _carrera_norm=Lower(Trim('alumno__carrera'))
+        ).filter(_carrera_norm=carrera_normalizada)
 
     if jornada_filtro:
+        jornada_normalizada = jornada_filtro.strip().lower()
         actividades_qs = actividades_qs.filter(jornadas__nombre=jornada_filtro)
-        asistencias_qs = asistencias_qs.filter(alumno__jornada=jornada_filtro)
+        asistencias_qs = asistencias_qs.annotate(
+            _jornada_norm=Lower(Trim('alumno__jornada'))
+        ).filter(_jornada_norm=jornada_normalizada)
 
     actividades_qs = actividades_qs.distinct()
     asistencias_qs = asistencias_qs.distinct()
@@ -578,9 +584,10 @@ def dashboard(request):
     actividades_finalizadas = actividades_qs.filter(estado='FINALIZADA').count()
 
     total_asistencias_filtradas = asistencias_qs.count()
+    total_actividades_filtradas = actividades_qs.count()
     promedio_asistentes = (
-        round(total_asistencias_filtradas / actividades_qs.count(), 1)
-        if actividades_qs.count() > 0 else 0
+        round(total_asistencias_filtradas / total_actividades_filtradas, 1)
+        if total_actividades_filtradas > 0 else 0
     )
 
     cupos_disponibles_totales = (
@@ -589,10 +596,9 @@ def dashboard(request):
         .get('total') or 0
     )
 
-    total_inscritos_para_tasa = inscripciones_qs.filter(actividad__in=actividades_qs).count()
     tasa_asistencia = (
-        round((total_asistencias_filtradas / total_inscritos_para_tasa) * 100, 1)
-        if total_inscritos_para_tasa > 0 else 0
+        round((total_asistencias_filtradas / total_inscritos) * 100, 1)
+        if total_inscritos > 0 else 0
     )
 
         # ============================================================
@@ -613,13 +619,13 @@ def dashboard(request):
     )
 
     if carrera_filtro:
-        inscripciones_talleres_qs = inscripciones_talleres_qs.filter(
-            alumno__carrera=carrera_filtro
-        )
+        inscripciones_talleres_qs = inscripciones_talleres_qs.annotate(
+            _carrera_norm=Lower(Trim('alumno__carrera'))
+        ).filter(_carrera_norm=carrera_normalizada)
     if jornada_filtro:
-        inscripciones_talleres_qs = inscripciones_talleres_qs.filter(
-            alumno__jornada=jornada_filtro
-        )
+        inscripciones_talleres_qs = inscripciones_talleres_qs.annotate(
+            _jornada_norm=Lower(Trim('alumno__jornada'))
+        ).filter(_jornada_norm=jornada_normalizada)
 
     talleres_inscritos = inscripciones_talleres_qs.count()
 
@@ -675,6 +681,33 @@ def dashboard(request):
     labels_pastel = [item['alumno__carrera'] or 'Sin carrera' for item in asistencias_por_carrera]
     data_pastel = [item['total'] for item in asistencias_por_carrera]
 
+        # ============================================================
+    # Gráfico de línea (últimos 6 meses) — 3 consultas en vez de 18
+    # ============================================================
+    fecha_min_mes = (ahora - timedelta(days=30 * 5)).replace(day=1)
+
+    def _agrupar_por_mes(queryset, campo_fecha):
+        agrupado = (
+            queryset
+            .annotate(mes=TruncMonth(campo_fecha))
+            .values('mes')
+            .annotate(total=Count('id'))
+        )
+        return {item['mes'].strftime('%Y-%m'): item['total'] for item in agrupado if item['mes']}
+
+    dict_programadas = _agrupar_por_mes(
+        actividades_qs.filter(fecha_inicio__gte=fecha_min_mes),
+        'fecha_inicio'
+    )
+    dict_en_curso = _agrupar_por_mes(
+        actividades_qs.filter(fecha_inicio__gte=fecha_min_mes, estado='ACTIVA'),
+        'fecha_inicio'
+    )
+    dict_finalizadas = _agrupar_por_mes(
+        actividades_qs.filter(fecha_fin__gte=fecha_min_mes, estado='FINALIZADA'),
+        'fecha_fin'
+    )
+
     meses_labels = []
     data_programadas = []
     data_en_curso = []
@@ -682,26 +715,11 @@ def dashboard(request):
 
     for i in range(5, -1, -1):
         fecha_ref = ahora - timedelta(days=30 * i)
+        clave = fecha_ref.strftime('%Y-%m')
         meses_labels.append(fecha_ref.strftime('%b').capitalize())
-
-        programadas = actividades_qs.filter(
-            fecha_inicio__year=fecha_ref.year,
-            fecha_inicio__month=fecha_ref.month
-        ).count()
-        finalizadas = actividades_qs.filter(
-            fecha_fin__year=fecha_ref.year,
-            fecha_fin__month=fecha_ref.month,
-            estado='FINALIZADA'
-        ).count()
-        en_curso = actividades_qs.filter(
-            fecha_inicio__year=fecha_ref.year,
-            fecha_inicio__month=fecha_ref.month,
-            estado='ACTIVA'
-        ).count()
-
-        data_programadas.append(programadas)
-        data_en_curso.append(en_curso)
-        data_finalizadas.append(finalizadas)
+        data_programadas.append(dict_programadas.get(clave, 0))
+        data_en_curso.append(dict_en_curso.get(clave, 0))
+        data_finalizadas.append(dict_finalizadas.get(clave, 0))
 
     actividades_comp = (
         actividades_qs
@@ -747,9 +765,10 @@ def dashboard(request):
 
     ultimas_actividades_creadas = actividades_qs.order_by('-fecha_creacion')[:5]
 
-    ultimos_logs = LogAuditoria.objects.all().order_by('-fecha_registro')[:5]
+    ultimos_logs = LogAuditoria.objects.all().order_by('-fecha_registro')
     if es_creador and not es_admin:
         ultimos_logs = ultimos_logs.filter(usuario_sistema=request.user)
+    ultimos_logs = ultimos_logs[:5]
 
     carreras_cache = {c.nombre.lower(): c for c in Carrera.objects.all()}
     asistencias_escuela = defaultdict(int)
