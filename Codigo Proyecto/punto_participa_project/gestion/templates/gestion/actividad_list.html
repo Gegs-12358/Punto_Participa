@@ -5,7 +5,7 @@
 {% block content %}
 
 <!-- ============================================================ -->
-<!-- TÍTULO Y BOTÓN NUEVA ACTIVIDAD -->
+<!-- TÍTULO + BOTÓN CREAR -->
 <!-- ============================================================ -->
 <div class="page-title">
     <div>
@@ -13,268 +13,256 @@
         <h1>Actividades</h1>
         <p>Administra las actividades y talleres del Punto Estudiantil.</p>
     </div>
-
-    {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
     <button class="btn" id="btnNuevaActividad" data-action="activity-new">
         + Nueva Actividad
     </button>
-    {% endif %}
 </div>
 
 <!-- ============================================================ -->
-<!-- FORMULARIO DE FILTROS -->
+<!-- FILTROS -->
 <!-- ============================================================ -->
-<form method="GET" action="" class="filters" role="search">
-
+<form method="get" class="filters" role="search">
     <div>
-        <label for="fecha_creacion" class="form-label">
-            Fecha de Creación
-        </label>
-        <input type="date"
-               class="form-control"
-               id="fecha_creacion"
-               name="fecha_creacion"
-               value="{{ request.GET.fecha_creacion }}"
-               aria-label="Filtrar por fecha de creación">
+        <label for="filtro-fecha-creacion" class="form-label">Fecha de Creación</label>
+        <input type="date" id="filtro-fecha-creacion" name="fecha_creacion" value="{{ request.GET.fecha_creacion }}">
     </div>
 
     <div>
-        <label for="tipo" class="form-label">
-            Tipo de Actividad
-        </label>
-        <select name="tipo"
-                id="tipo"
-                class="form-select"
-                aria-label="Filtrar por tipo de actividad">
-            {% for value, label in tipos %}
-                <option value="{{ value }}" {% if request.GET.tipo == value %}selected{% endif %}>
-                    {{ label }}
-                </option>
+        <label for="filtro-tipo" class="form-label">Tipo de Actividad</label>
+        <select name="tipo" id="filtro-tipo">
+            {% for valor, etiqueta in tipos %}
+            <option value="{{ valor }}" {% if request.GET.tipo == valor %}selected{% endif %}>
+                {{ etiqueta }}
+            </option>
             {% endfor %}
         </select>
     </div>
 
     <div>
-        <label for="fecha" class="form-label">
-            Fecha de Inicio
-        </label>
-        <input type="date"
-               class="form-control"
-               id="fecha"
-               name="fecha"
-               value="{{ request.GET.fecha }}"
-               aria-label="Filtrar por fecha de inicio">
+        <label for="filtro-fecha" class="form-label">Fecha de Inicio</label>
+        <input type="date" id="filtro-fecha" name="fecha" value="{{ request.GET.fecha }}">
     </div>
 
     <div>
-        <label for="estado" class="form-label">
-            Estado
-        </label>
-        <select name="estado"
-                id="estado"
-                class="form-select"
-                aria-label="Filtrar por estado">
-            {% for value, label in estados %}
-                <option value="{{ value }}" {% if request.GET.estado == value %}selected{% endif %}>
-                    {{ label }}
-                </option>
+        <label for="filtro-estado" class="form-label">Estado</label>
+        <select name="estado" id="filtro-estado">
+            {% for valor, etiqueta in estados %}
+            <option value="{{ valor }}" {% if request.GET.estado == valor %}selected{% endif %}>
+                {{ etiqueta }}
+            </option>
             {% endfor %}
         </select>
     </div>
 
-    <button type="submit" class="btn">
-        ▽ Filtrar
-    </button>
-    <a href="{% url 'lista_actividades' %}" class="btn secondary" title="Limpiar filtros">
-        × Limpiar
-    </a>
+    <button type="submit" class="btn">▽ Filtrar</button>
+    <a href="{% url 'lista_actividades' %}" class="btn secondary">× Limpiar</a>
 </form>
 
 <!-- ============================================================ -->
-<!-- INDICADOR DE FILTROS ACTIVOS -->
-<!-- ============================================================ -->
-{% if request.GET.tipo or request.GET.estado or request.GET.fecha or request.GET.fecha_creacion %}
-<div class="alert alert-info" role="status">
-    <div>
-        <strong>Filtros aplicados:</strong>
-        {% if request.GET.tipo %}
-            <span class="role">Tipo: {{ request.GET.tipo }}</span>
-        {% endif %}
-        {% if request.GET.estado %}
-            <span class="role">Estado: {{ request.GET.estado }}</span>
-        {% endif %}
-        {% if request.GET.fecha %}
-            <span class="role">Fecha inicio: {{ request.GET.fecha }}</span>
-        {% endif %}
-        {% if request.GET.fecha_creacion %}
-            <span class="role">Creada: {{ request.GET.fecha_creacion }}</span>
-        {% endif %}
-    </div>
-</div>
-{% endif %}
-
-<!-- ============================================================ -->
-<!-- TABLA DE ACTIVIDADES -->
+<!-- TABLA -->
 <!-- ============================================================ -->
 <div class="panel">
     <div class="table-wrap">
         <table>
-            <caption class="visually-hidden">Listado de actividades registradas</caption>
+            <caption class="visually-hidden">Lista de actividades</caption>
             <thead>
                 <tr>
-                    <th scope="col">ID</th>
-                    <th scope="col">Creada</th>
-                    <th scope="col">Imagen</th>
-                    <th scope="col">Nombre</th>
-                    <th scope="col">Tipo</th>
-                    <th scope="col">Inicio</th>
-                    <th scope="col">Cupos</th>
-                    <th scope="col">Inscritos</th>
-                    <th scope="col">Asistentes</th>
-                    <th scope="col">Invit.</th>
-                    <th scope="col">Fallos</th>
-                    <th scope="col">Estado</th>
+                    <th scope="col">
+                        <a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden={% if orden_actual == 'titulo' %}-titulo{% else %}titulo{% endif %}">
+                            Nombre
+                            {% if orden_actual == 'titulo' %}▲{% elif orden_actual == '-titulo' %}▼{% endif %}
+                        </a>
+                    </th>
+                    <th scope="col">
+                        <a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden={% if orden_actual == 'tipo' %}-tipo{% else %}tipo{% endif %}">
+                            Tipo
+                            {% if orden_actual == 'tipo' %}▲{% elif orden_actual == '-tipo' %}▼{% endif %}
+                        </a>
+                    </th>
+                    {% if es_admin %}
+                    <th scope="col">Creador</th>
+                    {% endif %}
+                    <th scope="col">
+                        <a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden={% if orden_actual == 'fecha_inicio' %}-fecha_inicio{% else %}fecha_inicio{% endif %}">
+                            Inicio
+                            {% if orden_actual == 'fecha_inicio' %}▲{% elif orden_actual == '-fecha_inicio' %}▼{% endif %}
+                        </a>
+                    </th>
+                    <th scope="col">
+                        <a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden={% if orden_actual == 'cupos_disponibles' %}-cupos_disponibles{% else %}cupos_disponibles{% endif %}">
+                            Cupos
+                            {% if orden_actual == 'cupos_disponibles' %}▲{% elif orden_actual == '-cupos_disponibles' %}▼{% endif %}
+                        </a>
+                    </th>
+                    <th scope="col">Disponibles</th>
+                    <th scope="col">
+                        <a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden={% if orden_actual == 'total_inscritos' %}-total_inscritos{% else %}total_inscritos{% endif %}">
+                            Inscritos
+                            {% if orden_actual == 'total_inscritos' %}▲{% elif orden_actual == '-total_inscritos' %}▼{% endif %}
+                        </a>
+                    </th>
+                    <th scope="col">
+                        <a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden={% if orden_actual == 'total_asistentes' %}-total_asistentes{% else %}total_asistentes{% endif %}">
+                            Asistentes
+                            {% if orden_actual == 'total_asistentes' %}▲{% elif orden_actual == '-total_asistentes' %}▼{% endif %}
+                        </a>
+                    </th>
+                    <th scope="col">Invit. OK</th>
+                    <th scope="col">Invit. fallidas</th>
+                    <th scope="col">
+                        <a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden={% if orden_actual == 'estado' %}-estado{% else %}estado{% endif %}">
+                            Estado
+                            {% if orden_actual == 'estado' %}▲{% elif orden_actual == '-estado' %}▼{% endif %}
+                        </a>
+                    </th>
                     <th scope="col">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for actividad in actividades %}
                 <tr>
-                    <td>{{ actividad.id }}</td>
-                    <td>{{ actividad.fecha_creacion|date:"d/m/Y" }}</td>
                     <td>
-                        {% if actividad.imagen %}
+                        <div class="activity-cell">
+                            {% if actividad.imagen %}
                             <img src="{{ actividad.imagen.url }}"
                                  alt="Imagen de {{ actividad.titulo }}"
-                                 class="img-miniatura">
-                        {% else %}
-                            <div class="img-miniatura-placeholder">▣</div>
-                        {% endif %}
+                                 class="activity-thumb"
+                                 title="{{ actividad.titulo }}">
+                            {% else %}
+                            <div class="activity-thumb-placeholder" title="{{ actividad.titulo }}">▣</div>
+                            {% endif %}
+                            <strong>{{ actividad.titulo }}</strong>
+                        </div>
                     </td>
-                    <td><strong>{{ actividad.titulo }}</strong></td>
                     <td>
                         {% if actividad.tipo == 'TALLER' %}
-                            <span class="role">Taller</span>
+                        <span class="role">Taller</span>
                         {% else %}
-                            <span class="badge">Masiva</span>
+                        <span class="badge">Masiva</span>
                         {% endif %}
                     </td>
+                    {% if es_admin %}
+                    <td>{{ actividad.creado_por.username|default:"N/A" }}</td>
+                    {% endif %}
                     <td>{{ actividad.fecha_inicio|date:"d/m/Y" }}</td>
-                    <td>{{ actividad.cupos_totales|default:"Sin límite" }}</td>
-                    <td><span class="badge draft">{{ actividad.total_inscritos }}</span></td>
+                    <td>
+                        {% if actividad.cupos_totales is not None %}
+                        {{ actividad.cupos_totales }}
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if actividad.cupos_disponibles is not None %}
+                        {{ actividad.cupos_disponibles }}
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if actividad.tipo == 'TALLER' %}
+                        <span class="badge draft">{{ actividad.total_inscritos }}</span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
                     <td><span class="badge">{{ actividad.total_asistentes }}</span></td>
                     <td>
-                        {% if actividad.total_invitaciones_exito > 0 %}
-                            <span class="badge">{{ actividad.total_invitaciones_exito }}</span>
-                        {% else %}
-                            <span class="badge draft">0</span>
-                        {% endif %}
+                        <a href="{% url 'notificaciones_actividad' actividad.pk %}"
+                           class="badge"
+                           title="Ver notificaciones enviadas">
+                            {{ actividad.total_invitaciones_exito }}
+                        </a>
                     </td>
                     <td>
                         {% if actividad.total_invitaciones_fallo > 0 %}
-                            <span class="badge inactive">{{ actividad.total_invitaciones_fallo }}</span>
+                        <a href="{% url 'notificaciones_actividad' actividad.pk %}"
+                           class="badge inactive"
+                           title="Ver notificaciones fallidas">
+                            {{ actividad.total_invitaciones_fallo }}
+                        </a>
                         {% else %}
-                            <span class="badge draft">0</span>
+                        <span class="text-muted">0</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% if actividad.estado == 'ACTIVA' %}
-                            <span class="badge">Activa</span>
+                        {% if actividad.estado == 'CANCELADA' %}
+                            <span class="badge inactive">Cancelada</span>
                         {% elif actividad.estado == 'FINALIZADA' %}
                             <span class="badge draft">Finalizada</span>
                         {% else %}
-                            <span class="badge inactive">Cancelada</span>
+                            {% now "Y-m-d H:i" as ahora %}
+                            {% if actividad.fecha_inicio|date:"Y-m-d H:i" > ahora %}
+                                <span class="badge draft">Próxima</span>
+                            {% elif actividad.fecha_fin|date:"Y-m-d H:i" < ahora %}
+                                <span class="badge draft">Finalizada</span>
+                            {% else %}
+                                <span class="badge">En curso</span>
+                            {% endif %}
                         {% endif %}
                     </td>
                     <td>
                         <div class="action-group">
-                            {% if actividad.tipo == 'TALLER' %}
-                                <a href="{% url 'inscripcion_taller' actividad.pk %}"
-                                   class="link-button"
-                                   target="_blank"
-                                   rel="noopener"
-                                   title="Ver inscripción pública"
-                                   aria-label="Ver inscripción de {{ actividad.titulo }}">
-                                    ◎ Ver
-                                </a>
-                            {% endif %}
-
-                            {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
-                                <button class="link-button btn-editar"
-                                        data-url="{% url 'editar_actividad' actividad.pk %}"
-                                        aria-label="Editar {{ actividad.titulo }}"
-                                        title="Editar">
-                                    ✎ Editar
-                                </button>
-
-                                <a href="{% url 'eliminar_actividad' actividad.pk %}"
-                                   class="danger-button"
-                                   aria-label="Eliminar {{ actividad.titulo }}"
-                                   title="Eliminar">
-                                    ✕ Eliminar
-                                </a>
-                            {% endif %}
+                            <a href="{% url 'actividad_detalle' actividad.pk %}"
+                               class="link-button"
+                               title="Ver detalle">
+                                👁 Ver
+                            </a>
+                            <button class="link-button btn-editar"
+                                    data-url="{% url 'editar_actividad' actividad.pk %}"
+                                    title="Editar">
+                                ✎ Editar
+                            </button>
+                            <button class="danger-button btn-eliminar"
+                                    data-url="{% url 'eliminar_actividad' actividad.pk %}"
+                                    title="Eliminar">
+                                ✕ Eliminar
+                            </button>
                         </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="13" class="text-center text-muted" style="padding: 40px;">
-                        <div class="empty-state" style="min-height: auto;">
-                            <span>▢</span>
-                            <h3>Sin actividades</h3>
-                            <p>No se encontraron actividades con esos filtros.</p>
-                        </div>
+                    <td colspan="12" class="text-center text-muted" style="padding: 40px;">
+                        Sin actividades registradas.
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
+            {% if actividades %}
+            <tfoot>
+                <tr class="table-total-row">
+                    <td colspan="{% if es_admin %}3{% else %}2{% endif %}">
+                        <strong>TOTAL</strong>
+                        <small class="text-muted">
+                            {{ totales.actividades }} actividad{{ totales.actividades|pluralize:"es" }}
+                            · {{ totales.talleres }} taller{{ totales.talleres|pluralize:"es" }}
+                            · {{ totales.masivas }} masiva{{ totales.masivas|pluralize:"s" }}
+                        </small>
+                    </td>
+                    <td colspan="2"></td>
+                    <td><strong>{{ totales.inscritos }}</strong></td>
+                    <td><strong>{{ totales.asistentes }}</strong></td>
+                    <td colspan="4"></td>
+                </tr>
+            </tfoot>
+            {% endif %}
         </table>
     </div>
 
     <!-- ============================================================ -->
     <!-- PAGINACIÓN -->
     <!-- ============================================================ -->
-    {% if actividades.has_other_pages %}
-    <nav aria-label="Paginación de actividades" style="margin-top: 20px;">
-        <ul class="pagination">
-            {% if actividades.has_previous %}
-                <li class="page-item">
-                    <a class="page-link"
-                       href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                       aria-label="Primera página">««</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link"
-                       href="?page={{ actividades.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                       aria-label="Página anterior">«</a>
-                </li>
-            {% endif %}
-
-            <li class="page-item active" aria-current="page">
-                <span class="page-link">
-                    Página {{ actividades.number }} de {{ actividades.paginator.num_pages }}
-                </span>
-            </li>
-
-            {% if actividades.has_next %}
-                <li class="page-item">
-                    <a class="page-link"
-                       href="?page={{ actividades.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                       aria-label="Página siguiente">»</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link"
-                       href="?page={{ actividades.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                       aria-label="Última página">»»</a>
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
+    {% if actividades.paginator.num_pages > 1 %}
+    {% include 'gestion/includes/paginacion.html' with pagina=actividades param='page' %}
     {% endif %}
 </div>
 
-<!-- Incluir el modal desde el archivo parcial -->
+<!-- Modal global para crear/editar actividad -->
 {% include 'gestion/includes/modal_actividad.html' %}
 
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'gestion/js/scripts.js' %}"></script>
 {% endblock %}

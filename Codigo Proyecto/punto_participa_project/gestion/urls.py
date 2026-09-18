@@ -38,8 +38,12 @@ urlpatterns = [
     path('actividades/enviar-invitaciones/', views.enviar_invitaciones, name='enviar_invitaciones'),
     path('actividades/previsualizar-invitacion/<int:pk>/', views.previsualizar_invitacion, name='previsualizar_invitacion'),
     path('actividades/eliminar-ajax/<int:pk>/', views.eliminar_ajax, name='eliminar_ajax'),
-
-
+    # ============================================================
+    # DETALLE DE ACTIVIDAD
+    # ============================================================
+    path( 'actividades/<int:pk>/', views.actividad_detalle, name='actividad_detalle'),
+    path( 'actividades/<int:pk>/notificaciones/', views.notificaciones_actividad, name='notificaciones_actividad'),
+    path( 'actividades/<int:pk>/participantes/', views.participantes_actividad, name='participantes_actividad'),
     # ============================================================
     # ESCÁNER
     # ============================================================

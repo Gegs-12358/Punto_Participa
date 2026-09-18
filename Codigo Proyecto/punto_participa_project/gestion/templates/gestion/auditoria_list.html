@@ -211,41 +211,7 @@
 <!-- PAGINACIÓN -->
 <!-- ============================================================ -->
 {% if logs.has_other_pages %}
-<nav aria-label="Paginación de auditoría" style="margin-top: 20px;">
-    <ul class="pagination">
-        {% if logs.has_previous %}
-            <li class="page-item">
-                <a class="page-link"
-                   href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                   aria-label="Primera página">««</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link"
-                   href="?page={{ logs.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                   aria-label="Página anterior">«</a>
-            </li>
-        {% endif %}
-
-        <li class="page-item active" aria-current="page">
-            <span class="page-link">
-                Página {{ logs.number }} de {{ logs.paginator.num_pages }}
-            </span>
-        </li>
-
-        {% if logs.has_next %}
-            <li class="page-item">
-                <a class="page-link"
-                   href="?page={{ logs.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                   aria-label="Página siguiente">»</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link"
-                   href="?page={{ logs.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                   aria-label="Última página">»»</a>
-            </li>
-        {% endif %}
-    </ul>
-</nav>
+{% include 'gestion/includes/paginacion.html' with pagina=logs param='page' %}
 {% endif %}
 
 {% endblock %}

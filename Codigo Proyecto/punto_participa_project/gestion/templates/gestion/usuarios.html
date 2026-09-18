@@ -26,6 +26,9 @@
         <div>
             <span class="eyebrow">CUENTAS</span>
             <h2>Usuarios del sistema</h2>
+            <p class="panel-subtitle">
+                Mostrando {{ usuarios|length }} de {{ usuarios.paginator.count }} usuarios
+            </p>
         </div>
     </div>
 
@@ -85,7 +88,6 @@
                     <td>{{ u.user.date_joined|date:"d/m/Y" }}</td>
                     <td>
                         <div class="action-group">
-                            <!-- Botón Editar -->
                             <button class="link-button btn-editar-usuario"
                                     data-id="{{ u.id }}"
                                     data-username="{{ u.user.username }}"
@@ -99,7 +101,6 @@
                                 ✎ Editar
                             </button>
 
-                            <!-- Botón Bloquear/Desbloquear -->
                             {% if u.user == request.user %}
                                 <span class="link-button" style="opacity: 0.5; cursor: not-allowed;"
                                       title="No puedes bloquearte a ti mismo">
@@ -141,6 +142,8 @@
             </tbody>
         </table>
     </div>
+
+    {% include 'gestion/includes/paginacion.html' with pagina=usuarios param='page' %}
 </div>
 
 <!-- ============================================================ -->

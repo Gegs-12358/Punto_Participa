@@ -5,7 +5,7 @@
 {% block content %}
 
 <!-- ============================================================ -->
-<!-- TÍTULO -->
+<!-- TÍTULO + BOTÓN CREAR -->
 <!-- ============================================================ -->
 <div class="page-title">
     <div>
@@ -22,28 +22,254 @@
 </div>
 
 <!-- ============================================================ -->
-<!-- INDICADORES (stats) -->
+<!-- BARRA DE FILTROS -->
 <!-- ============================================================ -->
-<div class="stats">
+<form method="get" class="filters-bar">
+    <div class="filter-group">
+        <label for="filtro-rango">Rango</label>
+        <select name="rango" id="filtro-rango">
+            <option value="">Todo el período</option>
+            <option value="hoy" {% if rango_actual == 'hoy' %}selected{% endif %}>Hoy</option>
+            <option value="7dias" {% if rango_actual == '7dias' %}selected{% endif %}>Últimos 7 días</option>
+            <option value="mes" {% if rango_actual == 'mes' %}selected{% endif %}>Este mes</option>
+        </select>
+    </div>
+
+    <div class="filter-group">
+        <label for="filtro-tipo">Tipo</label>
+        <select name="tipo" id="filtro-tipo">
+            <option value="">Todos</option>
+            <option value="MASIVA" {% if tipo_actual == 'MASIVA' %}selected{% endif %}>Masiva</option>
+            <option value="TALLER" {% if tipo_actual == 'TALLER' %}selected{% endif %}>Taller</option>
+        </select>
+    </div>
+
+    <div class="filter-group">
+        <label for="filtro-carrera">Carrera</label>
+        <select name="carrera" id="filtro-carrera">
+            <option value="">Todas</option>
+            {% for c in carreras_opciones %}
+                <option value="{{ c.nombre }}" {% if carrera_actual == c.nombre %}selected{% endif %}>
+                    {{ c.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="filter-group">
+        <label for="filtro-jornada">Jornada</label>
+        <select name="jornada" id="filtro-jornada">
+            <option value="">Todas</option>
+            {% for j in jornadas_opciones %}
+                <option value="{{ j.nombre }}" {% if jornada_actual == j.nombre %}selected{% endif %}>
+                    {{ j.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="filter-actions">
+        <button type="submit" class="btn">Aplicar</button>
+        <a href="{% url 'dashboard' %}" class="link-button">Limpiar</a>
+    </div>
+</form>
+
+<!-- ============================================================ -->
+<!-- KPIs PRINCIPALES (5 tarjetas) -->
+<!-- ============================================================ -->
+<div class="stats stats-5">
     <div class="stat">
+        <div class="stat-icon stat-icon-blue">▦</div>
         <span>ACTIVIDADES ACTIVAS</span>
         <strong>{{ actividades_activas }}</strong>
         <small>Actualmente en curso</small>
+        <a href="{% url 'lista_actividades' %}" class="stat-link">Ver detalle →</a>
     </div>
+
     <div class="stat">
+        <div class="stat-icon stat-icon-green">◈</div>
         <span>TALLERES PRÓXIMOS</span>
         <strong>{{ talleres_proximos }}</strong>
         <small>Con cupos disponibles</small>
+        <a href="{% url 'lista_actividades' %}?tipo=TALLER" class="stat-link">Ver detalle →</a>
     </div>
+
     <div class="stat">
+        <div class="stat-icon stat-icon-purple">◉</div>
+        <span>ALUMNOS INSCRITOS</span>
+        <strong>{{ total_inscritos }}</strong>
+        <small>En el período</small>
+        <a href="{% url 'reportes' %}" class="stat-link">Ver detalle →</a>
+    </div>
+
+    <div class="stat">
+        <div class="stat-icon stat-icon-orange">✓</div>
         <span>ASISTENCIAS HOY</span>
         <strong>{{ asistencias_hoy }}</strong>
         <small>Registros del día</small>
+        <a href="{% url 'escaneo' %}" class="stat-link">Ver detalle →</a>
+    </div>
+
+    <div class="stat">
+        <div class="stat-icon stat-icon-teal">✉</div>
+        <span>INVITACIONES ENVIADAS</span>
+        <strong>{{ invitaciones_enviadas }}</strong>
+        <small>Correos exitosos</small>
+        <a href="{% url 'lista_actividades' %}" class="stat-link">Ver detalle →</a>
     </div>
 </div>
 
 <!-- ============================================================ -->
-<!-- GRÁFICOS -->
+<!-- DESGLOSE POR TIPO (masivas vs talleres) -->
+<!-- ============================================================ -->
+<div class="type-table">
+    <table>
+        <thead>
+            <tr>
+                <th colspan="4" class="type-th type-th-masiva">
+                    Actividades masivas
+                </th>
+                <th colspan="4" class="type-th type-th-taller">
+                    Talleres
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="type-td type-td-label">Actividades</td>
+                <td class="type-td type-td-label">Asistentes</td>
+                <td class="type-td type-td-label">Cupos</td>
+                <td class="type-td type-td-label">Tasa de asistencia</td>
+
+                <td class="type-td type-td-label">Actividades</td>
+                <td class="type-td type-td-label">Inscritos</td>
+                <td class="type-td type-td-label">Asistentes</td>
+                <td class="type-td type-td-label">Tasa de asistencia</td>
+            </tr>
+            <tr>
+                <td class="type-td type-td-value">{{ masivas_count }}</td>
+                <td class="type-td type-td-value">{{ masivas_asistentes }}</td>
+                <td class="type-td type-td-value">
+                    {% if cupos_masivas > 0 %}
+                        {{ cupos_masivas }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td class="type-td type-td-value">
+                    {% if tasa_masivas is not None %}
+                        {{ tasa_masivas }}%
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+
+                <td class="type-td type-td-value">{{ talleres_count }}</td>
+                <td class="type-td type-td-value">{{ talleres_inscritos }}</td>
+                <td class="type-td type-td-value">{{ talleres_asistentes }}</td>
+                <td class="type-td type-td-value">
+                    {% if tasa_talleres is not None %}
+                        {{ tasa_talleres }}%
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- MINI KPIs (4 tarjetas) -->
+<!-- ============================================================ -->
+<div class="mini-stats">
+    <div class="mini-stat">
+        <span>FINALIZADAS</span>
+        <strong>{{ actividades_finalizadas }}</strong>
+    </div>
+    <div class="mini-stat">
+        <span>PROMEDIO ASISTENTES</span>
+        <strong>{{ promedio_asistentes }}</strong>
+    </div>
+    <div class="mini-stat">
+        <span>CUPOS DISPONIBLES</span>
+        <strong>{{ cupos_disponibles_totales }}</strong>
+    </div>
+    <div class="mini-stat">
+        <span>TASA DE TALLERES</span>
+        <strong>
+            {% if tasa_talleres is not None %}
+                {{ tasa_talleres }}%
+            {% else %}
+                —
+            {% endif %}
+        </strong>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- GRÁFICO DE LÍNEA + ACTIVIDADES PRÓXIMAS -->
+<!-- ============================================================ -->
+<div class="charts-row">
+    <div class="panel panel-wide">
+        <div class="panel-head">
+            <div>
+                <span class="eyebrow">RESUMEN</span>
+                <h2>Resumen de actividades</h2>
+            </div>
+            <span class="badge">Últimos 6 meses</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="graficoLinea" role="img" aria-label="Resumen de actividades por mes"></canvas>
+        </div>
+    </div>
+
+    <div class="panel panel-narrow">
+        <div class="panel-head">
+            <div>
+                <span class="eyebrow">PRÓXIMAS</span>
+                <h2>Actividades próximas</h2>
+            </div>
+            <a href="{% url 'lista_actividades' %}" class="link-button">Ver calendario</a>
+        </div>
+
+        <ul class="upcoming-list">
+            {% for act in actividades_proximas %}
+            <li class="upcoming-item">
+                <div class="upcoming-date">
+                    <strong>{{ act.fecha_inicio|date:"d" }}</strong>
+                    <span>{{ act.fecha_inicio|date:"M"|upper }}</span>
+                </div>
+                <div class="upcoming-body">
+                    <h4>{{ act.titulo }}</h4>
+                    <p>
+                        <span>◷</span>
+                        {{ act.fecha_inicio|date:"H:i" }} - {{ act.fecha_fin|date:"H:i" }}
+                    </p>
+                    <p>
+                        <span>◉</span>
+                        {{ act.lugar }}
+                    </p>
+                </div>
+                <div class="upcoming-badge">
+                    {% if act.tipo == 'TALLER' %}
+                        <span class="badge">Taller</span>
+                    {% else %}
+                        <span class="badge draft">Masiva</span>
+                    {% endif %}
+                </div>
+            </li>
+            {% empty %}
+            <li class="upcoming-empty">
+                No hay actividades próximas.
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- GRÁFICO DE BARRAS + DONUT DE CARRERAS -->
 <!-- ============================================================ -->
 <div class="charts-grid">
     <div class="panel">
@@ -72,7 +298,116 @@
 </div>
 
 <!-- ============================================================ -->
-<!-- ÚLTIMAS ACTIVIDADES -->
+<!-- GRÁFICO COMPARATIVO -->
+<!-- ============================================================ -->
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">COMPARATIVO</span>
+            <h2>Inscritos vs Asistentes por Actividad</h2>
+        </div>
+    </div>
+    <div class="chart-container">
+        <canvas id="graficoComparativo" role="img" aria-label="Inscritos vs asistentes por actividad"></canvas>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ALERTAS -->
+<!-- ============================================================ -->
+<div class="alerts-row">
+    <div class="alert-card alert-yellow">
+        <div class="alert-icon">!</div>
+        <div class="alert-body">
+            <h4>Talleres sin cupos</h4>
+            <p>{{ alertas.talleres_sin_cupos }} taller{{ alertas.talleres_sin_cupos|pluralize:"es" }}</p>
+        </div>
+    </div>
+
+    <div class="alert-card alert-blue">
+        <div class="alert-icon">◷</div>
+        <div class="alert-body">
+            <h4>Comienzan hoy</h4>
+            <p>{{ alertas.comienzan_hoy }} actividad{{ alertas.comienzan_hoy|pluralize:"es" }}</p>
+        </div>
+    </div>
+
+    <div class="alert-card alert-orange">
+        <div class="alert-icon">◉</div>
+        <div class="alert-body">
+            <h4>Sin inscritos</h4>
+            <p>{{ alertas.sin_inscritos }} actividad{{ alertas.sin_inscritos|pluralize:"es" }}</p>
+        </div>
+    </div>
+
+    <div class="alert-card alert-red">
+        <div class="alert-icon">✉</div>
+        <div class="alert-body">
+            <h4>Correos fallidos</h4>
+            <p>{{ alertas.correos_fallidos }} envío{{ alertas.correos_fallidos|pluralize:"s" }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PARTICIPACIÓN POR ESCUELA + ACTIVIDAD RECIENTE -->
+<!-- ============================================================ -->
+<div class="charts-grid-3">
+    <div class="panel">
+        <div class="panel-head">
+            <div>
+                <span class="eyebrow">PARTICIPACIÓN</span>
+                <h2>Por Escuela</h2>
+            </div>
+        </div>
+        <div class="chart-container">
+            <canvas id="graficoEscuela" role="img" aria-label="Participación por escuela"></canvas>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-head">
+            <div>
+                <span class="eyebrow">ÚLTIMOS</span>
+                <h2>Registros de asistencia</h2>
+            </div>
+        </div>
+        <ul class="activity-feed">
+            {% for a in ultimas_asistencias %}
+            <li>
+                <strong>{{ a.alumno.nombres }} {{ a.alumno.apellidos }}</strong>
+                <span>{{ a.actividad.titulo|truncatechars:30 }}</span>
+                <em>{{ a.fecha_ingreso|date:"d/m H:i" }}</em>
+            </li>
+            {% empty %}
+            <li class="activity-feed-empty">Sin registros recientes.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="panel">
+        <div class="panel-head">
+            <div>
+                <span class="eyebrow">ÚLTIMOS</span>
+                <h2>Cambios en el sistema</h2>
+            </div>
+        </div>
+        <ul class="activity-feed">
+            {% for log in ultimos_logs %}
+            <li>
+                <strong>{{ log.usuario_sistema.username|default:"Sistema" }}</strong>
+                <span>{{ log.accion|truncatechars:30 }}</span>
+                <em>{{ log.fecha_registro|date:"d/m H:i" }}</em>
+            </li>
+            {% empty %}
+            <li class="activity-feed-empty">Sin actividad reciente.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TABLA ÚLTIMAS ACTIVIDADES -->
 <!-- ============================================================ -->
 <div class="panel">
     <div class="panel-head">
@@ -94,7 +429,11 @@
                     <th>Nombre</th>
                     <th>Tipo</th>
                     <th>Fecha</th>
+                    <th>Inscritos</th>
+                    <th>Asistentes</th>
+                    <th>Cupos</th>
                     <th>Estado</th>
+                    <th>Creador</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -119,6 +458,15 @@
                         {% endif %}
                     </td>
                     <td>{{ actividad.fecha_inicio|date:"d/m/Y H:i" }}</td>
+                    <td>{{ actividad.total_inscritos }}</td>
+                    <td>{{ actividad.total_asistentes }}</td>
+                    <td>
+                        {% if actividad.cupos_disponibles is not None %}
+                            {{ actividad.cupos_disponibles }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
                     <td>
                         {% if actividad.estado == 'ACTIVA' %}
                             <span class="badge">Activa</span>
@@ -128,6 +476,7 @@
                             <span class="badge inactive">Cancelada</span>
                         {% endif %}
                     </td>
+                    <td>{{ actividad.creado_por.username|default:"N/A" }}</td>
                     <td>
                         <div class="action-group">
                             <button class="link-button btn-editar"
@@ -140,7 +489,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center text-muted" style="padding: 40px;">
+                    <td colspan="10" class="text-center text-muted" style="padding: 40px;">
                         Sin actividades registradas.
                     </td>
                 </tr>
@@ -157,6 +506,15 @@
 {{ data_barras|json_script:"data_barras" }}
 {{ labels_pastel|json_script:"labels_pastel" }}
 {{ data_pastel|json_script:"data_pastel" }}
+{{ labels_linea|json_script:"labels_linea" }}
+{{ data_programadas|json_script:"data_programadas" }}
+{{ data_en_curso|json_script:"data_en_curso" }}
+{{ data_finalizadas|json_script:"data_finalizadas" }}
+{{ labels_comp|json_script:"labels_comp" }}
+{{ data_comp_inscritos|json_script:"data_comp_inscritos" }}
+{{ data_comp_asistentes|json_script:"data_comp_asistentes" }}
+{{ labels_escuela|json_script:"labels_escuela" }}
+{{ data_escuela|json_script:"data_escuela" }}
 
 <!-- Modal global para crear/editar actividad -->
 {% include 'gestion/includes/modal_actividad.html' %}

@@ -26,6 +26,9 @@
            class="btn secondary">
             ⇩ Detalle
         </a>
+        <button type="button" class="btn secondary" onclick="window.print()">
+            ⎙ Imprimir
+        </button>
     </div>
 </div>
 
@@ -91,6 +94,143 @@
 </form>
 
 <!-- ============================================================ -->
+<!-- CHIPS DE FILTROS ACTIVOS -->
+<!-- ============================================================ -->
+{% if request.GET.actividad or request.GET.carrera or request.GET.jornada or request.GET.fecha_inicio or request.GET.fecha_fin %}
+<div class="filter-chips">
+    <span class="filter-chips-label">Filtros activos:</span>
+
+    {% if request.GET.actividad %}
+    <a class="filter-chip"
+       href="?{% for k, v in request.GET.items %}{% if k != 'actividad' and k != 'page_act' and k != 'page_det' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">
+        Actividad · quitar ×
+    </a>
+    {% endif %}
+
+    {% if request.GET.carrera %}
+    <a class="filter-chip"
+       href="?{% for k, v in request.GET.items %}{% if k != 'carrera' and k != 'page_act' and k != 'page_det' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">
+        Carrera: {{ request.GET.carrera }} · quitar ×
+    </a>
+    {% endif %}
+
+    {% if request.GET.jornada %}
+    <a class="filter-chip"
+       href="?{% for k, v in request.GET.items %}{% if k != 'jornada' and k != 'page_act' and k != 'page_det' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">
+        Jornada: {{ request.GET.jornada }} · quitar ×
+    </a>
+    {% endif %}
+
+    {% if request.GET.fecha_inicio %}
+    <a class="filter-chip"
+       href="?{% for k, v in request.GET.items %}{% if k != 'fecha_inicio' and k != 'page_act' and k != 'page_det' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">
+        Desde: {{ request.GET.fecha_inicio }} · quitar ×
+    </a>
+    {% endif %}
+
+    {% if request.GET.fecha_fin %}
+    <a class="filter-chip"
+       href="?{% for k, v in request.GET.items %}{% if k != 'fecha_fin' and k != 'page_act' and k != 'page_det' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">
+        Hasta: {{ request.GET.fecha_fin }} · quitar ×
+    </a>
+    {% endif %}
+
+    <a class="filter-chip filter-chip-clear" href="{% url 'reportes' %}">
+        Limpiar todos
+    </a>
+</div>
+{% endif %}
+
+<!-- ============================================================ -->
+<!-- DESGLOSE POR TIPO (tabla horizontal) -->
+<!-- ============================================================ -->
+<div class="type-table">
+    <table>
+        <thead>
+            <tr>
+                <th colspan="4" class="type-th type-th-masiva">
+                    Actividades masivas
+                </th>
+                <th colspan="4" class="type-th type-th-taller">
+                    Talleres
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="type-td type-td-label">Actividades</td>
+                <td class="type-td type-td-label">Asistentes</td>
+                <td class="type-td type-td-label">Cupos</td>
+                <td class="type-td type-td-label">Tasa de asistencia</td>
+
+                <td class="type-td type-td-label">Actividades</td>
+                <td class="type-td type-td-label">Inscritos</td>
+                <td class="type-td type-td-label">Asistentes</td>
+                <td class="type-td type-td-label">Tasa de asistencia</td>
+            </tr>
+            <tr>
+                <td class="type-td type-td-value">{{ masivas_count }}</td>
+                <td class="type-td type-td-value">{{ masivas_asistentes }}</td>
+                <td class="type-td type-td-value">
+                    {% if cupos_masivas > 0 %}
+                        {{ cupos_masivas }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td class="type-td type-td-value">
+                    {% if tasa_masivas is not None %}
+                        {{ tasa_masivas }}%
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+
+                <td class="type-td type-td-value">{{ talleres_count }}</td>
+                <td class="type-td type-td-value">{{ talleres_inscritos }}</td>
+                <td class="type-td type-td-value">{{ talleres_asistentes }}</td>
+                <td class="type-td type-td-value">
+                    {% if tasa_talleres is not None %}
+                        {{ tasa_talleres }}%
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- MINI KPIs GENERALES -->
+<!-- ============================================================ -->
+<div class="mini-stats">
+    <div class="mini-stat">
+        <span>ACTIVIDADES</span>
+        <strong>{{ actividades.paginator.count }}</strong>
+    </div>
+    <div class="mini-stat">
+        <span>INSCRITOS</span>
+        <strong>{{ total_inscritos_filtrado|default:"0" }}</strong>
+    </div>
+    <div class="mini-stat">
+        <span>ASISTENTES</span>
+        <strong>{{ total_asistentes_filtrado|default:"0" }}</strong>
+    </div>
+    <div class="mini-stat">
+        <span>PROMEDIO ASISTENTES</span>
+        <strong>
+            {% if actividades.paginator.count > 0 %}
+                {% widthratio total_asistentes_filtrado actividades.paginator.count 1 %}
+            {% else %}
+                0
+            {% endif %}
+        </strong>
+        <small class="mini-stat-note">Por actividad</small>
+    </div>
+</div>
+
+<!-- ============================================================ -->
 <!-- TABS -->
 <!-- ============================================================ -->
 <div class="tabs">
@@ -120,6 +260,10 @@
                 <div>
                     <span class="eyebrow">GRÁFICO DE BARRAS</span>
                     <h2>Asistentes por Actividad</h2>
+                    <p class="panel-subtitle">
+                        Total: {{ total_asistentes_filtrado|default:"0" }} asistentes
+                        en {{ actividades.paginator.count }} actividades
+                    </p>
                 </div>
             </div>
             <div class="chart-container">
@@ -132,6 +276,9 @@
                 <div>
                     <span class="eyebrow">GRÁFICO CIRCULAR</span>
                     <h2>Distribución por Carrera</h2>
+                    <p class="panel-subtitle">
+                        {{ labels_pastel|length }} carreras · {{ total_asistentes_filtrado|default:"0" }} asistentes
+                    </p>
                 </div>
             </div>
             <div class="chart-container">
@@ -144,6 +291,9 @@
                 <div>
                     <span class="eyebrow">GRÁFICO DE BARRAS</span>
                     <h2>Asistentes por Jornada</h2>
+                    <p class="panel-subtitle">
+                        {{ labels_jornada|length }} jornadas registradas
+                    </p>
                 </div>
             </div>
             <div class="chart-container">
@@ -158,6 +308,9 @@
             <div>
                 <span class="eyebrow">DETALLE GENERAL</span>
                 <h2>Actividades</h2>
+                <p class="panel-subtitle">
+                    Mostrando {{ actividades|length }} de {{ actividades.paginator.count }} actividad{{ actividades.paginator.count|pluralize:"es" }}
+                </p>
             </div>
         </div>
 
@@ -211,13 +364,25 @@
                                 <span>▥</span>
                                 <h3>Sin resultados</h3>
                                 <p>No se encontraron actividades con esos filtros.</p>
+                                <a href="{% url 'reportes' %}" class="btn secondary">Limpiar filtros</a>
                             </div>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
+                {% if actividades %}
+                <tfoot>
+                    <tr class="table-total-row">
+                        <td colspan="7"><strong>TOTAL</strong></td>
+                        <td><strong>{{ total_inscritos_filtrado|default:"0" }}</strong></td>
+                        <td><strong>{{ total_asistentes_filtrado|default:"0" }}</strong></td>
+                    </tr>
+                </tfoot>
+                {% endif %}
             </table>
         </div>
+
+        {% include 'gestion/includes/paginacion.html' with pagina=actividades param='page_act' %}
     </div>
 </div>
 
@@ -233,6 +398,9 @@
                 <div>
                     <span class="eyebrow">GRÁFICO DE BARRAS</span>
                     <h2>Asistentes por Escuela</h2>
+                    <p class="panel-subtitle">
+                        {{ labels_barras_detalle|length }} escuelas con participación
+                    </p>
                 </div>
             </div>
             <div class="chart-container">
@@ -245,6 +413,9 @@
                 <div>
                     <span class="eyebrow">GRÁFICO CIRCULAR</span>
                     <h2>Distribución por Carrera</h2>
+                    <p class="panel-subtitle">
+                        {{ labels_pastel_detalle|length }} carreras registradas
+                    </p>
                 </div>
             </div>
             <div class="chart-container">
@@ -257,6 +428,9 @@
                 <div>
                     <span class="eyebrow">GRÁFICO DE BARRAS</span>
                     <h2>Asistentes por Jornada</h2>
+                    <p class="panel-subtitle">
+                        Distribución por jornada de la participación
+                    </p>
                 </div>
             </div>
             <div class="chart-container">
@@ -271,6 +445,9 @@
             <div>
                 <span class="eyebrow">DETALLE POR ESCUELA</span>
                 <h2>Participación</h2>
+                <p class="panel-subtitle">
+                    Mostrando {{ detalle_data|length }} de {{ detalle_data.paginator.count }} filas
+                </p>
             </div>
         </div>
 
@@ -308,6 +485,7 @@
                                 <span>▤</span>
                                 <h3>Sin datos detallados</h3>
                                 <p>No hay datos para mostrar con los filtros seleccionados.</p>
+                                <a href="{% url 'reportes' %}" class="btn secondary">Limpiar filtros</a>
                             </div>
                         </td>
                     </tr>
@@ -315,6 +493,8 @@
                 </tbody>
             </table>
         </div>
+
+        {% include 'gestion/includes/paginacion.html' with pagina=detalle_data param='page_det' %}
     </div>
 </div>
 

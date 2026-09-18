@@ -18,6 +18,8 @@ __all__ = [
     'formatear_rut',
     'extraer_rut_de_carnet',
     'TIPO_DOCUMENTO_CHOICES',
+    'paginar',
+    'ITEMS_POR_PAGINA',
 ]
 
 
@@ -260,3 +262,42 @@ def extraer_rut_de_carnet(texto):
         rut_limpio = rut_limpio[:9]
 
     return rut_limpio
+
+# ============================================================
+# PAGINACIÓN ESTÁNDAR
+# ============================================================
+
+from django.core.paginator import Paginator
+
+
+# Cantidad de filas por página en todas las tablas del sistema
+ITEMS_POR_PAGINA = 3
+
+
+def paginar(request, queryset, param='page', por_pagina=None):
+    """
+    Pagina un queryset de forma estándar.
+
+    Args:
+        request: HttpRequest, para leer el número de página actual.
+        queryset: QuerySet o lista a paginar.
+        param: nombre del parámetro GET que contiene la página.
+            Por defecto 'page'. Usar 'page_insc', 'page_asis', etc.,
+            cuando hay varias tablas en la misma vista.
+        por_pagina: cantidad de filas por página. Si no se indica,
+            usa ITEMS_POR_PAGINA (15).
+
+    Returns:
+        Un objeto Page listo para usar en el template.
+
+    Ejemplo:
+        page_obj = paginar(request, actividades_qs)
+        page_obj = paginar(request, inscripciones, param='page_insc')
+    """
+    if por_pagina is None:
+        por_pagina = ITEMS_POR_PAGINA
+
+    paginator = Paginator(queryset, por_pagina)
+    page_number = request.GET.get(param)
+
+    return paginator.get_page(page_number)

@@ -41,11 +41,10 @@
                     </span>
                 </button>
 
-                <form method="post" action="{% url 'logout' %}"> 
+                <form method="post" action="{% url 'logout' %}" class="logout-form">
                     {% csrf_token %}
-                    <button type="submit"> Cerrar sesión </button>
+                    <button type="submit" class="text-button">Cerrar sesión</button>
                 </form>
-
 
                 <img class="duoc-logo" src="{% static 'gestion/img/logo_duoc.png' %}" alt="Duoc UC">
             </div>

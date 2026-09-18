@@ -1,0 +1,175 @@
+{% extends 'gestion/base.html' %}
+{% load static %}
+{% block title %}{{ actividad.titulo }}{% endblock %}
+
+{% block content %}
+
+<div class="page-title">
+    <div>
+        <span class="eyebrow">
+            <a href="{% url 'lista_actividades' %}">← Volver a actividades</a>
+        </span>
+        <h1>{{ actividad.titulo }}</h1>
+        <p>
+            {% if actividad.tipo == 'TALLER' %}
+            <span class="role">Taller</span>
+            {% else %}
+            <span class="badge">Masiva</span>
+            {% endif %}
+            {% if actividad.estado == 'ACTIVA' %}
+            <span class="badge">Activa</span>
+            {% elif actividad.estado == 'FINALIZADA' %}
+            <span class="badge draft">Finalizada</span>
+            {% else %}
+            <span class="badge inactive">Cancelada</span>
+            {% endif %}
+        </p>
+    </div>
+    <div class="btn-group">
+        <a href="{% url 'editar_actividad' actividad.pk %}" class="btn">
+            ✎ Editar
+        </a>
+        <a href="{% url 'participantes_actividad' actividad.pk %}" class="btn secondary">
+            ◉ Participantes
+        </a>
+        <a href="{% url 'notificaciones_actividad' actividad.pk %}" class="btn secondary">
+            ✉ Notificaciones
+        </a>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MINI KPIs -->
+<!-- ============================================================ -->
+<div class="mini-stats">
+    <div class="mini-stat">
+        <span>INSCRITOS</span>
+        <strong>{{ total_inscritos }}</strong>
+    </div>
+    <div class="mini-stat">
+        <span>ASISTENTES</span>
+        <strong>{{ total_asistentes }}</strong>
+    </div>
+    <div class="mini-stat">
+        <span>TASA DE ASISTENCIA</span>
+        <strong>
+            {% if tasa_asistencia is not None %}
+            {{ tasa_asistencia }}%
+            {% else %}
+            —
+            {% endif %}
+        </strong>
+    </div>
+    <div class="mini-stat">
+        <span>INVITACIONES</span>
+        <strong>{{ total_notificaciones_exito }} ✓ / {{ total_notificaciones_fallo }} ✗</strong>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- DATOS DE LA ACTIVIDAD -->
+<!-- ============================================================ -->
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">INFORMACIÓN</span>
+            <h2>Detalle</h2>
+        </div>
+    </div>
+
+    <div class="activity-detail">
+        {% if actividad.imagen %}
+        <div class="activity-detail-image">
+            <img src="{{ actividad.imagen.url }}" alt="{{ actividad.titulo }}">
+        </div>
+        {% endif %}
+
+        <div class="activity-detail-body">
+            <p><strong>Descripción:</strong> {{ actividad.descripcion }}</p>
+            <p><strong>Lugar:</strong> {{ actividad.lugar }}</p>
+            <p><strong>Fecha de inicio:</strong> {{ actividad.fecha_inicio|date:"d/m/Y H:i" }}</p>
+            <p><strong>Fecha de fin:</strong> {{ actividad.fecha_fin|date:"d/m/Y H:i" }}</p>
+            <p><strong>Creada por:</strong> {{ actividad.creado_por.username|default:"N/A" }}</p>
+            <p><strong>Fecha de creación:</strong> {{ actividad.fecha_creacion|date:"d/m/Y H:i" }}</p>
+
+            {% if actividad.tipo == 'TALLER' %}
+            <p><strong>Cupos totales:</strong> {{ actividad.cupos_totales }}</p>
+            <p><strong>Cupos disponibles:</strong> {{ actividad.cupos_disponibles }}</p>
+            {% endif %}
+
+            {% if actividad.carreras.all %}
+            <p>
+                <strong>Carreras:</strong>
+                {% for c in actividad.carreras.all %}
+                {{ c.nombre }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            {% endif %}
+
+            {% if actividad.jornadas.all %}
+            <p>
+                <strong>Jornadas:</strong>
+                {% for j in actividad.jornadas.all %}
+                {{ j.nombre }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            {% endif %}
+
+            {% if actividad.cronograma %}
+            <p><strong>Cronograma:</strong> {{ actividad.cronograma }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ÚLTIMAS ASISTENCIAS -->
+<!-- ============================================================ -->
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">ÚLTIMAS</span>
+            <h2>Asistencias registradas</h2>
+        </div>
+        <a href="{% url 'participantes_actividad' actividad.pk %}" class="link-button">
+            Ver todos →
+        </a>
+    </div>
+
+    {% if ultimas_asistencias %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Alumno</th>
+                    <th>RUT</th>
+                    <th>Carrera</th>
+                    <th>Jornada</th>
+                    <th>Registrado por</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in ultimas_asistencias %}
+                <tr>
+                    <td><strong>{{ a.alumno.nombres }} {{ a.alumno.apellidos }}</strong></td>
+                    <td>{{ a.alumno.rut }}</td>
+                    <td>{{ a.alumno.carrera }}</td>
+                    <td>{{ a.alumno.jornada }}</td>
+                    <td>{{ a.registrado_por.username|default:"N/A" }}</td>
+                    <td>{{ a.fecha_ingreso|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <span>◉</span>
+        <h3>Sin asistencias registradas</h3>
+        <p>Aún no se ha registrado ninguna asistencia en esta actividad.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

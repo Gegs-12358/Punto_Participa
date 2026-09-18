@@ -1,0 +1,118 @@
+{% extends 'gestion/base.html' %}
+{% load static %}
+{% block title %}Notificaciones - {{ actividad.titulo }}{% endblock %}
+
+{% block content %}
+
+<!-- ============================================================ -->
+<!-- TÍTULO -->
+<!-- ============================================================ -->
+<div class="page-title">
+    <div>
+        <span class="eyebrow">
+            <a href="{% url 'actividad_detalle' actividad.pk %}">← Volver a la actividad</a>
+        </span>
+        <h1>Notificaciones de correo</h1>
+        <p>{{ actividad.titulo }}</p>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MINI KPIs -->
+<!-- ============================================================ -->
+<div class="mini-stats">
+    <div class="mini-stat">
+        <span>ENVIADAS OK</span>
+        <strong>{{ total_exito }}</strong>
+    </div>
+    <div class="mini-stat">
+        <span>FALLIDAS</span>
+        <strong>{{ total_fallo }}</strong>
+    </div>
+    <div class="mini-stat">
+        <span>TOTAL</span>
+        <strong>{{ total_exito|add:total_fallo }}</strong>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- FILTROS -->
+<!-- ============================================================ -->
+<form method="get" class="filters">
+    <div>
+        <label for="filtro-estado" class="form-label">Estado</label>
+        <select name="estado" id="filtro-estado">
+            <option value="">Todos</option>
+            <option value="EXITO" {% if filtro_estado == 'EXITO' %}selected{% endif %}>Éxito</option>
+            <option value="FALLO" {% if filtro_estado == 'FALLO' %}selected{% endif %}>Fallo</option>
+        </select>
+    </div>
+    <button type="submit" class="btn">▽ Filtrar</button>
+    <a href="{% url 'notificaciones_actividad' actividad.pk %}" class="btn secondary">× Limpiar</a>
+</form>
+
+<!-- ============================================================ -->
+<!-- TABLA -->
+<!-- ============================================================ -->
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">NOTIFICACIONES</span>
+            <h2>Correos enviados</h2>
+            <p class="panel-subtitle">
+                Mostrando {{ notificaciones|length }} de {{ notificaciones.paginator.count }} notificaciones
+            </p>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Notificaciones de correo</caption>
+            <thead>
+                <tr>
+                    <th>Alumno</th>
+                    <th>Correo</th>
+                    <th>Estado</th>
+                    <th>Fecha de envío</th>
+                    <th>Filtro aplicado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for n in notificaciones %}
+                <tr>
+                    <td>
+                        {% if n.alumno %}
+                            <strong>{{ n.alumno.nombres }} {{ n.alumno.apellidos }}</strong>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ n.alumno.correo|default:"—" }}</td>
+                    <td>
+                        {% if n.estado_envio == 'EXITO' %}
+                            <span class="badge">Éxito</span>
+                        {% else %}
+                            <span class="badge inactive">Fallo</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ n.fecha_envio|date:"d/m/Y H:i" }}</td>
+                    <td>{{ n.filtro_aplicado|truncatechars:60 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted" style="padding: 40px;">
+                        No hay notificaciones para este filtro.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PAGINACIÓN -->
+    <!-- ============================================================ -->
+    {% include 'gestion/includes/paginacion.html' with pagina=notificaciones param='page' %}
+</div>
+
+{% endblock %}

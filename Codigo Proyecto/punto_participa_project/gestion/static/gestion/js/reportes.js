@@ -1,211 +1,302 @@
-// =============================================================
-// reportes.js - Manejo de gráficos con pestañas (General y Detallado)
-// Sin Bootstrap: tabs propias con data-tab
-// =============================================================
+// ============================================================
+// reportes.js - Gráficos de la vista de Reportes
+// Pestaña General + Pestaña Detallado
+// ============================================================
 
-// Variables para almacenar las instancias de los gráficos
-let chartGeneralBar = null;
-let chartGeneralPie = null;
-let chartGeneralJornada = null;
-let chartDetalleBar = null;
-let chartDetallePie = null;
-let chartDetalleJornada = null;
+const COLORES_INSTITUCIONALES = [
+    '#003366', '#FFC107', '#28a745', '#dc3545',
+    '#6c757d', '#17a2b8', '#fd7e14', '#6f42c1',
+    '#20c997', '#e83e8c', '#6610f2', '#007bff'
+];
 
-/**
- * Obtiene datos serializados de forma segura desde un <script type="application/json">
- */
-function obtenerDatosJson(id) {
-    const elemento = document.getElementById(id);
-    if (!elemento) return [];
-    try {
-        return JSON.parse(elemento.textContent);
-    } catch (error) {
-        console.error(`Error al parsear datos de "${id}":`, error);
-        return [];
-    }
-}
-
-/**
- * Función auxiliar para crear un gráfico Chart.js
- */
-function crearGrafico(canvasId, tipo, labelsData, dataData, label, opcionesExtra) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return null;
-
-    if (!labelsData || labelsData.length === 0) {
-        mostrarSinDatos(canvas);
-        return null;
-    }
-
-    const existingChart = Chart.getChart(canvasId);
-    if (existingChart) {
-        existingChart.destroy();
-    }
-
-    const coloresBase = [
-        '#003366', '#FFC107', '#28a745', '#dc3545',
-        '#6c757d', '#17a2b8', '#fd7e14', '#6f42c1',
-        '#20c997', '#e83e8c', '#6610f2', '#007bff'
-    ];
-
-    const backgroundColor = tipo === 'bar'
-        ? 'rgba(0, 51, 102, 0.7)'
-        : coloresBase.slice(0, dataData.length);
-
-    const borderColor = tipo === 'bar'
-        ? 'rgba(0, 51, 102, 1)'
-        : coloresBase.slice(0, dataData.length);
-
-    const config = {
-        type: tipo,
-        data: {
-            labels: labelsData,
-            datasets: [{
-                label: label || (tipo === 'bar' ? 'Datos' : 'Distribución'),
-                data: dataData,
-                backgroundColor: backgroundColor,
-                borderColor: borderColor,
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: tipo === 'bar' ? 'top' : 'bottom',
-                    labels: {
-                        boxWidth: 12,
-                        padding: 10,
-                        font: { size: 11 }
-                    }
-                }
-            },
-            scales: tipo === 'bar' ? {
-                y: {
-                    beginAtZero: true,
-                    ticks: { stepSize: 1 }
-                }
-            } : undefined
-        }
-    };
-
-    if (opcionesExtra) {
-        config.options = { ...config.options, ...opcionesExtra };
-    }
-
-    return new Chart(canvas, config);
-}
-
-/**
- * Muestra un mensaje cuando no hay datos para un gráfico.
- */
-function mostrarSinDatos(canvas) {
-    if (canvas && canvas.parentElement) {
-        canvas.parentElement.innerHTML =
-            '<p class="text-muted text-center py-5">No hay datos disponibles.</p>';
-    }
-}
-
-/**
- * Inicializar gráficos de la pestaña GENERAL
- */
-function initGeneralCharts() {
-    if (!chartGeneralBar) {
-        const labels = obtenerDatosJson('labels_barras');
-        const data = obtenerDatosJson('data_barras');
-        chartGeneralBar = crearGrafico('graficoBarrasReportes', 'bar', labels, data, 'Asistentes');
-    }
-
-    if (!chartGeneralPie) {
-        const labels = obtenerDatosJson('labels_pastel');
-        const data = obtenerDatosJson('data_pastel');
-        chartGeneralPie = crearGrafico('graficoPastelReportes', 'pie', labels, data, 'Distribución por Carrera');
-    }
-
-    if (!chartGeneralJornada) {
-        const labels = obtenerDatosJson('labels_jornada');
-        const data = obtenerDatosJson('data_jornada');
-        chartGeneralJornada = crearGrafico('graficoJornadaReportes', 'bar', labels, data, 'Asistentes por Jornada');
-    }
-}
-
-/**
- * Inicializar gráficos de la pestaña DETALLADO
- */
-function initDetalleCharts() {
-    if (!chartDetalleBar) {
-        const labels = obtenerDatosJson('labels_barras_detalle');
-        const data = obtenerDatosJson('data_barras_detalle');
-        chartDetalleBar = crearGrafico('graficoBarrasDetalle', 'bar', labels, data, 'Asistentes por Escuela');
-    }
-
-    if (!chartDetallePie) {
-        const labels = obtenerDatosJson('labels_pastel_detalle');
-        const data = obtenerDatosJson('data_pastel_detalle');
-        chartDetallePie = crearGrafico('graficoPastelDetalle', 'pie', labels, data, 'Distribución por Carrera');
-    }
-
-    if (!chartDetalleJornada) {
-        const labels = obtenerDatosJson('labels_jornada_detalle');
-        const data = obtenerDatosJson('data_jornada_detalle');
-        chartDetalleJornada = crearGrafico('graficoJornadaDetalle', 'bar', labels, data, 'Asistentes por Jornada');
-    }
-}
-
-/**
- * Destruir todos los gráficos (opcional, para limpiar)
- */
-function destroyAllCharts() {
-    if (chartGeneralBar) { chartGeneralBar.destroy(); chartGeneralBar = null; }
-    if (chartGeneralPie) { chartGeneralPie.destroy(); chartGeneralPie = null; }
-    if (chartGeneralJornada) { chartGeneralJornada.destroy(); chartGeneralJornada = null; }
-    if (chartDetalleBar) { chartDetalleBar.destroy(); chartDetalleBar = null; }
-    if (chartDetallePie) { chartDetallePie.destroy(); chartDetallePie = null; }
-    if (chartDetalleJornada) { chartDetalleJornada.destroy(); chartDetalleJornada = null; }
-}
-
-// =============================================================
-// EVENTOS
-// =============================================================
+const formatoNumero = new Intl.NumberFormat('es-CL');
 
 document.addEventListener('DOMContentLoaded', function () {
+
+    // Verificar que Chart.js esté cargado
     if (typeof Chart === 'undefined') {
         console.error('Chart.js no está cargado.');
+        mostrarErrorGraficos();
         return;
     }
 
-    initGeneralCharts();
+    // ============================================================
+    // Configuración global de Chart.js
+    // ============================================================
+    Chart.defaults.font.family = "'Lato', 'Roboto', system-ui, sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = '#4a5568';
 
+    // ============================================================
+    // Utilidades
+    // ============================================================
+    function obtenerDatos(id) {
+        const elemento = document.getElementById(id);
+        if (!elemento) return [];
+        try {
+            return JSON.parse(elemento.textContent);
+        } catch (error) {
+            console.error(`Error al parsear ${id}:`, error);
+            return [];
+        }
+    }
+
+    function calcularTotal(datos) {
+        return datos.reduce(function (a, b) { return a + b; }, 0);
+    }
+
+    function mostrarSinDatos(canvas) {
+        if (canvas && canvas.parentElement) {
+            canvas.parentElement.innerHTML =
+                '<p class="text-muted text-center" style="padding: 40px;">No hay datos disponibles.</p>';
+        }
+    }
+
+    function mostrarErrorGraficos() {
+        document.querySelectorAll('canvas').forEach(function (canvas) {
+            if (canvas && canvas.parentElement) {
+                canvas.parentElement.innerHTML =
+                    '<p class="text-danger text-center" style="padding: 40px;">Error al cargar los gráficos.</p>';
+            }
+        });
+    }
+
+    // ============================================================
+    // Configuración común para gráficos de barras
+    // ============================================================
+    function opcionesBarras(tituloSerie) {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 600 },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        callback: function (v) { return formatoNumero.format(v); }
+                    }
+                },
+                x: {
+                    ticks: { maxRotation: 45, minRotation: 0 }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (ctx) {
+                            return tituloSerie + ': ' + formatoNumero.format(ctx.parsed.y);
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    // ============================================================
+    // Configuración común para gráficos de pastel / donut
+    // ============================================================
+    function opcionesDonut() {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 600 },
+            cutout: '60%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 10,
+                        font: { size: 11 },
+                        generateLabels: function (chart) {
+                            const data = chart.data;
+                            if (!data.labels.length || !data.datasets.length) {
+                                return [];
+                            }
+                            const dataset = data.datasets[0];
+                            const total = calcularTotal(dataset.data);
+
+                            return data.labels.map(function (label, i) {
+                                const valor = dataset.data[i];
+                                const porcentaje = total > 0
+                                    ? ((valor / total) * 100).toFixed(1)
+                                    : '0.0';
+                                const color = dataset.backgroundColor[i];
+
+                                return {
+                                    text: `${label} — ${porcentaje}%`,
+                                    fillStyle: color,
+                                    strokeStyle: color,
+                                    lineWidth: 0,
+                                    hidden: isNaN(valor) || chart.getDatasetMeta(0).data[i].hidden,
+                                    index: i
+                                };
+                            });
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (ctx) {
+                            const total = calcularTotal(ctx.dataset.data);
+                            const valor = ctx.parsed;
+                            const porcentaje = total > 0
+                                ? ((valor / total) * 100).toFixed(1)
+                                : '0.0';
+                            return (
+                                ctx.label +
+                                ': ' +
+                                formatoNumero.format(valor) +
+                                ' (' + porcentaje + '%)'
+                            );
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    // ============================================================
+    // Función reutilizable: crear gráfico de barras
+    // ============================================================
+    function crearGraficoBarras(canvasId, labelsId, dataId, tituloSerie) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+
+        const labels = obtenerDatos(labelsId);
+        const data = obtenerDatos(dataId);
+
+        if (labels.length === 0 || data.length === 0) {
+            mostrarSinDatos(canvas);
+            return;
+        }
+
+        new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: tituloSerie,
+                    data: data,
+                    backgroundColor: 'rgba(0, 51, 102, 0.75)',
+                    borderColor: 'rgba(0, 51, 102, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: opcionesBarras(tituloSerie)
+        });
+    }
+
+    // ============================================================
+    // Función reutilizable: crear gráfico de donut
+    // ============================================================
+    function crearGraficoDonut(canvasId, labelsId, dataId) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+
+        const labels = obtenerDatos(labelsId);
+        const data = obtenerDatos(dataId);
+
+        if (labels.length === 0 || data.length === 0) {
+            mostrarSinDatos(canvas);
+            return;
+        }
+
+        const colores = labels.map(function (_, i) {
+            return COLORES_INSTITUCIONALES[i % COLORES_INSTITUCIONALES.length];
+        });
+
+        new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colores,
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: opcionesDonut()
+        });
+    }
+
+    // ============================================================
+    // PESTAÑA GENERAL
+    // ============================================================
+    crearGraficoBarras(
+        'graficoBarrasReportes',
+        'labels_barras',
+        'data_barras',
+        'Asistentes'
+    );
+
+    crearGraficoDonut(
+        'graficoPastelReportes',
+        'labels_pastel',
+        'data_pastel'
+    );
+
+    crearGraficoBarras(
+        'graficoJornadaReportes',
+        'labels_jornada',
+        'data_jornada',
+        'Asistentes'
+    );
+
+    // ============================================================
+    // PESTAÑA DETALLADO
+    // ============================================================
+    crearGraficoBarras(
+        'graficoBarrasDetalle',
+        'labels_barras_detalle',
+        'data_barras_detalle',
+        'Asistentes'
+    );
+
+    crearGraficoDonut(
+        'graficoPastelDetalle',
+        'labels_pastel_detalle',
+        'data_pastel_detalle'
+    );
+
+    crearGraficoBarras(
+        'graficoJornadaDetalle',
+        'labels_jornada_detalle',
+        'data_jornada_detalle',
+        'Asistentes'
+    );
+
+    // ============================================================
+    // TABS — Mostrar y ocultar pestañas
+    // ============================================================
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
 
-    tabButtons.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            const targetId = this.dataset.tab;
+    tabButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            const targetId = button.getAttribute('data-tab');
 
             tabButtons.forEach(function (b) {
                 b.classList.remove('active');
                 b.setAttribute('aria-selected', 'false');
             });
+
             tabContents.forEach(function (c) {
                 c.classList.remove('active');
-                c.hidden = true;
+                c.setAttribute('hidden', 'hidden');
             });
 
-            this.classList.add('active');
-            this.setAttribute('aria-selected', 'true');
+            button.classList.add('active');
+            button.setAttribute('aria-selected', 'true');
 
-            const targetContent = document.getElementById(targetId);
-            if (targetContent) {
-                targetContent.classList.add('active');
-                targetContent.hidden = false;
-            }
-
-            if (targetId === 'detallado-tab') {
-                setTimeout(function () {
-                    initDetalleCharts();
-                }, 100);
+            const target = document.getElementById(targetId);
+            if (target) {
+                target.classList.add('active');
+                target.removeAttribute('hidden');
             }
         });
     });
