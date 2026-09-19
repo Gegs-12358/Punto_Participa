@@ -3,8 +3,7 @@ from .models import (
     Rol, UsuarioSistema, Alumno, Actividad, Carrera, Jornada,
     Inscripcion, Asistencia, NotificacionCorreo, LogAuditoria
 )
-from .utils import normalizar_rut, validar_documento
-
+from .utils import normalizar_rut
 
 
 # ============================================================
@@ -104,6 +103,20 @@ class ActividadAdmin(admin.ModelAdmin):
     filter_horizontal = ('carreras', 'jornadas')
     ordering = ('-fecha_inicio',)
     date_hierarchy = 'fecha_inicio'
+
+    
+    def save_model(self, request, obj, form, change):
+        """
+        Recalcula cupos_disponibles según las inscripciones actuales,
+        igual que hace la vista normal de la app (crear/editar actividad).
+        - Nueva actividad (change=False): 0 inscritos.
+        - Edición (change=True): cuenta las inscripciones reales en BBDD.
+        """
+        if not change:
+            obj.recalcular_cupos(inscritos_override=0)
+        else:
+            obj.recalcular_cupos()
+        super().save_model(request, obj, form, change)
 
     fieldsets = (
         ('Información básica', {

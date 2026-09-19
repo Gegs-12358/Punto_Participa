@@ -3,21 +3,32 @@ Utilidades para el proyecto Punto Participa.
 
 Contiene funciones auxiliares para:
 - Normalización y validación de RUT chileno.
-- Soporte para documentos de identidad de extranjeros.
+- Soporte para documentos de identidad de extranjeros (pasaportes,
+  RUN provisorios, cédulas de extranjero).
 - Extracción de RUT desde códigos QR de cédula de identidad.
+- Búsqueda inteligente de alumnos por documento en BBDD.
+- Paginación estándar.
 """
 
 import re
 
+from django.core.paginator import Paginator
+
 
 __all__ = [
-    'normalizar_rut',
+    # Documentos de identidad
+    'rut_limpio',
+    'rut_formateado',
+    'normalizar_rut',        # alias de rut_limpio (compatibilidad)
+    'normalizar_documento',
     'validar_rut',
     'validar_rut_extranjero',
     'validar_documento',
     'formatear_rut',
     'extraer_rut_de_carnet',
+    'buscar_alumno_por_documento',
     'TIPO_DOCUMENTO_CHOICES',
+    # Paginación
     'paginar',
     'ITEMS_POR_PAGINA',
 ]
@@ -39,21 +50,61 @@ TIPO_DOCUMENTO_CHOICES = [
 # NORMALIZACIÓN
 # ============================================================
 
-def normalizar_rut(rut):
+def rut_limpio(rut):
     """
     Elimina puntos, guiones y espacios del RUT.
     Convierte la 'k' a 'K' mayúscula.
-    Acepta tanto letras como números (para pasaportes).
+    Acepta letras (para pasaportes) y números.
+
+    ⚠️ NO usar para buscar en BBDD: la BBDD guarda con guion.
+    Para buscar, usar `buscar_alumno_por_documento()`.
 
     Ejemplo:
-        >>> normalizar_rut('12.345.678-9')
+        >>> rut_limpio('12.345.678-9')
         '123456789'
-        >>> normalizar_rut('AB-123456')
+        >>> rut_limpio('AB-123456')
         'AB123456'
     """
     if not rut:
         return ""
-    return re.sub(r'[^0-9kK]', '', str(rut)).upper()
+    return re.sub(r'[^0-9a-zA-Z]', '', str(rut)).upper()
+
+
+# [REFACTOR] Alias de compatibilidad: admin.py y otros módulos usan
+# `normalizar_rut`, pero ahora hay UNA SOLA implementación.
+normalizar_rut = rut_limpio
+
+
+def rut_formateado(rut):
+    """
+    Devuelve el RUT en formato BBDD: '<cuerpo>-<DV>' (ej: '20001550-9').
+
+    A diferencia de `formatear_rut()`, esta función NO agrega puntos.
+    Se usa para guardar y buscar en la BBDD, que guarda sin puntos.
+
+    Si el RUT no tiene un cuerpo numérico (ej: pasaporte), lo devuelve
+    tal cual estaba (limpio, sin puntos ni espacios).
+
+    Ejemplo:
+        >>> rut_formateado('200015509')
+        '20001550-9'
+        >>> rut_formateado('20.001.550-9')
+        '20001550-9'
+        >>> rut_formateado('AB123456')
+        'AB123456'
+    """
+    limpio = rut_limpio(rut)
+    if len(limpio) < 2:
+        return limpio
+
+    cuerpo = limpio[:-1]
+    dv = limpio[-1]
+
+    # Si el cuerpo no es numérico, es un pasaporte → devolver tal cual
+    if not cuerpo.isdigit():
+        return limpio
+
+    return f"{cuerpo}-{dv}"
 
 
 def normalizar_documento(documento):
@@ -86,7 +137,7 @@ def validar_rut(rut):
         >>> validar_rut('12.345.678-0')
         False
     """
-    rut = normalizar_rut(rut)
+    rut = rut_limpio(rut)
 
     if len(rut) < 8 or len(rut) > 9:
         return False
@@ -133,7 +184,7 @@ def validar_rut_extranjero(rut):
     Esto es útil para RUN provisorios o documentos de extranjeros
     que no siguen el formato chileno tradicional.
     """
-    rut = normalizar_rut(rut)
+    rut = rut_limpio(rut)
 
     if len(rut) < 8 or len(rut) > 9:
         return False
@@ -141,11 +192,9 @@ def validar_rut_extranjero(rut):
     cuerpo = rut[:-1]
     dv = rut[-1]
 
-    # El cuerpo debe ser numérico
     if not cuerpo.isdigit():
         return False
 
-    # El DV puede ser número o K
     if not (dv.isdigit() or dv == 'K'):
         return False
 
@@ -176,20 +225,16 @@ def validar_documento(documento, tipo='RUT'):
         return False
 
     if tipo == 'RUT':
-        # RUT chileno: validación estricta con módulo 11
         return validar_rut(documento)
 
     elif tipo in ('RUN_PROVISORIO', 'CEDULA_EXTRANJERO'):
-        # RUN provisorio o cédula de extranjero: validación flexible
         return validar_rut_extranjero(documento)
 
     elif tipo == 'PASAPORTE':
-        # Pasaporte: solo requiere longitud mínima y caracteres válidos
         doc_limpio = normalizar_documento(documento)
         return len(doc_limpio) >= 6
 
     else:
-        # Tipo desconocido: validación flexible como fallback
         return validar_rut_extranjero(documento)
 
 
@@ -199,10 +244,13 @@ def validar_documento(documento, tipo='RUT'):
 
 def formatear_rut(rut):
     """
-    Da formato chileno al RUT: '12.345.678-9'.
+    Da formato chileno al RUT: '12.345.678-9' (CON puntos).
+
+    Útil para mostrar en pantalla o exportar a Excel.
+    Para guardar/buscar en BBDD usar `rut_formateado()` (sin puntos).
 
     Si el RUT no tiene el formato chileno tradicional,
-    lo devuelve tal cual fue ingresado.
+    lo devuelve tal cual fue ingresado (limpio).
 
     Ejemplo:
         >>> formatear_rut('123456789')
@@ -210,19 +258,16 @@ def formatear_rut(rut):
         >>> formatear_rut('AB123456')
         'AB123456'
     """
-    rut = normalizar_rut(rut)
+    rut = rut_limpio(rut)
 
     if len(rut) < 2:
         return rut
 
-    # Si contiene letras en el cuerpo, no es un RUT chileno
     cuerpo = rut[:-1]
     if not cuerpo.isdigit():
         return rut
 
     dv = rut[-1]
-
-    # Agregar puntos cada 3 dígitos desde la derecha
     cuerpo_con_puntos = re.sub(r'\B(?=(\d{3})+(?!\d))', '.', cuerpo)
 
     return f"{cuerpo_con_puntos}-{dv}"
@@ -248,30 +293,97 @@ def extraer_rut_de_carnet(texto):
     if not texto:
         return ""
 
-    # Si es una URL con parámetro RUN
     if 'RUN=' in texto:
         match = re.search(r'[?&]RUN=([0-9kK-]+)', texto)
         if match:
-            return normalizar_rut(match.group(1))
+            return rut_limpio(match.group(1))
 
-    # Si es texto plano (RUT con puntos/guiones)
-    rut_limpio = normalizar_rut(texto)
+    rut_l = rut_limpio(texto)
 
-    # Si tiene más de 9 caracteres, tomar los primeros 9
-    if len(rut_limpio) > 9:
-        rut_limpio = rut_limpio[:9]
+    if len(rut_l) > 9:
+        rut_l = rut_l[:9]
 
-    return rut_limpio
+    return rut_l
+
+
+# ============================================================
+# BÚSQUEDA INTELIGENTE DE ALUMNOS
+# ============================================================
+
+def buscar_alumno_por_documento(valor):
+    """
+    Busca un alumno probando múltiples formatos con UNA SOLA query.
+
+    Acepta:
+    - RUT chileno:   20.001.550-9 / 20001550-9 / 200015509
+    - Pasaporte:     AB123456
+    - RUN provisorio: 200015509
+    - Cédula extranjero: E12345678
+
+    Devuelve el objeto Alumno o None si no lo encuentra.
+
+    ⚠️ Import diferido de `Alumno` para evitar circular import con models.
+
+    Ejemplo de uso:
+        >>> alumno = buscar_alumno_por_documento('20001550-9')
+        >>> alumno = buscar_alumno_por_documento('20.001.550-9')
+        >>> alumno = buscar_alumno_por_documento('200015509')
+    """
+    # Import diferido para evitar circular import
+    from .models import Alumno
+
+    if not valor:
+        return None
+
+    valor = str(valor).strip()
+    if not valor:
+        return None
+
+    valor_upper = valor.upper()
+    rut_norm = re.sub(r'[^0-9kK]', '', valor_upper)
+
+    # Construir todas las variantes posibles
+    variantes = {valor, valor_upper}
+
+    if rut_norm and len(rut_norm) >= 7:
+        variantes.add(rut_norm)                          # 200015509
+        variantes.add(f"{rut_norm[:-1]}-{rut_norm[-1]}") # 20001550-9
+        try:
+            cuerpo = rut_norm[:-1]
+            dv = rut_norm[-1]
+            if cuerpo.isdigit():
+                cuerpo_puntos = f"{int(cuerpo):,}".replace(',', '.')
+                variantes.add(f"{cuerpo_puntos}-{dv}")   # 20.001.550-9
+        except (ValueError, IndexError):
+            pass
+
+    # Variantes para pasaportes (letras + números)
+    tiene_letras_pasaporte = bool(re.search(r'[A-PR-Za-pr-z]', valor_upper))
+    if tiene_letras_pasaporte:
+        variantes.add(valor_upper.replace(' ', ''))
+        variantes.add(valor_upper.replace('-', ''))
+        variantes.add(valor_upper.replace(' ', '').replace('-', '').replace('.', ''))
+
+    # Construir un único Q con todas las variantes
+    from django.db.models import Q
+    q = Q()
+    for v in variantes:
+        if v:
+            q |= Q(rut__iexact=v)
+
+    # Fallback: búsqueda parcial (último recurso)
+    if len(valor_upper) >= 6:
+        q |= Q(rut__icontains=valor_upper)
+
+    return Alumno.objects.filter(q).first()
+
 
 # ============================================================
 # PAGINACIÓN ESTÁNDAR
 # ============================================================
 
-from django.core.paginator import Paginator
-
-
 # Cantidad de filas por página en todas las tablas del sistema
-ITEMS_POR_PAGINA = 3
+ITEMS_POR_PAGINA = 15
 
 
 def paginar(request, queryset, param='page', por_pagina=None):

@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="Inscríbete en {{ actividad.titulo }} - Punto Estudiantil Duoc UC Sede Alameda">
 
     <title>Inscripción a {{ actividad.titulo }} - Punto Participa</title>
@@ -16,7 +16,7 @@
 <body>
 
     <!-- ============================================================ -->
-    <!-- HEADER PÚBLICO (sin sesión, sin menú privado) -->
+    <!-- HEADER PÚBLICO -->
     <!-- ============================================================ -->
     <header class="app-header">
         <img class="project-logo" src="{% static 'gestion/img/duoc.png' %}" alt="Punto Participa Duoc UC">
@@ -32,11 +32,8 @@
 
             <div class="event-card card">
 
-                <!-- Logo del evento (opcional) -->
-                <img class="event-logo"
-                     src="{% static 'gestion/img/logo.png' %}"
-                     alt="Punto Participa Duoc UC"
-                     onerror="this.style.display='none'">
+                <img class="event-logo" src="{% static 'gestion/img/logo.png' %}" alt="Punto Participa Duoc UC"
+                    onerror="this.style.display='none'">
 
                 <!-- Banner superior con tipo de actividad -->
                 <div class="event-banner">
@@ -73,77 +70,72 @@
 
                         {% if estado == 'con_cupos' %}
 
-                            <!-- Indicador de cupos -->
-                            <div class="seat-note">
-                                <span>◎ CUPOS DISPONIBLES</span>
-                                <strong style="font-size: 22px;">{{ actividad.cupos_disponibles }}</strong>
-                                {% if actividad.cupos_disponibles <= 2 %}
-                                    <small style="color: var(--red);">¡Últimos lugares!</small>
+                        <div class="seat-note">
+                            <span>◎ CUPOS DISPONIBLES</span>
+                            <strong style="font-size: 22px;">{{ actividad.cupos_disponibles }}</strong>
+                            {% if actividad.cupos_disponibles <= 2 %} <small style="color: var(--red);">¡Últimos
+                                lugares!</small>
                                 {% endif %}
-                            </div>
+                        </div>
 
-                            <!-- Mensajes de feedback -->
-                            <div aria-live="polite">
-                                {% if error %}
-                                    <div class="alert alert-danger" role="alert">
-                                        <div>
-                                            <strong>⚠ Error</strong>
-                                            <span>{{ error }}</span>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                {% if exito %}
-                                    <div class="alert alert-success" role="alert">
-                                        <div>
-                                            <strong>✓ Inscripción exitosa</strong>
-                                            <span>{{ exito }}</span>
-                                            <small>Guarda este mensaje como confirmación. Si tienes dudas, contacta a Punto Estudiantil.</small>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                            </div>
-
-                            <!-- Formulario -->
-                            <form method="POST" style="display: grid; gap: 12px;">
-                                {% csrf_token %}
-
-                                <div class="form-field">
-                                    <label for="rut">
-                                        RUT <span class="required">*</span>
-                                    </label>
-                                    <input type="text"
-                                           name="rut"
-                                           id="rut"
-                                           placeholder="Ej: 12345678-9"
-                                           maxlength="12"
-                                           autocomplete="off"
-                                           aria-label="RUT del estudiante"
-                                           required>
-                                    <small class="input-help">
-                                        Ingresa tu RUT sin puntos, con guión y dígito verificador.
-                                    </small>
+                        <!-- Mensajes de feedback -->
+                        <div aria-live="polite">
+                            {% if error %}
+                            <div class="alert alert-danger" role="alert">
+                                <div>
+                                    <strong>⚠ Error</strong>
+                                    <span>{{ error }}</span>
                                 </div>
+                            </div>
+                            {% endif %}
+                            {% if exito %}
+                            <div class="alert alert-success" role="alert">
+                                <div>
+                                    <strong>✓ Inscripción exitosa</strong>
+                                    <span>{{ exito }}</span>
+                                    <small>Guarda este mensaje como confirmación. Si tienes dudas, contacta a Punto
+                                        Estudiantil.</small>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
 
-                                <button type="submit" class="btn" style="width: 100%;">
-                                    ✓ Inscribirme
-                                </button>
-                            </form>
+                        <!-- Formulario -->
+                        <form method="POST" style="display: grid; gap: 12px;">
+                            {% csrf_token %}
+
+                            <div class="form-field">
+                                <label for="rut">
+                                    RUT / Pasaporte <span class="required">*</span>
+                                </label>
+                                <input type="text" name="rut" id="rut" placeholder="Ej: 12345678-9 o pasaporte"
+                                    maxlength="30" autocomplete="off" aria-label="RUT o pasaporte del estudiante"
+                                    required>
+                                <small class="input-help">
+                                    Ingresa tu RUT (con o sin puntos/guión) o tu número de pasaporte.
+                                </small>
+                            </div>
+
+                            <button type="submit" class="btn btn-block">
+                                ✓ Inscribirme
+                            </button>
+                        </form>
 
                         {% elif estado == 'sin_cupos' %}
 
-                            <div class="state-box error" role="alert">
-                                <div class="state-icon">⚠</div>
-                                <h3>Sin cupos</h3>
-                                <p>No quedan cupos disponibles para este taller.</p>
-                            </div>
+                        <div class="state-box error" role="alert">
+                            <div class="state-icon">⚠</div>
+                            <h3>Sin cupos</h3>
+                            <p>No quedan cupos disponibles para este taller.</p>
+                        </div>
 
                         {% elif estado == 'finalizado' %}
 
-                            <div class="state-box neutral" role="alert">
-                                <div class="state-icon">⏳</div>
-                                <h3>Evento finalizado</h3>
-                                <p>Este evento ya fue realizado.</p>
-                            </div>
+                        <div class="state-box neutral" role="alert">
+                            <div class="state-icon">⏳</div>
+                            <h3>Evento finalizado</h3>
+                            <p>Este evento ya fue realizado.</p>
+                        </div>
 
                         {% endif %}
 

@@ -18,46 +18,32 @@
         <span class="eyebrow">ACTIVIDAD ACTUAL</span>
 
         {% if actividad_seleccionada %}
-            <div class="scanner-activity-info">
-                <h2>{{ actividad_seleccionada.titulo }}</h2>
-                <p>
-                    ▦ {{ actividad_seleccionada.fecha_inicio|date:"d/m/Y H:i" }} —
-                    {{ actividad_seleccionada.fecha_fin|date:"d/m/Y H:i" }}
-                </p>
-                <p>
-                    ◎ Cupos disponibles:
-                    {% if actividad_seleccionada.cupos_disponibles is not None %}
-                        <strong>{{ actividad_seleccionada.cupos_disponibles }}</strong>
-                    {% else %}
-                        <span class="text-muted">Sin límite</span>
-                    {% endif %}
-                </p>
-            </div>
-            <div class="scanner-activity-actions">
-                <button type="button"
-                        class="btn secondary"
-                        id="btnCambiarActividad">
-                    ⇄ Cambiar
-                </button>
-                <form method="post" action="{% url 'escaneo' %}" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit"
-                            name="finalizar_turno"
-                            value="1"
-                            class="btn danger">
-                        ⇥ Finalizar turno
-                    </button>
-                </form>
-            </div>
+        <div class="scanner-activity-info">
+            <h2>{{ actividad_seleccionada.titulo }}</h2>
+            <p>
+                ▦ {{ actividad_seleccionada.fecha_inicio|date:"d/m/Y H:i" }} — {{ actividad_seleccionada.fecha_fin|date:"d/m/Y H:i" }}
+            </p>
+            <p>
+                ◎ Cupos disponibles:
+                {% if actividad_seleccionada.cupos_disponibles is not None %}
+                <strong>{{ actividad_seleccionada.cupos_disponibles }}</strong>
+                {% else %}
+                <span class="text-muted">Sin límite</span>
+                {% endif %}
+            </p>
+        </div>
+        <div class="scanner-activity-actions">
+            <button type="button" class="btn secondary" id="btnCambiarActividad">⇄ Cambiar</button>
+            <form method="post" action="{% url 'escaneo' %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" name="finalizar_turno" value="1" class="btn danger">⇥ Finalizar turno</button>
+            </form>
+        </div>
         {% else %}
-            <div class="scanner-activity-empty">
-                <p>⚠ No hay actividad seleccionada.</p>
-                <button type="button"
-                        class="btn"
-                        id="btnCambiarActividad">
-                    ⇄ Seleccionar actividad
-                </button>
-            </div>
+        <div class="scanner-activity-empty">
+            <p>⚠ No hay actividad seleccionada.</p>
+            <button type="button" class="btn" id="btnCambiarActividad">⇄ Seleccionar actividad</button>
+        </div>
         {% endif %}
     </div>
 </div>
@@ -67,95 +53,81 @@
 <!-- ============================================================ -->
 <div class="scanner-grid">
 
-    <!-- ============================================================ -->
     <!-- COLUMNA IZQUIERDA: FORMULARIO DE REGISTRO -->
-    <!-- ============================================================ -->
     <div>
         {% if actividad_seleccionada %}
-            <div class="scan-card panel">
-                <div class="scan-symbol">▢</div>
-                <h2>Registrar asistencia</h2>
-                <p class="text-muted">
-                    Escanea el código QR de la cédula o escribe el RUT manualmente.
-                </p>
+        <div class="scan-card panel">
+            <div class="scan-symbol">▢</div>
+            <h2>Registrar asistencia</h2>
+            <p class="text-muted">Escanea el código QR de la cédula o escribe el RUT/Pasaporte manualmente.</p>
 
-                <div class="scanner-status">
-                    <span class="badge">◉ Listo para escanear</span>
-                    <small class="text-muted">Pistola o ingreso manual</small>
-                </div>
-
-                <form id="formEscaneo" autocomplete="off">
-                    {% csrf_token %}
-                    <input type="hidden" name="metodo_ingreso" id="metodo_ingreso" value="RUT">
-
-                    <label for="rutInput">
-                        RUT del estudiante
-                        <input type="text"
-                               id="rutInput"
-                               name="rut"
-                               placeholder="Escanea con la pistola o escribe el RUT"
-                               maxlength="12"
-                               autocomplete="off"
-                               aria-describedby="rut-help"
-                               required
-                               autofocus>
-                    </label>
-                    <small class="input-help" id="rut-help">
-                        ⓘ Presiona el gatillo de la pistola sobre el código QR o
-                        escribe el RUT manualmente y presiona Enter.
-                    </small>
-
-                    <button type="submit" class="btn" style="width: 100%; margin-top: 12px;">
-                        ✓ Registrar asistencia
-                    </button>
-                </form>
-
-                <div id="resultado" aria-live="polite"></div>
+            <div class="scanner-status">
+                <span class="badge">◉ Listo para escanear</span>
+                <small class="text-muted">Pistola o ingreso manual</small>
             </div>
+
+            <form id="formEscaneo" autocomplete="off">
+                {% csrf_token %}
+                <input type="hidden" name="metodo_ingreso" id="metodo_ingreso" value="RUT">
+
+                <label for="rutInput">
+                    RUT, Pasaporte o RUN provisorio
+                    <input type="text" id="rutInput" name="rut"
+                           placeholder="RUT, Pasaporte o RUN provisorio"
+                           maxlength="30" autocomplete="off"
+                           aria-describedby="rut-help" required autofocus>
+                </label>
+                <small class="input-help" id="rut-help">
+                    ⓘ Presiona el gatillo de la pistola sobre el código QR o escribe el RUT/Pasaporte manualmente y presiona Enter.
+                    <br>
+                    Acepta RUT chileno, pasaporte, RUN provisorio y cédula de extranjero.
+                </small>
+
+                <button type="submit" class="btn btn-block" style="margin-top: 12px;">
+                    ✓ Registrar asistencia
+                </button>
+            </form>
+
+            <div id="resultado" aria-live="polite"></div>
+        </div>
         {% else %}
-            <div class="panel">
-                <div class="empty-state">
-                    <span>▢</span>
-                    <h3>Sin actividad seleccionada</h3>
-                    <p>Selecciona una actividad para comenzar a registrar asistencia.</p>
-                </div>
+        <div class="panel">
+            <div class="empty-state">
+                <span>▢</span>
+                <h3>Sin actividad seleccionada</h3>
+                <p>Selecciona una actividad para comenzar a registrar asistencia.</p>
             </div>
+        </div>
         {% endif %}
     </div>
 
-    <!-- ============================================================ -->
     <!-- COLUMNA DERECHA: ÚLTIMOS REGISTROS -->
-    <!-- ============================================================ -->
     <div>
         <div class="session">
             <span class="live">● EN VIVO</span>
             <h3 style="margin: 12px 0 6px;">Últimos registros</h3>
-            <p style="color: #adc8db; font-size: 13px; margin-bottom: 20px;">
+            <p style="color: #adc8db; font-size: 12px; margin-bottom: 14px;">
                 Los últimos 10 estudiantes registrados en esta actividad.
             </p>
 
             <div class="lista-ultimos-registros">
                 {% for asistencia in ultimas_asistencias %}
-                    <div class="person">
-                        <span class="avatar">{{ asistencia.alumno.nombres|slice:":1" }}{{ asistencia.alumno.apellidos|slice:":1" }}</span>
-                        <p>
-                            <strong>{{ asistencia.alumno.nombres }} {{ asistencia.alumno.apellidos }}</strong>
-                            <small>
-                                {% if asistencia.metodo_ingreso == 'QR' %}
-                                    ▢ QR
-                                {% elif asistencia.metodo_ingreso == 'CODIGO' %}
-                                    ▥ Código
-                                {% else %}
-                                    ⌨ RUT
-                                {% endif %}
-                            </small>
-                        </p>
-                        <time>{{ asistencia.fecha_ingreso|date:"H:i" }}</time>
-                    </div>
-                {% empty %}
-                    <p style="color: #adc8db; text-align: center; padding: 20px 0;">
-                        Sin registros aún
+                <div class="person">
+                    <span class="avatar">{{ asistencia.alumno.nombres|slice:":1" }}{{ asistencia.alumno.apellidos|slice:":1" }}</span>
+                    <p>
+                        <strong>{{ asistencia.alumno.nombres }} {{ asistencia.alumno.apellidos }}</strong>
+                        <small>
+                            {% if asistencia.metodo_ingreso == 'QR' %}▢ QR
+                            {% elif asistencia.metodo_ingreso == 'CODIGO' %}▥ Código
+                            {% else %}⌨ RUT{% endif %}
+                        </small>
                     </p>
+                    <time>{{ asistencia.fecha_ingreso|date:"H:i" }}</time>
+                </div>
+                {% empty %}
+                <p style="color: #adc8db; text-align: center; padding: 20px 0;">
+                    Sin registros aún
+                </p>
                 {% endfor %}
             </div>
         </div>
@@ -169,10 +141,7 @@
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="cambiarActividadLabel">
         <header class="modal-header">
             <h2 id="cambiarActividadLabel">Cambiar Actividad</h2>
-            <button type="button"
-                    class="close-button"
-                    data-modal-close
-                    aria-label="Cerrar">×</button>
+            <button type="button" class="close-button" data-modal-close aria-label="Cerrar">×</button>
         </header>
 
         <form method="post" action="{% url 'escaneo' %}">
@@ -183,10 +152,10 @@
                     <select name="actividad_id" id="actividadSelect" required>
                         <option value="">-- Seleccionar --</option>
                         {% for actividad in actividades_disponibles %}
-                            <option value="{{ actividad.id }}"
-                                    {% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %}selected{% endif %}>
-                                {{ actividad.titulo }} — {{ actividad.fecha_inicio|date:"d/m/Y H:i" }} ({{ actividad.get_tipo_display }})
-                            </option>
+                        <option value="{{ actividad.id }}"
+                                {% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %}selected{% endif %}>
+                            {{ actividad.titulo }} — {{ actividad.fecha_inicio|date:"d/m/Y H:i" }} ({{ actividad.get_tipo_display }})
+                        </option>
                         {% endfor %}
                     </select>
                     <small class="input-help">Solo se listan actividades en estado ACTIVA.</small>
@@ -194,9 +163,7 @@
             </div>
             <footer class="modal-footer">
                 <button type="button" class="btn secondary" data-modal-close>Cancelar</button>
-                <button type="submit" name="cambiar_actividad" value="1" class="btn">
-                    ✓ Seleccionar
-                </button>
+                <button type="submit" name="cambiar_actividad" value="1" class="btn">✓ Seleccionar</button>
             </footer>
         </form>
     </section>
@@ -209,11 +176,7 @@
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmarAsistenciaLabel">
         <header class="modal-header">
             <h2 id="confirmarAsistenciaLabel">Confirmar Registro</h2>
-            <button type="button"
-                    class="close-button"
-                    data-modal-close
-                    aria-label="Cerrar"
-                    id="btnCerrarModalAsistencia">×</button>
+            <button type="button" class="close-button" data-modal-close aria-label="Cerrar" id="btnCerrarModalAsistencia">×</button>
         </header>
 
         <div class="modal-body">
@@ -222,12 +185,8 @@
         </div>
 
         <footer class="modal-footer">
-            <button type="button" class="btn secondary" data-modal-close id="btnCancelarConfirmacion">
-                × Cancelar
-            </button>
-            <button type="button" class="btn" id="btnAceptarConfirmacion">
-                ✓ Aceptar
-            </button>
+            <button type="button" class="btn secondary" data-modal-close id="btnCancelarConfirmacion">× Cancelar</button>
+            <button type="button" class="btn" id="btnAceptarConfirmacion">✓ Aceptar</button>
         </footer>
     </section>
 </div>
@@ -239,10 +198,7 @@
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalAvisoLabel">
         <header class="modal-header">
             <h2 id="modalAvisoLabel">Aviso</h2>
-            <button type="button"
-                    class="close-button"
-                    data-modal-close
-                    aria-label="Cerrar">×</button>
+            <button type="button" class="close-button" data-modal-close aria-label="Cerrar">×</button>
         </header>
 
         <div class="modal-body" id="modalAvisoBody" aria-live="polite"></div>

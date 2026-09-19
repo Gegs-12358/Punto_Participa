@@ -13,8 +13,7 @@
         <h1>Auditoría del Sistema</h1>
         <p>Registro histórico de acciones realizadas en el sistema.</p>
     </div>
-    <a href="{% url 'exportar_auditoria' %}?{{ request.GET.urlencode }}"
-       class="btn secondary">
+    <a href="{% url 'exportar_auditoria' %}?{{ request.GET.urlencode }}" class="btn secondary">
         ⇩ Exportar a Excel
     </a>
 </div>
@@ -23,85 +22,60 @@
 <!-- FILTROS -->
 <!-- ============================================================ -->
 <form method="GET" action="" class="filters" role="search">
-
     <div>
         <label for="usuario" class="form-label">Usuario</label>
-        <input type="text"
-               id="usuario"
-               name="usuario"
-               placeholder="Buscar por usuario..."
-               value="{{ request.GET.usuario }}"
-               aria-label="Filtrar por usuario">
+        <input type="text" id="usuario" name="usuario" placeholder="Buscar..."
+               value="{{ request.GET.usuario }}" aria-label="Filtrar por usuario">
     </div>
 
     <div>
         <label for="accion" class="form-label">Acción</label>
-        <select name="accion"
-                id="accion"
-                aria-label="Filtrar por acción">
-            <option value="">Todas las acciones</option>
+        <select name="accion" id="accion" aria-label="Filtrar por acción">
+            <option value="">Todas</option>
             {% for accion in acciones_disponibles %}
-                <option value="{{ accion }}" {% if request.GET.accion == accion %}selected{% endif %}>
-                    {{ accion }}
-                </option>
+                <option value="{{ accion }}" {% if request.GET.accion == accion %}selected{% endif %}>{{ accion }}</option>
             {% endfor %}
         </select>
     </div>
 
     <div>
         <label for="modulo" class="form-label">Módulo</label>
-        <select name="modulo"
-                id="modulo"
-                aria-label="Filtrar por módulo">
-            <option value="">Todos los módulos</option>
+        <select name="modulo" id="modulo" aria-label="Filtrar por módulo">
+            <option value="">Todos</option>
             {% for modulo in modulos_disponibles %}
-                <option value="{{ modulo }}" {% if request.GET.modulo == modulo %}selected{% endif %}>
-                    {{ modulo }}
-                </option>
+                <option value="{{ modulo }}" {% if request.GET.modulo == modulo %}selected{% endif %}>{{ modulo }}</option>
             {% endfor %}
         </select>
     </div>
 
     <div>
         <label for="fecha" class="form-label">Fecha</label>
-        <input type="date"
-               id="fecha"
-               name="fecha"
-               value="{{ request.GET.fecha }}"
-               aria-label="Filtrar por fecha">
+        <input type="date" id="fecha" name="fecha" value="{{ request.GET.fecha }}" aria-label="Filtrar por fecha">
     </div>
 
-    <button type="submit" class="btn">
-        ▽ Filtrar
-    </button>
-    <a href="{% url 'auditoria' %}"
-       class="btn secondary"
-       title="Limpiar filtros"
-       aria-label="Limpiar filtros">
-        × Limpiar
-    </a>
+    <button type="submit" class="btn">▽ Filtrar</button>
+    <a href="{% url 'auditoria' %}" class="btn secondary" title="Limpiar filtros">× Limpiar</a>
 </form>
 
 <!-- ============================================================ -->
-<!-- INDICADOR DE FILTROS ACTIVOS -->
+<!-- CHIPS DE FILTROS ACTIVOS -->
 <!-- ============================================================ -->
 {% if request.GET.usuario or request.GET.accion or request.GET.modulo or request.GET.fecha %}
-<div class="alert alert-info" role="status">
-    <div>
-        <strong>Filtros aplicados:</strong>
-        {% if request.GET.usuario %}
-            <span class="role">Usuario: {{ request.GET.usuario }}</span>
-        {% endif %}
-        {% if request.GET.accion %}
-            <span class="role">Acción: {{ request.GET.accion }}</span>
-        {% endif %}
-        {% if request.GET.modulo %}
-            <span class="role">Módulo: {{ request.GET.modulo }}</span>
-        {% endif %}
-        {% if request.GET.fecha %}
-            <span class="role">Fecha: {{ request.GET.fecha }}</span>
-        {% endif %}
-    </div>
+<div class="filter-chips">
+    <span class="filter-chips-label">Filtros activos:</span>
+    {% if request.GET.usuario %}
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'usuario' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Usuario: {{ request.GET.usuario }} · quitar ×</a>
+    {% endif %}
+    {% if request.GET.accion %}
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'accion' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Acción: {{ request.GET.accion }} · quitar ×</a>
+    {% endif %}
+    {% if request.GET.modulo %}
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'modulo' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Módulo: {{ request.GET.modulo }} · quitar ×</a>
+    {% endif %}
+    {% if request.GET.fecha %}
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'fecha' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Fecha: {{ request.GET.fecha }} · quitar ×</a>
+    {% endif %}
+    <a class="filter-chip filter-chip-clear" href="{% url 'auditoria' %}">Limpiar todos</a>
 </div>
 {% endif %}
 
@@ -109,19 +83,27 @@
 <!-- TABLA DE AUDITORÍA -->
 <!-- ============================================================ -->
 <div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">REGISTROS</span>
+            <h2>Historial de acciones</h2>
+            <p class="panel-subtitle">Mostrando {{ logs|length }} de {{ logs.paginator.count }} registro{{ logs.paginator.count|pluralize:"s" }}</p>
+        </div>
+    </div>
+
     <div class="table-wrap">
         <table>
             <caption class="visually-hidden">Registros de auditoría del sistema</caption>
             <thead>
                 <tr>
-                    <th scope="col">Fecha y Hora</th>
-                    <th scope="col">Usuario</th>
-                    <th scope="col">Módulo</th>
-                    <th scope="col">Acción</th>
-                    <th scope="col">Objeto</th>
-                    <th scope="col">ID</th>
-                    <th scope="col">IP</th>
-                    <th scope="col">Detalle</th>
+                    <th>Fecha y Hora</th>
+                    <th>Usuario</th>
+                    <th>Módulo</th>
+                    <th>Acción</th>
+                    <th>Objeto</th>
+                    <th>ID</th>
+                    <th>IP</th>
+                    <th>Detalle</th>
                 </tr>
             </thead>
             <tbody>
@@ -134,7 +116,7 @@
                         {% if log.usuario_sistema %}
                             <strong>{{ log.usuario_sistema.username }}</strong>
                         {% else %}
-                            <span class="text-muted">Sistema/Anónimo</span>
+                            <span class="text-muted">Sistema</span>
                         {% endif %}
                     </td>
                     <td>
@@ -145,19 +127,9 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if log.accion == 'Eliminar Actividad' or log.accion == 'Eliminación rápida de actividad' %}
-                            <span class="badge inactive">{{ log.accion }}</span>
-                        {% elif log.accion == 'Crear Actividad' or log.accion == 'Guardar usuario' %}
-                            <span class="badge">{{ log.accion }}</span>
-                        {% elif log.accion == 'Edición de actividad' or log.accion == 'Cambio de rol' %}
-                            <span class="role">{{ log.accion }}</span>
-                        {% elif log.accion == 'Envío de invitaciones' %}
-                            <span class="badge draft">{{ log.accion }}</span>
-                        {% elif log.accion == 'Cambio de estado' %}
-                            <span class="badge draft">{{ log.accion }}</span>
-                        {% else %}
-                            <span class="badge draft">{{ log.accion }}</span>
-                        {% endif %}
+                        <span class="badge {% if 'Eliminar' in log.accion or 'Eliminación' in log.accion %}inactive{% elif 'Crear' in log.accion or 'Guardar' in log.accion %}badge-success{% else %}draft{% endif %}">
+                            {{ log.accion }}
+                        </span>
                     </td>
                     <td>
                         {% if log.objeto_tipo %}
@@ -198,6 +170,7 @@
                             <span>☰</span>
                             <h3>Sin resultados</h3>
                             <p>No se encontraron registros con esos filtros.</p>
+                            <a href="{% url 'auditoria' %}" class="btn secondary">Limpiar filtros</a>
                         </div>
                     </td>
                 </tr>
@@ -205,13 +178,10 @@
             </tbody>
         </table>
     </div>
-</div>
 
-<!-- ============================================================ -->
-<!-- PAGINACIÓN -->
-<!-- ============================================================ -->
-{% if logs.has_other_pages %}
-{% include 'gestion/includes/paginacion.html' with pagina=logs param='page' %}
-{% endif %}
+    {% if logs.has_other_pages %}
+        {% include 'gestion/includes/paginacion.html' with pagina=logs param='page' %}
+    {% endif %}
+</div>
 
 {% endblock %}

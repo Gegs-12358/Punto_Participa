@@ -83,8 +83,6 @@ class ActividadForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Forzar formato ISO 8601 para datetime-local en entrada y salida.
-        # Esto evita que Django use DD/MM/YYYY HH:MM:SS al renderizar
-        # y que el navegador muestre el valor correctamente.
         self.fields['fecha_inicio'].input_formats = ['%Y-%m-%dT%H:%M']
         self.fields['fecha_fin'].input_formats = ['%Y-%m-%dT%H:%M']
 
@@ -93,9 +91,19 @@ class ActividadForm(forms.ModelForm):
     # ============================================================
 
     def clean_fecha_inicio(self):
-        """Valida que la fecha de inicio no sea en el pasado."""
+        """Valida que la fecha de inicio no sea en el pasado.
+        [REFACTOR] En edición se permite mantener la fecha original
+        aunque ya haya pasado (evita romper ediciones de actividades antiguas).
+        """
         fecha_inicio = self.cleaned_data.get('fecha_inicio')
-        if fecha_inicio and fecha_inicio < timezone.now():
+        if not fecha_inicio:
+            return fecha_inicio
+
+        # Si estamos editando y la fecha no cambió, no validar contra "ahora"
+        if self.instance and self.instance.pk and self.instance.fecha_inicio == fecha_inicio:
+            return fecha_inicio
+
+        if fecha_inicio < timezone.now():
             raise ValidationError('La fecha de inicio no puede ser en el pasado.')
         return fecha_inicio
 
@@ -135,7 +143,11 @@ class ActividadForm(forms.ModelForm):
     # ============================================================
 
     def clean(self):
-        """Validaciones cruzadas entre campos."""
+        """
+        Validaciones cruzadas entre campos.
+        [REFACTOR] La validación de fecha_fin > fecha_inicio ya está en
+        clean_fecha_fin(), acá solo nos preocupamos de cupos vs tipo.
+        """
         cleaned_data = super().clean()
         tipo = cleaned_data.get('tipo')
         cupos_totales = cleaned_data.get('cupos_totales')
@@ -156,18 +168,19 @@ class ActividadForm(forms.ModelForm):
 
     def save(self, commit=True):
         """
-        Sobrescribe el save para asignar cupos_disponibles automáticamente.
-        - Si es TALLER: cupos_disponibles = cupos_totales (al crear).
-        - Si es MASIVA: cupos_disponibles = None.
+        [REFACTOR] Delega el cálculo de cupos al modelo Actividad.recalcular_cupos().
+        - Al crear un TALLER: cupos_disponibles = cupos_totales (inscritos = 0).
+        - Al editar un TALLER: respeta las inscripciones existentes.
+        - MASIVA: cupos = None.
         """
         actividad = super().save(commit=False)
 
-        if actividad.tipo == 'TALLER':
-            if not self.instance.pk:  # Si es nueva
-                actividad.cupos_disponibles = actividad.cupos_totales
+        es_nueva = not self.instance.pk
+        if es_nueva:
+            actividad.recalcular_cupos(inscritos_override=0)
         else:
-            actividad.cupos_totales = None
-            actividad.cupos_disponibles = None
+            # Al editar, si ya está en BBDD, contar inscripciones reales
+            actividad.recalcular_cupos()
 
         if commit:
             actividad.save()

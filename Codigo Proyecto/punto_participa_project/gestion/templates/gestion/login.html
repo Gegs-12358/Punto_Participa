@@ -7,36 +7,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <meta name="description"
-          content="Iniciar sesión en Punto Participa - Sistema de gestión de actividades del Punto Estudiantil">
+        content="Iniciar sesión en Punto Participa - Sistema de gestión de actividades del Punto Estudiantil">
 
     <title>Iniciar sesión - Punto Participa</title>
 
-    <link rel="icon"
-          href="{% static 'gestion/img/logo_duoc.png' %}"
-          type="image/png">
+    <link rel="icon" href="{% static 'gestion/img/logo_duoc.png' %}" type="image/png">
 
-    <link rel="stylesheet"
-          href="{% static 'gestion/css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'gestion/css/styles.css' %}">
 </head>
 
 <body>
 
     <div id="app" class="site-shell">
 
-        <section id="login-view"
-                 class="view login-view"
-                 aria-labelledby="login-title">
+        <section id="login-view" class="view login-view" aria-labelledby="login-title">
 
             <header class="brand-header">
-                <img class="project-logo"
-                     src="{% static 'gestion/img/duoc.png' %}"
-                     alt="Punto Participa Duoc UC"
-                     onerror="this.style.display='none'">
+                <img class="project-logo" src="{% static 'gestion/img/duoc.png' %}" alt="Punto Participa Duoc UC"
+                    onerror="this.style.display='none'">
 
-                <img class="duoc-logo"
-                     src="{% static 'gestion/img/logo_duoc.png' %}"
-                     alt="Duoc UC"
-                     onerror="this.style.display='none'">
+                <img class="duoc-logo" src="{% static 'gestion/img/logo_duoc.png' %}" alt="Duoc UC"
+                    onerror="this.style.display='none'">
             </header>
 
             <div class="login-layout">
@@ -61,25 +52,20 @@
                         </span>
                     </div>
 
-                    <div class="welcome-features"
-                         aria-label="Funciones principales">
+                    <div class="welcome-features" aria-label="Funciones principales">
                         <span>Actividades</span>
                         <span>Inscripciones</span>
                         <span>Asistencia</span>
                     </div>
                 </div>
 
-                <form id="login-form"
-                      class="card login-card"
-                      method="post"
-                      action="{% url 'login' %}">
+                <form id="login-form" class="card login-card" method="post" action="{% url 'login' %}">
 
                     {% csrf_token %}
-
-                    <img class="login-guide"
-                         src="{% static 'gestion/img/acceso.png' %}"
-                         alt="Mascota de Punto Participa indicando el acceso"
-                         onerror="this.style.display='none'">
+                    <!-- [REFACTOR Opción B] Preservar ?next= para redirigir tras login -->
+                    <input type="hidden" name="next" value="{{ request.GET.next|default:'' }}">
+                    <img class="login-guide" src="{% static 'gestion/img/acceso.png' %}"
+                        alt="Mascota de Punto Participa indicando el acceso" onerror="this.style.display='none'">
 
                     <h2>Bienvenido</h2>
 
@@ -88,17 +74,15 @@
                     </p>
 
                     {% if messages %}
-                        <div class="login-messages"
-                             aria-live="polite">
+                    <div class="login-messages" aria-live="polite">
 
-                            {% for message in messages %}
-                                <div class="alert alert-{{ message.tags }}"
-                                     role="alert">
-                                    {{ message }}
-                                </div>
-                            {% endfor %}
-
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}" role="alert">
+                            {{ message }}
                         </div>
+                        {% endfor %}
+
+                    </div>
                     {% endif %}
 
                     <div class="form-group">
@@ -106,13 +90,8 @@
                             Usuario
                         </label>
 
-                        <input type="text"
-                               id="username"
-                               name="username"
-                               placeholder="pa.rebolledoa"
-                               autocomplete="username"
-                               required
-                               autofocus>
+                        <input type="text" id="username" name="username" placeholder="pa.rebolledoa"
+                            autocomplete="username" required autofocus>
                     </div>
 
                     <div class="form-group">
@@ -121,31 +100,23 @@
                         </label>
 
                         <div class="password-wrapper">
-                            <input type="password"
-                                   id="password"
-                                   name="password"
-                                   autocomplete="current-password"
-                                   required>
+                            <input type="password" id="password" name="password" autocomplete="current-password"
+                                required>
 
-                            <button type="button"
-                                    class="toggle-password"
-                                    id="toggle-password"
-                                    aria-label="Mostrar contraseña"
-                                    aria-pressed="false">
+                            <button type="button" class="toggle-password" id="toggle-password"
+                                aria-label="Mostrar contraseña" aria-pressed="false">
 
                                 <span aria-hidden="true">◎</span>
                             </button>
                         </div>
                     </div>
 
-                    <button class="btn"
-                            type="submit">
+                    <button class="btn" type="submit">
                         Ingresar al sistema
                         <span aria-hidden="true">→</span>
                     </button>
 
-                    <a href="{% url 'recuperar_contrasena' %}"
-                       class="link-password">
+                    <a href="{% url 'recuperar_contrasena' %}" class="link-password">
                         ¿Olvidaste tu contraseña?
                     </a>
 

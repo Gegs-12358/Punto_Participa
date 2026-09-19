@@ -26,9 +26,7 @@
         <div>
             <span class="eyebrow">CUENTAS</span>
             <h2>Usuarios del sistema</h2>
-            <p class="panel-subtitle">
-                Mostrando {{ usuarios|length }} de {{ usuarios.paginator.count }} usuarios
-            </p>
+            <p class="panel-subtitle">Mostrando {{ usuarios|length }} de {{ usuarios.paginator.count }} usuarios</p>
         </div>
     </div>
 
@@ -37,14 +35,14 @@
             <caption class="visually-hidden">Listado de usuarios del sistema</caption>
             <thead>
                 <tr>
-                    <th scope="col">Username</th>
-                    <th scope="col">Nombre</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">Rol</th>
-                    <th scope="col">RUT</th>
-                    <th scope="col">Estado</th>
-                    <th scope="col">Registro</th>
-                    <th scope="col">Acciones</th>
+                    <th>Username</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>RUT</th>
+                    <th>Estado</th>
+                    <th>Registro</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -52,9 +50,7 @@
                 <tr>
                     <td>
                         <strong>{{ u.user.username }}</strong>
-                        {% if u.user == request.user %}
-                        <span class="role" title="Eres tú">Tú</span>
-                        {% endif %}
+                        {% if u.user == request.user %}<span class="role" title="Eres tú">Tú</span>{% endif %}
                     </td>
                     <td>{{ u.user.first_name|default:"—" }}</td>
                     <td>
@@ -72,11 +68,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if u.rut %}
-                        <code>{{ u.rut }}</code>
-                        {% else %}
-                        <span class="text-muted">Sin RUT</span>
-                        {% endif %}
+                        {% if u.rut %}<code>{{ u.rut }}</code>{% else %}<span class="text-muted">Sin RUT</span>{% endif %}
                     </td>
                     <td>
                         {% if u.activo %}
@@ -89,38 +81,33 @@
                     <td>
                         <div class="action-group">
                             <button class="link-button btn-editar-usuario" data-id="{{ u.id }}"
-                                data-username="{{ u.user.username }}" data-nombre="{{ u.user.first_name }}"
-                                data-email="{{ u.user.email }}" data-rol="{% if u.rol %}{{ u.rol.id }}{% endif %}"
-                                data-rut="{{ u.rut|default:'' }}" data-activo="{{ u.activo|yesno:'1,0' }}"
-                                aria-label="Editar usuario {{ u.user.username }}" title="Editar">
-                                ✎ Editar
-                            </button>
+                                    data-username="{{ u.user.username }}"
+                                    data-nombre="{{ u.user.first_name }}"
+                                    data-email="{{ u.user.email }}"
+                                    data-rol="{% if u.rol %}{{ u.rol.id }}{% endif %}"
+                                    data-rut="{{ u.rut|default:'' }}"
+                                    data-activo="{{ u.activo|yesno:'1,0' }}"
+                                    title="Editar">✎ Editar</button>
 
                             {% if u.user == request.user %}
-                            <span class="link-button" style="opacity: 0.5; cursor: not-allowed;"
-                                title="No puedes bloquearte a ti mismo">
-                                ◉ Protegido
-                            </span>
+                            <span class="link-button" style="opacity: 0.5; cursor: not-allowed;" title="No puedes bloquearte a ti mismo">◉ Protegido</span>
                             {% elif u.activo %}
                             <button class="danger-button btn-bloquear-usuario" data-id="{{ u.id }}"
-                                data-username="{{ u.user.username }}" data-accion="bloquear"
-                                aria-label="Bloquear usuario {{ u.user.username }}" title="Bloquear acceso al sistema">
-                                ✕ Bloquear
-                            </button>
+                                    data-username="{{ u.user.username }}"
+                                    data-accion="bloquear"
+                                    title="Bloquear acceso al sistema">✕ Bloquear</button>
                             {% else %}
                             <button class="link-button btn-bloquear-usuario" data-id="{{ u.id }}"
-                                data-username="{{ u.user.username }}" data-accion="desbloquear"
-                                aria-label="Desbloquear usuario {{ u.user.username }}"
-                                title="Restaurar acceso al sistema">
-                                ✓ Desbloquear
-                            </button>
+                                    data-username="{{ u.user.username }}"
+                                    data-accion="desbloquear"
+                                    title="Restaurar acceso al sistema">✓ Desbloquear</button>
                             {% endif %}
                         </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" class="text-center text-muted" style="padding: 40px;">
+                    <td colspan="8" class="text-center text-muted" style="padding: 30px;">
                         <div class="empty-state" style="min-height: auto;">
                             <span>◎</span>
                             <h3>Sin usuarios</h3>
@@ -145,9 +132,7 @@
             <span class="eyebrow">ACTIVIDAD RECIENTE</span>
             <h2>Últimos 10 registros de auditoría</h2>
         </div>
-        <a href="{% url 'auditoria' %}" class="link-button">
-            Ver todos →
-        </a>
+        <a href="{% url 'auditoria' %}" class="link-button">Ver todos →</a>
     </div>
 
     <div class="table-wrap">
@@ -155,26 +140,24 @@
             <caption class="visually-hidden">Últimos 10 registros de auditoría</caption>
             <thead>
                 <tr>
-                    <th scope="col">Fecha y Hora</th>
-                    <th scope="col">Usuario</th>
-                    <th scope="col">Módulo</th>
-                    <th scope="col">Acción</th>
-                    <th scope="col">Objeto</th>
-                    <th scope="col">IP</th>
-                    <th scope="col">Detalle</th>
+                    <th>Fecha y Hora</th>
+                    <th>Usuario</th>
+                    <th>Módulo</th>
+                    <th>Acción</th>
+                    <th>Objeto</th>
+                    <th>IP</th>
+                    <th>Detalle</th>
                 </tr>
             </thead>
             <tbody>
                 {% for log in logs %}
                 <tr>
-                    <td class="text-nowrap">
-                        {{ log.fecha_registro|date:"d/m/Y H:i" }}
-                    </td>
+                    <td class="text-nowrap">{{ log.fecha_registro|date:"d/m/Y H:i" }}</td>
                     <td>
                         {% if log.usuario_sistema %}
                         <strong>{{ log.usuario_sistema.username }}</strong>
                         {% else %}
-                        <span class="text-muted">Sistema/Anónimo</span>
+                        <span class="text-muted">Sistema</span>
                         {% endif %}
                     </td>
                     <td>
@@ -185,36 +168,20 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if log.accion == 'Eliminar Actividad' or log.accion == 'Eliminación rápida de actividad' %}
-                        <span class="badge inactive">{{ log.accion }}</span>
-                        {% elif log.accion == 'Crear Actividad' or log.accion == 'Guardar usuario' %}
-                        <span class="badge">{{ log.accion }}</span>
-                        {% elif log.accion == 'Edición de actividad' or log.accion == 'Cambio de rol' %}
-                        <span class="role">{{ log.accion }}</span>
-                        {% elif log.accion == 'Envío de invitaciones' %}
-                        <span class="badge draft">{{ log.accion }}</span>
-                        {% elif log.accion == 'Cambio de estado' %}
-                        <span class="badge draft">{{ log.accion }}</span>
-                        {% else %}
-                        <span class="badge draft">{{ log.accion }}</span>
-                        {% endif %}
+                        <span class="badge {% if 'Eliminar' in log.accion or 'Eliminación' in log.accion %}inactive{% elif 'Crear' in log.accion or 'Guardar' in log.accion %}{% else %}draft{% endif %}">
+                            {{ log.accion }}
+                        </span>
                     </td>
                     <td>
                         {% if log.objeto_tipo %}
                         {{ log.objeto_tipo }}
-                        {% if log.objeto_nombre %}
-                        <br><small class="text-muted">{{ log.objeto_nombre }}</small>
-                        {% endif %}
+                        {% if log.objeto_nombre %}<br><small class="text-muted">{{ log.objeto_nombre }}</small>{% endif %}
                         {% else %}
                         <span class="text-muted">—</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% if log.ip_address %}
-                        <code>{{ log.ip_address }}</code>
-                        {% else %}
-                        <span class="text-muted">—</span>
-                        {% endif %}
+                        {% if log.ip_address %}<code>{{ log.ip_address }}</code>{% else %}<span class="text-muted">—</span>{% endif %}
                     </td>
                     <td class="detalle-cell">
                         {% if log.detalle %}
@@ -226,7 +193,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="text-center text-muted" style="padding: 40px;">
+                    <td colspan="7" class="text-center text-muted" style="padding: 30px;">
                         <div class="empty-state" style="min-height: auto;">
                             <span>☰</span>
                             <h3>Sin actividad registrada</h3>
@@ -258,30 +225,19 @@
             <div class="modal-body">
 
                 <div class="form-field">
-                    <label for="username">
-                        Usuario <span class="required">*</span>
-                    </label>
-                    <input type="text" id="username" name="username" placeholder="Ej: pa.rebolledoa"
-                        autocomplete="username" required>
-                    <small class="input-help">
-                        Se usará para iniciar sesión. No usar espacios.
-                    </small>
+                    <label for="username">Usuario <span class="required">*</span></label>
+                    <input type="text" id="username" name="username" placeholder="Ej: pa.rebolledoa" autocomplete="username" required>
+                    <small class="input-help">Se usará para iniciar sesión. No usar espacios.</small>
                 </div>
 
                 <div class="form-field">
-                    <label for="nombre">
-                        Nombre completo <span class="required">*</span>
-                    </label>
-                    <input type="text" id="nombre" name="nombre" placeholder="Ej: Pablo Rebolledo" autocomplete="name"
-                        required>
+                    <label for="nombre">Nombre completo <span class="required">*</span></label>
+                    <input type="text" id="nombre" name="nombre" placeholder="Ej: Pablo Rebolledo" autocomplete="name" required>
                 </div>
 
                 <div class="form-field">
-                    <label for="email">
-                        Email <span class="required">*</span>
-                    </label>
-                    <input type="email" id="email" name="email" placeholder="usuario@duocuc.cl" autocomplete="email"
-                        required>
+                    <label for="email">Email <span class="required">*</span></label>
+                    <input type="email" id="email" name="email" placeholder="usuario@duocuc.cl" autocomplete="email" required>
                 </div>
 
                 <div class="form-field">
@@ -290,9 +246,7 @@
                 </div>
 
                 <div class="form-field">
-                    <label for="rol">
-                        Rol <span class="required">*</span>
-                    </label>
+                    <label for="rol">Rol <span class="required">*</span></label>
                     <select id="rol" name="rol" required>
                         <option value="">Seleccionar rol</option>
                         {% for rol in roles %}
@@ -306,20 +260,14 @@
                         <input type="checkbox" id="estado" name="estado" checked>
                         <span>Usuario activo</span>
                     </label>
-                    <small class="input-help">
-                        Si se desmarca, el usuario no podrá iniciar sesión.
-                    </small>
+                    <small class="input-help">Si se desmarca, el usuario no podrá iniciar sesión.</small>
                 </div>
 
             </div>
 
             <footer class="modal-footer">
-                <button type="button" class="btn secondary" data-modal-close>
-                    × Cancelar
-                </button>
-                <button type="submit" class="btn">
-                    ✓ Guardar
-                </button>
+                <button type="button" class="btn secondary" data-modal-close>× Cancelar</button>
+                <button type="submit" class="btn">✓ Guardar</button>
             </footer>
         </form>
 

@@ -11,10 +11,7 @@
     <div>
         <span class="eyebrow">PANEL DE CONTROL</span>
         <h1>Resumen general</h1>
-        <p>
-            <span class="badge">▦</span>
-            Actualizado: {% now "d/m/Y H:i" %}
-        </p>
+        <p><span class="badge">▦</span> Actualizado: {% now "d/m/Y H:i" %}</p>
     </div>
     <button class="btn" id="btnNuevaActividad" data-action="activity-new">
         + Crear Nueva Actividad
@@ -22,7 +19,7 @@
 </div>
 
 <!-- ============================================================ -->
-<!-- BARRA DE FILTROS -->
+<!-- FILTROS -->
 <!-- ============================================================ -->
 <form method="get" class="filters-bar">
     <div class="filter-group">
@@ -34,7 +31,6 @@
             <option value="mes" {% if rango_actual == 'mes' %}selected{% endif %}>Este mes</option>
         </select>
     </div>
-
     <div class="filter-group">
         <label for="filtro-tipo">Tipo</label>
         <select name="tipo" id="filtro-tipo">
@@ -43,31 +39,24 @@
             <option value="TALLER" {% if tipo_actual == 'TALLER' %}selected{% endif %}>Taller</option>
         </select>
     </div>
-
     <div class="filter-group">
         <label for="filtro-carrera">Carrera</label>
         <select name="carrera" id="filtro-carrera">
             <option value="">Todas</option>
             {% for c in carreras_opciones %}
-                <option value="{{ c.nombre }}" {% if carrera_actual == c.nombre %}selected{% endif %}>
-                    {{ c.nombre }}
-                </option>
+            <option value="{{ c.nombre }}" {% if carrera_actual == c.nombre %}selected{% endif %}>{{ c.nombre }}</option>
             {% endfor %}
         </select>
     </div>
-
     <div class="filter-group">
         <label for="filtro-jornada">Jornada</label>
         <select name="jornada" id="filtro-jornada">
             <option value="">Todas</option>
             {% for j in jornadas_opciones %}
-                <option value="{{ j.nombre }}" {% if jornada_actual == j.nombre %}selected{% endif %}>
-                    {{ j.nombre }}
-                </option>
+            <option value="{{ j.nombre }}" {% if jornada_actual == j.nombre %}selected{% endif %}>{{ j.nombre }}</option>
             {% endfor %}
         </select>
     </div>
-
     <div class="filter-actions">
         <button type="submit" class="btn">Aplicar</button>
         <a href="{% url 'dashboard' %}" class="link-button">Limpiar</a>
@@ -80,58 +69,49 @@
 <div class="stats stats-5">
     <div class="stat">
         <div class="stat-icon stat-icon-blue">▦</div>
-        <span>ACTIVIDADES ACTIVAS</span>
         <strong>{{ actividades_activas }}</strong>
-        <small>Actualmente en curso</small>
-        <a href="{% url 'lista_actividades' %}" class="stat-link">Ver detalle →</a>
+        <span>ACTIVIDADES ACTIVAS EN CURSO</span>
+        <a href="{% url 'lista_actividades' %}" class="stat-link">Ver →</a>
     </div>
 
     <div class="stat">
         <div class="stat-icon stat-icon-green">◈</div>
-        <span>TALLERES PRÓXIMOS</span>
         <strong>{{ talleres_proximos }}</strong>
-        <small>Con cupos disponibles</small>
-        <a href="{% url 'lista_actividades' %}?tipo=TALLER" class="stat-link">Ver detalle →</a>
+        <span>TALLERES PRÓXIMOS CON CUPOS</span>
+        <a href="{% url 'lista_actividades' %}?tipo=TALLER" class="stat-link">Ver →</a>
     </div>
 
     <div class="stat">
         <div class="stat-icon stat-icon-purple">◉</div>
-        <span>ALUMNOS INSCRITOS</span>
         <strong>{{ total_inscritos }}</strong>
-        <small>En el período</small>
-        <a href="{% url 'reportes' %}" class="stat-link">Ver detalle →</a>
+        <span>ALUMNOS INSCRITOS EN EL PERÍODO</span>
+        <a href="{% url 'reportes' %}" class="stat-link">Ver →</a>
     </div>
 
     <div class="stat">
         <div class="stat-icon stat-icon-orange">✓</div>
-        <span>ASISTENCIAS HOY</span>
         <strong>{{ asistencias_hoy }}</strong>
-        <small>Registros del día</small>
-        <a href="{% url 'escaneo' %}" class="stat-link">Ver detalle →</a>
+        <span>ASISTENCIAS REGISTRADAS HOY</span>
+        <a href="{% url 'escaneo' %}" class="stat-link">Ver →</a>
     </div>
 
     <div class="stat">
         <div class="stat-icon stat-icon-teal">✉</div>
-        <span>INVITACIONES ENVIADAS</span>
         <strong>{{ invitaciones_enviadas }}</strong>
-        <small>Correos exitosos</small>
-        <a href="{% url 'lista_actividades' %}" class="stat-link">Ver detalle →</a>
+        <span>INVITACIONES ENVIADAS CON ÉXITO</span>
+        <a href="{% url 'lista_actividades' %}" class="stat-link">Ver →</a>
     </div>
 </div>
 
 <!-- ============================================================ -->
-<!-- DESGLOSE POR TIPO (masivas vs talleres) -->
+<!-- DESGLOSE POR TIPO -->
 <!-- ============================================================ -->
 <div class="type-table">
     <table>
         <thead>
             <tr>
-                <th colspan="4" class="type-th type-th-masiva">
-                    Actividades masivas
-                </th>
-                <th colspan="4" class="type-th type-th-taller">
-                    Talleres
-                </th>
+                <th colspan="4" class="type-th type-th-masiva">Actividades masivas</th>
+                <th colspan="4" class="type-th type-th-taller">Talleres</th>
             </tr>
         </thead>
         <tbody>
@@ -139,48 +119,28 @@
                 <td class="type-td type-td-label">Actividades</td>
                 <td class="type-td type-td-label">Asistentes</td>
                 <td class="type-td type-td-label">Cupos</td>
-                <td class="type-td type-td-label">Tasa de asistencia</td>
-
+                <td class="type-td type-td-label">Tasa</td>
                 <td class="type-td type-td-label">Actividades</td>
                 <td class="type-td type-td-label">Inscritos</td>
                 <td class="type-td type-td-label">Asistentes</td>
-                <td class="type-td type-td-label">Tasa de asistencia</td>
+                <td class="type-td type-td-label">Tasa</td>
             </tr>
             <tr>
                 <td class="type-td type-td-value">{{ masivas_count }}</td>
                 <td class="type-td type-td-value">{{ masivas_asistentes }}</td>
-                <td class="type-td type-td-value">
-                    {% if cupos_masivas > 0 %}
-                        {{ cupos_masivas }}
-                    {% else %}
-                        —
-                    {% endif %}
-                </td>
-                <td class="type-td type-td-value">
-                    {% if tasa_masivas is not None %}
-                        {{ tasa_masivas }}%
-                    {% else %}
-                        —
-                    {% endif %}
-                </td>
-
+                <td class="type-td type-td-value">{% if cupos_masivas > 0 %}{{ cupos_masivas }}{% else %}—{% endif %}</td>
+                <td class="type-td type-td-value">{% if tasa_masivas is not None %}{{ tasa_masivas }}%{% else %}—{% endif %}</td>
                 <td class="type-td type-td-value">{{ talleres_count }}</td>
                 <td class="type-td type-td-value">{{ talleres_inscritos }}</td>
                 <td class="type-td type-td-value">{{ talleres_asistentes }}</td>
-                <td class="type-td type-td-value">
-                    {% if tasa_talleres is not None %}
-                        {{ tasa_talleres }}%
-                    {% else %}
-                        —
-                    {% endif %}
-                </td>
+                <td class="type-td type-td-value">{% if tasa_talleres is not None %}{{ tasa_talleres }}%{% else %}—{% endif %}</td>
             </tr>
         </tbody>
     </table>
 </div>
 
 <!-- ============================================================ -->
-<!-- MINI KPIs (4 tarjetas) -->
+<!-- MINI KPIs -->
 <!-- ============================================================ -->
 <div class="mini-stats">
     <div class="mini-stat">
@@ -197,21 +157,15 @@
     </div>
     <div class="mini-stat">
         <span>TASA DE TALLERES</span>
-        <strong>
-            {% if tasa_talleres is not None %}
-                {{ tasa_talleres }}%
-            {% else %}
-                —
-            {% endif %}
-        </strong>
+        <strong>{% if tasa_talleres is not None %}{{ tasa_talleres }}%{% else %}—{% endif %}</strong>
     </div>
 </div>
 
 <!-- ============================================================ -->
-<!-- GRÁFICO DE LÍNEA + ACTIVIDADES PRÓXIMAS -->
+<!-- FILA: LÍNEA + COMPARATIVO -->
 <!-- ============================================================ -->
 <div class="charts-row">
-    <div class="panel panel-wide">
+    <div class="panel">
         <div class="panel-head">
             <div>
                 <span class="eyebrow">RESUMEN</span>
@@ -222,137 +176,53 @@
         <div class="chart-container">
             <canvas id="graficoLinea" role="img" aria-label="Resumen de actividades por mes"></canvas>
         </div>
+        <div class="chart-legend" id="legendLinea"></div>
     </div>
 
-    <div class="panel panel-narrow">
+    <div class="panel">
         <div class="panel-head">
             <div>
-                <span class="eyebrow">PRÓXIMAS</span>
-                <h2>Actividades próximas</h2>
+                <span class="eyebrow">COMPARATIVO</span>
+                <h2>Inscritos vs Asistentes</h2>
             </div>
-            <a href="{% url 'lista_actividades' %}" class="link-button">Ver calendario</a>
         </div>
-
-        <ul class="upcoming-list">
-            {% for act in actividades_proximas %}
-            <li class="upcoming-item">
-                <div class="upcoming-date">
-                    <strong>{{ act.fecha_inicio|date:"d" }}</strong>
-                    <span>{{ act.fecha_inicio|date:"M"|upper }}</span>
-                </div>
-                <div class="upcoming-body">
-                    <h4>{{ act.titulo }}</h4>
-                    <p>
-                        <span>◷</span>
-                        {{ act.fecha_inicio|date:"H:i" }} - {{ act.fecha_fin|date:"H:i" }}
-                    </p>
-                    <p>
-                        <span>◉</span>
-                        {{ act.lugar }}
-                    </p>
-                </div>
-                <div class="upcoming-badge">
-                    {% if act.tipo == 'TALLER' %}
-                        <span class="badge">Taller</span>
-                    {% else %}
-                        <span class="badge draft">Masiva</span>
-                    {% endif %}
-                </div>
-            </li>
-            {% empty %}
-            <li class="upcoming-empty">
-                No hay actividades próximas.
-            </li>
-            {% endfor %}
-        </ul>
+        <div class="chart-container">
+            <canvas id="graficoComparativo" role="img" aria-label="Inscritos vs asistentes por actividad"></canvas>
+        </div>
+        <div class="chart-legend" id="legendComparativo"></div>
     </div>
 </div>
 
 <!-- ============================================================ -->
-<!-- GRÁFICO DE BARRAS + DONUT DE CARRERAS -->
+<!-- FILA DE 3: BARRAS + DONA CARRERA + DONA ESCUELA -->
 <!-- ============================================================ -->
-<div class="charts-grid">
+<div class="charts-grid-3">
     <div class="panel">
         <div class="panel-head">
             <div>
                 <span class="eyebrow">GRÁFICO DE BARRAS</span>
-                <h2>Asistencia por Actividad (Top 5)</h2>
+                <h2>Top 5 Actividades</h2>
             </div>
         </div>
         <div class="chart-container">
             <canvas id="graficoBarras" role="img" aria-label="Gráfico de barras: asistentes por actividad"></canvas>
         </div>
+        <div class="chart-legend" id="legendBarras"></div>
     </div>
 
     <div class="panel">
         <div class="panel-head">
             <div>
                 <span class="eyebrow">GRÁFICO CIRCULAR</span>
-                <h2>Distribución por Carrera</h2>
+                <h2>Por Carrera</h2>
             </div>
         </div>
         <div class="chart-container">
             <canvas id="graficoPastel" role="img" aria-label="Gráfico circular: distribución por carrera"></canvas>
         </div>
-    </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- GRÁFICO COMPARATIVO -->
-<!-- ============================================================ -->
-<div class="panel">
-    <div class="panel-head">
-        <div>
-            <span class="eyebrow">COMPARATIVO</span>
-            <h2>Inscritos vs Asistentes por Actividad</h2>
-        </div>
-    </div>
-    <div class="chart-container">
-        <canvas id="graficoComparativo" role="img" aria-label="Inscritos vs asistentes por actividad"></canvas>
-    </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- ALERTAS -->
-<!-- ============================================================ -->
-<div class="alerts-row">
-    <div class="alert-card alert-yellow">
-        <div class="alert-icon">!</div>
-        <div class="alert-body">
-            <h4>Talleres sin cupos</h4>
-            <p>{{ alertas.talleres_sin_cupos }} taller{{ alertas.talleres_sin_cupos|pluralize:"es" }}</p>
-        </div>
+        <div class="chart-legend" id="legendPastel"></div>
     </div>
 
-    <div class="alert-card alert-blue">
-        <div class="alert-icon">◷</div>
-        <div class="alert-body">
-            <h4>Comienzan hoy</h4>
-            <p>{{ alertas.comienzan_hoy }} actividad{{ alertas.comienzan_hoy|pluralize:"es" }}</p>
-        </div>
-    </div>
-
-    <div class="alert-card alert-orange">
-        <div class="alert-icon">◉</div>
-        <div class="alert-body">
-            <h4>Sin inscritos</h4>
-            <p>{{ alertas.sin_inscritos }} actividad{{ alertas.sin_inscritos|pluralize:"es" }}</p>
-        </div>
-    </div>
-
-    <div class="alert-card alert-red">
-        <div class="alert-icon">✉</div>
-        <div class="alert-body">
-            <h4>Correos fallidos</h4>
-            <p>{{ alertas.correos_fallidos }} envío{{ alertas.correos_fallidos|pluralize:"s" }}</p>
-        </div>
-    </div>
-</div>
-
-<!-- ============================================================ -->
-<!-- PARTICIPACIÓN POR ESCUELA + ACTIVIDAD RECIENTE -->
-<!-- ============================================================ -->
-<div class="charts-grid-3">
     <div class="panel">
         <div class="panel-head">
             <div>
@@ -363,6 +233,77 @@
         <div class="chart-container">
             <canvas id="graficoEscuela" role="img" aria-label="Participación por escuela"></canvas>
         </div>
+        <div class="chart-legend" id="legendEscuela"></div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ALERTAS (fila de 4) -->
+<!-- ============================================================ -->
+<div class="alerts-row">
+    <div class="alert-card alert-yellow">
+        <div class="alert-icon">!</div>
+        <div class="alert-body">
+            <h4>Talleres sin cupos</h4>
+            <p>{{ alertas.talleres_sin_cupos }} taller{{ alertas.talleres_sin_cupos|pluralize:"es" }}</p>
+        </div>
+    </div>
+    <div class="alert-card alert-blue">
+        <div class="alert-icon">◷</div>
+        <div class="alert-body">
+            <h4>Comienzan hoy</h4>
+            <p>{{ alertas.comienzan_hoy }} actividad{{ alertas.comienzan_hoy|pluralize:"es" }}</p>
+        </div>
+    </div>
+    <div class="alert-card alert-orange">
+        <div class="alert-icon">◉</div>
+        <div class="alert-body">
+            <h4>Sin inscritos</h4>
+            <p>{{ alertas.sin_inscritos }} actividad{{ alertas.sin_inscritos|pluralize:"es" }}</p>
+        </div>
+    </div>
+    <div class="alert-card alert-red">
+        <div class="alert-icon">✉</div>
+        <div class="alert-body">
+            <h4>Correos fallidos</h4>
+            <p>{{ alertas.correos_fallidos }} envío{{ alertas.correos_fallidos|pluralize:"s" }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- FILA DE 3 FEEDS -->
+<!-- ============================================================ -->
+<div class="charts-grid-3">
+    <div class="panel">
+        <div class="panel-head">
+            <div>
+                <span class="eyebrow">PRÓXIMAS</span>
+                <h2>Actividades próximas</h2>
+            </div>
+            <a href="{% url 'lista_actividades' %}" class="link-button">Ver →</a>
+        </div>
+        <ul class="upcoming-list">
+            {% for act in actividades_proximas %}
+            <li class="upcoming-item">
+                <div class="upcoming-date">
+                    <strong>{{ act.fecha_inicio|date:"d" }}</strong>
+                    <span>{{ act.fecha_inicio|date:"M"|upper }}</span>
+                </div>
+                <div class="upcoming-body">
+                    <h4>{{ act.titulo }}</h4>
+                    <p><span>◷</span> {{ act.fecha_inicio|date:"H:i" }}</p>
+                    <p><span>◉</span> {{ act.lugar }}</p>
+                </div>
+                <div class="upcoming-badge">
+                    {% if act.tipo == 'TALLER' %}<span class="badge">Taller</span>
+                    {% else %}<span class="badge draft">Masiva</span>{% endif %}
+                </div>
+            </li>
+            {% empty %}
+            <li class="upcoming-empty">No hay actividades próximas.</li>
+            {% endfor %}
+        </ul>
     </div>
 
     <div class="panel">
@@ -376,7 +317,7 @@
             {% for a in ultimas_asistencias %}
             <li>
                 <strong>{{ a.alumno.nombres }} {{ a.alumno.apellidos }}</strong>
-                <span>{{ a.actividad.titulo|truncatechars:30 }}</span>
+                <span>{{ a.actividad.titulo|truncatechars:28 }}</span>
                 <em>{{ a.fecha_ingreso|date:"d/m H:i" }}</em>
             </li>
             {% empty %}
@@ -396,7 +337,7 @@
             {% for log in ultimos_logs %}
             <li>
                 <strong>{{ log.usuario_sistema.username|default:"Sistema" }}</strong>
-                <span>{{ log.accion|truncatechars:30 }}</span>
+                <span>{{ log.accion|truncatechars:28 }}</span>
                 <em>{{ log.fecha_registro|date:"d/m H:i" }}</em>
             </li>
             {% empty %}
@@ -415,9 +356,15 @@
             <span class="eyebrow">ACTIVIDADES</span>
             <h2>Últimas Actividades Creadas</h2>
         </div>
-        <a href="{% url 'lista_actividades' %}" class="link-button">
-            Ver todas →
-        </a>
+        <a href="{% url 'lista_actividades' %}" class="link-button">Ver todas →</a>
+    </div>
+
+    <div class="hint-banner" role="status">
+        <span class="hint-icon">i</span>
+        <span>
+            <strong>Tip:</strong> Haz click en el <strong>nombre</strong> de la actividad para ver el detalle, o en los
+            <strong>números</strong> de inscritos/asistentes para ver los participantes.
+        </span>
     </div>
 
     <div class="table-wrap">
@@ -442,46 +389,54 @@
                 <tr>
                     <td>
                         {% if actividad.imagen %}
-                            <img src="{{ actividad.imagen.url }}"
-                                 alt="Imagen de {{ actividad.titulo }}"
-                                 class="img-miniatura">
+                        <img src="{{ actividad.imagen.url }}" alt="{{ actividad.titulo }}" class="img-miniatura">
                         {% else %}
-                            <div class="img-miniatura-placeholder">▣</div>
+                        <div class="img-miniatura-placeholder">▣</div>
                         {% endif %}
                     </td>
-                    <td><strong>{{ actividad.titulo }}</strong></td>
+                    <td>
+                        <a href="{% url 'actividad_detalle' actividad.pk %}" class="activity-link"
+                            title="Ver detalle de {{ actividad.titulo }}">
+                            <strong>{{ actividad.titulo }}</strong>
+                        </a>
+                    </td>
                     <td>
                         {% if actividad.tipo == 'TALLER' %}
-                            <span class="role">Taller</span>
+                        <span class="role">Taller</span>
                         {% else %}
-                            <span class="badge">Masiva</span>
+                        <span class="badge">Masiva</span>
                         {% endif %}
                     </td>
                     <td>{{ actividad.fecha_inicio|date:"d/m/Y H:i" }}</td>
-                    <td>{{ actividad.total_inscritos }}</td>
-                    <td>{{ actividad.total_asistentes }}</td>
                     <td>
-                        {% if actividad.cupos_disponibles is not None %}
-                            {{ actividad.cupos_disponibles }}
-                        {% else %}
-                            —
-                        {% endif %}
+                        <a href="{% url 'participantes_actividad' actividad.pk %}" class="badge draft"
+                            title="Ver participantes">
+                            {{ actividad.total_inscritos }}
+                        </a>
                     </td>
                     <td>
-                        {% if actividad.estado == 'ACTIVA' %}
-                            <span class="badge">Activa</span>
-                        {% elif actividad.estado == 'FINALIZADA' %}
-                            <span class="badge draft">Finalizada</span>
-                        {% else %}
-                            <span class="badge inactive">Cancelada</span>
-                        {% endif %}
+                        <a href="{% url 'participantes_actividad' actividad.pk %}" class="badge"
+                            title="Ver participantes">
+                            {{ actividad.total_asistentes }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if actividad.cupos_disponibles is not None %}{{ actividad.cupos_disponibles }}{% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if actividad.estado == 'ACTIVA' %}<span class="badge">Activa</span>
+                        {% elif actividad.estado == 'FINALIZADA' %}<span class="badge draft">Finalizada</span>
+                        {% else %}<span class="badge inactive">Cancelada</span>{% endif %}
                     </td>
                     <td>{{ actividad.creado_por.username|default:"N/A" }}</td>
                     <td>
                         <div class="action-group">
-                            <button class="link-button btn-editar"
-                                    data-url="{% url 'editar_actividad' actividad.pk %}"
-                                    aria-label="Editar {{ actividad.titulo }}">
+                            <a href="{% url 'actividad_detalle' actividad.pk %}" class="link-button"
+                                title="Ver detalle">
+                                👁 Ver
+                            </a>
+                            <button class="link-button btn-editar" data-url="{% url 'editar_actividad' actividad.pk %}"
+                                aria-label="Editar {{ actividad.titulo }}">
                                 ✎ Editar
                             </button>
                         </div>
@@ -489,7 +444,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="10" class="text-center text-muted" style="padding: 40px;">
+                    <td colspan="10" class="text-center text-muted" style="padding: 30px;">
                         Sin actividades registradas.
                     </td>
                 </tr>
@@ -500,12 +455,13 @@
 </div>
 
 <!-- ============================================================ -->
-<!-- DATOS PARA GRÁFICOS (JSON seguro) -->
+<!-- DATOS PARA GRÁFICOS -->
 <!-- ============================================================ -->
 {{ labels_barras|json_script:"labels_barras" }}
 {{ data_barras|json_script:"data_barras" }}
 {{ labels_pastel|json_script:"labels_pastel" }}
 {{ data_pastel|json_script:"data_pastel" }}
+{{ data_colores_pastel|json_script:"data_colores_pastel" }}
 {{ labels_linea|json_script:"labels_linea" }}
 {{ data_programadas|json_script:"data_programadas" }}
 {{ data_en_curso|json_script:"data_en_curso" }}
@@ -515,6 +471,7 @@
 {{ data_comp_asistentes|json_script:"data_comp_asistentes" }}
 {{ labels_escuela|json_script:"labels_escuela" }}
 {{ data_escuela|json_script:"data_escuela" }}
+{{ data_colores_escuela|json_script:"data_colores_escuela" }}
 
 <!-- Modal global para crear/editar actividad -->
 {% include 'gestion/includes/modal_actividad.html' %}

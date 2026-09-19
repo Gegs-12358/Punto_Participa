@@ -21,118 +21,128 @@
 <!-- ============================================================ -->
 <!-- FILTROS -->
 <!-- ============================================================ -->
-<form method="get" class="filters" role="search">
-    <div>
-        <label for="filtro-fecha-creacion" class="form-label">Fecha de Creación</label>
+<form method="get" class="filters-bar" role="search">
+    <div class="filter-group">
+        <label for="filtro-fecha-creacion">Fecha de Creación</label>
         <input type="date" id="filtro-fecha-creacion" name="fecha_creacion" value="{{ request.GET.fecha_creacion }}">
     </div>
 
-    <div>
-        <label for="filtro-tipo" class="form-label">Tipo de Actividad</label>
+    <div class="filter-group">
+        <label for="filtro-tipo">Tipo</label>
         <select name="tipo" id="filtro-tipo">
             {% for valor, etiqueta in tipos %}
-            <option value="{{ valor }}" {% if request.GET.tipo == valor %}selected{% endif %}>
-                {{ etiqueta }}
-            </option>
+            <option value="{{ valor }}" {% if request.GET.tipo == valor %}selected{% endif %}>{{ etiqueta }}</option>
             {% endfor %}
         </select>
     </div>
 
-    <div>
-        <label for="filtro-fecha" class="form-label">Fecha de Inicio</label>
+    <div class="filter-group">
+        <label for="filtro-fecha">Fecha de Inicio</label>
         <input type="date" id="filtro-fecha" name="fecha" value="{{ request.GET.fecha }}">
     </div>
 
-    <div>
-        <label for="filtro-estado" class="form-label">Estado</label>
+    <div class="filter-group">
+        <label for="filtro-estado">Estado</label>
         <select name="estado" id="filtro-estado">
             {% for valor, etiqueta in estados %}
-            <option value="{{ valor }}" {% if request.GET.estado == valor %}selected{% endif %}>
-                {{ etiqueta }}
-            </option>
+            <option value="{{ valor }}" {% if request.GET.estado == valor %}selected{% endif %}>{{ etiqueta }}</option>
             {% endfor %}
         </select>
     </div>
 
-    <button type="submit" class="btn">▽ Filtrar</button>
-    <a href="{% url 'lista_actividades' %}" class="btn secondary">× Limpiar</a>
+    <div class="filter-actions">
+        <button type="submit" class="btn">▽ Filtrar</button>
+        <a href="{% url 'lista_actividades' %}" class="link-button">× Limpiar</a>
+    </div>
 </form>
+
+<!-- ============================================================ -->
+<!-- CHIPS DE FILTROS ACTIVOS -->
+<!-- ============================================================ -->
+{% if request.GET.tipo or request.GET.estado or request.GET.fecha or request.GET.fecha_creacion %}
+<div class="filter-chips">
+    <span class="filter-chips-label">Filtros activos:</span>
+    {% if request.GET.tipo %}
+    <a class="filter-chip"
+        href="?{% for k, v in request.GET.items %}{% if k != 'tipo' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Tipo:
+        {{ request.GET.tipo }} · quitar ×</a>
+    {% endif %}
+    {% if request.GET.estado %}
+    <a class="filter-chip"
+        href="?{% for k, v in request.GET.items %}{% if k != 'estado' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Estado:
+        {{ request.GET.estado }} · quitar ×</a>
+    {% endif %}
+    {% if request.GET.fecha %}
+    <a class="filter-chip"
+        href="?{% for k, v in request.GET.items %}{% if k != 'fecha' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Inicio:
+        {{ request.GET.fecha }} · quitar ×</a>
+    {% endif %}
+    {% if request.GET.fecha_creacion %}
+    <a class="filter-chip"
+        href="?{% for k, v in request.GET.items %}{% if k != 'fecha_creacion' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Creada:
+        {{ request.GET.fecha_creacion }} · quitar ×</a>
+    {% endif %}
+    <a class="filter-chip filter-chip-clear" href="{% url 'lista_actividades' %}">Limpiar todos</a>
+</div>
+{% endif %}
 
 <!-- ============================================================ -->
 <!-- TABLA -->
 <!-- ============================================================ -->
 <div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">LISTADO</span>
+            <h2>Actividades registradas</h2>
+            <p class="panel-subtitle">Mostrando {{ actividades|length }} de {{ actividades.paginator.count }}
+                actividad{{ actividades.paginator.count|pluralize:"es" }}</p>
+        </div>
+    </div>
+
+    <div class="hint-banner" role="status">
+        <span class="hint-icon">i</span>
+        <span>
+            <strong>Tip:</strong> Haz click en el <strong>nombre</strong> de la actividad para ver el detalle, o en el
+            ícono <strong>👥</strong> para ver los participantes.
+        </span>
+    </div>
+
     <div class="table-wrap">
         <table>
             <caption class="visually-hidden">Lista de actividades</caption>
             <thead>
                 <tr>
-                    <th scope="col">
-                        <a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden={% if orden_actual == 'titulo' %}-titulo{% else %}titulo{% endif %}">
-                            Nombre
-                            {% if orden_actual == 'titulo' %}▲{% elif orden_actual == '-titulo' %}▼{% endif %}
-                        </a>
+                    <th>{% include 'gestion/includes/orden_link.html' with campo='titulo' label='Nombre' %}</th>
+                    <th>{% include 'gestion/includes/orden_link.html' with campo='tipo' label='Tipo' %}</th>
+                    {% if es_admin %}<th>Creador</th>{% endif %}
+                    <th>{% include 'gestion/includes/orden_link.html' with campo='fecha_inicio' label='Inicio' %}</th>
+                    <th>{% include 'gestion/includes/orden_link.html' with campo='cupos_disponibles' label='Cupos' %}
                     </th>
-                    <th scope="col">
-                        <a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden={% if orden_actual == 'tipo' %}-tipo{% else %}tipo{% endif %}">
-                            Tipo
-                            {% if orden_actual == 'tipo' %}▲{% elif orden_actual == '-tipo' %}▼{% endif %}
-                        </a>
+                    <th>Disponibles</th>
+                    <th>{% include 'gestion/includes/orden_link.html' with campo='total_inscritos' label='Inscritos' %}
                     </th>
-                    {% if es_admin %}
-                    <th scope="col">Creador</th>
-                    {% endif %}
-                    <th scope="col">
-                        <a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden={% if orden_actual == 'fecha_inicio' %}-fecha_inicio{% else %}fecha_inicio{% endif %}">
-                            Inicio
-                            {% if orden_actual == 'fecha_inicio' %}▲{% elif orden_actual == '-fecha_inicio' %}▼{% endif %}
-                        </a>
+                    <th>{% include 'gestion/includes/orden_link.html' with campo='total_asistentes' label='Asistentes'%}
                     </th>
-                    <th scope="col">
-                        <a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden={% if orden_actual == 'cupos_disponibles' %}-cupos_disponibles{% else %}cupos_disponibles{% endif %}">
-                            Cupos
-                            {% if orden_actual == 'cupos_disponibles' %}▲{% elif orden_actual == '-cupos_disponibles' %}▼{% endif %}
-                        </a>
-                    </th>
-                    <th scope="col">Disponibles</th>
-                    <th scope="col">
-                        <a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden={% if orden_actual == 'total_inscritos' %}-total_inscritos{% else %}total_inscritos{% endif %}">
-                            Inscritos
-                            {% if orden_actual == 'total_inscritos' %}▲{% elif orden_actual == '-total_inscritos' %}▼{% endif %}
-                        </a>
-                    </th>
-                    <th scope="col">
-                        <a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden={% if orden_actual == 'total_asistentes' %}-total_asistentes{% else %}total_asistentes{% endif %}">
-                            Asistentes
-                            {% if orden_actual == 'total_asistentes' %}▲{% elif orden_actual == '-total_asistentes' %}▼{% endif %}
-                        </a>
-                    </th>
-                    <th scope="col">Invit. OK</th>
-                    <th scope="col">Invit. fallidas</th>
-                    <th scope="col">
-                        <a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden={% if orden_actual == 'estado' %}-estado{% else %}estado{% endif %}">
-                            Estado
-                            {% if orden_actual == 'estado' %}▲{% elif orden_actual == '-estado' %}▼{% endif %}
-                        </a>
-                    </th>
-                    <th scope="col">Acciones</th>
+                    <th>Invit. OK</th>
+                    <th>Invit. fallidas</th>
+                    <th>{% include 'gestion/includes/orden_link.html' with campo='estado' label='Estado' %}</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
+                {% now "Y-m-d H:i" as ahora %}
                 {% for actividad in actividades %}
                 <tr>
                     <td>
-                        <div class="activity-cell">
+                        <a href="{% url 'actividad_detalle' actividad.pk %}" class="activity-link"
+                            title="Ver detalle de {{ actividad.titulo }}">
                             {% if actividad.imagen %}
-                            <img src="{{ actividad.imagen.url }}"
-                                 alt="Imagen de {{ actividad.titulo }}"
-                                 class="activity-thumb"
-                                 title="{{ actividad.titulo }}">
+                            <img src="{{ actividad.imagen.url }}" alt="{{ actividad.titulo }}" class="activity-thumb">
                             {% else %}
-                            <div class="activity-thumb-placeholder" title="{{ actividad.titulo }}">▣</div>
+                            <div class="activity-thumb-placeholder">▣</div>
                             {% endif %}
                             <strong>{{ actividad.titulo }}</strong>
-                        </div>
+                        </a>
                     </td>
                     <td>
                         {% if actividad.tipo == 'TALLER' %}
@@ -146,18 +156,12 @@
                     {% endif %}
                     <td>{{ actividad.fecha_inicio|date:"d/m/Y" }}</td>
                     <td>
-                        {% if actividad.cupos_totales is not None %}
-                        {{ actividad.cupos_totales }}
-                        {% else %}
-                        <span class="text-muted">—</span>
-                        {% endif %}
+                        {% if actividad.cupos_totales is not None %}{{ actividad.cupos_totales }}{% else %}<span
+                            class="text-muted">—</span>{% endif %}
                     </td>
                     <td>
-                        {% if actividad.cupos_disponibles is not None %}
-                        {{ actividad.cupos_disponibles }}
-                        {% else %}
-                        <span class="text-muted">—</span>
-                        {% endif %}
+                        {% if actividad.cupos_disponibles is not None %}{{ actividad.cupos_disponibles }}{% else %}<span
+                            class="text-muted">—</span>{% endif %}
                     </td>
                     <td>
                         {% if actividad.tipo == 'TALLER' %}
@@ -168,63 +172,53 @@
                     </td>
                     <td><span class="badge">{{ actividad.total_asistentes }}</span></td>
                     <td>
-                        <a href="{% url 'notificaciones_actividad' actividad.pk %}"
-                           class="badge"
-                           title="Ver notificaciones enviadas">
-                            {{ actividad.total_invitaciones_exito }}
-                        </a>
+                        <a href="{% url 'notificaciones_actividad' actividad.pk %}" class="badge"
+                            title="Ver notificaciones enviadas">{{ actividad.total_invitaciones_exito }}</a>
                     </td>
                     <td>
                         {% if actividad.total_invitaciones_fallo > 0 %}
-                        <a href="{% url 'notificaciones_actividad' actividad.pk %}"
-                           class="badge inactive"
-                           title="Ver notificaciones fallidas">
-                            {{ actividad.total_invitaciones_fallo }}
-                        </a>
+                        <a href="{% url 'notificaciones_actividad' actividad.pk %}" class="badge inactive"
+                            title="Ver notificaciones fallidas">{{ actividad.total_invitaciones_fallo }}</a>
                         {% else %}
                         <span class="text-muted">0</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if actividad.estado == 'CANCELADA' %}
-                            <span class="badge inactive">Cancelada</span>
+                        <span class="badge inactive">Cancelada</span>
                         {% elif actividad.estado == 'FINALIZADA' %}
-                            <span class="badge draft">Finalizada</span>
-                        {% else %}
-                            {% now "Y-m-d H:i" as ahora %}
-                            {% if actividad.fecha_inicio|date:"Y-m-d H:i" > ahora %}
-                                <span class="badge draft">Próxima</span>
-                            {% elif actividad.fecha_fin|date:"Y-m-d H:i" < ahora %}
-                                <span class="badge draft">Finalizada</span>
+                        <span class="badge draft">Finalizada</span>
+                        {% elif actividad.fecha_inicio|date:"Y-m-d H:i" > ahora %}
+                        <span class="badge draft">Próxima</span>
+                        {% elif actividad.fecha_fin|date:"Y-m-d H:i" < ahora %} <span class="badge draft">
+                            Finalizada</span>
                             {% else %}
-                                <span class="badge">En curso</span>
+                            <span class="badge">En curso</span>
                             {% endif %}
-                        {% endif %}
                     </td>
                     <td>
                         <div class="action-group">
-                            <a href="{% url 'actividad_detalle' actividad.pk %}"
-                               class="link-button"
-                               title="Ver detalle">
-                                👁 Ver
-                            </a>
-                            <button class="link-button btn-editar"
-                                    data-url="{% url 'editar_actividad' actividad.pk %}"
-                                    title="Editar">
-                                ✎ Editar
-                            </button>
-                            <button class="danger-button btn-eliminar"
-                                    data-url="{% url 'eliminar_actividad' actividad.pk %}"
-                                    title="Eliminar">
-                                ✕ Eliminar
-                            </button>
+                            <a href="{% url 'actividad_detalle' actividad.pk %}" class="link-button"
+                                title="Ver detalle">👁 Ver</a>
+                            <a href="{% url 'participantes_actividad' actividad.pk %}" class="link-button"
+                                title="Ver participantes">👥</a>
+                            <button class="link-button btn-editar" data-url="{% url 'editar_actividad' actividad.pk %}"
+                                title="Editar">✎</button>
+                            <button class="danger-button btn-eliminar" data-url="{% url 'eliminar_ajax' actividad.pk %}"
+                                data-nombre="{{ actividad.titulo }}" title="Eliminar">✕</button>
                         </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="12" class="text-center text-muted" style="padding: 40px;">
-                        Sin actividades registradas.
+                    <td colspan="12" class="text-center text-muted" style="padding: 30px;">
+                        <div class="empty-state" style="min-height: auto;">
+                            <span>▦</span>
+                            <h3>Sin actividades</h3>
+                            <p>No hay actividades que coincidan con los filtros.</p>
+                            <button class="btn" id="btnNuevaActividadVacio" data-action="activity-new">+ Crear la
+                                primera</button>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -250,9 +244,6 @@
         </table>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- PAGINACIÓN -->
-    <!-- ============================================================ -->
     {% if actividades.paginator.num_pages > 1 %}
     {% include 'gestion/includes/paginacion.html' with pagina=actividades param='page' %}
     {% endif %}

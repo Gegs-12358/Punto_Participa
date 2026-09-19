@@ -4,7 +4,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <meta name="description"
         content="Punto Participa - Gestión de actividades del Punto Estudiantil Duoc UC Sede Alameda">
@@ -28,11 +28,41 @@
         <header class="app-header">
             <img class="project-logo" src="{% static 'gestion/img/duoc.png' %}" alt="Punto Participa Duoc UC">
 
-            <div class="account">
-                <button class="icon-button" aria-label="Notificaciones" type="button">
-                    ◇<i id="notification-count">0</i>
-                </button>
+            <!-- ============================================================ -->
+            <!-- MENÚ DE USUARIO DESPLEGABLE (solo visible en móvil) -->
+            <!-- ============================================================ -->
+            <div class="mobile-menu-wrapper">
+                <input type="checkbox" id="mobile-menu-toggle" class="mobile-menu-checkbox">
+                <label for="mobile-menu-toggle" class="mobile-menu-button" aria-label="Abrir menú de usuario">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </label>
 
+                <div class="mobile-menu-dropdown">
+                    <div class="mobile-menu-user">
+                        <span class="avatar">{{ user.username|slice:":2"|upper }}</span>
+                        <div>
+                            <b>{{ user.get_full_name|default:user.username }}</b>
+                            <small>{{ rol_usuario|default:"Usuario" }}</small>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <form method="post" action="{% url 'logout' %}" class="mobile-logout-form">
+                        {% csrf_token %}
+                        <button type="submit" class="text-button">⎋ Cerrar sesión</button>
+                    </form>
+
+                    <img class="duoc-logo-mobile" src="{% static 'gestion/img/logo_duoc.png' %}" alt="Duoc UC">
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- HEADER DE ESCRITORIO (oculto en móvil) -->
+            <!-- ============================================================ -->
+            <div class="account desktop-account">
                 <button id="profile-button" class="profile" type="button">
                     <span id="profile-initials">{{ user.username|slice:":2"|upper }}</span>
                     <span>
@@ -55,42 +85,25 @@
         <!-- ============================================================ -->
         <nav id="main-nav" class="main-nav" aria-label="Navegación principal">
 
-            {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
-            <a href="{% url 'dashboard' %}"
-                class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                ⌂ Inicio
-            </a>
-            {% endif %}
+            <!-- Botón hamburguesa solo visible en móvil -->
+            <div class="nav-mobile-wrapper">
+                <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox">
+                <label for="nav-toggle" class="nav-toggle-button" aria-label="Abrir menú de navegación">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span class="nav-toggle-text">Menú</span>
+                </label>
 
-            {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
-            <a href="{% url 'lista_actividades' %}" class="{% if 'actividades' in request.path %}active{% endif %}">
-                ▦ Actividades
-            </a>
-            {% endif %}
+                <div class="nav-mobile-dropdown">
+                    {% include 'gestion/_nav_links.html' %}
+                </div>
+            </div>
 
-            {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
-            <a href="{% url 'reportes' %}" class="{% if 'reportes' in request.path %}active{% endif %}">
-                ▥ Reportes
-            </a>
-            {% endif %}
-
-            {% if rol_usuario == 'Administrador' %}
-            <a href="{% url 'usuarios' %}" class="{% if 'usuarios' in request.path %}active{% endif %}">
-                ◎ Usuarios
-            </a>
-            {% endif %}
-
-            {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' or rol_usuario == 'Encargado de Registrar' %}
-            <a href="{% url 'escaneo' %}" class="{% if 'escaneo' in request.path %}active{% endif %}">
-                ▢ Escáner
-            </a>
-            {% endif %}
-
-            {% if rol_usuario == 'Administrador' %}
-            <a href="{% url 'auditoria' %}" class="{% if 'auditoria' in request.path %}active{% endif %}">
-                ☰ Auditoría
-            </a>
-            {% endif %}
+            <!-- Enlaces de navegación (visibles en escritorio/tablet) -->
+                        <div class="nav-desktop-links">
+                {% include 'gestion/_nav_links.html' %}
+            </div>
 
         </nav>
 

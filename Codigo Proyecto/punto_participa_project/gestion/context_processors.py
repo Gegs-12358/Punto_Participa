@@ -1,4 +1,4 @@
-from .models import UsuarioSistema
+from .permissions import get_perfil
 
 
 def rol_usuario(request):
@@ -10,24 +10,9 @@ def rol_usuario(request):
         - rol_usuario: nombre del rol ('Administrador', 'Creador de Evento', etc.)
         - perfil_usuario: objeto UsuarioSistema del usuario autenticado
     """
-    contexto = {
-        'rol_usuario': None,
-        'perfil_usuario': None,
+    perfil = get_perfil(request.user)
+
+    return {
+        'rol_usuario': perfil.rol.nombre if perfil and perfil.rol else None,
+        'perfil_usuario': perfil,
     }
-
-    if not request.user.is_authenticated:
-        return contexto
-
-    try:
-        perfil = request.user.usuariosistema
-        contexto['perfil_usuario'] = perfil
-        if perfil.rol:
-            contexto['rol_usuario'] = perfil.rol.nombre
-    except UsuarioSistema.DoesNotExist:
-        # El usuario no tiene perfil asociado (ej: superusuario creado con createsuperuser)
-        pass
-    except AttributeError:
-        # Por si 'usuariosistema' no existe como atributo
-        pass
-
-    return contexto

@@ -1,0 +1,36 @@
+{% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
+<a href="{% url 'dashboard' %}"
+    class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+    ⌂ Inicio
+</a>
+{% endif %}
+
+{% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
+<a href="{% url 'lista_actividades' %}" class="{% if 'actividades' in request.path %}active{% endif %}">
+    ▦ Actividades
+</a>
+{% endif %}
+
+{% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
+<a href="{% url 'reportes' %}" class="{% if 'reportes' in request.path %}active{% endif %}">
+    ▥ Reportes
+</a>
+{% endif %}
+
+{% if rol_usuario == 'Administrador' %}
+<a href="{% url 'usuarios' %}" class="{% if 'usuarios' in request.path %}active{% endif %}">
+    ◎ Usuarios
+</a>
+{% endif %}
+
+{% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' or rol_usuario == 'Encargado de Registrar' %}
+<a href="{% url 'escaneo' %}" class="{% if 'escaneo' in request.path %}active{% endif %}">
+    ▢ Escáner
+</a>
+{% endif %}
+
+{% if rol_usuario == 'Administrador' %}
+<a href="{% url 'auditoria' %}" class="{% if 'auditoria' in request.path %}active{% endif %}">
+    ☰ Auditoría
+</a>
+{% endif %}

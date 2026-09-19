@@ -9,9 +9,13 @@
 <!-- ============================================================ -->
 <div class="page-title">
     <div>
-        <span class="eyebrow">
-            <a href="{% url 'actividad_detalle' actividad.pk %}">← Volver a la actividad</a>
-        </span>
+        <nav class="breadcrumbs" aria-label="Navegación">
+            <a href="{% url 'lista_actividades' %}">Actividades</a>
+            <span class="sep">›</span>
+            <a href="{% url 'actividad_detalle' actividad.pk %}">{{ actividad.titulo|truncatechars:30 }}</a>
+            <span class="sep">›</span>
+            <span class="current">Notificaciones</span>
+        </nav>
         <h1>Notificaciones de correo</h1>
         <p>{{ actividad.titulo }}</p>
     </div>
@@ -38,17 +42,19 @@
 <!-- ============================================================ -->
 <!-- FILTROS -->
 <!-- ============================================================ -->
-<form method="get" class="filters">
-    <div>
-        <label for="filtro-estado" class="form-label">Estado</label>
+<form method="get" class="filters-bar">
+    <div class="filter-group">
+        <label for="filtro-estado">Estado</label>
         <select name="estado" id="filtro-estado">
             <option value="">Todos</option>
             <option value="EXITO" {% if filtro_estado == 'EXITO' %}selected{% endif %}>Éxito</option>
             <option value="FALLO" {% if filtro_estado == 'FALLO' %}selected{% endif %}>Fallo</option>
         </select>
     </div>
-    <button type="submit" class="btn">▽ Filtrar</button>
-    <a href="{% url 'notificaciones_actividad' actividad.pk %}" class="btn secondary">× Limpiar</a>
+    <div class="filter-actions">
+        <button type="submit" class="btn">▽ Filtrar</button>
+        <a href="{% url 'notificaciones_actividad' actividad.pk %}" class="link-button">× Limpiar</a>
+    </div>
 </form>
 
 <!-- ============================================================ -->
@@ -59,9 +65,7 @@
         <div>
             <span class="eyebrow">NOTIFICACIONES</span>
             <h2>Correos enviados</h2>
-            <p class="panel-subtitle">
-                Mostrando {{ notificaciones|length }} de {{ notificaciones.paginator.count }} notificaciones
-            </p>
+            <p class="panel-subtitle">Mostrando {{ notificaciones|length }} de {{ notificaciones.paginator.count }} notificaciones</p>
         </div>
     </div>
 
@@ -82,17 +86,17 @@
                 <tr>
                     <td>
                         {% if n.alumno %}
-                            <strong>{{ n.alumno.nombres }} {{ n.alumno.apellidos }}</strong>
+                        <strong>{{ n.alumno.nombres }} {{ n.alumno.apellidos }}</strong>
                         {% else %}
-                            <span class="text-muted">—</span>
+                        <span class="text-muted">—</span>
                         {% endif %}
                     </td>
                     <td>{{ n.alumno.correo|default:"—" }}</td>
                     <td>
                         {% if n.estado_envio == 'EXITO' %}
-                            <span class="badge">Éxito</span>
+                        <span class="badge">Éxito</span>
                         {% else %}
-                            <span class="badge inactive">Fallo</span>
+                        <span class="badge inactive">Fallo</span>
                         {% endif %}
                     </td>
                     <td>{{ n.fecha_envio|date:"d/m/Y H:i" }}</td>
@@ -100,8 +104,13 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="text-center text-muted" style="padding: 40px;">
-                        No hay notificaciones para este filtro.
+                    <td colspan="5" class="text-center text-muted" style="padding: 30px;">
+                        <div class="empty-state" style="min-height: auto;">
+                            <span>✉</span>
+                            <h3>Sin notificaciones</h3>
+                            <p>No hay notificaciones para este filtro.</p>
+                            <a href="{% url 'notificaciones_actividad' actividad.pk %}" class="btn secondary">Ver todas</a>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -109,9 +118,6 @@
         </table>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- PAGINACIÓN -->
-    <!-- ============================================================ -->
     {% include 'gestion/includes/paginacion.html' with pagina=notificaciones param='page' %}
 </div>
 

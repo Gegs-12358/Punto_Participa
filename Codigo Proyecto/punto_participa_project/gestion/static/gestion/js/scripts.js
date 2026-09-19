@@ -148,6 +148,27 @@ document.addEventListener('keydown', function (e) {
 // ============================================================
 // MOSTRAR MENSAJES (alertas y modal global)
 // ============================================================
+// Leyenda informativa descartable (opcional)
+document.addEventListener('click', function (e) {
+    if (e.target.closest('.hint-close')) {
+        const banner = e.target.closest('.hint-banner');
+        if (banner) {
+            banner.style.display = 'none';
+            try {
+                localStorage.setItem('hint-dismissed', '1');
+            } catch (err) {}
+        }
+    }
+});
+
+// Ocultar si ya se descartó antes
+document.addEventListener('DOMContentLoaded', function () {
+    try {
+        if (localStorage.getItem('hint-dismissed') === '1') {
+            document.querySelectorAll('.hint-banner').forEach(b => b.style.display = 'none');
+        }
+    } catch (err) {}
+});
 
 function abrirModalGlobal(titulo, mensaje, tipo) {
     tipo = tipo || 'danger';
@@ -322,6 +343,42 @@ document.addEventListener('click', function (e) {
         const btn = e.target.closest('.btn-editar');
         const url = btn.getAttribute('data-url');
         cargarFormulario(url, 'Editar Actividad');
+    }
+
+    
+    // Botón "Eliminar" (tabla de actividades)
+    if (e.target.closest('.btn-eliminar')) {
+        e.preventDefault();
+        const btn = e.target.closest('.btn-eliminar');
+        const url = btn.getAttribute('data-url');
+        const nombre = btn.getAttribute('data-nombre') || 'esta actividad';
+
+        if (!confirm('¿Estás seguro de eliminar "' + nombre + '"? Esta acción no se puede deshacer.')) {
+            return;
+        }
+
+        btn.disabled = true;
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrftoken },
+            credentials: 'same-origin'
+        })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    mostrarMensaje('Actividad eliminada correctamente.', 'success');
+                    setTimeout(function () { window.location.reload(); }, 1000);
+                } else {
+                    btn.disabled = false;
+                    mostrarMensaje(data.message || 'No se pudo eliminar la actividad.', 'danger');
+                }
+            })
+            .catch(function (error) {
+                console.error('Error al eliminar actividad:', error);
+                btn.disabled = false;
+                mostrarMensaje('Error al conectar con el servidor.', 'danger');
+            });
     }
 
     // Botón "Ahora no" en modal de invitaciones

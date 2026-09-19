@@ -9,9 +9,13 @@
 <!-- ============================================================ -->
 <div class="page-title">
     <div>
-        <span class="eyebrow">
-            <a href="{% url 'actividad_detalle' actividad.pk %}">← Volver a la actividad</a>
-        </span>
+        <nav class="breadcrumbs" aria-label="Navegación">
+            <a href="{% url 'lista_actividades' %}">Actividades</a>
+            <span class="sep">›</span>
+            <a href="{% url 'actividad_detalle' actividad.pk %}">{{ actividad.titulo|truncatechars:30 }}</a>
+            <span class="sep">›</span>
+            <span class="current">Participantes</span>
+        </nav>
         <h1>Participantes</h1>
         <p>{{ actividad.titulo }}</p>
     </div>
@@ -39,15 +43,13 @@
         <div>
             <span class="eyebrow">INSCRITOS</span>
             <h2>Lista de inscritos</h2>
-            <p class="panel-subtitle">
-                Mostrando {{ inscripciones|length }} de {{ inscripciones.paginator.count }} inscripciones
-            </p>
+            <p class="panel-subtitle">Mostrando {{ inscripciones|length }} de {{ inscripciones.paginator.count }} inscripciones</p>
         </div>
     </div>
 
-    <form method="get" class="filters">
-        <div>
-            <label for="filtro-estado" class="form-label">Estado</label>
+    <form method="get" class="filters-bar">
+        <div class="filter-group">
+            <label for="filtro-estado">Estado</label>
             <select name="estado" id="filtro-estado">
                 <option value="">Todos</option>
                 <option value="CONFIRMADA" {% if filtro_estado == 'CONFIRMADA' %}selected{% endif %}>Confirmada</option>
@@ -55,8 +57,10 @@
                 <option value="LISTA_ESPERA" {% if filtro_estado == 'LISTA_ESPERA' %}selected{% endif %}>Lista de espera</option>
             </select>
         </div>
-        <button type="submit" class="btn">▽ Filtrar</button>
-        <a href="{% url 'participantes_actividad' actividad.pk %}" class="btn secondary">× Limpiar</a>
+        <div class="filter-actions">
+            <button type="submit" class="btn">▽ Filtrar</button>
+            <a href="{% url 'participantes_actividad' actividad.pk %}" class="link-button">× Limpiar</a>
+        </div>
     </form>
 
     <div class="table-wrap">
@@ -83,19 +87,23 @@
                     <td>{{ i.alumno.correo }}</td>
                     <td>
                         {% if i.estado == 'CONFIRMADA' %}
-                            <span class="badge">Confirmada</span>
+                        <span class="badge">Confirmada</span>
                         {% elif i.estado == 'CANCELADA' %}
-                            <span class="badge inactive">Cancelada</span>
+                        <span class="badge inactive">Cancelada</span>
                         {% else %}
-                            <span class="badge draft">Lista de espera</span>
+                        <span class="badge draft">Lista de espera</span>
                         {% endif %}
                     </td>
                     <td>{{ i.fecha_inscripcion|date:"d/m/Y H:i" }}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="text-center text-muted" style="padding: 40px;">
-                        No hay inscritos con este filtro.
+                    <td colspan="7" class="text-center text-muted" style="padding: 30px;">
+                        <div class="empty-state" style="min-height: auto;">
+                            <span>◉</span>
+                            <h3>Sin inscritos</h3>
+                            <p>No hay inscripciones con este filtro.</p>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -103,23 +111,18 @@
         </table>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- PAGINACIÓN INSCRITOS -->
-    <!-- ============================================================ -->
     {% include 'gestion/includes/paginacion.html' with pagina=inscripciones param='page_insc' %}
 </div>
 
 <!-- ============================================================ -->
 <!-- ASISTENTES -->
 <!-- ============================================================ -->
-<div class="panel" style="margin-top: 20px;">
+<div class="panel">
     <div class="panel-head">
         <div>
             <span class="eyebrow">ASISTENTES</span>
             <h2>Lista de asistentes</h2>
-            <p class="panel-subtitle">
-                Mostrando {{ asistencias|length }} de {{ asistencias.paginator.count }} asistencias
-            </p>
+            <p class="panel-subtitle">Mostrando {{ asistencias|length }} de {{ asistencias.paginator.count }} asistencias</p>
         </div>
     </div>
 
@@ -145,21 +148,21 @@
                     <td>{{ a.alumno.carrera }}</td>
                     <td>{{ a.alumno.jornada }}</td>
                     <td>
-                        {% if a.metodo_ingreso == 'QR' %}
-                            ▢ QR
-                        {% elif a.metodo_ingreso == 'CODIGO' %}
-                            ▥ Código
-                        {% else %}
-                            ⌨ RUT
-                        {% endif %}
+                        {% if a.metodo_ingreso == 'QR' %}▢ QR
+                        {% elif a.metodo_ingreso == 'CODIGO' %}▥ Código
+                        {% else %}⌨ RUT{% endif %}
                     </td>
                     <td>{{ a.registrado_por.username|default:"N/A" }}</td>
                     <td>{{ a.fecha_ingreso|date:"d/m/Y H:i" }}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="text-center text-muted" style="padding: 40px;">
-                        No hay asistencias registradas.
+                    <td colspan="7" class="text-center text-muted" style="padding: 30px;">
+                        <div class="empty-state" style="min-height: auto;">
+                            <span>◉</span>
+                            <h3>Sin asistencias</h3>
+                            <p>No hay asistencias registradas en esta actividad.</p>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -167,9 +170,6 @@
         </table>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- PAGINACIÓN ASISTENCIAS -->
-    <!-- ============================================================ -->
     {% include 'gestion/includes/paginacion.html' with pagina=asistencias param='page_asis' %}
 </div>
 

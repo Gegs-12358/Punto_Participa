@@ -40,7 +40,14 @@ class Alumno(models.Model):
         ('CEDULA_EXTRANJERO', 'Cédula de identidad de extranjero'),
     ]
 
-    rut = models.CharField(max_length=20, unique=True, null=True, blank=True, db_index=True)
+    rut = models.CharField(
+        max_length=30,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='RUT/Pasaporte'
+    )
     tipo_documento = models.CharField(
         max_length=20,
         choices=TIPO_DOCUMENTO_CHOICES,
@@ -122,6 +129,10 @@ class Actividad(models.Model):
     def __str__(self):
         return self.titulo
 
+    # ============================================================
+    # [REFACTOR] Propiedades y métodos de negocio
+    # ============================================================
+
     @property
     def esta_activa(self):
         return self.estado == 'ACTIVA'
@@ -129,6 +140,37 @@ class Actividad(models.Model):
     @property
     def es_taller(self):
         return self.tipo == 'TALLER'
+
+    @property
+    def esta_lleno(self):
+        """[REFACTOR] Útil para templates y validaciones rápidas."""
+        if self.tipo != 'TALLER':
+            return False
+        return (self.cupos_disponibles or 0) <= 0
+
+    def recalcular_cupos(self, inscritos_override=None):
+        """
+        [REFACTOR] Recalcula cupos_disponibles según las inscripciones actuales.
+
+        - TALLER: cupos_disponibles = max(0, cupos_totales - inscritos)
+        - MASIVA: cupos_totales y cupos_disponibles = None
+
+        Parámetros:
+            inscritos_override (int | None): si se pasa, usa ese número en vez
+                de contar en BBDD. Útil al crear una actividad nueva (0).
+        NO guarda en BBDD: el llamador debe hacer actividad.save().
+        """
+        if self.tipo == 'TALLER':
+            if inscritos_override is not None:
+                inscritos = inscritos_override
+            elif self.pk:
+                inscritos = self.inscripciones.count()
+            else:
+                inscritos = 0
+            self.cupos_disponibles = max(0, (self.cupos_totales or 0) - inscritos)
+        else:
+            self.cupos_totales = None
+            self.cupos_disponibles = None
 
 
 # ==================== MODELOS TRANSACCIONALES ====================
@@ -156,7 +198,7 @@ class Inscripcion(models.Model):
 
 
 class Asistencia(models.Model):
-    METODO_CHOICES = [ ('RUT', 'RUT'), ('QR', 'Código QR'), ('CODIGO', 'Código de barras'),]
+    METODO_CHOICES = [('RUT', 'RUT'), ('QR', 'Código QR'), ('CODIGO', 'Código de barras')]
 
     actividad = models.ForeignKey(
         Actividad,
@@ -204,9 +246,8 @@ class Asistencia(models.Model):
         return f'{self.alumno} - {self.actividad}'
 
 
-
 class NotificacionCorreo(models.Model):
-    ESTADO_CHOICES = [ ('EXITO', 'Éxito'), ('FALLO', 'Fallo'), ]
+    ESTADO_CHOICES = [('EXITO', 'Éxito'), ('FALLO', 'Fallo')]
 
     actividad = models.ForeignKey(
         Actividad,
@@ -243,14 +284,12 @@ class NotificacionCorreo(models.Model):
         return f'{self.actividad} - {self.estado_envio}'
 
 
-
 class LogAuditoria(models.Model):
     usuario_sistema = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='logs_auditoria')
     accion = models.CharField(max_length=200)
     detalle = models.TextField(blank=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
-    # Campos adicionales
     modulo = models.CharField(max_length=50, blank=True, null=True)
     objeto_tipo = models.CharField(max_length=50, blank=True, null=True)
     objeto_id = models.IntegerField(null=True, blank=True)

@@ -1,215 +1,147 @@
 // ============================================================
 // reportes.js - Gráficos de la vista de Reportes
-// Pestaña General + Pestaña Detallado
 // ============================================================
 
-const COLORES_INSTITUCIONALES = [
-    '#003366', '#FFC107', '#28a745', '#dc3545',
-    '#6c757d', '#17a2b8', '#fd7e14', '#6f42c1',
-    '#20c997', '#e83e8c', '#6610f2', '#007bff'
+// Paleta de respaldo (solo se usa si el backend no envía colores)
+const COLORES_FALLBACK = [
+    '#132CAA', '#F1B634', '#2B9141', '#BF0249',
+    '#F78B30', '#3CB8C1', '#9521B2', '#37A7C6',
+    '#BDC601', '#939393'
 ];
 
 const formatoNumero = new Intl.NumberFormat('es-CL');
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    // Verificar que Chart.js esté cargado
     if (typeof Chart === 'undefined') {
         console.error('Chart.js no está cargado.');
         mostrarErrorGraficos();
         return;
     }
 
-    // ============================================================
-    // Configuración global de Chart.js
-    // ============================================================
     Chart.defaults.font.family = "'Lato', 'Roboto', system-ui, sans-serif";
     Chart.defaults.font.size = 12;
     Chart.defaults.color = '#4a5568';
 
-    // ============================================================
+    // ------------------------------------------------------------
     // Utilidades
-    // ============================================================
+    // ------------------------------------------------------------
     function obtenerDatos(id) {
-        const elemento = document.getElementById(id);
-        if (!elemento) return [];
-        try {
-            return JSON.parse(elemento.textContent);
-        } catch (error) {
-            console.error(`Error al parsear ${id}:`, error);
-            return [];
-        }
-    }
-
-    function calcularTotal(datos) {
-        return datos.reduce(function (a, b) { return a + b; }, 0);
+        const el = document.getElementById(id);
+        if (!el) return [];
+        try { return JSON.parse(el.textContent); }
+        catch (e) { console.error('Error al parsear ' + id + ':', e); return []; }
     }
 
     function mostrarSinDatos(canvas) {
         if (canvas && canvas.parentElement) {
             canvas.parentElement.innerHTML =
-                '<p class="text-muted text-center" style="padding: 40px;">No hay datos disponibles.</p>';
+                '<p class="text-muted text-center" style="padding:40px;">No hay datos disponibles.</p>';
         }
     }
 
     function mostrarErrorGraficos() {
-        document.querySelectorAll('canvas').forEach(function (canvas) {
-            if (canvas && canvas.parentElement) {
-                canvas.parentElement.innerHTML =
-                    '<p class="text-danger text-center" style="padding: 40px;">Error al cargar los gráficos.</p>';
+        document.querySelectorAll('canvas').forEach(function (c) {
+            if (c && c.parentElement) {
+                c.parentElement.innerHTML =
+                    '<p class="text-danger text-center" style="padding:40px;">Error al cargar los gráficos.</p>';
             }
         });
     }
 
-    // ============================================================
-    // Configuración común para gráficos de barras
-    // ============================================================
-    function opcionesBarras(tituloSerie) {
-        return {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: { duration: 600 },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1,
-                        callback: function (v) { return formatoNumero.format(v); }
-                    }
-                },
-                x: {
-                    ticks: { maxRotation: 45, minRotation: 0 }
-                }
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function (ctx) {
-                            return tituloSerie + ': ' + formatoNumero.format(ctx.parsed.y);
-                        }
-                    }
-                }
-            }
-        };
+    // Devuelve colores del backend o fallback
+    function obtenerColores(colorsId, total) {
+        const colores = colorsId ? obtenerDatos(colorsId) : [];
+        return Array.from({ length: total }, (_, i) =>
+            (colores && colores[i]) || COLORES_FALLBACK[i % COLORES_FALLBACK.length]
+        );
     }
 
-    // ============================================================
-    // Configuración común para gráficos de pastel / donut
-    // ============================================================
-    function opcionesDonut() {
-        return {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: { duration: 600 },
-            cutout: '60%',
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        boxWidth: 12,
-                        padding: 10,
-                        font: { size: 11 },
-                        generateLabels: function (chart) {
-                            const data = chart.data;
-                            if (!data.labels.length || !data.datasets.length) {
-                                return [];
-                            }
-                            const dataset = data.datasets[0];
-                            const total = calcularTotal(dataset.data);
-
-                            return data.labels.map(function (label, i) {
-                                const valor = dataset.data[i];
-                                const porcentaje = total > 0
-                                    ? ((valor / total) * 100).toFixed(1)
-                                    : '0.0';
-                                const color = dataset.backgroundColor[i];
-
-                                return {
-                                    text: `${label} — ${porcentaje}%`,
-                                    fillStyle: color,
-                                    strokeStyle: color,
-                                    lineWidth: 0,
-                                    hidden: isNaN(valor) || chart.getDatasetMeta(0).data[i].hidden,
-                                    index: i
-                                };
-                            });
-                        }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function (ctx) {
-                            const total = calcularTotal(ctx.dataset.data);
-                            const valor = ctx.parsed;
-                            const porcentaje = total > 0
-                                ? ((valor / total) * 100).toFixed(1)
-                                : '0.0';
-                            return (
-                                ctx.label +
-                                ': ' +
-                                formatoNumero.format(valor) +
-                                ' (' + porcentaje + '%)'
-                            );
-                        }
-                    }
-                }
-            }
-        };
+    // Leyenda HTML con texto coloreado (1 color por label)
+    function renderLegendColored(chart, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container || !chart) return;
+        container.innerHTML = '';
+        chart.data.labels.forEach(function (label, i) {
+            const bg = chart.data.datasets[0].backgroundColor;
+            const color = Array.isArray(bg) ? bg[i] : bg;
+            const item = document.createElement('span');
+            item.className = 'chart-legend-item';
+            item.style.color = color;
+            item.textContent = label;
+            container.appendChild(item);
+        });
     }
 
-    // ============================================================
-    // Función reutilizable: crear gráfico de barras
-    // ============================================================
-    function crearGraficoBarras(canvasId, labelsId, dataId, tituloSerie) {
+    // ------------------------------------------------------------
+    // Creador: Barras
+    // ------------------------------------------------------------
+    function crearBarras(canvasId, labelsId, dataId, colorsId, legendId) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
 
         const labels = obtenerDatos(labelsId);
         const data = obtenerDatos(dataId);
 
-        if (labels.length === 0 || data.length === 0) {
-            mostrarSinDatos(canvas);
-            return;
-        }
+        if (!labels.length) { mostrarSinDatos(canvas); return; }
 
-        new Chart(canvas, {
+        const colores = obtenerColores(colorsId, labels.length);
+
+        const chart = new Chart(canvas, {
             type: 'bar',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: tituloSerie,
+                    label: 'Asistentes',
                     data: data,
-                    backgroundColor: 'rgba(0, 51, 102, 0.75)',
-                    borderColor: 'rgba(0, 51, 102, 1)',
+                    backgroundColor: colores,
+                    borderColor: colores,
                     borderWidth: 1,
                     borderRadius: 4
                 }]
             },
-            options: opcionesBarras(tituloSerie)
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 600 },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, callback: v => formatoNumero.format(v) }
+                    },
+                    x: { ticks: { display: false }, grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: ctx => ctx[0].label,
+                            label: ctx => 'Asistentes: ' + formatoNumero.format(ctx.parsed.y)
+                        }
+                    }
+                }
+            }
         });
+
+        if (legendId) renderLegendColored(chart, legendId);
+        return chart;
     }
 
-    // ============================================================
-    // Función reutilizable: crear gráfico de donut
-    // ============================================================
-    function crearGraficoDonut(canvasId, labelsId, dataId) {
+    // ------------------------------------------------------------
+    // Creador: Dona
+    // ------------------------------------------------------------
+    function crearDonut(canvasId, labelsId, dataId, colorsId, legendId) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
 
         const labels = obtenerDatos(labelsId);
         const data = obtenerDatos(dataId);
 
-        if (labels.length === 0 || data.length === 0) {
-            mostrarSinDatos(canvas);
-            return;
-        }
+        if (!labels.length) { mostrarSinDatos(canvas); return; }
 
-        const colores = labels.map(function (_, i) {
-            return COLORES_INSTITUCIONALES[i % COLORES_INSTITUCIONALES.length];
-        });
+        const colores = obtenerColores(colorsId, labels.length);
 
-        new Chart(canvas, {
+        const chart = new Chart(canvas, {
             type: 'doughnut',
             data: {
                 labels: labels,
@@ -220,78 +152,62 @@ document.addEventListener('DOMContentLoaded', function () {
                     borderColor: '#fff'
                 }]
             },
-            options: opcionesDonut()
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 600 },
+                cutout: '60%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => {
+                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+                                return ctx.label + ': ' + formatoNumero.format(ctx.parsed) + ' (' + pct + '%)';
+                            }
+                        }
+                    }
+                }
+            }
         });
+
+        if (legendId) renderLegendColored(chart, legendId);
+        return chart;
     }
 
-    // ============================================================
+    // ------------------------------------------------------------
     // PESTAÑA GENERAL
-    // ============================================================
-    crearGraficoBarras(
-        'graficoBarrasReportes',
-        'labels_barras',
-        'data_barras',
-        'Asistentes'
-    );
+    // ------------------------------------------------------------
+    crearBarras('graficoBarrasReportes', 'labels_barras', 'data_barras', null, 'legendBarrasReportes');
+    crearDonut('graficoPastelReportes', 'labels_pastel', 'data_pastel', 'data_colores_pastel', 'legendPastelReportes');
+    crearBarras('graficoJornadaReportes', 'labels_jornada', 'data_jornada', null, 'legendJornadaReportes');
 
-    crearGraficoDonut(
-        'graficoPastelReportes',
-        'labels_pastel',
-        'data_pastel'
-    );
-
-    crearGraficoBarras(
-        'graficoJornadaReportes',
-        'labels_jornada',
-        'data_jornada',
-        'Asistentes'
-    );
-
-    // ============================================================
+    // ------------------------------------------------------------
     // PESTAÑA DETALLADO
-    // ============================================================
-    crearGraficoBarras(
-        'graficoBarrasDetalle',
-        'labels_barras_detalle',
-        'data_barras_detalle',
-        'Asistentes'
-    );
+    // ------------------------------------------------------------
+    crearBarras('graficoBarrasDetalle', 'labels_barras_detalle', 'data_barras_detalle', 'data_colores_barras_detalle', 'legendBarrasDetalle');
+    crearDonut('graficoPastelDetalle', 'labels_pastel_detalle', 'data_pastel_detalle', 'data_colores_pastel_detalle', 'legendPastelDetalle');
+    crearBarras('graficoJornadaDetalle', 'labels_jornada_detalle', 'data_jornada_detalle', null, 'legendJornadaDetalle');
 
-    crearGraficoDonut(
-        'graficoPastelDetalle',
-        'labels_pastel_detalle',
-        'data_pastel_detalle'
-    );
+    // ------------------------------------------------------------
+    // TABS
+    // ------------------------------------------------------------
+    document.querySelectorAll('.tab-button').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const targetId = btn.getAttribute('data-tab');
 
-    crearGraficoBarras(
-        'graficoJornadaDetalle',
-        'labels_jornada_detalle',
-        'data_jornada_detalle',
-        'Asistentes'
-    );
-
-    // ============================================================
-    // TABS — Mostrar y ocultar pestañas
-    // ============================================================
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    tabButtons.forEach(function (button) {
-        button.addEventListener('click', function () {
-            const targetId = button.getAttribute('data-tab');
-
-            tabButtons.forEach(function (b) {
+            document.querySelectorAll('.tab-button').forEach(b => {
                 b.classList.remove('active');
                 b.setAttribute('aria-selected', 'false');
             });
-
-            tabContents.forEach(function (c) {
+            document.querySelectorAll('.tab-content').forEach(c => {
                 c.classList.remove('active');
                 c.setAttribute('hidden', 'hidden');
             });
 
-            button.classList.add('active');
-            button.setAttribute('aria-selected', 'true');
+            btn.classList.add('active');
+            btn.setAttribute('aria-selected', 'true');
 
             const target = document.getElementById(targetId);
             if (target) {

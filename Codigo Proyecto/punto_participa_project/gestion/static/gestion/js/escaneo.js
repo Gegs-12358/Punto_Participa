@@ -1,6 +1,7 @@
 // ============================================================
 // escaneo.js - Lógica del módulo de escáner
 // Compatible con pistola Well 9322 (modo Keyboard Wedge)
+// Soporta RUT, Pasaporte, RUN provisorio y Cédula de extranjero
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -17,16 +18,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalAvisoBody = document.getElementById('modalAvisoBody');
     const btnAceptarAviso = document.getElementById('btnAceptarAviso');
 
-    // Botón "Cambiar actividad"
     const btnCambiarActividad = document.getElementById('btnCambiarActividad');
+    const listaRegistros = document.querySelector('.lista-ultimos-registros');
 
     let rutPendiente = '';
+    let ultimoAlumno = null;
+    let ultimoMetodo = 'RUT';
 
     // ============================================================
     // LISTENERS DE MODALES (siempre, aunque no haya formulario)
     // ============================================================
-
-    // Botón "Cambiar" → abre el modal de cambiar actividad
     if (btnCambiarActividad) {
         btnCambiarActividad.addEventListener('click', function (e) {
             e.preventDefault();
@@ -34,25 +35,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Botón "Aceptar" del modal de aviso
     if (btnAceptarAviso) {
         btnAceptarAviso.addEventListener('click', function () {
             closeModal(modalAviso);
-            if (inputRut) {
-                inputRut.value = '';
-                inputRut.focus();
-            }
+            enfocarInput();
         });
     }
 
-    // Botones "Cerrar" y "Cancelar" del modal de confirmación
     [btnCerrarModal, btnCancelar].forEach(function (btn) {
         if (btn) {
             btn.addEventListener('click', function () {
-                if (inputRut) {
-                    inputRut.value = '';
-                    inputRut.focus();
-                }
+                enfocarInput();
             });
         }
     });
@@ -65,8 +58,19 @@ document.addEventListener('DOMContentLoaded', function () {
     // ============================================================
     // FUNCIONES AUXILIARES
     // ============================================================
-    function limpiarRUT(valor) {
-        return valor.replace(/[^0-9kK]/g, '').toUpperCase();
+
+    /**
+     * NO eliminamos caracteres. El backend decide el formato.
+     * Solo limpiamos espacios y pasamos a mayúsculas.
+     * Esto permite RUT, pasaportes, RUN provisorio, etc.
+     */
+    function limpiarDocumento(valor) {
+        return valor.trim().toUpperCase();
+    }
+
+    function enfocarInput() {
+        inputRut.value = '';
+        inputRut.focus();
     }
 
     function mostrarAviso(mensaje) {
@@ -75,12 +79,60 @@ document.addEventListener('DOMContentLoaded', function () {
         openModal(modalAviso);
     }
 
+    /**
+     * Inserta el alumno en la lista de "Últimos registros" sin recargar.
+     */
+    function agregarRegistroALaLista(alumno, metodo, hora) {
+        if (!listaRegistros) return;
+
+        // Quitar el mensaje "Sin registros aún" si existe
+        const vacio = listaRegistros.querySelector('p');
+        if (vacio) vacio.remove();
+
+        // Iniciales del nombre
+        const partes = alumno.nombre.split(' ');
+        const iniciales = (
+            (partes[0] ? partes[0][0] : '') +
+            (partes[1] ? partes[1][0] : '')
+        ).toUpperCase();
+
+        // Ícono del método
+        let metodoTexto = '⌨ RUT';
+        if (metodo === 'QR') metodoTexto = '▢ QR';
+        else if (metodo === 'CODIGO') metodoTexto = '▥ Código';
+
+        const item = document.createElement('div');
+        item.className = 'person';
+        item.style.animation = 'fadeIn 0.3s ease';
+        item.innerHTML =
+            '<span class="avatar">' + iniciales + '</span>' +
+            '<p>' +
+                '<strong>' + alumno.nombre + '</strong>' +
+                '<small>' + metodoTexto + '</small>' +
+            '</p>' +
+            '<time>' + hora + '</time>';
+
+        listaRegistros.insertBefore(item, listaRegistros.firstChild);
+
+        // Mantener máximo 10 items
+        const items = listaRegistros.querySelectorAll('.person');
+        if (items.length > 10) {
+            items[items.length - 1].remove();
+        }
+    }
+
+    function horaActual() {
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        return hh + ':' + mm;
+    }
+
     // ============================================================
     // PROCESAR ENVÍO (manual o pistola)
     // ============================================================
     function procesarEnvio() {
-        let valorLimpio = limpiarRUT(inputRut.value);
-        if (valorLimpio.length >= 9) valorLimpio = valorLimpio.slice(0, 9);
+        let valorLimpio = limpiarDocumento(inputRut.value);
         inputRut.value = valorLimpio;
 
         if (!inputRut.value) {
@@ -103,7 +155,11 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(function (response) { return response.json(); })
             .then(function (data) {
                 if (data.confirmar) {
+                    // El backend pide confirmación → mostrar modal
                     rutPendiente = inputRut.value;
+                    ultimoAlumno = data.alumno;
+                    ultimoMetodo = 'RUT';
+
                     if (infoAlumno) {
                         infoAlumno.innerHTML =
                             '<strong>' + data.alumno.nombre + '</strong><br>' +
@@ -114,10 +170,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else if (!data.success) {
                     mostrarAviso(data.message);
                 } else {
+                    // Registro exitoso directo
                     mostrarMensaje(data.message, 'success');
-                    inputRut.value = '';
-                    inputRut.focus();
-                    setTimeout(function () { window.location.reload(); }, 1000);
+                    if (data.alumno) {
+                        ultimoAlumno = data.alumno;
+                    }
+                    if (ultimoAlumno) {
+                        agregarRegistroALaLista(ultimoAlumno, ultimoMetodo, horaActual());
+                    }
+                    enfocarInput();
                 }
             })
             .catch(function (error) {
@@ -171,9 +232,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     if (data.success) {
                         mostrarMensaje(data.message, 'success');
-                        inputRut.value = '';
-                        inputRut.focus();
-                        setTimeout(function () { window.location.reload(); }, 1000);
+                        if (data.alumno) {
+                            ultimoAlumno = data.alumno;
+                        }
+                        if (ultimoAlumno) {
+                            agregarRegistroALaLista(ultimoAlumno, ultimoMetodo, horaActual());
+                        }
+                        enfocarInput();
                     } else {
                         mostrarAviso(data.message);
                     }
