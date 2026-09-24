@@ -100,7 +100,7 @@ class Actividad(models.Model):
         ('ACTIVA', 'Activa'),
         ('FINALIZADA', 'Finalizada'),
         ('CANCELADA', 'Cancelada')
-    ]
+    ] 
 
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField()

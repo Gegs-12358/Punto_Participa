@@ -34,7 +34,6 @@ urlpatterns = [
     path('actividades/', views.lista_actividades, name='lista_actividades'),
     path('actividades/nueva/', views.crear_actividad, name='crear_actividad'),
     path('actividades/editar/<int:pk>/', views.editar_actividad, name='editar_actividad'),
-    path('actividades/eliminar/<int:pk>/', views.eliminar_actividad, name='eliminar_actividad'),
     path('actividades/enviar-invitaciones/', views.enviar_invitaciones, name='enviar_invitaciones'),
     path('actividades/previsualizar-invitacion/<int:pk>/', views.previsualizar_invitacion, name='previsualizar_invitacion'),
     path('actividades/eliminar-ajax/<int:pk>/', views.eliminar_ajax, name='eliminar_ajax'),

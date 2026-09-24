@@ -228,5 +228,9 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'gestion/js/scripts.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        inicializarFormularioActividad();
+    });
+</script>
 {% endblock %}

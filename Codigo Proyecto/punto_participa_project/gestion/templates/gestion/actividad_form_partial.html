@@ -1,18 +1,14 @@
 {% load static %}
 
-<form method="post"
-      action="{{ request.path }}"
-      id="formActividad"
-      enctype="multipart/form-data"
-      novalidate>
+<form method="post" action="{{ request.path }}" id="formActividad" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
 
     {% if form.non_field_errors %}
-        <div class="alert alert-danger" role="alert">
-            {% for error in form.non_field_errors %}
-                <div>⚠ {{ error }}</div>
-            {% endfor %}
-        </div>
+    <div class="alert alert-danger" role="alert">
+        {% for error in form.non_field_errors %}
+        <div>⚠ {{ error }}</div>
+        {% endfor %}
+    </div>
     {% endif %}
 
     <div class="form-2col">
@@ -28,7 +24,7 @@
                 </label>
                 {{ form.titulo }}
                 {% if form.titulo.errors %}
-                    <span class="field-error">{{ form.titulo.errors.0 }}</span>
+                <span class="field-error">{{ form.titulo.errors.0 }}</span>
                 {% endif %}
             </div>
 
@@ -38,7 +34,19 @@
                 </label>
                 {{ form.descripcion }}
                 {% if form.descripcion.errors %}
-                    <span class="field-error">{{ form.descripcion.errors.0 }}</span>
+                <span class="field-error">{{ form.descripcion.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.cronograma.id_for_label }}">
+                    Cronograma (opcional)
+                </label>
+                {{ form.cronograma }}
+                <small class="input-help">Detalle de sesiones o fechas específicas, si la actividad tiene
+                    varias.</small>
+                {% if form.cronograma.errors %}
+                <span class="field-error">{{ form.cronograma.errors.0 }}</span>
                 {% endif %}
             </div>
 
@@ -48,7 +56,7 @@
                 </label>
                 {{ form.tipo }}
                 {% if form.tipo.errors %}
-                    <span class="field-error">{{ form.tipo.errors.0 }}</span>
+                <span class="field-error">{{ form.tipo.errors.0 }}</span>
                 {% endif %}
             </div>
 
@@ -58,7 +66,7 @@
                 </label>
                 {{ form.lugar }}
                 {% if form.lugar.errors %}
-                    <span class="field-error">{{ form.lugar.errors.0 }}</span>
+                <span class="field-error">{{ form.lugar.errors.0 }}</span>
                 {% endif %}
             </div>
 
@@ -69,7 +77,7 @@
                     </label>
                     {{ form.fecha_inicio }}
                     {% if form.fecha_inicio.errors %}
-                        <span class="field-error">{{ form.fecha_inicio.errors.0 }}</span>
+                    <span class="field-error">{{ form.fecha_inicio.errors.0 }}</span>
                     {% endif %}
                 </div>
                 <div class="form-field">
@@ -78,7 +86,7 @@
                     </label>
                     {{ form.fecha_fin }}
                     {% if form.fecha_fin.errors %}
-                        <span class="field-error">{{ form.fecha_fin.errors.0 }}</span>
+                    <span class="field-error">{{ form.fecha_fin.errors.0 }}</span>
                     {% endif %}
                 </div>
             </div>
@@ -90,10 +98,10 @@
                 {{ form.cupos_totales }}
                 <small class="input-help">Solo aplica para TALLER.</small>
                 {% if form.cupos_totales.errors %}
-                    <span class="field-error">{{ form.cupos_totales.errors.0 }}</span>
+                <span class="field-error">{{ form.cupos_totales.errors.0 }}</span>
                 {% endif %}
             </div>
-
+            
         </div>
 
         <!-- ============================================================ -->
@@ -107,15 +115,11 @@
                     <div class="drop-icon">▣</div>
                     <p>Arrastra una imagen aquí o haz clic para seleccionar</p>
                     <small>Formato recomendado: 200x150px</small>
-                    <input type="file"
-                           name="imagen"
-                           id="id_imagen"
-                           accept="image/*"
-                           hidden>
+                    <input type="file" name="imagen" id="id_imagen" accept="image/*" hidden>
                 </div>
                 <div id="preview-container"></div>
                 {% if form.imagen.errors %}
-                    <span class="field-error">{{ form.imagen.errors.0 }}</span>
+                <span class="field-error">{{ form.imagen.errors.0 }}</span>
                 {% endif %}
             </div>
 
@@ -124,35 +128,29 @@
                     Carreras Asociadas <span class="required">*</span>
                 </label>
                 {% if form.carreras.errors %}
-                    <span class="field-error">{{ form.carreras.errors.0 }}</span>
+                <span class="field-error">{{ form.carreras.errors.0 }}</span>
                 {% endif %}
 
                 <div class="career-selector-body">
                     {% regroup form.carreras.field.queryset by escuela as carreras_por_escuela %}
                     {% for grupo in carreras_por_escuela %}
-                        <div class="career-group">
-                            <div class="career-group-head">
-                                <strong>{{ grupo.grouper|default:"Sin escuela asignada" }}</strong>
-                                <button type="button"
-                                        class="career-action secondary btn-select-all"
-                                        data-group="escuela-{{ forloop.counter }}">
-                                    Agregar todas
-                                </button>
-                            </div>
-                            {% for carrera in grupo.list %}
-                                <label class="career-option">
-                                    <input type="checkbox"
-                                           name="carreras"
-                                           value="{{ carrera.id }}"
-                                           class="carrera-checkbox"
-                                           data-group="escuela-{{ forloop.parentloop.counter }}"
-                                           {% if form.carreras.value and carrera.id in form.carreras.value %}checked{% endif %}>
-                                    <span>{{ carrera.nombre }}</span>
-                                </label>
-                            {% endfor %}
+                    <div class="career-group">
+                        <div class="career-group-head">
+                            <strong>{{ grupo.grouper|default:"Sin escuela asignada" }}</strong>
+                            <button type="button" class="career-action secondary btn-select-all"
+                                data-group="escuela-{{ forloop.counter }}">
+                                Agregar todas
+                            </button>
                         </div>
+                        {% for carrera in grupo.list %}
+                        <label class="career-option">
+                            <input type="checkbox" name="carreras" value="{{ carrera.id }}" class="carrera-checkbox" data-group="escuela-{{ forloop.parentloop.counter }}" {% if form.carreras.value %}{% if carrera.id in form.carreras.value %}checked{% endif %}{% endif %}>
+                            <span>{{ carrera.nombre }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
                     {% empty %}
-                        <p class="text-muted">No hay carreras registradas.</p>
+                    <p class="text-muted">No hay carreras registradas.</p>
                     {% endfor %}
                 </div>
             </div>
@@ -168,21 +166,18 @@
                     </label>
                 </div>
                 {% if form.jornadas.errors %}
-                    <span class="field-error">{{ form.jornadas.errors.0 }}</span>
+                <span class="field-error">{{ form.jornadas.errors.0 }}</span>
                 {% endif %}
 
                 <div class="schedule-options">
                     {% for jornada in form.jornadas.field.queryset %}
-                        <label class="schedule-option">
-                            <input type="checkbox"
-                                   name="jornadas"
-                                   value="{{ jornada.id }}"
-                                   class="jornada-checkbox"
-                                   {% if form.jornadas.value and jornada.id in form.jornadas.value %}checked{% endif %}>
-                            <span>{{ jornada.nombre }}</span>
-                        </label>
+                    <label class="schedule-option">
+                        <input type="checkbox" name="jornadas" value="{{ jornada.id }}" class="jornada-checkbox" {% if form.jornadas.value %}{% if jornada.id in form.jornadas.value %}checked{% endif %}{% endif %}>
+
+                        <span>{{ jornada.nombre }}</span>
+                    </label>
                     {% empty %}
-                        <p class="text-muted">No hay jornadas registradas.</p>
+                    <p class="text-muted">No hay jornadas registradas.</p>
                     {% endfor %}
                 </div>
             </div>
@@ -191,36 +186,10 @@
     </div>
 
     <!-- ============================================================ -->
-    <!-- SECCIÓN DE INVITACIONES (solo en edición) -->
-    <!-- ============================================================ -->
-    {% if form.instance.pk %}
-    <div class="invitaciones-section">
-        <h3>✉ Invitaciones por Correo Electrónico</h3>
-        <div class="invitaciones-actions">
-            <button type="button"
-                    class="btn"
-                    id="btnEnviarInvitaciones"
-                    data-actividad-id="{{ form.instance.pk }}">
-                ✉ Enviar invitación / aviso por correo
-            </button>
-            <span class="text-muted" id="estadoInvitaciones"></span>
-        </div>
-    </div>
-    {% else %}
-    <div class="invitaciones-section info">
-        <p class="text-muted">
-            ✉ Las invitaciones se podrán enviar después de guardar la actividad.
-        </p>
-    </div>
-    {% endif %}
-
-    <!-- ============================================================ -->
     <!-- BOTONES DEL FORMULARIO -->
     <!-- ============================================================ -->
     <div class="form-actions">
-        <button type="button"
-                class="btn secondary"
-                data-modal-close>
+        <button type="button" class="btn secondary" data-modal-close>
             × Cancelar
         </button>
         <button type="submit" class="btn" id="btnGuardarActividad">

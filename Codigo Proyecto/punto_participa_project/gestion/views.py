@@ -29,7 +29,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 from django_ratelimit.decorators import ratelimit
-
+ 
 from .decorators import role_required
 from .forms import ActividadForm
 from .models import (
@@ -618,7 +618,7 @@ def reportes(request):
     ids_act = list(act_qs.values_list('id', flat=True))
     alumnos_ids = asis_qs.values('alumno')
 
-    act_qs = act_qs.annotate(
+    act_qs = act_qs.select_related('creado_por').annotate(
         total_asistentes_calc=Count('asistencias', filter=Q(asistencias__alumno__in=alumnos_ids), distinct=True),
         total_inscritos_calc=Count('inscripciones', filter=Q(inscripciones__alumno__in=alumnos_ids), distinct=True),
     ).prefetch_related('carreras', 'jornadas')
@@ -1100,6 +1100,11 @@ def participantes_actividad(request, pk):
 def _procesar_form_actividad(request, form, es_nueva):
     """Guarda el form de actividad validando fechas y cupos."""
     if not form.is_valid():
+        if _es_ajax(request):
+            titulo = 'Crear Actividad' if es_nueva else 'Editar Actividad'
+            html = render_to_string('gestion/actividad_form_partial.html',
+                                    {'form': form, 'titulo': titulo}, request=request)
+            return None, JsonResponse({'success': False, 'html': html})
         return None, None
 
     actividad = form.save(commit=False)
@@ -1234,33 +1239,6 @@ def editar_actividad(request, pk):
     if request.GET.get('partial'):
         return render(request, 'gestion/actividad_form_partial.html', {'form': form, 'titulo': titulo})
     return render(request, 'gestion/actividad_form.html', {'form': form, 'titulo': titulo})
-
-
-@login_required
-def eliminar_actividad(request, pk):
-    if not tiene_rol(request.user, ['Administrador', 'Creador de Evento']):
-        messages.error(request, 'No tienes permisos para eliminar actividades.')
-        return redirect('dashboard')
-
-    actividad = get_object_or_404(Actividad, pk=pk)
-    if not puede_gestionar_actividad(request.user, actividad):
-        messages.error(request, 'No tienes permisos para eliminar esta actividad.')
-        return redirect('lista_actividades')
-
-    if Inscripcion.objects.filter(actividad=actividad).exists() or \
-       Asistencia.objects.filter(actividad=actividad).exists():
-        messages.error(request, 'No puedes eliminar esta actividad porque tiene inscritos o asistentes registrados.')
-        return redirect('lista_actividades')
-
-    if request.method == 'POST':
-        nombre, id_act = actividad.titulo, actividad.id
-        actividad.delete()
-        registrar_log(request, 'Actividades', 'Eliminar Actividad',
-                      f'Actividad "{nombre}" (ID: {id_act}) eliminada', 'Actividad', id_act, nombre)
-        messages.success(request, 'Actividad eliminada.')
-        return redirect('lista_actividades')
-
-    return render(request, 'gestion/actividad_confirm_delete.html', {'actividad': actividad})
 
 
 # ============================================================

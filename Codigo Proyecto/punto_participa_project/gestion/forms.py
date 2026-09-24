@@ -19,7 +19,7 @@ class ActividadForm(forms.ModelForm):
         model = Actividad
         fields = [
             'titulo', 'descripcion', 'tipo', 'lugar', 'imagen',
-            'cupos_totales', 'fecha_inicio', 'fecha_fin',
+            'cupos_totales', 'fecha_inicio', 'fecha_fin', 'cronograma',
             'carreras', 'jornadas',
         ]
         widgets = {
@@ -68,6 +68,11 @@ class ActividadForm(forms.ModelForm):
                 'class': 'form-control',
                 'accept': 'image/*',
             }),
+            'cronograma': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Ej: Sesión 1: 10/10 - Sesión 2: 17/10 - Sesión 3: 24/10',
+            }), 
             'carreras': forms.CheckboxSelectMultiple(attrs={
                 'class': 'form-check-input',
             }),

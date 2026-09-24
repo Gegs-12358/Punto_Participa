@@ -8,35 +8,24 @@ from django.urls import reverse
 
 from .permissions import tiene_rol
 
-
-# ============================================================
 # DECORADORES DE ROL
-# ============================================================
-
 def role_required(*roles, json_response=False, redirect_name='dashboard'):
-    """
-    Restringe una vista a los roles indicados.
-
+    """ Restringe una vista a los roles indicados.
     Uso:
         @role_required('Administrador')
         def vista(request): ...
-
         @role_required('Administrador', 'Creador de Evento', json_response=True)
         def vista_ajax(request): ...
-
     Parámetros:
         *roles: nombres de roles permitidos.
         json_response: si True, devuelve JSON en vez de redirigir (para AJAX).
         redirect_name: nombre de URL a la que redirigir si no tiene permisos.
     """
-
     def decorator(view_func):
 
         @wraps(view_func)
         def wrapper(request, *args, **kwargs):
-            # ------------------------------------------------------------
             # 1. Usuario NO autenticado → login (con next)
-            # ------------------------------------------------------------
             if not request.user.is_authenticated:
                 if json_response:
                     return JsonResponse(
@@ -45,10 +34,7 @@ def role_required(*roles, json_response=False, redirect_name='dashboard'):
                     )
                 login_url = reverse('login')
                 return redirect(f'{login_url}?next={request.get_full_path()}')
-
-            # ------------------------------------------------------------
             # 2. Usuario autenticado pero sin el rol requerido
-            # ------------------------------------------------------------
             if not tiene_rol(request.user, list(roles)):
                 if json_response:
                     return JsonResponse(
@@ -60,7 +46,6 @@ def role_required(*roles, json_response=False, redirect_name='dashboard'):
                     request,
                     'No tienes permisos para acceder a esta sección.'
                 )
-
                 # Evitar loop: si el redirect es al dashboard y ya estamos en él
                 if (redirect_name == 'dashboard'
                         and request.resolver_match
@@ -69,9 +54,6 @@ def role_required(*roles, json_response=False, redirect_name='dashboard'):
 
                 return redirect(redirect_name)
 
-            # ------------------------------------------------------------
-            # 3. OK
-            # ------------------------------------------------------------
             return view_func(request, *args, **kwargs)
 
         return wrapper

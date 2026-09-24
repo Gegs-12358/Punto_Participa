@@ -62,4 +62,4 @@ def puede_gestionar_actividad(user, actividad):
     return (
         tiene_rol(user, ['Creador de Evento'])
         and actividad.creado_por_id == user.id
-    )
+    ) 

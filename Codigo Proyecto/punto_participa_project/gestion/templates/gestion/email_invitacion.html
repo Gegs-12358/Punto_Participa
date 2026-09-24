@@ -19,7 +19,7 @@
             <h2 style="color: #003366; margin-top: 0;">¡Súmate al {{ actividad.titulo }}!</h2>
 
             <p style="font-size: 16px; line-height: 1.6;">
-                Estimada comunidad:
+                Hola {{ alumno.nombres|default:"" }},
             </p>
 
             <p style="font-size: 16px; line-height: 1.6;">
@@ -38,7 +38,7 @@
                 {% endif %}
 
                 <p style="margin: 5px 0;"><strong>Lugar:</strong> {{ actividad.lugar }}</p>
-                <p style="margin: 5px 0;"><strong>Horario:</strong> {{ actividad.fecha_inicio|date:"H:i" }} a {{ actividad.fecha_fin|date:"H:i" }} horas.</p>
+                <p style="margin: 5px 0;"><strong>Horario:</strong> {{ actividad.fecha_inicio|date:"H:i" }} a {{actividad.fecha_fin|date:"H:i" }} horas.</p>
             </div>
 
             <p style="font-size: 16px; line-height: 1.6;">Asegura tu cupo registrándote en el siguiente enlace:</p>
