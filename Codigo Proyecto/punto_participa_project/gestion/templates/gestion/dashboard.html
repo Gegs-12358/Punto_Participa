@@ -24,7 +24,7 @@
 <form method="get" class="filters-bar">
     <div class="filter-group">
         <label for="filtro-rango">Rango</label>
-        <select name="rango" id="filtro-rango">
+        <select name="rango" id="filtro-rango" autocomplete="off">
             <option value="">Todo el período</option>
             <option value="hoy" {% if rango_actual == 'hoy' %}selected{% endif %}>Hoy</option>
             <option value="7dias" {% if rango_actual == '7dias' %}selected{% endif %}>Últimos 7 días</option>
@@ -33,7 +33,7 @@
     </div>
     <div class="filter-group">
         <label for="filtro-tipo">Tipo</label>
-        <select name="tipo" id="filtro-tipo">
+        <select name="tipo" id="filtro-tipo" autocomplete="off">
             <option value="">Todos</option>
             <option value="MASIVA" {% if tipo_actual == 'MASIVA' %}selected{% endif %}>Masiva</option>
             <option value="TALLER" {% if tipo_actual == 'TALLER' %}selected{% endif %}>Taller</option>
@@ -41,7 +41,7 @@
     </div>
     <div class="filter-group">
         <label for="filtro-carrera">Carrera</label>
-        <select name="carrera" id="filtro-carrera">
+        <select name="carrera" id="filtro-carrera" autocomplete="off">
             <option value="">Todas</option>
             {% for c in carreras_opciones %}
             <option value="{{ c.nombre }}" {% if carrera_actual == c.nombre %}selected{% endif %}>{{ c.nombre }}</option>
@@ -50,7 +50,7 @@
     </div>
     <div class="filter-group">
         <label for="filtro-jornada">Jornada</label>
-        <select name="jornada" id="filtro-jornada">
+        <select name="jornada" id="filtro-jornada" autocomplete="off">
             <option value="">Todas</option>
             {% for j in jornadas_opciones %}
             <option value="{{ j.nombre }}" {% if jornada_actual == j.nombre %}selected{% endif %}>{{ j.nombre }}</option>
@@ -169,7 +169,7 @@
         <div class="panel-head">
             <div>
                 <span class="eyebrow">RESUMEN</span>
-                <h2>Resumen de actividades</h2>
+                <h2>Actividades programadas, en curso y finalizadas</h2>
             </div>
             <span class="badge">Últimos 6 meses</span>
         </div>
@@ -183,7 +183,7 @@
         <div class="panel-head">
             <div>
                 <span class="eyebrow">COMPARATIVO</span>
-                <h2>Inscritos vs Asistentes</h2>
+                <h2>Inscritos vs. asistentes (top 10 actividades)</h2>
             </div>
         </div>
         <div class="chart-container">
@@ -201,7 +201,7 @@
         <div class="panel-head">
             <div>
                 <span class="eyebrow">GRÁFICO DE BARRAS</span>
-                <h2>Top 5 Actividades</h2>
+                <h2>Top 5 actividades con más asistentes</h2>
             </div>
         </div>
         <div class="chart-container">
@@ -214,7 +214,7 @@
         <div class="panel-head">
             <div>
                 <span class="eyebrow">GRÁFICO CIRCULAR</span>
-                <h2>Por Carrera</h2>
+                <h2>Asistentes por carrera (top 6)</h2>
             </div>
         </div>
         <div class="chart-container">
@@ -227,7 +227,7 @@
         <div class="panel-head">
             <div>
                 <span class="eyebrow">PARTICIPACIÓN</span>
-                <h2>Por Escuela</h2>
+                <h2>Asistentes por escuela (top 6)</h2>
             </div>
         </div>
         <div class="chart-container">
@@ -296,8 +296,7 @@
                     <p><span>◉</span> {{ act.lugar }}</p>
                 </div>
                 <div class="upcoming-badge">
-                    {% if act.tipo == 'TALLER' %}<span class="badge">Taller</span>
-                    {% else %}<span class="badge draft">Masiva</span>{% endif %}
+                    {% if act.tipo == 'TALLER' %}<span class="badge">Taller</span>{% else %}<span class="badge draft">Masiva</span>{% endif %}
                 </div>
             </li>
             {% empty %}
@@ -420,9 +419,7 @@
                             {{ actividad.total_asistentes }}
                         </a>
                     </td>
-                    <td>
-                        {% if actividad.cupos_disponibles is not None %}{{ actividad.cupos_disponibles }}{% else %}—{% endif %}
-                    </td>
+                    <td>{% if actividad.cupos_disponibles is not None %}{{ actividad.cupos_disponibles }}{% else %}—{% endif %}</td>
                     <td>
                         {% if actividad.estado == 'ACTIVA' %}<span class="badge">Activa</span>
                         {% elif actividad.estado == 'FINALIZADA' %}<span class="badge draft">Finalizada</span>
@@ -479,6 +476,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'gestion/js/vendor/chart.umd.js' %}"></script>
 <script src="{% static 'gestion/js/dashboard.js' %}"></script>
 {% endblock %}

@@ -21,9 +21,9 @@ SILENCED_SYSTEM_CHECKS = [
 ]
 
 # ==================== DEBUG Y HOSTS ====================
-DEBUG = True
+# DEBUG = True
 
-ALLOWED_HOSTS = []
+#ALLOWED_HOSTS = []
 
 # ==================== APLICACIONES ====================
 INSTALLED_APPS = [
@@ -48,6 +48,7 @@ CACHES = {
 # ==================== MIDDLEWARE ====================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -122,6 +123,14 @@ USE_TZ = True
 # ==================== ARCHIVOS ESTÁTICOS Y MEDIA ====================
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -151,6 +160,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Límite de destinatarios por envío de invitaciones (0 = sin límite)
 MAX_INVITACIONES_POR_ENVIO = config('MAX_INVITACIONES_POR_ENVIO', default=15, cast=int)
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler'},
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
+
 # =============================================================
 # CONFIGURACIÓN PARA PRODUCCIÓN (DESCOMENTAR AL DESPLEGAR)
 # =============================================================
@@ -161,12 +185,14 @@ MAX_INVITACIONES_POR_ENVIO = config('MAX_INVITACIONES_POR_ENVIO', default=15, ca
 #   4. Configurar las variables en el .env para producción
 # Comentar las líneas DEBUG = True y ALLOWED_HOSTS = [] de la parte de arriba.
 # =============================================================
-
+# === PRODUCCIÓN ===
+DEBUG = config('DEBUG', default=False, cast=bool)
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='midominio.com,www.midominio.com').split(',')
 """
 # === DESCOMENTAR PARA PRODUCCIÓN (Y COMENTAR LAS LÍNEAS DE ARRIBA) ===
 
 # 1. Desactivar modo debug
-# DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 # 2. Dominios permitidos (cambiar por el dominio real)
 # ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='midominio.com,www.midominio.com').split(',')

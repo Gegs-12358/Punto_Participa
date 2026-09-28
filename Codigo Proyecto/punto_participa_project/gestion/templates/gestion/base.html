@@ -101,7 +101,7 @@
             </div>
 
             <!-- Enlaces de navegación (visibles en escritorio/tablet) -->
-                        <div class="nav-desktop-links">
+            <div class="nav-desktop-links">
                 {% include 'gestion/_nav_links.html' %}
             </div>
 
@@ -167,6 +167,11 @@
     <!-- TOAST (notificaciones rápidas) -->
     <!-- ============================================================ -->
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+    <!-- ============================================================ -->
+    <!-- TOAST DE CONEXIÓN (dedicado, no se comparte con mensajes normales) -->
+    <!-- ============================================================ -->
+    <div id="toast-conexion" class="toast toast-conexion error" role="status" aria-live="assertive" hidden></div>
 
     <!-- ============================================================ -->
     <!-- SCRIPTS -->

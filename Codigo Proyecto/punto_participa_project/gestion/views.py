@@ -29,6 +29,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 from django_ratelimit.decorators import ratelimit
+from django.views.decorators.debug import sensitive_post_parameters
  
 from .decorators import role_required
 from .forms import ActividadForm
@@ -311,6 +312,7 @@ def _aplicar_filtros_reporte(request, act_qs=None, asis_qs=None):
     Devuelve (act_qs, asis_qs).
     """
     actividad_id = request.GET.get('actividad', '')
+    escuela = request.GET.get('escuela', '')          # <-- nuevo
     carrera = request.GET.get('carrera', '')
     jornada = request.GET.get('jornada', '')
     fecha_inicio = request.GET.get('fecha_inicio', '')
@@ -323,6 +325,8 @@ def _aplicar_filtros_reporte(request, act_qs=None, asis_qs=None):
         act_qs = act_qs.filter(creado_por=request.user)
     if actividad_id:
         act_qs = act_qs.filter(pk=actividad_id)
+    if escuela:                                        # <-- nuevo
+        act_qs = act_qs.filter(carreras__escuela=escuela).distinct()
     if fecha_inicio:
         act_qs = act_qs.filter(fecha_inicio__date__gte=fecha_inicio)
     if fecha_fin:
@@ -336,6 +340,11 @@ def _aplicar_filtros_reporte(request, act_qs=None, asis_qs=None):
     else:
         asis_qs = asis_qs.filter(actividad_id__in=ids)
 
+    if escuela:                                        # <-- nuevo
+        carreras_de_escuela = list(
+            Carrera.objects.filter(escuela=escuela).values_list('nombre', flat=True)
+        )
+        asis_qs = asis_qs.filter(alumno__carrera__in=carreras_de_escuela)
     if carrera:
         asis_qs = asis_qs.filter(alumno__carrera=carrera)
     if jornada:
@@ -343,12 +352,12 @@ def _aplicar_filtros_reporte(request, act_qs=None, asis_qs=None):
 
     return act_qs, asis_qs
 
-
 # ============================================================
 # CAMBIO / RECUPERACIÓN DE CONTRASEÑA
 # ============================================================
 
 @login_required
+@sensitive_post_parameters('contrasena_actual', 'nueva_contrasena', 'confirmar_contrasena')
 def cambiar_contrasena(request):
     perfil = _get_perfil_o_none(request.user)
     if not perfil:
@@ -386,6 +395,7 @@ def cambiar_contrasena(request):
     return render(request, 'gestion/cambiar_contrasena.html')
 
 
+@sensitive_post_parameters('password')
 @ratelimit(key='ip', rate='5/15m', method='POST', block=True)
 def login_view(request):
     if request.method != 'POST':
@@ -474,6 +484,7 @@ def solicitar_recuperacion(request):
     return redirect('login')
 
 
+@sensitive_post_parameters('nueva_contrasena', 'confirmar_contrasena')
 def restablecer_contrasena(request, uidb64, token):
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
@@ -608,6 +619,7 @@ def reportes(request):
     es_admin = tiene_rol(request.user, ['Administrador'])
     es_creador = tiene_rol(request.user, ['Creador de Evento'])
 
+    escuela = request.GET.get('escuela', '') 
     carrera = request.GET.get('carrera', '')
     jornada = request.GET.get('jornada', '')
     actividad_id = request.GET.get('actividad', '')
@@ -666,28 +678,29 @@ def reportes(request):
         a.registrado_por_detalle = ", ".join(regs_por_act.get(a.id, [])) or "Sin registros"
 
     # ---- Detalle por escuela/carrera/jornada ----
+        # ---- Detalle por escuela/carrera/jornada ----
     detalle_data = []
     det_escuelas, det_carreras = defaultdict(int), defaultdict(int)
     agrupado = defaultdict(lambda: defaultdict(lambda: {'t': 0, 'regs': defaultdict(int)}))
 
     for a in asis_qs:
         c = carreras_cache.get(a.alumno.carrera.lower())
-        escuela = c.escuela if c and c.escuela else 'Sin asignar'
-        clave = (escuela, a.alumno.carrera, a.alumno.jornada)
+        escuela_item = c.escuela if c and c.escuela else 'Sin asignar'
+        clave = (escuela_item, a.alumno.carrera, a.alumno.jornada)
         agrupado[a.actividad_id][clave]['t'] += 1
         agrupado[a.actividad_id][clave]['regs'][
             a.registrado_por.username if a.registrado_por else 'Anónimo'] += 1
 
     for a in act_qs:
-        for (escuela, carrera_n, jornada_n), vals in agrupado.get(a.id, {}).items():
+        for (escuela_item, carrera_n, jornada_n), vals in agrupado.get(a.id, {}).items():
             detalle_data.append({
                 'actividad': a.titulo, 'tipo': a.get_tipo_display(),
                 'fecha': a.fecha_inicio.strftime("%d/%m/%Y"),
-                'escuela': escuela, 'carrera': carrera_n, 'jornada': jornada_n,
+                'escuela': escuela_item, 'carrera': carrera_n, 'jornada': jornada_n,
                 'asistentes': vals['t'],
                 'registrado_por': ", ".join(f"{u} ({c})" for u, c in vals['regs'].items()),
             })
-            det_escuelas[escuela] += vals['t']
+            det_escuelas[escuela_item] += vals['t']
             det_carreras[carrera_n] += vals['t']
 
     # ---- Colores del detalle ----
@@ -732,6 +745,10 @@ def reportes(request):
         'data_jornada_detalle': data_jornada,
 
         'actividades_opciones': actividades_opciones,
+        'escuelas_opciones': Carrera.objects.exclude(escuela__isnull=True)   # <-- nuevo
+            .exclude(escuela='')
+            .values_list('escuela', flat=True).distinct().order_by('escuela'),
+        'escuela_seleccionada': escuela,                                     # <-- nuevo
         'carreras_opciones': Carrera.objects.all(),
         'jornadas_opciones': Jornada.objects.all(),
         'actividad_seleccionada': actividad_id,
@@ -808,6 +825,21 @@ def _construir_datos_reporte(act_qs, asis_qs, agrupar_por_escuela=False):
 def _filtrar_actividades_export(request):
     return _aplicar_filtros_reporte(request)
 
+# Caracteres con los que Excel/LibreOffice interpretan una celda como fórmula
+_PREFIJOS_FORMULA = ('=', '+', '-', '@', '\t', '\r')
+
+
+def _sanitizar_celda(valor):
+    """
+    Neutraliza la inyección de fórmulas en exportaciones CSV/Excel.
+    Si un texto empieza con un carácter de fórmula, se le antepone un
+    apóstrofe para que la planilla lo trate como texto literal.
+    Los valores que no son texto (números, fechas) pasan sin cambios.
+    """
+    if isinstance(valor, str) and valor.startswith(_PREFIJOS_FORMULA):
+        return "'" + valor
+    return valor
+
 
 def _exportar_excel(datos, headers, filename, sheet_name='Reporte'):
     wb = Workbook()
@@ -824,7 +856,7 @@ def _exportar_excel(datos, headers, filename, sheet_name='Reporte'):
 
     for r, fila in enumerate(datos, start=2):
         for col, val in enumerate(fila, start=1):
-            ws.cell(row=r, column=col, value=val)
+            ws.cell(row=r, column=col, value=_sanitizar_celda(val))
 
     for col in ws.columns:
         max_len = max((len(str(c.value)) for c in col if c.value is not None), default=0)
@@ -843,7 +875,7 @@ def _exportar_csv(datos, headers, filename):
     response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
     writer = csv.writer(response)
     writer.writerow(headers)
-    writer.writerows(datos)
+    writer.writerows([[_sanitizar_celda(v) for v in fila] for fila in datos])
     return response
 
 
@@ -884,6 +916,7 @@ def usuarios(request):
 
 @login_required
 @role_required('Administrador', json_response=True)
+@sensitive_post_parameters('password')
 def guardar_usuario(request):
     if request.method != 'POST':
         return _error_json('Método no permitido', 405)

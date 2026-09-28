@@ -146,6 +146,83 @@ document.addEventListener('keydown', function (e) {
 });
 
 // ============================================================
+// AVISO DE CAMBIOS SIN GUARDAR (formulario de Actividad)
+// ============================================================
+
+let formActividadModificado = false;
+
+function marcarFormularioSinGuardar() {
+    formActividadModificado = true;
+}
+
+function marcarFormularioGuardado() {
+    formActividadModificado = false;
+}
+
+// Detecta cualquier cambio dentro del formulario de actividad,
+// incluso si se cargó dinámicamente dentro del modal.
+document.addEventListener('input', function (e) {
+    if (e.target.closest('#formActividad')) {
+        marcarFormularioSinGuardar();
+    }
+});
+
+document.addEventListener('change', function (e) {
+    if (e.target.closest('#formActividad')) {
+        marcarFormularioSinGuardar();
+    }
+});
+
+// Aviso nativo del navegador al cerrar la pestaña, recargar o navegar fuera.
+window.addEventListener('beforeunload', function (e) {
+    if (!formActividadModificado) return;
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+});
+
+// Si el usuario cierra el modal intencionalmente (X, Escape, backdrop),
+// ya no hace falta seguir advirtiendo.
+document.addEventListener('DOMContentLoaded', function () {
+    const actividadModal = document.getElementById('actividadModal');
+    if (actividadModal) {
+        actividadModal.addEventListener('modal:hidden', function () {
+            marcarFormularioGuardado();
+        });
+    }
+});
+
+// ============================================================
+// AVISO DE PÉRDIDA DE CONEXIÓN A INTERNET
+// ============================================================
+
+function mostrarAvisoSinConexion() {
+    const toast = document.getElementById('toast-conexion');
+    if (!toast) return;
+
+    toast.textContent = '⚠ Sin conexión a internet. Los cambios podrían no guardarse.';
+    toast.hidden = false;
+}
+
+function ocultarAvisoSinConexion() {
+    const toast = document.getElementById('toast-conexion');
+    if (!toast || toast.hidden) return;
+
+    toast.hidden = true;
+    mostrarMensaje('✓ Conexión restablecida.', 'success');
+}
+
+window.addEventListener('offline', mostrarAvisoSinConexion);
+window.addEventListener('online', ocultarAvisoSinConexion);
+
+// Por si la página se carga ya sin conexión
+document.addEventListener('DOMContentLoaded', function () {
+    if (!navigator.onLine) {
+        mostrarAvisoSinConexion();
+    }
+});
+
+// ============================================================
 // MOSTRAR MENSAJES (alertas y modal global)
 // ============================================================
 // Leyenda informativa descartable (opcional)
@@ -525,6 +602,7 @@ document.addEventListener('submit', function (e) {
             .then(function (data) {
                 if (data.success) {
                     closeModal(document.getElementById('actividadModal'));
+                    marcarFormularioGuardado();
 
                     const modalInv = document.getElementById('modalConfirmarInvitaciones');
                     modalInv.dataset.actividadId = data.id;
@@ -660,6 +738,7 @@ function cargarFormulario(url, titulo) {
                             .then(function (htmlForzado) {
                                 body.innerHTML = htmlForzado;
                                 inicializarFormularioActividad();
+                                marcarFormularioGuardado();
                                 openModal(document.getElementById('actividadModal'));
 
                                 const form = document.getElementById('formActividad');
@@ -687,6 +766,7 @@ function cargarFormulario(url, titulo) {
 
             body.innerHTML = html;
             inicializarFormularioActividad();
+            marcarFormularioGuardado();
             openModal(document.getElementById('actividadModal'));
         })
         .catch(function (error) {

@@ -27,7 +27,7 @@
 <form method="GET" action="" class="filters-bar" role="search">
     <div class="filter-group">
         <label for="filtro-actividad">Actividad</label>
-        <select name="actividad" id="filtro-actividad">
+        <select name="actividad" id="filtro-actividad"  autocomplete="off">
             <option value="">Todas</option>
             {% for act in actividades_opciones %}
                 <option value="{{ act.id }}" {% if actividad_seleccionada == act.id|stringformat:"s" %}selected{% endif %}>{{ act.titulo }}</option>
@@ -35,8 +35,17 @@
         </select>
     </div>
     <div class="filter-group">
+        <label for="filtro-escuela">Escuela</label>
+        <select name="escuela" id="filtro-escuela" autocomplete="off">
+            <option value="">Todas</option>
+            {% for esc in escuelas_opciones %}
+                <option value="{{ esc }}" {% if escuela_seleccionada == esc %}selected{% endif %}>{{ esc }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
         <label for="filtro-carrera">Carrera</label>
-        <select name="carrera" id="filtro-carrera">
+        <select name="carrera" id="filtro-carrera" autocomplete="off">
             <option value="">Todas</option>
             {% for car in carreras_opciones %}
                 <option value="{{ car.nombre }}" {% if request.GET.carrera == car.nombre %}selected{% endif %}>{{ car.nombre }}</option>
@@ -45,24 +54,33 @@
     </div>
     <div class="filter-group">
         <label for="filtro-jornada">Jornada</label>
-        <select name="jornada" id="filtro-jornada">
+        <select name="jornada" id="filtro-jornada" autocomplete="off">
             <option value="">Todas</option>
             {% for jorn in jornadas_opciones %}
                 <option value="{{ jorn.nombre }}" {% if request.GET.jornada == jorn.nombre %}selected{% endif %}>{{ jorn.nombre }}</option>
             {% endfor %}
         </select>
     </div>
-    <div class="filter-group">
+    <div class="filter-group filter-group--date">
         <label for="filtro-fecha-inicio">Desde</label>
         <input type="date" id="filtro-fecha-inicio" name="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
     </div>
-    <div class="filter-group">
+    <div class="filter-group filter-group--date">
         <label for="filtro-fecha-fin">Hasta</label>
         <input type="date" id="filtro-fecha-fin" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
     </div>
     <div class="filter-actions">
-        <button type="submit" class="btn">▽ Filtrar</button>
-        <a href="{% url 'reportes' %}" class="link-button">× Limpiar</a>
+        <button type="submit" class="btn-icon btn-icon--primary" title="Filtrar" aria-label="Filtrar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
+        </button>
+        <a href="{% url 'reportes' %}" class="btn-icon btn-icon--ghost" title="Limpiar filtros" aria-label="Limpiar filtros">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </a>
     </div>
 </form>
 
@@ -187,7 +205,7 @@
             <div class="panel-head">
                 <div>
                     <span class="eyebrow">GRÁFICO CIRCULAR</span>
-                    <h2>Distribución por Carrera</h2>
+                    <h2>Asistentes por carrera (agregado)</h2>
                     <p class="panel-subtitle">{{ labels_pastel|length }} carreras · {{ total_asistentes_filtrado|default:"0" }} asistentes</p>
                 </div>
             </div>
@@ -201,7 +219,7 @@
             <div class="panel-head">
                 <div>
                     <span class="eyebrow">GRÁFICO DE BARRAS</span>
-                    <h2>Asistentes por Jornada</h2>
+                    <h2>Asistentes por jornada (agregado)</h2>
                     <p class="panel-subtitle">{{ labels_jornada|length }} jornadas registradas</p>
                 </div>
             </div>
@@ -303,7 +321,7 @@
             <div class="panel-head">
                 <div>
                     <span class="eyebrow">GRÁFICO CIRCULAR</span>
-                    <h2>Distribución por Carrera</h2>
+                    <h2>Asistentes por carrera (cruzado con escuela)</h2>
                     <p class="panel-subtitle">{{ labels_pastel_detalle|length }} carreras registradas</p>
                 </div>
             </div>
@@ -317,7 +335,7 @@
             <div class="panel-head">
                 <div>
                     <span class="eyebrow">GRÁFICO DE BARRAS</span>
-                    <h2>Asistentes por Jornada</h2>
+                    <h2>Asistentes por jornada (detalle por actividad)</h2>
                     <p class="panel-subtitle">Distribución por jornada de la participación</p>
                 </div>
             </div>
@@ -406,6 +424,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'gestion/js/vendor/chart.umd.js' %}"></script>
 <script src="{% static 'gestion/js/reportes.js' %}"></script>
 {% endblock %}
