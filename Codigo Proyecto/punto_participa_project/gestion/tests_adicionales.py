@@ -29,8 +29,10 @@ class EdicionYEliminacionTests(BaseSistemaTestCase):
             "tipo": "TALLER",
             "lugar": "Sala nueva",
             "cupos_totales": 30,
-            "fecha_inicio": inicio.strftime("%Y-%m-%dT%H:%M"),
-            "fecha_fin": (inicio + timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M"),
+            "fecha_inicio_fecha": inicio.strftime("%Y-%m-%d"),
+            "fecha_inicio_hora": inicio.strftime("%H:%M"),
+            "fecha_fin_fecha": (inicio + timedelta(hours=2)).strftime("%Y-%m-%d"),
+            "fecha_fin_hora": (inicio + timedelta(hours=2)).strftime("%H:%M"),
             "carreras": [self.carrera.pk],
             "jornadas": [self.jornada.pk],
         }

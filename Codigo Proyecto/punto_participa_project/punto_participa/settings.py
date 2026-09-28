@@ -135,6 +135,23 @@ STORAGES = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# ==================== DETECCIÓN DE TESTS ====================
+import sys
+
+TESTING = 'test' in sys.argv
+
+if TESTING:
+    # En modo test, usar StaticFilesStorage (sin manifest)
+    # porque collectstatic no se ejecuta en los tests.
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+
 # ==================== CONFIGURACIÓN DE CORREO ====================
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'

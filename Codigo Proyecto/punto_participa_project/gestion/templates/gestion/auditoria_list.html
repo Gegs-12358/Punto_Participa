@@ -22,12 +22,15 @@
 <!-- FILTROS -->
 <!-- ============================================================ -->
 <form method="GET" action="" class="filters" role="search">
-    <div>
-        <label for="usuario" class="form-label">Usuario</label>
-        <input type="text" id="usuario" name="usuario" placeholder="Buscar..."
-               value="{{ request.GET.usuario }}" aria-label="Filtrar por usuario">
+
+    <!-- USUARIO (label flotante) -->
+    <div class="floating-group">
+        <input type="text" id="usuario" name="usuario" class="floating-input"
+               placeholder=" " value="{{ request.GET.usuario }}" aria-label="Filtrar por usuario">
+        <label for="usuario" class="floating-label">Usuario</label>
     </div>
 
+    <!-- ACCIÓN (select - sin cambio) -->
     <div>
         <label for="accion" class="form-label">Acción</label>
         <select name="accion" id="accion" aria-label="Filtrar por acción">
@@ -38,6 +41,7 @@
         </select>
     </div>
 
+    <!-- MÓDULO (select - sin cambio) -->
     <div>
         <label for="modulo" class="form-label">Módulo</label>
         <select name="modulo" id="modulo" aria-label="Filtrar por módulo">
@@ -48,6 +52,7 @@
         </select>
     </div>
 
+    <!-- FECHA (date - sin cambio) -->
     <div>
         <label for="fecha" class="form-label">Fecha</label>
         <input type="date" id="fecha" name="fecha" value="{{ request.GET.fecha }}" aria-label="Filtrar por fecha">

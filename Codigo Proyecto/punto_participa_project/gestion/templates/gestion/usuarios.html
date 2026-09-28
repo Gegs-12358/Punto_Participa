@@ -224,27 +224,44 @@
 
             <div class="modal-body">
 
-                <div class="form-field">
-                    <label for="username">Usuario <span class="required">*</span></label>
-                    <input type="text" id="username" name="username" placeholder="Ej: pa.rebolledoa" autocomplete="username" required>
+                <!-- USUARIO (label flotante) -->
+                <div class="floating-group">
+                    <input type="text" id="username" name="username" class="floating-input"
+                           placeholder=" " autocomplete="username" required>
+                    <label for="username" class="floating-label">
+                        Usuario <span class="required">*</span>
+                    </label>
                     <small class="input-help">Se usará para iniciar sesión. No usar espacios.</small>
                 </div>
 
-                <div class="form-field">
-                    <label for="nombre">Nombre completo <span class="required">*</span></label>
-                    <input type="text" id="nombre" name="nombre" placeholder="Ej: Pablo Rebolledo" autocomplete="name" required>
+                <!-- NOMBRE COMPLETO (label flotante) -->
+                <div class="floating-group">
+                    <input type="text" id="nombre" name="nombre" class="floating-input"
+                           placeholder=" " autocomplete="name" required>
+                    <label for="nombre" class="floating-label">
+                        Nombre completo <span class="required">*</span>
+                    </label>
                 </div>
 
-                <div class="form-field">
-                    <label for="email">Email <span class="required">*</span></label>
-                    <input type="email" id="email" name="email" placeholder="usuario@duocuc.cl" autocomplete="email" required>
+                <!-- EMAIL (label flotante) -->
+                <div class="floating-group">
+                    <input type="email" id="email" name="email" class="floating-input"
+                           placeholder=" " autocomplete="email" required>
+                    <label for="email" class="floating-label">
+                        Email <span class="required">*</span>
+                    </label>
                 </div>
 
-                <div class="form-field">
-                    <label for="rut">RUT (opcional)</label>
-                    <input type="text" id="rut" name="rut" placeholder="Ej: 12345678-9" autocomplete="off">
+                <!-- RUT (label flotante) -->
+                <div class="floating-group">
+                    <input type="text" id="rut" name="rut" class="floating-input"
+                           placeholder=" " autocomplete="off">
+                    <label for="rut" class="floating-label">
+                        RUT (opcional)
+                    </label>
                 </div>
 
+                <!-- ROL (select - sin label flotante) -->
                 <div class="form-field">
                     <label for="rol">Rol <span class="required">*</span></label>
                     <select id="rol" name="rol" required>
@@ -255,6 +272,7 @@
                     </select>
                 </div>
 
+                <!-- ESTADO (checkbox - sin label flotante) -->
                 <div class="form-field">
                     <label class="check-line">
                         <input type="checkbox" id="estado" name="estado" checked>

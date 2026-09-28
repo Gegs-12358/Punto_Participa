@@ -20,6 +20,14 @@
 
 <div class="panel">
 
+    <!-- AVISO DE CAMPOS OBLIGATORIOS -->
+    <div class="hint-banner" role="status" style="margin-bottom: 12px;">
+        <span class="hint-icon">i</span>
+        <span>
+            Los campos marcados con <strong style="color: var(--red);">*</strong> son obligatorios.
+        </span>
+    </div>
+
     {% if form.non_field_errors %}
         <div class="alert alert-danger" role="alert">
             {% for error in form.non_field_errors %}
@@ -42,72 +50,100 @@
             <!-- ============================================================ -->
             <div class="form-col">
 
-                <div class="form-field">
-                    <label for="{{ form.titulo.id_for_label }}">
+                <!-- NOMBRE (label flotante) -->
+                <div class="floating-group">
+                    {{ form.titulo }}
+                    <label for="{{ form.titulo.id_for_label }}" class="floating-label">
                         Nombre <span class="required">*</span>
                     </label>
-                    {{ form.titulo }}
                     {% if form.titulo.errors %}
                         <span class="field-error">{{ form.titulo.errors.0 }}</span>
                     {% endif %}
                 </div>
 
-                <div class="form-field">
-                    <label for="{{ form.descripcion.id_for_label }}">
+                <!-- DESCRIPCIÓN (label flotante) -->
+                <div class="floating-group">
+                    {{ form.descripcion }}
+                    <label for="{{ form.descripcion.id_for_label }}" class="floating-label">
                         Descripción <span class="required">*</span>
                     </label>
-                    {{ form.descripcion }}
                     {% if form.descripcion.errors %}
                         <span class="field-error">{{ form.descripcion.errors.0 }}</span>
                     {% endif %}
                 </div>
 
+                <!-- TIPO (select en español) -->
                 <div class="form-field">
                     <label for="{{ form.tipo.id_for_label }}">
-                        Tipo <span class="required">*</span>
+                        Tipo de actividad <span class="required">*</span>
                     </label>
-                    {{ form.tipo }}
+                    <select name="tipo" id="{{ form.tipo.id_for_label }}" class="form-select" required>
+                        <option value="" disabled {% if not form.tipo.value %}selected{% endif %}>Selecciona un tipo</option>
+                        <option value="MASIVA" {% if form.tipo.value == 'MASIVA' %}selected{% endif %}>Masiva</option>
+                        <option value="TALLER" {% if form.tipo.value == 'TALLER' %}selected{% endif %}>Taller</option>
+                    </select>
                     {% if form.tipo.errors %}
                         <span class="field-error">{{ form.tipo.errors.0 }}</span>
                     {% endif %}
                 </div>
 
-                <div class="form-field">
-                    <label for="{{ form.lugar.id_for_label }}">
+                <!-- LUGAR (label flotante) -->
+                <div class="floating-group">
+                    {{ form.lugar }}
+                    <label for="{{ form.lugar.id_for_label }}" class="floating-label">
                         Lugar <span class="required">*</span>
                     </label>
-                    {{ form.lugar }}
                     {% if form.lugar.errors %}
                         <span class="field-error">{{ form.lugar.errors.0 }}</span>
                     {% endif %}
                 </div>
 
-                <div class="form-row-2">
+                <!-- FECHAS Y HORAS SEPARADAS (4 columnas) -->
+                <div class="form-row-4">
                     <div class="form-field">
-                        <label for="{{ form.fecha_inicio.id_for_label }}">
+                        <label for="{{ form.fecha_inicio_fecha.id_for_label }}">
                             Fecha Inicio <span class="required">*</span>
                         </label>
-                        {{ form.fecha_inicio }}
-                        {% if form.fecha_inicio.errors %}
-                            <span class="field-error">{{ form.fecha_inicio.errors.0 }}</span>
+                        {{ form.fecha_inicio_fecha }}
+                        {% if form.fecha_inicio_fecha.errors %}
+                            <span class="field-error">{{ form.fecha_inicio_fecha.errors.0 }}</span>
                         {% endif %}
                     </div>
                     <div class="form-field">
-                        <label for="{{ form.fecha_fin.id_for_label }}">
-                            Fecha Término <span class="required">*</span>
+                        <label for="{{ form.fecha_inicio_hora.id_for_label }}">
+                            Hora Inicio <span class="required">*</span>
                         </label>
-                        {{ form.fecha_fin }}
-                        {% if form.fecha_fin.errors %}
-                            <span class="field-error">{{ form.fecha_fin.errors.0 }}</span>
+                        {{ form.fecha_inicio_hora }}
+                        {% if form.fecha_inicio_hora.errors %}
+                            <span class="field-error">{{ form.fecha_inicio_hora.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.fecha_fin_fecha.id_for_label }}">
+                            Fecha Fin<span class="required">*</span>
+                        </label>
+                        {{ form.fecha_fin_fecha }}
+                        {% if form.fecha_fin_fecha.errors %}
+                            <span class="field-error">{{ form.fecha_fin_fecha.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.fecha_fin_hora.id_for_label }}">
+                            Hora Fin<span class="required">*</span>
+                        </label>
+                        {{ form.fecha_fin_hora }}
+                        {% if form.fecha_fin_hora.errors %}
+                            <span class="field-error">{{ form.fecha_fin_hora.errors.0 }}</span>
                         {% endif %}
                     </div>
                 </div>
 
-                <div class="form-field" id="campos-cupos">
-                    <label for="{{ form.cupos_totales.id_for_label }}">
+                <!-- CUPO MÁXIMO (label flotante) -->
+                <div class="floating-group" id="campos-cupos">
+                    {{ form.cupos_totales }}
+                    <label for="{{ form.cupos_totales.id_for_label }}" class="floating-label">
                         Cupo Máximo
                     </label>
-                    {{ form.cupos_totales }}
                     <small class="input-help">Solo aplica para TALLER.</small>
                     {% if form.cupos_totales.errors %}
                         <span class="field-error">{{ form.cupos_totales.errors.0 }}</span>
@@ -121,6 +157,7 @@
             <!-- ============================================================ -->
             <div class="form-col">
 
+                <!-- IMAGEN (file - sin label flotante) -->
                 <div class="form-field">
                     <label>Imagen / Banner</label>
                     <div id="drop-area" class="zona-drop">
@@ -139,6 +176,7 @@
                     {% endif %}
                 </div>
 
+                <!-- CARRERAS (checkboxes - sin label flotante) -->
                 <div class="form-field">
                     <label>
                         Carreras Asociadas <span class="required">*</span>
@@ -177,6 +215,7 @@
                     </div>
                 </div>
 
+                <!-- JORNADAS (checkboxes - sin label flotante) -->
                 <div class="form-field">
                     <div class="career-group-head">
                         <label style="margin: 0;">

@@ -40,22 +40,23 @@
 
             {% csrf_token %}
 
-            <!-- Contraseña actual -->
-            <div class="form-field">
-                <label for="contrasena_actual">
-                    Contraseña actual
-                    <span class="required" aria-hidden="true">*</span>
-                </label>
-
+            <!-- Contraseña actual (label flotante) -->
+            <div class="floating-group">
                 <div class="password-wrapper">
                     <input
                         type="password"
                         name="contrasena_actual"
                         id="contrasena_actual"
+                        class="floating-input"
+                        placeholder=" "
                         autocomplete="current-password"
                         required
                         autofocus
                     >
+                    <label for="contrasena_actual" class="floating-label">
+                        Contraseña actual
+                        <span class="required" aria-hidden="true">*</span>
+                    </label>
 
                     <button
                         type="button"
@@ -69,22 +70,23 @@
                 </div>
             </div>
 
-            <!-- Nueva contraseña -->
-            <div class="form-field">
-                <label for="nueva_contrasena">
-                    Nueva contraseña
-                    <span class="required" aria-hidden="true">*</span>
-                </label>
-
+            <!-- Nueva contraseña (label flotante) -->
+            <div class="floating-group">
                 <div class="password-wrapper">
                     <input
                         type="password"
                         name="nueva_contrasena"
                         id="nueva_contrasena"
+                        class="floating-input"
+                        placeholder=" "
                         autocomplete="new-password"
                         minlength="8"
                         required
                     >
+                    <label for="nueva_contrasena" class="floating-label">
+                        Nueva contraseña
+                        <span class="required" aria-hidden="true">*</span>
+                    </label>
 
                     <button
                         type="button"
@@ -133,22 +135,23 @@
                 </div>
             </div>
 
-            <!-- Confirmar nueva contraseña -->
-            <div class="form-field">
-                <label for="confirmar_contrasena">
-                    Confirmar nueva contraseña
-                    <span class="required" aria-hidden="true">*</span>
-                </label>
-
+            <!-- Confirmar nueva contraseña (label flotante) -->
+            <div class="floating-group">
                 <div class="password-wrapper">
                     <input
                         type="password"
                         name="confirmar_contrasena"
                         id="confirmar_contrasena"
+                        class="floating-input"
+                        placeholder=" "
                         autocomplete="new-password"
                         minlength="8"
                         required
                     >
+                    <label for="confirmar_contrasena" class="floating-label">
+                        Confirmar nueva contraseña
+                        <span class="required" aria-hidden="true">*</span>
+                    </label>
 
                     <button
                         type="button"

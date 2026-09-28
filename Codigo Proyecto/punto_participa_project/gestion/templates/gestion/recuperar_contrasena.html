@@ -112,18 +112,22 @@
 
                         {% csrf_token %}
 
-                        <label for="identificador">
-                            Usuario o correo electrónico
-
+                        <!-- CAMPO IDENTIFICADOR CON LABEL FLOTANTE -->
+                        <div class="floating-group">
                             <input
                                 type="text"
                                 id="identificador"
                                 name="identificador"
+                                class="floating-input"
+                                placeholder=" "
                                 autocomplete="username"
                                 maxlength="254"
                                 required
                                 autofocus>
-                        </label>
+                            <label for="identificador" class="floating-label">
+                                Usuario o correo electrónico
+                            </label>
+                        </div>
 
                         <small>
                             Si la cuenta existe y tiene un correo registrado,

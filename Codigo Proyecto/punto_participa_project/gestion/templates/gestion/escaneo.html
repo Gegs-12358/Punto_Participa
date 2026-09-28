@@ -70,13 +70,15 @@
                 {% csrf_token %}
                 <input type="hidden" name="metodo_ingreso" id="metodo_ingreso" value="RUT">
 
-                <label for="rutInput">
-                    RUT, Pasaporte o RUN provisorio
-                    <input type="text" id="rutInput" name="rut"
-                           placeholder="RUT, Pasaporte o RUN provisorio"
-                           maxlength="30" autocomplete="off"
+                <!-- CAMPO RUT CON LABEL FLOTANTE -->
+                <div class="floating-group">
+                    <input type="text" id="rutInput" name="rut" class="floating-input"
+                           placeholder=" " maxlength="30" autocomplete="off"
                            aria-describedby="rut-help" required autofocus>
-                </label>
+                    <label for="rutInput" class="floating-label">
+                        RUT, Pasaporte o RUN provisorio
+                    </label>
+                </div>
                 <small class="input-help" id="rut-help">
                     ⓘ Presiona el gatillo de la pistola sobre el código QR o escribe el RUT/Pasaporte manualmente y presiona Enter.
                     <br>

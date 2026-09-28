@@ -100,17 +100,19 @@
                             {% endif %}
                         </div>
 
-                        <!-- Formulario -->
+                        <!-- ============================================ -->
+                        <!-- FORMULARIO CON LABEL FLOTANTE                -->
+                        <!-- ============================================ -->
                         <form method="POST" style="display: grid; gap: 12px;">
                             {% csrf_token %}
 
-                            <div class="form-field">
-                                <label for="rut">
+                            <div class="floating-group">
+                                <input type="text" name="rut" id="rut" class="floating-input"
+                                    placeholder=" " maxlength="30" autocomplete="off"
+                                    aria-label="RUT o pasaporte del estudiante" required>
+                                <label for="rut" class="floating-label">
                                     RUT / Pasaporte <span class="required">*</span>
                                 </label>
-                                <input type="text" name="rut" id="rut" placeholder="Ej: 12345678-9 o pasaporte"
-                                    maxlength="30" autocomplete="off" aria-label="RUT o pasaporte del estudiante"
-                                    required>
                                 <small class="input-help">
                                     Ingresa tu RUT (con o sin puntos/guión) o tu número de pasaporte.
                                 </small>

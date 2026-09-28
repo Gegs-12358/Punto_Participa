@@ -185,8 +185,10 @@ class ModeloYFormularioIntegralTests(BaseSistemaTestCase):
             "tipo": "TALLER",
             "lugar": "Sala 1",
             "cupos_totales": 20,
-            "fecha_inicio": futuro.strftime("%Y-%m-%dT%H:%M"),
-            "fecha_fin": (futuro + timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M"),
+            "fecha_inicio_fecha": futuro.strftime("%Y-%m-%d"),
+            "fecha_inicio_hora": futuro.strftime("%H:%M"),
+            "fecha_fin_fecha": (futuro + timedelta(hours=2)).strftime("%Y-%m-%d"),
+            "fecha_fin_hora": (futuro + timedelta(hours=2)).strftime("%H:%M"),
             "carreras": [self.carrera.pk],
             "jornadas": [self.jornada.pk],
         }
@@ -205,14 +207,16 @@ class ModeloYFormularioIntegralTests(BaseSistemaTestCase):
             "descripcion": "Descripción",
             "tipo": "MASIVA",
             "lugar": "Sala 1",
-            "fecha_inicio": futuro.strftime("%Y-%m-%dT%H:%M"),
-            "fecha_fin": (futuro - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M"),
+            "fecha_inicio_fecha": futuro.strftime("%Y-%m-%d"),
+            "fecha_inicio_hora": futuro.strftime("%H:%M"),
+            "fecha_fin_fecha": (futuro - timedelta(hours=1)).strftime("%Y-%m-%d"),
+            "fecha_fin_hora": (futuro - timedelta(hours=1)).strftime("%H:%M"),
             "carreras": [self.carrera.pk],
             "jornadas": [self.jornada.pk],
         }
         form = ActividadForm(data=datos)
         self.assertFalse(form.is_valid())
-        self.assertIn("fecha_fin", form.errors)
+        self.assertIn("fecha_fin_fecha", form.errors)
 
     def test_formulario_rechaza_taller_sin_cupos(self):
         futuro = timezone.localtime(timezone.now() + timedelta(days=3))
@@ -222,8 +226,10 @@ class ModeloYFormularioIntegralTests(BaseSistemaTestCase):
             "tipo": "TALLER",
             "lugar": "Sala 1",
             "cupos_totales": "",
-            "fecha_inicio": futuro.strftime("%Y-%m-%dT%H:%M"),
-            "fecha_fin": (futuro + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M"),
+            "fecha_inicio_fecha": futuro.strftime("%Y-%m-%d"),
+            "fecha_inicio_hora": futuro.strftime("%H:%M"),
+            "fecha_fin_fecha": (futuro + timedelta(hours=1)).strftime("%Y-%m-%d"),
+            "fecha_fin_hora": (futuro + timedelta(hours=1)).strftime("%H:%M"),
             "carreras": [self.carrera.pk],
             "jornadas": [self.jornada.pk],
         }
@@ -446,8 +452,10 @@ class UsuariosAuditoriaYMiddlewareIntegralTests(BaseSistemaTestCase):
             "descripcion": "Descripción",
             "tipo": "MASIVA",
             "lugar": "Sala 2",
-            "fecha_inicio": futuro.strftime("%Y-%m-%dT%H:%M"),
-            "fecha_fin": (futuro + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M"),
+            "fecha_inicio_fecha": futuro.strftime("%Y-%m-%d"),
+            "fecha_inicio_hora": futuro.strftime("%H:%M"),
+            "fecha_fin_fecha": (futuro + timedelta(hours=1)).strftime("%Y-%m-%d"),
+            "fecha_fin_hora": (futuro + timedelta(hours=1)).strftime("%H:%M"),
             "carreras": [self.carrera.pk],
             "jornadas": [self.jornada.pk],
         }

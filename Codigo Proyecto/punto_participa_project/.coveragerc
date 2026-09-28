@@ -1,0 +1,29 @@
+[run]
+source = gestion
+omit =
+    gestion/migrations/*
+    gestion/tests*.py
+    gestion/management/*
+    gestion/apps.py
+    gestion/__init__.py
+    gestion/admin.py
+    manage.py
+    */site-packages/*
+    */venv/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    def __str__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    class .*\bProtocol\):
+    @abc.abstractmethod
+
+[html]
+directory = docs/htmlcov

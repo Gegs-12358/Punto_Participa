@@ -38,22 +38,6 @@ function escapeHtml(texto) {
 // ============================================================
 // SISTEMA DE MODALES (sin Bootstrap)
 // ============================================================
-//
-// API:
-//   openModal(elemento o selector)  → Abre el modal
-//   closeModal(elemento o selector) → Cierra el modal
-//   closeAllModals()                → Cierra todos los modales
-//
-// El modal debe tener la estructura:
-//   <div class="modal-backdrop" id="miModal" hidden>
-//     <section class="modal" role="dialog" aria-modal="true">
-//       <header>
-//         <button data-modal-close>Cerrar</button>
-//       </header>
-//       <div>Contenido</div>
-//     </section>
-//   </div>
-// ============================================================
 
 let _ultimoFocoAntesDeModal = null;
 
@@ -67,17 +51,11 @@ function openModal(modalOrSelector) {
         return;
     }
 
-    // Guardar el elemento que tenía el foco para restaurarlo al cerrar
     _ultimoFocoAntesDeModal = document.activeElement;
-
-    // Mostrar el modal (quitar el atributo hidden)
     modal.hidden = false;
     modal.setAttribute('aria-hidden', 'false');
-
-    // Bloquear scroll del body
     document.body.style.overflow = 'hidden';
 
-    // Foco al primer elemento focusable dentro del modal
     const focusable = modal.querySelector('input, select, textarea, button, a[href]');
     if (focusable) {
         focusable.focus();
@@ -91,21 +69,15 @@ function closeModal(modalOrSelector) {
 
     if (!modal) return;
 
-    // Ocultar el modal
     modal.hidden = true;
     modal.setAttribute('aria-hidden', 'true');
-
-    // Restaurar scroll del body
     document.body.style.overflow = '';
 
-    // Restaurar el foco al elemento que lo tenía antes
     if (_ultimoFocoAntesDeModal && document.body.contains(_ultimoFocoAntesDeModal)) {
         _ultimoFocoAntesDeModal.focus();
     }
     _ultimoFocoAntesDeModal = null;
 
-    // Avisar a quien esté escuchando que este modal se cerró,
-    // sin importar si fue por botón, click en el fondo o Escape.
     modal.dispatchEvent(new Event('modal:hidden'));
 }
 
@@ -117,25 +89,19 @@ function closeAllModals() {
     document.body.style.overflow = '';
 }
 
-// Listener global: cerrar modales con click en backdrop o botón [data-modal-close]
 document.addEventListener('click', function (e) {
-    // Botón con data-modal-close: siempre cierra, es una acción explícita del usuario
     if (e.target.closest('[data-modal-close]')) {
         const modal = e.target.closest('.modal-backdrop');
         if (modal) closeModal(modal);
         return;
     }
 
-    // Click directo en el backdrop (fuera del contenido del modal).
-    // Los modales marcados como "persistentes" (formularios largos, por ejemplo)
-    // no se cierran así, para evitar perder datos por un clic accidental.
     if (e.target.classList.contains('modal-backdrop')) {
         if (e.target.hasAttribute('data-modal-persistent')) return;
         closeModal(e.target);
     }
 });
 
-// Listener global: cerrar con Escape (mismo criterio que el click en el backdrop)
 document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
         const abierto = document.querySelector('.modal-backdrop:not([hidden])');
@@ -159,8 +125,6 @@ function marcarFormularioGuardado() {
     formActividadModificado = false;
 }
 
-// Detecta cualquier cambio dentro del formulario de actividad,
-// incluso si se cargó dinámicamente dentro del modal.
 document.addEventListener('input', function (e) {
     if (e.target.closest('#formActividad')) {
         marcarFormularioSinGuardar();
@@ -173,7 +137,6 @@ document.addEventListener('change', function (e) {
     }
 });
 
-// Aviso nativo del navegador al cerrar la pestaña, recargar o navegar fuera.
 window.addEventListener('beforeunload', function (e) {
     if (!formActividadModificado) return;
     e.preventDefault();
@@ -181,8 +144,6 @@ window.addEventListener('beforeunload', function (e) {
     return '';
 });
 
-// Si el usuario cierra el modal intencionalmente (X, Escape, backdrop),
-// ya no hace falta seguir advirtiendo.
 document.addEventListener('DOMContentLoaded', function () {
     const actividadModal = document.getElementById('actividadModal');
     if (actividadModal) {
@@ -215,7 +176,6 @@ function ocultarAvisoSinConexion() {
 window.addEventListener('offline', mostrarAvisoSinConexion);
 window.addEventListener('online', ocultarAvisoSinConexion);
 
-// Por si la página se carga ya sin conexión
 document.addEventListener('DOMContentLoaded', function () {
     if (!navigator.onLine) {
         mostrarAvisoSinConexion();
@@ -225,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // ============================================================
 // MOSTRAR MENSAJES (alertas y modal global)
 // ============================================================
-// Leyenda informativa descartable (opcional)
+
 document.addEventListener('click', function (e) {
     if (e.target.closest('.hint-close')) {
         const banner = e.target.closest('.hint-banner');
@@ -238,7 +198,6 @@ document.addEventListener('click', function (e) {
     }
 });
 
-// Ocultar si ya se descartó antes
 document.addEventListener('DOMContentLoaded', function () {
     try {
         if (localStorage.getItem('hint-dismissed') === '1') {
@@ -278,7 +237,6 @@ function abrirModalGlobal(titulo, mensaje, tipo) {
 }
 
 function mostrarMensaje(mensaje, tipo) {
-    // Buscar un toast global existente o crear uno
     let toast = document.getElementById('toast');
     if (!toast) {
         toast = document.createElement('div');
@@ -319,27 +277,61 @@ function toggleCamposCupos() {
     }
 }
 
+// ============================================================
+// VALIDACIÓN DE FECHAS Y HORAS (nuevos campos separados)
+// ============================================================
+
+/**
+ * Combina fecha + hora de un par de inputs en un objeto Date.
+ * Retorna null si falta alguno de los dos.
+ */
+function combinarFechaHora(idFecha, idHora) {
+    const fechaEl = document.getElementById(idFecha);
+    const horaEl = document.getElementById(idHora);
+    if (!fechaEl || !horaEl || !fechaEl.value || !horaEl.value) return null;
+
+    // Construye "YYYY-MM-DDTHH:MM:00"
+    return new Date(fechaEl.value + 'T' + horaEl.value + ':00');
+}
+
 function validarFechas() {
-    const fechaInicio = document.getElementById('id_fecha_inicio');
-    const fechaFin = document.getElementById('id_fecha_fin');
-    if (fechaInicio && fechaFin && fechaInicio.value && fechaFin.value) {
-        if (fechaFin.value <= fechaInicio.value) {
-            mostrarMensaje('La fecha de fin debe ser posterior a la fecha de inicio.', 'danger');
-            fechaFin.value = '';
-            fechaFin.focus();
-            return false;
-        }
+    const inicio = combinarFechaHora('id_fecha_inicio_fecha', 'id_fecha_inicio_hora');
+    const fin = combinarFechaHora('id_fecha_fin_fecha', 'id_fecha_fin_hora');
+
+    if (inicio && fin && fin <= inicio) {
+        mostrarMensaje('La fecha y hora de término debe ser posterior a la de inicio.', 'danger');
+
+        // Limpiar solo los campos de fin
+        const fechaFinEl = document.getElementById('id_fecha_fin_fecha');
+        const horaFinEl = document.getElementById('id_fecha_fin_hora');
+        if (fechaFinEl) fechaFinEl.value = '';
+        if (horaFinEl) horaFinEl.value = '';
+
+        if (fechaFinEl) fechaFinEl.focus();
+        return false;
     }
     return true;
 }
 
+function actualizarMinFechaFin() {
+    // Cuando cambia la fecha de inicio, actualizar el "min" de la fecha de fin
+    const fechaInicioEl = document.getElementById('id_fecha_inicio_fecha');
+    const fechaFinEl = document.getElementById('id_fecha_fin_fecha');
+    if (fechaInicioEl && fechaFinEl && fechaInicioEl.value) {
+        fechaFinEl.min = fechaInicioEl.value;
+
+        // Si la fecha de fin ya no es válida, limpiarla
+        if (fechaFinEl.value && fechaFinEl.value < fechaInicioEl.value) {
+            fechaFinEl.value = '';
+            const horaFinEl = document.getElementById('id_fecha_fin_hora');
+            if (horaFinEl) horaFinEl.value = '';
+        }
+    }
+}
+
 function inicializarFormularioActividad() {
     toggleCamposCupos();
-    const fechaInicio = document.getElementById('id_fecha_inicio');
-    const fechaFin = document.getElementById('id_fecha_fin');
-    if (fechaInicio && fechaFin && fechaInicio.value) {
-        fechaFin.min = fechaInicio.value;
-    }
+    actualizarMinFechaFin();
 }
 
 // ============================================================
@@ -349,12 +341,20 @@ function inicializarFormularioActividad() {
 document.addEventListener('change', function (e) {
     if (e.target && e.target.id === 'id_tipo') toggleCamposCupos();
 
-    if (e.target && e.target.id === 'id_fecha_inicio') {
-        const fechaInicio = e.target.value;
-        const fechaFin = document.getElementById('id_fecha_fin');
-        if (fechaInicio && fechaFin) {
-            fechaFin.min = fechaInicio;
-            if (fechaFin.value && fechaFin.value < fechaInicio) fechaFin.value = '';
+    // Cuando cambia la fecha de inicio, actualizar el min de fecha fin
+    if (e.target && e.target.id === 'id_fecha_inicio_fecha') {
+        actualizarMinFechaFin();
+    }
+
+    // Validar cuando cambia la hora de inicio (por si ya hay fecha/hora fin)
+    if (e.target && e.target.id === 'id_fecha_inicio_hora') {
+        const inicio = combinarFechaHora('id_fecha_inicio_fecha', 'id_fecha_inicio_hora');
+        const fin = combinarFechaHora('id_fecha_fin_fecha', 'id_fecha_fin_hora');
+        if (inicio && fin && fin <= inicio) {
+            const fechaFinEl = document.getElementById('id_fecha_fin_fecha');
+            const horaFinEl = document.getElementById('id_fecha_fin_hora');
+            if (fechaFinEl) fechaFinEl.value = '';
+            if (horaFinEl) horaFinEl.value = '';
         }
     }
 
@@ -422,7 +422,6 @@ document.addEventListener('click', function (e) {
         cargarFormulario(url, 'Editar Actividad');
     }
 
-    
     // Botón "Eliminar" (tabla de actividades)
     if (e.target.closest('.btn-eliminar')) {
         e.preventDefault();
@@ -641,8 +640,12 @@ document.addEventListener('submit', function (e) {
                         let mensaje = '<ul class="mb-0">';
                         const nombresCampos = {
                             titulo: 'Nombre', descripcion: 'Descripción', tipo: 'Tipo',
-                            lugar: 'Lugar', fecha_inicio: 'Fecha Inicio',
-                            fecha_fin: 'Fecha Término', cupos_totales: 'Cupo Máximo',
+                            lugar: 'Lugar',
+                            fecha_inicio_fecha: 'Fecha Inicio',
+                            fecha_inicio_hora: 'Hora Inicio',
+                            fecha_fin_fecha: 'Fecha Término',
+                            fecha_fin_hora: 'Hora Término',
+                            cupos_totales: 'Cupo Máximo',
                             carreras: 'Carreras', jornadas: 'Jornadas'
                         };
                         for (const campo in errores) {
