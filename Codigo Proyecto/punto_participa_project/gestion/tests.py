@@ -3,17 +3,49 @@ Tests para el proyecto Punto Participa.
 
 Cobertura actual (post-refactor Opción B):
 - utils.py: rut_limpio, rut_formateado, buscar_alumno_por_documento
+- utils.py: limpiar_texto (caracteres especiales)
 - permissions.py: tiene_rol
 - decorators.py: role_required (a través de una vista protegida real)
+- models.py: Alumno.save() (limpieza de texto)
+- forms.py: ActividadForm (limpieza de texto)
 """
 
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
+from .forms import ActividadForm
 from .models import Alumno, Rol, UsuarioSistema
 from .permissions import tiene_rol
-from .utils import buscar_alumno_por_documento, rut_formateado, rut_limpio
+from .utils import (
+    buscar_alumno_por_documento,
+    limpiar_texto,
+    rut_formateado,
+    rut_limpio,
+)
+
+
+# Entradas hostiles reutilizadas por las pruebas de caracteres especiales
+ENTRADAS_HOSTILES = [
+    "Bernardo O`higgins",
+    "Bernardo O'Higgins",
+    'María "La Pepa" Pérez',
+    "Ñancupil Müller-Åström",
+    "Nguyễn Văn Ánh",
+    "Jose\u0301 (NFD)",
+    "Robert'); DROP TABLE alumno;--",
+    "<script>alert(1)</script>",
+    '=HYPERLINK("http://x.com")',
+    "+56912345678",
+    "-Pedro",
+    "@usuario",
+    "Nombre\x00Con\x00Nul",
+    "Línea1\nLínea2",
+    "\u202eoediv",
+    "😀 Emoji",
+    "  espacios   múltiples  ",
+    "100% & más #1",
+]
 
 
 # ============================================================
@@ -174,3 +206,110 @@ class RoleRequiredDecoratorTestCase(TestCase):
         response = self.client.get(reverse('usuarios'))
         # No tiene permiso -> redirige (302), no 200 ni 500
         self.assertEqual(response.status_code, 302)
+
+
+# ============================================================
+# 5. LIMPIEZA DE TEXTO (utils.limpiar_texto)
+# ============================================================
+
+class LimpiarTextoTestCase(TestCase):
+    """Prueba limpiar_texto(): conserva lo legítimo, quita lo peligroso."""
+
+    def test_conserva_apostrofes_y_tildes(self):
+        self.assertEqual(limpiar_texto("O`higgins"), "O`higgins")
+        self.assertEqual(limpiar_texto("O'Higgins"), "O'Higgins")
+        self.assertEqual(limpiar_texto("Peña Müller"), "Peña Müller")
+
+    def test_quita_nul_y_bidi(self):
+        self.assertEqual(limpiar_texto("A\x00B"), "AB")
+        self.assertEqual(limpiar_texto("\u202eABC"), "ABC")
+
+    def test_una_linea_y_multilinea(self):
+        self.assertEqual(limpiar_texto("a\nb"), "a b")
+        self.assertEqual(limpiar_texto("a\nb", una_linea=False), "a\nb")
+
+    def test_normaliza_nfc(self):
+        self.assertEqual(limpiar_texto("Jose\u0301"), "Jos\u00e9")
+
+    def test_none_se_mantiene(self):
+        self.assertIsNone(limpiar_texto(None))
+
+
+# ============================================================
+# 6. ALUMNO: CARACTERES ESPECIALES (models.Alumno.save)
+# ============================================================
+
+class AlumnoCaracteresTestCase(TestCase):
+    """Guardar y leer alumnos con entradas hostiles nunca debe fallar."""
+
+    def test_entradas_hostiles_se_guardan_limpias(self):
+        for i, texto in enumerate(ENTRADAS_HOSTILES):
+            with self.subTest(texto=repr(texto)):
+                a = Alumno.objects.create(
+                    rut=f"T{i}", nombres=texto[:100], apellidos=texto[:100],
+                    correo="a@b.cl", carrera=texto[:100], jornada="Diurno",
+                )
+                a.refresh_from_db()
+                self.assertNotIn("\x00", a.nombres)
+                self.assertNotIn("\n", a.nombres)
+                self.assertNotIn("\u202e", a.nombres)
+
+    def test_apostrofe_se_conserva_en_bbdd(self):
+        a = Alumno.objects.create(
+            rut="X1", nombres="Bernardo", apellidos="O`higgins",
+            correo="a@b.cl", carrera="X", jornada="Y",
+        )
+        a.refresh_from_db()
+        self.assertEqual(a.apellidos, "O`higgins")
+
+    def test_nfc_en_modelo(self):
+        a = Alumno.objects.create(
+            rut="X2", nombres="Jose\u0301", apellidos="P",
+            correo="a@b.cl", carrera="X", jornada="Y",
+        )
+        a.refresh_from_db()
+        self.assertEqual(a.nombres, "Jos\u00e9")
+
+    def test_rut_vacio_se_guarda_como_none(self):
+        a = Alumno.objects.create(
+            rut="", nombres="A", apellidos="B",
+            correo="a@b.cl", carrera="X", jornada="Y",
+        )
+        b = Alumno.objects.create(
+            rut="", nombres="C", apellidos="D",
+            correo="c@d.cl", carrera="X", jornada="Y",
+        )
+        a.refresh_from_db()
+        b.refresh_from_db()
+        self.assertIsNone(a.rut)
+        self.assertIsNone(b.rut)  # sin la conversión, el segundo chocaría por unique
+
+
+# ============================================================
+# 7. ACTIVIDAD: CARACTERES ESPECIALES (forms.ActividadForm)
+# ============================================================
+
+class ActividadFormCaracteresTestCase(TestCase):
+    """El formulario de actividad limpia texto y nunca lanza excepciones."""
+
+    def test_entradas_hostiles_no_lanzan_excepcion(self):
+        for texto in ENTRADAS_HOSTILES:
+            with self.subTest(texto=repr(texto)):
+                f = ActividadForm(data={
+                    "titulo": texto, "lugar": texto, "descripcion": texto,
+                })
+                f.is_valid()  # será inválido por otros campos; no debe lanzar
+                for campo in ("titulo", "lugar", "descripcion"):
+                    valor = f.cleaned_data.get(campo)
+                    if valor is not None:
+                        self.assertNotIn("\x00", valor)
+                        self.assertNotIn("\u202e", valor)
+
+    def test_titulo_y_descripcion_se_limpian(self):
+        f = ActividadForm(data={
+            "titulo": "  Feria\x00 de   O`higgins \n", "lugar": "x",
+            "descripcion": "línea1\nlínea2",
+        })
+        f.is_valid()
+        self.assertEqual(f.cleaned_data.get("titulo"), "Feria de O`higgins")
+        self.assertEqual(f.cleaned_data.get("descripcion"), "línea1\nlínea2")

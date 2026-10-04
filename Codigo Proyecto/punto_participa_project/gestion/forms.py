@@ -3,9 +3,47 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import datetime, time, date
 from .models import Actividad
+from .utils import limpiar_texto
+import io
+from PIL import Image
+from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import UploadedFile
 
 
-class ActividadForm(forms.ModelForm):
+class LimpiarTextoMixin:
+    """Limpia automáticamente todos los CharField (incluye EmailField).
+
+    - Excluye campos de contraseña y los listados en `campos_sin_limpiar`.
+    - Los Textarea conservan los saltos de línea; el resto se limpia a una línea.
+    - Se ejecuta en to_python, o sea ANTES de max_length y de los validadores.
+    """
+    campos_sin_limpiar = ()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for nombre, campo in self.fields.items():
+            if not isinstance(campo, forms.CharField):
+                continue
+            if nombre in self.campos_sin_limpiar:
+                continue
+            if isinstance(campo.widget, forms.PasswordInput):
+                continue
+            una_linea = not isinstance(campo.widget, forms.Textarea)
+            self._envolver(campo, una_linea)
+
+    @staticmethod
+    def _envolver(campo, una_linea):
+        original = campo.to_python
+
+        def to_python(valor):
+            if isinstance(valor, str):
+                valor = limpiar_texto(valor, una_linea=una_linea)
+            return original(valor)
+
+        campo.to_python = to_python
+
+
+class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
     """
     Formulario para crear y editar actividades.
 
@@ -18,7 +56,8 @@ class ActividadForm(forms.ModelForm):
     # Campos separados de fecha y hora
     fecha_inicio_fecha = forms.DateField(
         label='Fecha de inicio',
-        widget=forms.DateInput(attrs={
+        input_formats=['%Y-%m-%d'],
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={
             'type': 'date',
             'class': 'form-control',
             'required': True,
@@ -26,7 +65,8 @@ class ActividadForm(forms.ModelForm):
     )
     fecha_inicio_hora = forms.TimeField(
         label='Hora de inicio',
-        widget=forms.TimeInput(attrs={
+        input_formats=['%H:%M'],
+        widget=forms.TimeInput(format='%H:%M', attrs={
             'type': 'time',
             'class': 'form-control',
             'required': True,
@@ -34,7 +74,8 @@ class ActividadForm(forms.ModelForm):
     )
     fecha_fin_fecha = forms.DateField(
         label='Fecha de término',
-        widget=forms.DateInput(attrs={
+        input_formats=['%Y-%m-%d'],
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={
             'type': 'date',
             'class': 'form-control',
             'required': True,
@@ -42,7 +83,8 @@ class ActividadForm(forms.ModelForm):
     )
     fecha_fin_hora = forms.TimeField(
         label='Hora de término',
-        widget=forms.TimeInput(attrs={
+        input_formats=['%H:%M'],
+        widget=forms.TimeInput(format='%H:%M', attrs={
             'type': 'time',
             'class': 'form-control',
             'required': True,
@@ -147,8 +189,13 @@ class ActividadForm(forms.ModelForm):
         # Validar que fecha_inicio no sea en el pasado
         fecha_inicio = cleaned_data.get('fecha_inicio')
         if fecha_inicio:
-            # Si estamos editando y la fecha no cambió, no validar contra "ahora"
-            if not (self.instance and self.instance.pk and self.instance.fecha_inicio == fecha_inicio):
+            # Si estamos editando y la fecha no cambió (hasta el minuto), no validar contra "ahora"
+            fecha_sin_cambios = (
+                self.instance and self.instance.pk and self.instance.fecha_inicio
+                and self.instance.fecha_inicio.replace(second=0, microsecond=0)
+                    == fecha_inicio.replace(second=0, microsecond=0)
+            )
+            if not fecha_sin_cambios:
                 if fecha_inicio < timezone.now():
                     self.add_error('fecha_inicio_fecha', 'La fecha de inicio no puede ser en el pasado.')
 
@@ -178,6 +225,82 @@ class ActividadForm(forms.ModelForm):
         if not jornadas or jornadas.count() == 0:
             raise ValidationError('Debes seleccionar al menos una jornada.')
         return jornadas
+
+    # Tamaño máximo permitido para la imagen subida (5 MB)
+    TAMANO_MAXIMO_IMAGEN = 5 * 1024 * 1024
+
+    # Formatos de imagen que el sistema acepta de verdad (validados por contenido,
+    # no por la extensión del nombre de archivo)
+    FORMATOS_IMAGEN_PERMITIDOS = {'JPEG', 'PNG', 'GIF', 'WEBP'}
+
+    def clean_imagen(self):
+        """
+        Valida y limpia la imagen subida:
+        1. Rechaza archivos demasiado grandes.
+        2. Verifica que el CONTENIDO sea realmente una imagen válida en un
+           formato permitido (no solo que el nombre termine en .jpg).
+        3. Si es una imagen nueva, la reconstruye sin metadatos EXIF
+           (ubicación GPS, fecha, modelo de cámara, etc.).
+        No reemplaza un antivirus. ClamAV queda como mejora futura (ver backlog).
+        """
+        imagen = self.cleaned_data.get('imagen')
+
+        # Si no es un archivo nuevo (se mantiene la imagen ya guardada), no tocar nada
+        if not imagen or not isinstance(imagen, UploadedFile):
+            return imagen
+
+        # 1. Tamaño máximo
+        if imagen.size > self.TAMANO_MAXIMO_IMAGEN:
+            raise ValidationError(
+                f'La imagen no puede superar los '
+                f'{self.TAMANO_MAXIMO_IMAGEN // (1024 * 1024)} MB.'
+            )
+
+        # 2. Verificar que el contenido sea realmente una imagen válida
+        try:
+            img = Image.open(imagen)
+            img.verify()  # valida la estructura sin cargarlo completo
+        except Exception:
+            raise ValidationError(
+                'El archivo no es una imagen válida o está dañado.'
+            )
+
+        # Reabrir: img.verify() deja el objeto inutilizable para seguir operando
+        imagen.seek(0)
+        img = Image.open(imagen)
+        formato = img.format or ''
+
+        if formato not in self.FORMATOS_IMAGEN_PERMITIDOS:
+            raise ValidationError(
+                f'Formato de imagen no permitido ({formato or "desconocido"}). '
+                f'Usa JPEG, PNG, GIF o WEBP.'
+            )
+
+        # GIF (animado o no) no se reprocesa: perdería la animación
+        if formato == 'GIF':
+            imagen.seek(0)
+            return imagen
+
+        # 3. Reconstruir la imagen sin metadatos EXIF
+        try:
+            datos_pixeles = list(img.getdata())
+            imagen_limpia = Image.new(img.mode, img.size)
+            imagen_limpia.putdata(datos_pixeles)
+
+            buffer = io.BytesIO()
+            opciones_guardado = {}
+            if formato in ('JPEG', 'WEBP'):
+                opciones_guardado['quality'] = 90
+            imagen_limpia.save(buffer, format=formato, **opciones_guardado)
+            buffer.seek(0)
+
+            imagen = ContentFile(buffer.read(), name=imagen.name)
+        except Exception:
+            # Si falla la limpieza de metadatos, usar la imagen original
+            # ya validada en los pasos 1 y 2 (no bloquear por esto)
+            imagen.seek(0)
+
+        return imagen
 
     # ============================================================
     # GUARDADO

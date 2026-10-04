@@ -156,7 +156,13 @@
                     <small>Formato recomendado: 200x150px</small>
                     <input type="file" name="imagen" id="id_imagen" accept="image/*" hidden>
                 </div>
-                <div id="preview-container"></div>
+                <div id="preview-container">
+                    {% if form.instance.imagen %}
+                    <p class="input-help" style="margin-top: 6px;">Imagen actual:</p>
+                    <img src="{{ form.instance.imagen.url }}" class="img-preview-actividad" alt="Imagen actual de la actividad">
+                    <p class="input-help">Selecciona una nueva imagen solo si quieres reemplazarla.</p>
+                    {% endif %}
+                </div>
                 {% if form.imagen.errors %}
                 <span class="field-error">{{ form.imagen.errors.0 }}</span>
                 {% endif %}
@@ -172,6 +178,7 @@
                 {% endif %}
 
                 <div class="career-selector-body">
+                    {% with valores_carreras=form.carreras.value %}
                     {% regroup form.carreras.field.queryset by escuela as carreras_por_escuela %}
                     {% for grupo in carreras_por_escuela %}
                     <div class="career-group">
@@ -184,7 +191,8 @@
                         </div>
                         {% for carrera in grupo.list %}
                         <label class="career-option">
-                            <input type="checkbox" name="carreras" value="{{ carrera.id }}" class="carrera-checkbox" data-group="escuela-{{ forloop.parentloop.counter }}" {% if form.carreras.value %}{% if carrera.id in form.carreras.value %}checked{% endif %}{% endif %}>
+                            <input type="checkbox" name="carreras" value="{{ carrera.id }}" class="carrera-checkbox" data-group="escuela-{{ forloop.parentloop.counter }}"
+                                {% for v in valores_carreras %}{% if v|stringformat:"s" == carrera.id|stringformat:"s" %}checked{% endif %}{% endfor %}>
                             <span>{{ carrera.nombre }}</span>
                         </label>
                         {% endfor %}
@@ -192,6 +200,7 @@
                     {% empty %}
                     <p class="text-muted">No hay carreras registradas.</p>
                     {% endfor %}
+                    {% endwith %}
                 </div>
             </div>
 
@@ -211,15 +220,17 @@
                 {% endif %}
 
                 <div class="schedule-options">
+                    {% with valores_jornadas=form.jornadas.value %}
                     {% for jornada in form.jornadas.field.queryset %}
                     <label class="schedule-option">
-                        <input type="checkbox" name="jornadas" value="{{ jornada.id }}" class="jornada-checkbox" {% if form.jornadas.value %}{% if jornada.id in form.jornadas.value %}checked{% endif %}{% endif %}>
-
+                        <input type="checkbox" name="jornadas" value="{{ jornada.id }}" class="jornada-checkbox"
+                            {% for v in valores_jornadas %}{% if v|stringformat:"s" == jornada.id|stringformat:"s" %}checked{% endif %}{% endfor %}>
                         <span>{{ jornada.nombre }}</span>
                     </label>
                     {% empty %}
                     <p class="text-muted">No hay jornadas registradas.</p>
                     {% endfor %}
+                    {% endwith %}
                 </div>
             </div>
 

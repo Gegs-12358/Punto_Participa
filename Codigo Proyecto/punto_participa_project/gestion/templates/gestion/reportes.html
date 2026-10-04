@@ -87,11 +87,14 @@
 <!-- ============================================================ -->
 <!-- CHIPS DE FILTROS ACTIVOS -->
 <!-- ============================================================ -->
-{% if request.GET.actividad or request.GET.carrera or request.GET.jornada or request.GET.fecha_inicio or request.GET.fecha_fin %}
+{% if request.GET.actividad or request.GET.escuela or request.GET.carrera or request.GET.jornada or request.GET.fecha_inicio or request.GET.fecha_fin %}
 <div class="filter-chips">
     <span class="filter-chips-label">Filtros activos:</span>
     {% if request.GET.actividad %}
     <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'actividad' and k != 'page_act' and k != 'page_det' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Actividad · quitar ×</a>
+    {% endif %}
+    {% if request.GET.escuela %}
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'escuela' and k != 'page_act' and k != 'page_det' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Escuela: {{ request.GET.escuela }} · quitar ×</a>
     {% endif %}
     {% if request.GET.carrera %}
     <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'carrera' and k != 'page_act' and k != 'page_det' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Carrera: {{ request.GET.carrera }} · quitar ×</a>

@@ -222,54 +222,6 @@ video {
     font-size: 10.5px;
 }
 
-.filters-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 1rem 1.25rem;
-    padding: 1rem 1.25rem;
-    background: #fff;
-    border: 1px solid #e2e2e2;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-}
-
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-    flex: 1 1 160px;
-    min-width: 140px;
-}
-
-.filter-group--date {
-    flex: 1 1 140px;
-    max-width: 170px;
-}
-
-.filter-group label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #555;
-}
-
-.filter-group select,
-.filter-group input[type="date"] {
-    padding: 0.5rem 0.6rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    background: #fff;
-    height: 38px;
-}
-
-.filter-actions {
-    display: flex;
-    gap: 0.5rem;
-    margin-left: auto;
-    align-items: flex-end;
-}
-
 .btn-icon {
     display: inline-flex;
     align-items: center;
@@ -2533,6 +2485,11 @@ a.role:hover {
     text-align: center;
     cursor: pointer;
     transition: all 0.15s;
+}
+
+.zona-drop--active {
+    border-color: var(--blue);
+    background: #e8f0f7;
 }
 
 .zona-drop:hover {

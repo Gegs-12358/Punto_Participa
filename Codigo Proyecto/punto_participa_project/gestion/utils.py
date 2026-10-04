@@ -14,6 +14,42 @@ import re
 
 from django.core.paginator import Paginator
 
+import re
+import unicodedata
+
+# NUL, caracteres de control (excepto \t y \n), DEL, ancho cero,
+# marcas de dirección bidi y BOM.
+_CONTROL = re.compile(
+    r'[\x00-\x08\x0b-\x1f\x7f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]'
+)
+
+
+def limpiar_texto(valor, una_linea=True):
+    """Normaliza a NFC y quita NUL, control, bidi y ancho cero.
+
+    Conserva apóstrofes, tildes invertidas, comillas, tildes, ñ, emojis, etc.
+    - una_linea=True: saltos de línea y tabs se convierten en un espacio
+      y se colapsan espacios repetidos.
+    - una_linea=False: conserva los saltos de línea (para textareas).
+    La longitud NO se valida aquí: lo hacen max_length y los validadores.
+    """
+    if valor is None:
+        return valor
+    valor = unicodedata.normalize('NFC', str(valor))
+    valor = _CONTROL.sub('', valor)
+    if una_linea:
+        valor = re.sub(r'\s+', ' ', valor)
+    else:
+        valor = valor.replace('\r', '')
+    return valor.strip()
+
+def limpiar_documento(valor, max_len=40):
+    """Limpia un RUT/pasaporte/código recibido por POST o GET y limita su largo.
+    Devuelve '' si el valor es None. No valida formato: eso lo hace
+    buscar_alumno_por_documento."""
+    valor = limpiar_texto(valor) or ''
+    return valor[:max_len]
+
 
 __all__ = [
     # Documentos de identidad

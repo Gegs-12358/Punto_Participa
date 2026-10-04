@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from .utils import limpiar_texto
 
 
 # ==================== MODELOS BASE ====================
@@ -31,6 +32,9 @@ class UsuarioSistema(models.Model):
     def __str__(self):
         return f"{self.user.username} ({self.rol.nombre if self.rol else 'Sin rol'})"
 
+
+# Reemplaza la clase Alumno en tu models.py por esta.
+# Agrega arriba del models.py:  from .utils import limpiar_texto
 
 class Alumno(models.Model):
     TIPO_DOCUMENTO_CHOICES = [
@@ -67,6 +71,17 @@ class Alumno(models.Model):
 
     def __str__(self):
         return f"{self.nombres} {self.apellidos}"
+
+    def save(self, *args, **kwargs):
+        # Red de seguridad: cubre admin, importador y objects.create().
+        # OJO: .update() y bulk_create() NO pasan por aquí; limpiar antes.
+        self.nombres = limpiar_texto(self.nombres)
+        self.apellidos = limpiar_texto(self.apellidos)
+        self.carrera = limpiar_texto(self.carrera)
+        self.jornada = limpiar_texto(self.jornada)
+        self.correo = limpiar_texto(self.correo)
+        self.rut = limpiar_texto(self.rut) or None  # '' -> None (evita choque de unique)
+        super().save(*args, **kwargs)
 
 
 class Carrera(models.Model):

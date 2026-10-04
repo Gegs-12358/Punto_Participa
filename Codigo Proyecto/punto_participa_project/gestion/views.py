@@ -8,6 +8,11 @@ from datetime import timedelta
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 
+from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from .utils import limpiar_texto, limpiar_documento
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
@@ -913,6 +918,24 @@ def usuarios(request):
         'roles': Rol.objects.all(),
     })
 
+_validador_username = UnicodeUsernameValidator()
+_MSG_USERNAME = ('El nombre de usuario solo puede contener letras, números y '
+                 'los símbolos @ . + - _ (máximo 150 caracteres).')
+ 
+ 
+def _username_valido(username):
+    if not username or len(username) > 150:
+        return False
+    try:
+        _validador_username(username)
+    except ValidationError:
+        return False
+    return True
+ 
+ 
+def _id_valido(valor):
+    """True si es un entero positivo corto (evita ValueError y desbordes en pk)."""
+    return bool(valor) and valor.isascii() and valor.isdecimal() and len(valor) <= 9
 
 @login_required
 @role_required('Administrador', json_response=True)
@@ -920,34 +943,56 @@ def usuarios(request):
 def guardar_usuario(request):
     if request.method != 'POST':
         return _error_json('Método no permitido', 405)
-
+ 
     try:
-        usuario_id = request.POST.get('user_id')
-        username = request.POST.get('username', '').strip()
-        nombre = request.POST.get('nombre', '').strip()
-        email = request.POST.get('email', '').strip()
-        rol_id = request.POST.get('rol')
+        usuario_id = limpiar_documento(request.POST.get('user_id'), 20)
+        username = limpiar_texto(request.POST.get('username') or '')
+        nombre = limpiar_texto(request.POST.get('nombre') or '')
+        email = limpiar_texto(request.POST.get('email') or '')
+        rol_id = limpiar_documento(request.POST.get('rol'), 20)
         estado = request.POST.get('estado') == 'on'
-        rut = request.POST.get('rut', '').strip()
-
+        rut = limpiar_texto(request.POST.get('rut') or '')
+        rut_max = UsuarioSistema._meta.get_field('rut').max_length
+        if len(rut) > rut_max:
+            return _error_json(f'El RUT no puede superar los {rut_max} caracteres.')
+ 
         if not (username and nombre and email and rol_id):
             return _error_json('Faltan campos obligatorios')
-
+ 
+        # --- Validación de formato y largo (evita errores de BD) ---
+        if (usuario_id and not _id_valido(usuario_id)) or not _id_valido(rol_id):
+            return _error_json('Datos inválidos.')
+        if len(nombre) > 150:
+            return _error_json('El nombre no puede superar los 150 caracteres.')
+        try:
+            if len(email) > 254:
+                raise ValidationError('largo')
+            validate_email(email)
+        except ValidationError:
+            return _error_json('El correo electrónico no es válido.')
+ 
         usuario_sistema = None
         rol_anterior = estado_anterior = None
         password_temporal = None
-
+ 
         if usuario_id:
             usuario_sistema = UsuarioSistema.objects.get(pk=usuario_id)
             user = usuario_sistema.user
             if user == request.user and not estado:
                 return _error_json('No puedes bloquear tu propia cuenta.')
-            if user.username != username and User.objects.filter(username=username).exclude(pk=user.pk).exists():
-                return _error_json('Ese nombre de usuario ya está en uso')
+            # Solo se valida el formato si el username cambió
+            # (no rompe usuarios antiguos con formato distinto).
+            if user.username != username:
+                if not _username_valido(username):
+                    return _error_json(_MSG_USERNAME)
+                if User.objects.filter(username=username).exclude(pk=user.pk).exists():
+                    return _error_json('Ese nombre de usuario ya está en uso')
             user.username = username
             rol_anterior = usuario_sistema.rol.nombre if usuario_sistema.rol else None
             estado_anterior = usuario_sistema.activo
         else:
+            if not _username_valido(username):
+                return _error_json(_MSG_USERNAME)
             if User.objects.filter(username=username).exists():
                 return _error_json('Ese nombre de usuario ya está en uso')
             user = User(username=username)
@@ -956,36 +1001,44 @@ def guardar_usuario(request):
                 allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'
             )
             user.set_password(password_temporal)
-
-        user.email, user.first_name, user.is_active = email, nombre, estado
-        user.save()
-
-        if usuario_sistema is None:
-            usuario_sistema = UsuarioSistema(user=user)
-        usuario_sistema.rol = Rol.objects.get(pk=rol_id)
-        usuario_sistema.activo = estado
-        usuario_sistema.rut = rut or f'99999999-{user.id}'
-        usuario_sistema.save()
-
+ 
+        rol = Rol.objects.get(pk=rol_id)  # antes de escribir nada
+ 
+        # Atómico: si falla UsuarioSistema (p. ej. RUT duplicado) no queda un User huérfano
+        with transaction.atomic():
+            user.email, user.first_name, user.is_active = email, nombre, estado
+            user.save()
+ 
+            if usuario_sistema is None:
+                usuario_sistema = UsuarioSistema(user=user)
+            usuario_sistema.rol = rol
+            usuario_sistema.activo = estado
+            usuario_sistema.rut = rut or f'99999999-{user.id}'
+            usuario_sistema.save()
+ 
         if rol_anterior != usuario_sistema.rol.nombre:
             registrar_log(request, 'Usuarios', 'Cambio de rol',
                           f'"{user.username}": de "{rol_anterior}" a "{usuario_sistema.rol.nombre}"',
                           'Usuario', user.id, user.username)
-
+ 
         if estado_anterior is not None and estado_anterior != estado:
             registrar_log(request, 'Usuarios', 'Cambio de estado',
                           f'"{user.username}": de "{"Activo" if estado_anterior else "Inactivo"}" '
                           f'a "{"Activo" if estado else "Inactivo"}"',
                           'Usuario', user.id, user.username)
-
+ 
         registrar_log(request, 'Usuarios', 'Guardar usuario',
                       f'Usuario: {nombre} ({username})', 'Usuario', user.id, nombre)
-
+ 
         resp = {'success': True}
         if password_temporal:
             resp['password_temporal'] = password_temporal
         return JsonResponse(resp)
-
+ 
+    except (UsuarioSistema.DoesNotExist, Rol.DoesNotExist):
+        return _error_json('Usuario o rol no encontrado.', 404)
+    except IntegrityError:
+        return _error_json('Ya existe un usuario con ese nombre de usuario o RUT.', 409)
     except Exception:
         logger.exception('Error en guardar_usuario')
         return _error_json('Ocurrió un error inesperado.', 500)
@@ -1425,7 +1478,7 @@ def _procesar_escaneo(request):
     - RUN provisorio (solo números)
     - Cédula de extranjero (números o alfanumérico)
     """
-    rut_original = request.POST.get('rut', '').strip()
+    rut_original = limpiar_documento(request.POST.get('rut'), 300)
     if not rut_original:
         return _error_json('Debes ingresar un RUT o Pasaporte.')
 
@@ -1696,7 +1749,7 @@ def inscripcion_taller(request, actividad_id):
     if request.method != 'POST':
         return _render_inscripcion(request, actividad, 'con_cupos')
 
-    rut_original = request.POST.get('rut', '').strip()
+    rut_original = limpiar_documento(request.POST.get('rut'), 40)
     if not rut_original:
         return _render_inscripcion(request, actividad, 'con_cupos', 'Debes ingresar tu RUT.')
 

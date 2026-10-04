@@ -335,6 +335,55 @@ function inicializarFormularioActividad() {
 }
 
 // ============================================================
+// DRAG & DROP DE IMAGEN
+// ============================================================
+
+['dragenter', 'dragover'].forEach(function (evento) {
+    document.addEventListener(evento, function (e) {
+        const dropArea = e.target.closest('#drop-area');
+        if (!dropArea) return;
+        e.preventDefault();
+        e.stopPropagation();
+        dropArea.classList.add('zona-drop--active');
+    });
+});
+
+['dragleave', 'drop'].forEach(function (evento) {
+    document.addEventListener(evento, function (e) {
+        const dropArea = e.target.closest('#drop-area');
+        if (!dropArea) return;
+        e.preventDefault();
+        e.stopPropagation();
+        dropArea.classList.remove('zona-drop--active');
+    });
+});
+
+document.addEventListener('drop', function (e) {
+    const dropArea = e.target.closest('#drop-area');
+    if (!dropArea) return;
+
+    const input = document.getElementById('id_imagen');
+    if (!input) return;
+
+    const archivos = e.dataTransfer.files;
+    if (!archivos || archivos.length === 0) return;
+
+    const archivo = archivos[0];
+    if (!archivo.type.startsWith('image/')) {
+        mostrarMensaje('Solo se permiten archivos de imagen.', 'warning');
+        return;
+    }
+
+    // Asignar el archivo soltado al input real, para que el formulario lo envíe
+    const transferencia = new DataTransfer();
+    transferencia.items.add(archivo);
+    input.files = transferencia.files;
+
+    // Disparar 'change' para reutilizar la lógica de preview que ya existe
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+});
+
+// ============================================================
 // EVENTOS GLOBALES: change
 // ============================================================
 
@@ -408,8 +457,8 @@ document.addEventListener('click', function (e) {
         if (input) input.click();
     }
 
-    // Botón "Nueva Actividad"
-    if (e.target.closest('#btnNuevaActividad')) {
+    // Botón "Nueva Actividad" (normal y el del estado vacío)
+    if (e.target.closest('#btnNuevaActividad') || e.target.closest('#btnNuevaActividadVacio')) {
         e.preventDefault();
         cargarFormulario('/actividades/nueva/', 'Crear Actividad');
     }
