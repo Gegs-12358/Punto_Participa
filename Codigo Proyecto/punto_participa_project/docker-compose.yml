@@ -9,8 +9,10 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"   # opcional: para conectarte con un cliente local (pgAdmin, DBeaver)
+    #ports:
+        # ports:
+        #   - "127.0.0.1:5432:5432"
+        #- "127.0.0.1:5432:5432"   # solo accesible desde este computador
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s

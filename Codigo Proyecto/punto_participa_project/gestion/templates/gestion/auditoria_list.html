@@ -69,16 +69,16 @@
 <div class="filter-chips">
     <span class="filter-chips-label">Filtros activos:</span>
     {% if request.GET.usuario %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'usuario' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Usuario: {{ request.GET.usuario }} · quitar ×</a>
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'usuario' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Usuario: {{ request.GET.usuario }} · quitar ×</a>
     {% endif %}
     {% if request.GET.accion %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'accion' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Acción: {{ request.GET.accion }} · quitar ×</a>
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'accion' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Acción: {{ request.GET.accion }} · quitar ×</a>
     {% endif %}
     {% if request.GET.modulo %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'modulo' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Módulo: {{ request.GET.modulo }} · quitar ×</a>
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'modulo' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Módulo: {{ request.GET.modulo }} · quitar ×</a>
     {% endif %}
     {% if request.GET.fecha %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'fecha' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Fecha: {{ request.GET.fecha }} · quitar ×</a>
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'fecha' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Fecha: {{ request.GET.fecha }} · quitar ×</a>
     {% endif %}
     <a class="filter-chip filter-chip-clear" href="{% url 'auditoria' %}">Limpiar todos</a>
 </div>

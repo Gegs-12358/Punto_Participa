@@ -209,8 +209,12 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
             cleaned_data['cupos_totales'] = None
 
         # Si es TALLER, asegurar que hay cupos
-        if tipo == 'TALLER' and not cupos_totales:
-            self.add_error('cupos_totales', 'Debes indicar el cupo máximo del taller.')
+        # Si es TALLER, validar cupos
+        if tipo == 'TALLER':
+            if cupos_totales is None:
+                self.add_error('cupos_totales', 'Debes indicar el cupo máximo del taller.')
+            elif cupos_totales < 1:
+                self.add_error('cupos_totales', 'El cupo debe ser al menos 1.')
 
         return cleaned_data
 

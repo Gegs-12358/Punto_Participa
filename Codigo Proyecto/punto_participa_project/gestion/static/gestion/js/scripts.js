@@ -811,7 +811,7 @@ function cargarFormulario(url, titulo) {
                 }
 
                 if (data.success === false) {
-                    abrirModalGlobal('Error', data.message, 'danger');
+                    abrirModalGlobal('Error', escapeHtml(data.message), 'danger');
                     return;
                 }
             }
@@ -850,10 +850,20 @@ document.addEventListener('submit', function (e) {
 
         const tipoEl = document.getElementById('id_tipo');
         const cupo = document.getElementById('id_cupos_totales');
-        if (tipoEl && tipoEl.value === 'TALLER' && cupo && (!cupo.value || cupo.value <= 0)) {
-            e.preventDefault();
-            mostrarMensaje('Si es un TALLER, debes indicar el Cupo Máximo.', 'warning');
-            return;
+        // Si es TALLER, validar cupo en 2 casos
+        if (tipoEl && tipoEl.value === 'TALLER' && cupo) {
+            // Caso 1: campo vacío
+            if (!cupo.value || cupo.value.trim() === '') {
+                e.preventDefault();
+                mostrarMensaje('Debes indicar el Cupo Máximo del taller.', 'warning');
+                return;
+            }
+            // Caso 2: valor ≤ 0
+            if (parseInt(cupo.value, 10) <= 0) {
+                e.preventDefault();
+                mostrarMensaje('El cupo debe ser al menos 1.', 'warning');
+                return;
+            }
         }
         if (tipoEl && tipoEl.value === 'MASIVA' && cupo) cupo.value = '';
     }
@@ -868,7 +878,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (messageContainer && messageContainer.children.length > 0) {
         const firstMessage = messageContainer.querySelector('.msg');
-        const messageText = firstMessage.textContent.trim();
+        const messageText = escapeHtml(firstMessage.textContent.trim());
         const messageType = firstMessage.getAttribute('data-type');
 
         if (messageType === 'error') {

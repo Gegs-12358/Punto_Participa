@@ -16,6 +16,7 @@ from django.core.paginator import Paginator
 
 import re
 import unicodedata
+from datetime import datetime
 
 # NUL, caracteres de control (excepto \t y \n), DEL, ancho cero,
 # marcas de dirección bidi y BOM.
@@ -449,3 +450,24 @@ def paginar(request, queryset, param='page', por_pagina=None):
     page_number = request.GET.get(param)
 
     return paginator.get_page(page_number)
+
+def fecha_o_none(valor):
+    """Devuelve un objeto date si el texto es una fecha AAAA-MM-DD real; si no, None.
+    Sirve para usar parámetros de la URL en filtros sin provocar un error 500."""
+    if not valor:
+        return None
+    try:
+        return datetime.strptime(str(valor).strip(), '%Y-%m-%d').date()
+    except ValueError:
+        return None
+
+
+def id_o_none(valor):
+    """Devuelve el entero si el texto es un ID positivo razonable; si no, None."""
+    if not valor:
+        return None
+    valor = str(valor).strip()
+    if valor.isascii() and valor.isdecimal() and len(valor) <= 9:
+        return int(valor)
+    return None
+

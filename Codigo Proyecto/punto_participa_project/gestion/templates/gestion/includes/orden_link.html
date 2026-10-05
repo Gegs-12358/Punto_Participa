@@ -1,7 +1,7 @@
 {% comment %}
 Partial reutilizable para el ordenamiento de columnas.
 {% endcomment %}
-<a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}orden={% if orden_actual == campo %}-{{ campo }}{% else %}{{ campo }}{% endif %}">
+<a href="?{% for k, v in request.GET.items %}{% if k != 'orden' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}orden={% if orden_actual == campo %}-{{ campo }}{% else %}{{ campo }}{% endif %}">
     {{ label }}
     {% if orden_actual == campo %}▲{% endif %}
     {% if orden_actual == '-titulo' and campo == 'titulo' %}▼{% endif %}

@@ -6,12 +6,13 @@ import re
 from collections import defaultdict
 from datetime import timedelta
 from openpyxl import Workbook
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.styles import Alignment, Font, PatternFill
 
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from .utils import limpiar_texto, limpiar_documento
+from .utils import limpiar_texto, limpiar_documento, fecha_o_none, id_o_none
 
 from django.conf import settings
 from django.contrib import messages
@@ -316,12 +317,13 @@ def _aplicar_filtros_reporte(request, act_qs=None, asis_qs=None):
     Aplica los filtros comunes de reportes/export a actividades y asistencias.
     Devuelve (act_qs, asis_qs).
     """
-    actividad_id = request.GET.get('actividad', '')
-    escuela = request.GET.get('escuela', '')          # <-- nuevo
+    # IDs y fechas inválidos se ignoran (no provocan error 500)
+    actividad_id = id_o_none(request.GET.get('actividad'))
+    escuela = request.GET.get('escuela', '')          
     carrera = request.GET.get('carrera', '')
     jornada = request.GET.get('jornada', '')
-    fecha_inicio = request.GET.get('fecha_inicio', '')
-    fecha_fin = request.GET.get('fecha_fin', '')
+    fecha_inicio = fecha_o_none(request.GET.get('fecha_inicio'))
+    fecha_fin = fecha_o_none(request.GET.get('fecha_fin'))
 
     if act_qs is None:
         act_qs = Actividad.objects.all().order_by('-fecha_inicio')
@@ -839,8 +841,12 @@ def _sanitizar_celda(valor):
     Neutraliza la inyección de fórmulas en exportaciones CSV/Excel.
     Si un texto empieza con un carácter de fórmula, se le antepone un
     apóstrofe para que la planilla lo trate como texto literal.
-    Los valores que no son texto (números, fechas) pasan sin cambios.
+    También quita caracteres de control (NUL, etc.) que harían fallar
+    la exportación a Excel. Los valores que no son texto (números,
+    fechas) pasan sin cambios.
     """
+    if isinstance(valor, str):
+        valor = ILLEGAL_CHARACTERS_RE.sub('', valor)
     if isinstance(valor, str) and valor.startswith(_PREFIJOS_FORMULA):
         return "'" + valor
     return valor
@@ -878,6 +884,7 @@ def _exportar_excel(datos, headers, filename, sheet_name='Reporte'):
 def _exportar_csv(datos, headers, filename):
     response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+    response.write('\ufeff')  # BOM: hace que Excel reconozca UTF-8 y muestre bien tildes y ñ
     writer = csv.writer(response)
     writer.writerow(headers)
     writer.writerows([[_sanitizar_celda(v) for v in fila] for fila in datos])
@@ -1052,8 +1059,8 @@ def guardar_usuario(request):
 @role_required('Administrador', 'Creador de Evento')
 def lista_actividades(request):
     tipo = request.GET.get('tipo', '')
-    fecha = request.GET.get('fecha', '')
-    fecha_creacion = request.GET.get('fecha_creacion', '')
+    fecha = fecha_o_none(request.GET.get('fecha'))
+    fecha_creacion = fecha_o_none(request.GET.get('fecha_creacion'))
     estado = request.GET.get('estado', '')
     orden = request.GET.get('orden', '-fecha_inicio')
 
@@ -1338,7 +1345,7 @@ def enviar_invitaciones(request):
         return _error_json('Método no permitido.', 405)
 
     try:
-        actividad_id = request.POST.get('actividad_id')
+        actividad_id = id_o_none(request.POST.get('actividad_id'))
         if not actividad_id:
             return _error_json('No se recibió la actividad.')
 
@@ -1628,7 +1635,7 @@ def _procesar_escaneo(request):
 def escaneo(request):
     if request.method == 'POST':
         if 'cambiar_actividad' in request.POST:
-            actividad_id = request.POST.get('actividad_id')
+            actividad_id = id_o_none(request.POST.get('actividad_id'))
             if not actividad_id:
                 if _es_ajax(request):
                     return _error_json('Debes seleccionar una actividad.')
@@ -1687,8 +1694,9 @@ def _filtrar_auditoria(request):
     ]:
         if request.GET.get(param):
             qs = qs.filter(**{campo: request.GET[param]})
-    if request.GET.get('fecha'):
-        qs = qs.filter(fecha_registro__date=request.GET['fecha'])
+    fecha = fecha_o_none(request.GET.get('fecha'))
+    if fecha:
+        qs = qs.filter(fecha_registro__date=fecha)
     return qs
 
 

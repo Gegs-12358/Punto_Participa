@@ -64,22 +64,22 @@
     <span class="filter-chips-label">Filtros activos:</span>
     {% if request.GET.tipo %}
     <a class="filter-chip"
-        href="?{% for k, v in request.GET.items %}{% if k != 'tipo' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Tipo:
+        href="?{% for k, v in request.GET.items %}{% if k != 'tipo' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Tipo:
         {{ request.GET.tipo }} · quitar ×</a>
     {% endif %}
     {% if request.GET.estado %}
     <a class="filter-chip"
-        href="?{% for k, v in request.GET.items %}{% if k != 'estado' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Estado:
+        href="?{% for k, v in request.GET.items %}{% if k != 'estado' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Estado:
         {{ request.GET.estado }} · quitar ×</a>
     {% endif %}
     {% if request.GET.fecha %}
     <a class="filter-chip"
-        href="?{% for k, v in request.GET.items %}{% if k != 'fecha' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Inicio:
+        href="?{% for k, v in request.GET.items %}{% if k != 'fecha' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Inicio:
         {{ request.GET.fecha }} · quitar ×</a>
     {% endif %}
     {% if request.GET.fecha_creacion %}
     <a class="filter-chip"
-        href="?{% for k, v in request.GET.items %}{% if k != 'fecha_creacion' and k != 'page' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Creada:
+        href="?{% for k, v in request.GET.items %}{% if k != 'fecha_creacion' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Creada:
         {{ request.GET.fecha_creacion }} · quitar ×</a>
     {% endif %}
     <a class="filter-chip filter-chip-clear" href="{% url 'lista_actividades' %}">Limpiar todos</a>

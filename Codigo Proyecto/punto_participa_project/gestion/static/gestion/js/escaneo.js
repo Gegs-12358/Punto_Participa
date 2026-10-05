@@ -75,7 +75,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function mostrarAviso(mensaje) {
         if (!modalAviso || !modalAvisoBody) return;
-        modalAvisoBody.innerHTML = '<p class="mb-0">' + mensaje + '</p>';
+        const p = document.createElement('p');
+        p.className = 'mb-0';
+        p.textContent = mensaje;   // textContent no interpreta HTML
+        modalAvisoBody.textContent = '';
+        modalAvisoBody.appendChild(p);
         openModal(modalAviso);
     }
 
@@ -104,13 +108,25 @@ document.addEventListener('DOMContentLoaded', function () {
         const item = document.createElement('div');
         item.className = 'person';
         item.style.animation = 'fadeIn 0.3s ease';
-        item.innerHTML =
-            '<span class="avatar">' + iniciales + '</span>' +
-            '<p>' +
-                '<strong>' + alumno.nombre + '</strong>' +
-                '<small>' + metodoTexto + '</small>' +
-            '</p>' +
-            '<time>' + hora + '</time>';
+
+        const spanAvatar = document.createElement('span');
+        spanAvatar.className = 'avatar';
+        spanAvatar.textContent = iniciales;
+
+        const elNombre = document.createElement('strong');
+        elNombre.textContent = alumno.nombre;
+        const elMetodo = document.createElement('small');
+        elMetodo.textContent = metodoTexto;
+        const elInfo = document.createElement('p');
+        elInfo.appendChild(elNombre);
+        elInfo.appendChild(elMetodo);
+
+        const elHora = document.createElement('time');
+        elHora.textContent = hora;
+
+        item.appendChild(spanAvatar);
+        item.appendChild(elInfo);
+        item.appendChild(elHora);
 
         listaRegistros.insertBefore(item, listaRegistros.firstChild);
 
@@ -161,10 +177,16 @@ document.addEventListener('DOMContentLoaded', function () {
                     ultimoMetodo = 'RUT';
 
                     if (infoAlumno) {
-                        infoAlumno.innerHTML =
-                            '<strong>' + data.alumno.nombre + '</strong><br>' +
-                            'RUT: ' + data.alumno.rut + '<br>' +
-                            'Carrera: ' + data.alumno.carrera + ' — ' + data.alumno.jornada;
+                        infoAlumno.textContent = '';
+                        const elNom = document.createElement('strong');
+                        elNom.textContent = data.alumno.nombre;
+                        infoAlumno.appendChild(elNom);
+                        infoAlumno.appendChild(document.createElement('br'));
+                        infoAlumno.appendChild(document.createTextNode('RUT: ' + data.alumno.rut));
+                        infoAlumno.appendChild(document.createElement('br'));
+                        infoAlumno.appendChild(document.createTextNode(
+                            'Carrera: ' + data.alumno.carrera + ' — ' + data.alumno.jornada
+                        ));
                     }
                     openModal(modalConfirmar);
                 } else if (!data.success) {

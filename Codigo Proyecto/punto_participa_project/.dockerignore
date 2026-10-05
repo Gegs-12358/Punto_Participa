@@ -1,0 +1,40 @@
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.gitignore
+.env
+db.sqlite3
+*.log
+node_modules/
+.pytest_cache/
+.vscode/
+.idea/
+media/
+staticfiles/
+$extra = @'
+# --- Agregado: respaldos, pruebas y archivos temporales ---
+**/__pycache__
+**/*.pyc
+**/*.bak
+*.backup
+*.dump
+*.sql
+htmlcov/
+docs/htmlcov/
+media_backup/
+resultados/
+cookies*.txt
+dash_*.html
+login_*.html
+rep_*.html
+resultado_busqueda_*.txt
+estructura.txt
+.coverage
+.env.*
+'@
+[System.IO.File]::AppendAllText("$PWD\.dockerignore", "`r`n" + $extra, (New-Object System.Text.UTF8Encoding($false)))
+Get-Content .dockerignore

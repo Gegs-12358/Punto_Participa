@@ -91,22 +91,22 @@
 <div class="filter-chips">
     <span class="filter-chips-label">Filtros activos:</span>
     {% if request.GET.actividad %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'actividad' and k != 'page_act' and k != 'page_det' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Actividad · quitar ×</a>
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'actividad' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Actividad · quitar ×</a>
     {% endif %}
     {% if request.GET.escuela %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'escuela' and k != 'page_act' and k != 'page_det' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Escuela: {{ request.GET.escuela }} · quitar ×</a>
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'escuela' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Escuela: {{ request.GET.escuela }} · quitar ×</a>
     {% endif %}
     {% if request.GET.carrera %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'carrera' and k != 'page_act' and k != 'page_det' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Carrera: {{ request.GET.carrera }} · quitar ×</a>
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'carrera' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Carrera: {{ request.GET.carrera }} · quitar ×</a>
     {% endif %}
     {% if request.GET.jornada %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'jornada' and k != 'page_act' and k != 'page_det' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Jornada: {{ request.GET.jornada }} · quitar ×</a>
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'jornada' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Jornada: {{ request.GET.jornada }} · quitar ×</a>
     {% endif %}
     {% if request.GET.fecha_inicio %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'fecha_inicio' and k != 'page_act' and k != 'page_det' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Desde: {{ request.GET.fecha_inicio }} · quitar ×</a>
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'fecha_inicio' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Desde: {{ request.GET.fecha_inicio }} · quitar ×</a>
     {% endif %}
     {% if request.GET.fecha_fin %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'fecha_fin' and k != 'page_act' and k != 'page_det' %}{{ k }}={{ v }}&{% endif %}{% endfor %}">Hasta: {{ request.GET.fecha_fin }} · quitar ×</a>
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'fecha_fin' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Hasta: {{ request.GET.fecha_fin }} · quitar ×</a>
     {% endif %}
     <a class="filter-chip filter-chip-clear" href="{% url 'reportes' %}">Limpiar todos</a>
 </div>

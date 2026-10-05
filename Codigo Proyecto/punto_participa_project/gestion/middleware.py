@@ -45,3 +45,41 @@ class ForzarCambioContrasenaMiddleware:
                 pass
 
         return self.get_response(request)
+
+
+class LimpiarNulMiddleware:
+    """
+    Quita el carácter NUL (\\x00) de todos los parámetros de la URL (GET) y de
+    los formularios (POST) antes de que lleguen a cualquier vista.
+
+    PostgreSQL no acepta NUL en texto: sin este filtro, un parámetro como
+    ?carrera=%00 provoca un error 500 en cualquier vista que use ese valor
+    en una consulta.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    @staticmethod
+    def _tiene_nul(qd):
+        for clave, valores in qd.lists():
+            if '\x00' in clave or any('\x00' in v for v in valores):
+                return True
+        return False
+
+    @staticmethod
+    def _limpiar(qd):
+        nuevo = qd.copy()  # copia mutable
+        nuevo.clear()
+        for clave, valores in qd.lists():
+            nuevo.setlist(clave.replace('\x00', ''),
+                          [v.replace('\x00', '') for v in valores])
+        nuevo._mutable = False
+        return nuevo
+
+    def __call__(self, request):
+        if self._tiene_nul(request.GET):
+            request.GET = self._limpiar(request.GET)
+        if request.method == 'POST' and self._tiene_nul(request.POST):
+            request.POST = self._limpiar(request.POST)
+        return self.get_response(request)
