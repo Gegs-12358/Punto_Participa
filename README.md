@@ -235,3 +235,7 @@ Será responsable de almacenar y centralizar la información del sistema.
                     │ • Inscripciones      │
                     │ • Asistencias        │
                     └──────────────────────┘
+
+## Codigo del proyecto
+
+La carpeta `Codigo Proyecto` contiene el codigo del sistema Punto Participa. El historial de commits fue reconstruido el 05/10/2026 a partir de respaldos locales (archivos zip); la fecha de cada commit corresponde a la fecha del respaldo del que proviene.

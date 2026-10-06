@@ -1,0 +1,12 @@
+﻿
+# Refuerzos
+env/
+ENV/
+cookies*.txt
+cookies_*.txt
+*.dump
+*.sql
+backup_local.*
+traslado.sql
+.coverage
+docs/*.zip
