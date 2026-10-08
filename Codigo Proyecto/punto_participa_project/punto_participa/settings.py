@@ -13,7 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 # ==================== RATE LIMITING (DESARROLLO) ====================
-RATELIMIT_ENABLE = False
+RATELIMIT_ENABLE = True
 
 SILENCED_SYSTEM_CHECKS = [
     'django_ratelimit.E003',

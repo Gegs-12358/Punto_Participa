@@ -26,6 +26,7 @@ echo "PostgreSQL disponible."
 # ⚠️ AJUSTAR: reemplazar "nombre_proyecto" por el módulo real de settings
 # (la carpeta donde está manage.py y settings.py)
 python manage.py migrate --noinput
+python manage.py createcachetable
 python manage.py collectstatic --noinput
 
 echo "Iniciando Gunicorn..."
