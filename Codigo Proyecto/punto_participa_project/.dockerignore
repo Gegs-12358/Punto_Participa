@@ -15,7 +15,6 @@ node_modules/
 .idea/
 media/
 staticfiles/
-$extra = @'
 # --- Agregado: respaldos, pruebas y archivos temporales ---
 **/__pycache__
 **/*.pyc
@@ -35,6 +34,3 @@ resultado_busqueda_*.txt
 estructura.txt
 .coverage
 .env.*
-'@
-[System.IO.File]::AppendAllText("$PWD\.dockerignore", "`r`n" + $extra, (New-Object System.Text.UTF8Encoding($false)))
-Get-Content .dockerignore

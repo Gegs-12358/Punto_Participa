@@ -38,7 +38,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**.
 
-* Suite de pruebas automatizadas: 259 tests.
+* Suite de pruebas automatizadas: 261 tests.
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 
 ---
@@ -149,6 +149,7 @@ Codigo Proyecto/
 * Credenciales y claves fuera del código, en variables de entorno (`.env`).
 * Rol obligatorio para cada usuario y permisos según el rol y la propiedad de cada actividad.
 * Límite de intentos en el inicio de sesión y en la recuperación de contraseña (5 intentos por IP cada 15 minutos).
+* Límite de escaneos por usuario en la pantalla de registro de asistencia (120 por minuto), con aviso en pantalla al superarlo.
 * Recuperación de contraseña mediante token y cambio de clave obligatorio cuando corresponde.
 * Validación de imágenes subidas, con eliminación de metadatos EXIF.
 * Protección de las exportaciones CSV y Excel contra inyección de fórmulas.
