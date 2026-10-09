@@ -1631,7 +1631,7 @@ def _procesar_escaneo(request):
 
 @login_required
 @role_required('Administrador', 'Creador de Evento', 'Encargado de Registrar')
-@ratelimit(key='ip', rate='30/1m', method='POST')
+@ratelimit(key='user', rate='120/1m', method='POST', block=False)
 def escaneo(request):
     if request.method == 'POST':
         if 'cambiar_actividad' in request.POST:
@@ -1660,7 +1660,12 @@ def escaneo(request):
             return redirect('escaneo')
 
         if 'rut' in request.POST:
-            return _procesar_escaneo(request)
+               if getattr(request, 'limited', False):
+                   return _error_json(
+                       'Demasiados escaneos seguidos. Espera unos segundos e intenta de nuevo.',
+                       429,
+                   )
+               return _procesar_escaneo(request)
 
     act_id = request.session.get('actividad_escaneo_id')
     actividad = None
