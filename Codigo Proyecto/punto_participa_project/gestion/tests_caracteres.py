@@ -104,6 +104,7 @@ class GuardarUsuarioHostilTestCase(TestCase):
         r = self.client.post(self.url, {
             'username': 'bohiggins', 'nombre': 'Bernardo O`higgins',
             'email': 'bohiggins@duocuc.cl', 'rol': self.rol.pk, 'estado': 'on',
+            'rut': _rut_unico(),
         })
         self.assertEqual(r.status_code, 200)
         self.assertEqual(User.objects.get(username='bohiggins').first_name,
@@ -117,7 +118,8 @@ class GuardarUsuarioHostilTestCase(TestCase):
         self.assertEqual(r1.status_code, 200)
         r2 = self.client.post(self.url, {**datos, 'username': 'dup2',
                                          'email': 'dup2@duocuc.cl'})
-        self.assertEqual(r2.status_code, 409)
+        self.assertEqual(r2.status_code, 400)
+        self.assertIn('asignado', r2.json()['message'].lower())
         self.assertFalse(User.objects.filter(username='dup2').exists())
 
 

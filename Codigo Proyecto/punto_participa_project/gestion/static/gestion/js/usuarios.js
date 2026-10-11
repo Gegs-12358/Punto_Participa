@@ -121,35 +121,44 @@ document.addEventListener('DOMContentLoaded', function () {
         // ============================================================
     // Enviar formulario para guardar
     // ============================================================
-    if (form) {
+        if (form) {
         form.addEventListener('submit', function (e) {
             e.preventDefault();
 
-            const formData = new FormData(this);
             const csrftoken = getCookie('csrftoken');
 
-            fetch('/usuarios/guardar/', {
-                method: 'POST',
-                body: formData,
-                headers: { 'X-CSRFToken': csrftoken },
-                credentials: 'same-origin'
-            })
-                .then(function (response) { return response.json(); })
-                .then(function (data) {
-                    if (data.success) {
-                        if (data.password_temporal) {
-                            mostrarPasswordTemporal(data.password_temporal);
-                        } else {
-                            window.location.reload();
-                        }
-                    } else {
-                        mostrarMensaje(data.message || 'Error al guardar el usuario.', 'danger');
-                    }
+            function enviar(formData) {
+                fetch('/usuarios/guardar/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRFToken': csrftoken },
+                    credentials: 'same-origin'
                 })
-                .catch(function (error) {
-                    console.error('Error al guardar usuario:', error);
-                    mostrarMensaje('Error al conectar con el servidor.', 'danger');
-                });
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            if (data.password_temporal) {
+                                mostrarPasswordTemporal(data.password_temporal);
+                            } else {
+                                window.location.reload();
+                            }
+                        } else if (data.confirmar_rut) {
+                            // El servidor pide confirmar el cambio de RUT
+                            if (confirm(data.message || '¿Confirmas el cambio de RUT o documento?')) {
+                                formData.append('confirmar_rut', 'true');
+                                enviar(formData);
+                            }
+                        } else {
+                            mostrarMensaje(data.message || 'Error al guardar el usuario.', 'danger');
+                        }
+                    })
+                    .catch(function (error) {
+                        console.error('Error al guardar usuario:', error);
+                        mostrarMensaje('Error al conectar con el servidor.', 'danger');
+                    });
+            }
+
+            enviar(new FormData(this));
         });
     }
 

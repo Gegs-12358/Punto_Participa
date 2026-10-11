@@ -1,5 +1,6 @@
 {% extends 'gestion/base.html' %}
 {% load static %}
+{% load formato %}
 {% block title %}Usuarios{% endblock %}
 
 {% block content %}
@@ -68,7 +69,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if u.rut %}<code>{{ u.rut }}</code>{% else %}<span class="text-muted">Sin RUT</span>{% endif %}
+                        {% if u.rut %}<code>{{ u.rut|rut_fmt }}</code>{% else %}<span class="text-muted">Sin RUT</span>{% endif %}
                     </td>
                     <td>
                         {% if u.activo %}
@@ -81,26 +82,22 @@
                     <td>
                         <div class="action-group">
                             <button class="link-button btn-editar-usuario" data-id="{{ u.id }}"
-                                    data-username="{{ u.user.username }}"
-                                    data-nombre="{{ u.user.first_name }}"
-                                    data-email="{{ u.user.email }}"
-                                    data-rol="{% if u.rol %}{{ u.rol.id }}{% endif %}"
-                                    data-rut="{{ u.rut|default:'' }}"
-                                    data-activo="{{ u.activo|yesno:'1,0' }}"
-                                    title="Editar">✎ Editar</button>
+                                data-username="{{ u.user.username }}" data-nombre="{{ u.user.first_name }}"
+                                data-email="{{ u.user.email }}" data-rol="{% if u.rol %}{{ u.rol.id }}{% endif %}"
+                                data-rut="{{ u.rut|default:'' }}" data-activo="{{ u.activo|yesno:'1,0' }}"
+                                title="Editar">✎ Editar</button>
 
                             {% if u.user == request.user %}
-                            <span class="link-button" style="opacity: 0.5; cursor: not-allowed;" title="No puedes bloquearte a ti mismo">◉ Protegido</span>
+                            <span class="link-button" style="opacity: 0.5; cursor: not-allowed;"
+                                title="No puedes bloquearte a ti mismo">◉ Protegido</span>
                             {% elif u.activo %}
                             <button class="danger-button btn-bloquear-usuario" data-id="{{ u.id }}"
-                                    data-username="{{ u.user.username }}"
-                                    data-accion="bloquear"
-                                    title="Bloquear acceso al sistema">✕ Bloquear</button>
+                                data-username="{{ u.user.username }}" data-accion="bloquear"
+                                title="Bloquear acceso al sistema">✕ Bloquear</button>
                             {% else %}
                             <button class="link-button btn-bloquear-usuario" data-id="{{ u.id }}"
-                                    data-username="{{ u.user.username }}"
-                                    data-accion="desbloquear"
-                                    title="Restaurar acceso al sistema">✓ Desbloquear</button>
+                                data-username="{{ u.user.username }}" data-accion="desbloquear"
+                                title="Restaurar acceso al sistema">✓ Desbloquear</button>
                             {% endif %}
                         </div>
                     </td>
@@ -168,7 +165,8 @@
                         {% endif %}
                     </td>
                     <td>
-                        <span class="badge {% if 'Eliminar' in log.accion or 'Eliminación' in log.accion %}inactive{% elif 'Crear' in log.accion or 'Guardar' in log.accion %}{% else %}draft{% endif %}">
+                        <span
+                            class="badge {% if 'Eliminar' in log.accion or 'Eliminación' in log.accion %}inactive{% elif 'Crear' in log.accion or 'Guardar' in log.accion %}{% else %}draft{% endif %}">
                             {{ log.accion }}
                         </span>
                     </td>
@@ -181,7 +179,8 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if log.ip_address %}<code>{{ log.ip_address }}</code>{% else %}<span class="text-muted">—</span>{% endif %}
+                        {% if log.ip_address %}<code>{{ log.ip_address }}</code>{% else %}<span
+                            class="text-muted">—</span>{% endif %}
                     </td>
                     <td class="detalle-cell">
                         {% if log.detalle %}
@@ -226,8 +225,8 @@
 
                 <!-- USUARIO (label flotante) -->
                 <div class="floating-group">
-                    <input type="text" id="username" name="username" class="floating-input"
-                           placeholder=" " autocomplete="username" required>
+                    <input type="text" id="username" name="username" class="floating-input" placeholder=" "
+                        autocomplete="username" required>
                     <label for="username" class="floating-label">
                         Usuario <span class="required">*</span>
                     </label>
@@ -236,8 +235,8 @@
 
                 <!-- NOMBRE COMPLETO (label flotante) -->
                 <div class="floating-group">
-                    <input type="text" id="nombre" name="nombre" class="floating-input"
-                           placeholder=" " autocomplete="name" required>
+                    <input type="text" id="nombre" name="nombre" class="floating-input" placeholder=" "
+                        autocomplete="name" required>
                     <label for="nombre" class="floating-label">
                         Nombre completo <span class="required">*</span>
                     </label>
@@ -245,8 +244,8 @@
 
                 <!-- EMAIL (label flotante) -->
                 <div class="floating-group">
-                    <input type="email" id="email" name="email" class="floating-input"
-                           placeholder=" " autocomplete="email" required>
+                    <input type="email" id="email" name="email" class="floating-input" placeholder=" "
+                        autocomplete="email" required>
                     <label for="email" class="floating-label">
                         Email <span class="required">*</span>
                     </label>
@@ -254,10 +253,10 @@
 
                 <!-- RUT (label flotante) -->
                 <div class="floating-group">
-                    <input type="text" id="rut" name="rut" class="floating-input"
-                           placeholder=" " autocomplete="off">
+                    <input type="text" id="rut" name="rut" class="floating-input" placeholder=" " autocomplete="off"
+                        required>
                     <label for="rut" class="floating-label">
-                        RUT (opcional)
+                        RUT o documento <span class="required">*</span>
                     </label>
                 </div>
 

@@ -1,5 +1,6 @@
 {% extends 'gestion/base.html' %}
 {% load static %}
+{% load formato %}
 {% block title %}Participantes - {{ actividad.titulo }}{% endblock %}
 
 {% block content %}
@@ -81,7 +82,7 @@
                 {% for i in inscripciones %}
                 <tr>
                     <td><strong>{{ i.alumno.nombres }} {{ i.alumno.apellidos }}</strong></td>
-                    <td>{{ i.alumno.rut }}</td>
+                    <td>{{ i.alumno.rut|rut_fmt }}</td>
                     <td>{{ i.alumno.carrera }}</td>
                     <td>{{ i.alumno.jornada }}</td>
                     <td>{{ i.alumno.correo }}</td>
@@ -144,7 +145,7 @@
                 {% for a in asistencias %}
                 <tr>
                     <td><strong>{{ a.alumno.nombres }} {{ a.alumno.apellidos }}</strong></td>
-                    <td>{{ a.alumno.rut }}</td>
+                    <td>{{ a.alumno.rut|rut_fmt }}</td>
                     <td>{{ a.alumno.carrera }}</td>
                     <td>{{ a.alumno.jornada }}</td>
                     <td>

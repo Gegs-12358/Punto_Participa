@@ -1,5 +1,6 @@
 {% extends 'gestion/base.html' %}
 {% load static %}
+{% load formato %}
 {% block title %}{{ actividad.titulo }}{% endblock %}
 
 {% block content %}
@@ -151,7 +152,7 @@
                         {% for a in ultimas_asistencias %}
                         <tr>
                             <td><strong>{{ a.alumno.nombres }} {{ a.alumno.apellidos }}</strong></td>
-                            <td>{{ a.alumno.rut }}</td>
+                            <td>{{ a.alumno.rut|rut_fmt }}</td>
                             <td>{{ a.alumno.carrera }}</td>
                             <td>{{ a.alumno.jornada }}</td>
                             <td>{{ a.registrado_por.username|default:"N/A" }}</td>

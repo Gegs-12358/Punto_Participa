@@ -38,7 +38,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**.
 
-* Suite de pruebas automatizadas: 261 tests.
+* Suite de pruebas automatizadas: 279 tests.
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 
 ---

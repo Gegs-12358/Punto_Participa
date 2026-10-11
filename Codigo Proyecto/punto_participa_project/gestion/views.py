@@ -46,7 +46,7 @@ from .models import (
 # [REFACTOR Opción B] Permisos centralizados
 # [REFACTOR Opción B] Permisos centralizados
 from .permissions import ( ROLES_VALIDOS, get_perfil, puede_gestionar_actividad,tiene_rol,)
-from .utils import buscar_alumno_por_documento
+from .utils import buscar_alumno_por_documento, formatear_rut, normalizar_documento
 
 logger = logging.getLogger(__name__)
 
@@ -950,7 +950,7 @@ def _id_valido(valor):
 def guardar_usuario(request):
     if request.method != 'POST':
         return _error_json('Método no permitido', 405)
- 
+
     try:
         usuario_id = limpiar_documento(request.POST.get('user_id'), 20)
         username = limpiar_texto(request.POST.get('username') or '')
@@ -958,14 +958,19 @@ def guardar_usuario(request):
         email = limpiar_texto(request.POST.get('email') or '')
         rol_id = limpiar_documento(request.POST.get('rol'), 20)
         estado = request.POST.get('estado') == 'on'
-        rut = limpiar_texto(request.POST.get('rut') or '')
+
+        # --- RUT / documento: obligatorio, normalizado, sin validar módulo 11 ---
+        rut = normalizar_documento(limpiar_texto(request.POST.get('rut') or ''))
+        confirmar_rut = request.POST.get('confirmar_rut', '').lower() == 'true'
         rut_max = UsuarioSistema._meta.get_field('rut').max_length
-        if len(rut) > rut_max:
-            return _error_json(f'El RUT no puede superar los {rut_max} caracteres.')
- 
+
         if not (username and nombre and email and rol_id):
             return _error_json('Faltan campos obligatorios')
- 
+        if not rut:
+            return _error_json('El RUT o documento es obligatorio.')
+        if len(rut) > rut_max:
+            return _error_json(f'El RUT no puede superar los {rut_max} caracteres.')
+
         # --- Validación de formato y largo (evita errores de BD) ---
         if (usuario_id and not _id_valido(usuario_id)) or not _id_valido(rol_id):
             return _error_json('Datos inválidos.')
@@ -977,11 +982,11 @@ def guardar_usuario(request):
             validate_email(email)
         except ValidationError:
             return _error_json('El correo electrónico no es válido.')
- 
+
         usuario_sistema = None
         rol_anterior = estado_anterior = None
         password_temporal = None
- 
+
         if usuario_id:
             usuario_sistema = UsuarioSistema.objects.get(pk=usuario_id)
             user = usuario_sistema.user
@@ -1008,40 +1013,62 @@ def guardar_usuario(request):
                 allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789'
             )
             user.set_password(password_temporal)
- 
+
+        # --- RUT duplicado en otro usuario ---
+        duplicado = UsuarioSistema.objects.filter(rut=rut)
+        if usuario_sistema:
+            duplicado = duplicado.exclude(pk=usuario_sistema.pk)
+        if duplicado.exists():
+            return _error_json('Ese RUT o documento ya está asignado a otro usuario.')
+
+        # --- Cambio de RUT: el servidor exige confirmación ---
+        rut_anterior = normalizar_documento(usuario_sistema.rut) if usuario_sistema else ''
+        rut_cambia = bool(rut_anterior) and rut_anterior != rut
+        if rut_cambia and not confirmar_rut:
+            return JsonResponse({
+                'success': False,
+                'confirmar_rut': True,
+                'message': 'Vas a cambiar el RUT o documento de este usuario. ¿Confirmas el cambio?',
+            })
+
         rol = Rol.objects.get(pk=rol_id)  # antes de escribir nada
- 
+
         # Atómico: si falla UsuarioSistema (p. ej. RUT duplicado) no queda un User huérfano
         with transaction.atomic():
             user.email, user.first_name, user.is_active = email, nombre, estado
             user.save()
- 
+
             if usuario_sistema is None:
                 usuario_sistema = UsuarioSistema(user=user)
             usuario_sistema.rol = rol
             usuario_sistema.activo = estado
-            usuario_sistema.rut = rut or f'99999999-{user.id}'
+            usuario_sistema.rut = rut
             usuario_sistema.save()
- 
+
         if rol_anterior != usuario_sistema.rol.nombre:
             registrar_log(request, 'Usuarios', 'Cambio de rol',
                           f'"{user.username}": de "{rol_anterior}" a "{usuario_sistema.rol.nombre}"',
                           'Usuario', user.id, user.username)
- 
+
         if estado_anterior is not None and estado_anterior != estado:
             registrar_log(request, 'Usuarios', 'Cambio de estado',
                           f'"{user.username}": de "{"Activo" if estado_anterior else "Inactivo"}" '
                           f'a "{"Activo" if estado else "Inactivo"}"',
                           'Usuario', user.id, user.username)
- 
+
+        if rut_cambia:
+            registrar_log(request, 'Usuarios', 'Cambio de RUT',
+                          f'"{user.username}": se modificó el documento de identidad',
+                          'Usuario', user.id, user.username)
+
         registrar_log(request, 'Usuarios', 'Guardar usuario',
                       f'Usuario: {nombre} ({username})', 'Usuario', user.id, nombre)
- 
+
         resp = {'success': True}
         if password_temporal:
             resp['password_temporal'] = password_temporal
         return JsonResponse(resp)
- 
+
     except (UsuarioSistema.DoesNotExist, Rol.DoesNotExist):
         return _error_json('Usuario o rol no encontrado.', 404)
     except IntegrityError:
@@ -1570,7 +1597,7 @@ def _procesar_escaneo(request):
             'confirmar': True,
             'alumno': {
                 'nombre': f'{alumno.nombres} {alumno.apellidos}',
-                'rut': alumno.rut,
+                'rut': formatear_rut(alumno.rut),
                 'carrera': alumno.carrera,
                 'jornada': alumno.jornada,
             }
@@ -1622,7 +1649,7 @@ def _procesar_escaneo(request):
         'message': f'Asistencia registrada para {alumno.nombres} {alumno.apellidos}.',
         'alumno': {
             'nombre': f'{alumno.nombres} {alumno.apellidos}',
-            'rut': alumno.rut,
+            'rut': formatear_rut(alumno.rut),
             'carrera': alumno.carrera,
             'jornada': alumno.jornada,
         }
