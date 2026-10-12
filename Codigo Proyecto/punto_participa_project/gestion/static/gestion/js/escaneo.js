@@ -70,6 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function enfocarInput() {
         inputRut.value = '';
+        rutPendiente = '';   // no dejar el texto del carnet en memoria
         inputRut.focus();
     }
 
@@ -173,6 +174,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.confirmar) {
                     // El backend pide confirmación → mostrar modal
                     rutPendiente = inputRut.value;
+                    inputRut.value = '';   // el texto del carnet no debe quedar a la vista
                     ultimoAlumno = data.alumno;
                     ultimoMetodo = 'RUT';
 
@@ -190,6 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                     openModal(modalConfirmar);
                 } else if (!data.success) {
+                    inputRut.value = '';
                     mostrarAviso(data.message);
                 } else {
                     // Registro exitoso directo
