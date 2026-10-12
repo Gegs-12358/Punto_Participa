@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from gestion.models import Actividad, Alumno, Rol, UsuarioSistema
+import re
 
 
 def _mostrar(valor):
@@ -78,3 +79,27 @@ class RutFormateadoEnPantallasTests(TestCase):
         r = self.client.post('/escaneo/', {'rut': '20.001.550-9', 'confirmar': 'true'})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()['alumno']['rut'], '20.001.550-9')
+
+    def test_el_campo_del_escaner_acepta_el_texto_largo_de_un_qr(self):
+        # El QR del carnet mide ~170 caracteres; con maxlength=30 se corta
+        # y el sistema no encuentra al alumno.
+        ahora = timezone.now()
+        act = Actividad.objects.create(
+            titulo='Masiva campo', descripcion='desc', tipo='MASIVA',
+            lugar='Patio', fecha_inicio=ahora, fecha_fin=ahora + timedelta(hours=2),
+            estado='ACTIVA', cupos_totales=None, cupos_disponibles=None,
+            creado_por=self.admin,
+        )
+        sesion = self.client.session
+        sesion['actividad_escaneo_id'] = act.pk
+        sesion.save()
+
+        r = self.client.get('/escaneo/')
+        self.assertEqual(r.status_code, 200)
+        html = r.content.decode()
+        m = re.search(r'<input\b(?:(?!>).)*?id="rutInput"(?:(?!>).)*>', html, re.DOTALL)
+        self.assertIsNotNone(m, 'no aparece el campo rutInput')
+        l = re.search(r'maxlength="(\d+)"', m.group(0))
+        limite = int(l.group(1)) if l else 10**6
+        self.assertGreaterEqual(limite, 300)
+
