@@ -85,3 +85,35 @@ class EscanerEnCualquierTecladoTests(TestCase):
         r = self._escanear("HTTPSÑ--PORTAL.SIDIV.REGISTROCIVIL.CL-DOCSTATUS")
         self.assertEqual(r.status_code, 404)
         self.assertFalse(r.json()['success'])
+
+    def test_qr_de_alguien_que_no_esta_en_la_base_no_muestra_su_run(self):
+        casos = [
+            ('ingles',
+             "HTTPS://PORTAL.SIDIV.REGISTROCIVIL.CL/DOCSTATUS?RUN=99999999-9&TYPE=CEDULA&SERIAL=A123456789"),
+            ('espanol',
+             "HTTPSÑ--PORTAL.SIDIV.REGISTROCIVIL.CL-DOCSTATUS_RUN¡99999999'9/TYPE¡CEDULA/SERIAL¡A123456789"),
+        ]
+        for nombre, texto in casos:
+            with self.subTest(caso=nombre):
+                r = self._escanear(texto)
+                self.assertEqual(r.status_code, 404)
+                mensaje = r.json()['message']
+                self.assertNotIn('99999999', mensaje)
+                self.assertNotIn('PORTAL', mensaje.upper())
+
+    def test_un_texto_largo_o_raro_no_se_repite_en_el_aviso(self):
+        for texto in ["ABCDEFGHIJ" * 5, "HTTPSÑ--PORTAL.SIDIV.REGISTROCIVIL.CL-DOCSTATUS"]:
+            with self.subTest(texto=texto[:15]):
+                r = self._escanear(texto)
+                self.assertEqual(r.status_code, 404)
+                mensaje = r.json()['message']
+                self.assertNotIn('ABCDEFGHIJ', mensaje)
+                self.assertNotIn('PORTAL', mensaje.upper())
+
+    def test_un_rut_digitado_a_mano_sigue_apareciendo_en_el_aviso(self):
+        # Guardia: ayuda a detectar un error de tipeo.
+        for texto in ['99999999-9', '999999999']:
+            with self.subTest(texto=texto):
+                r = self._escanear(texto)
+                self.assertEqual(r.status_code, 404)
+                self.assertIn(texto, r.json()['message'])

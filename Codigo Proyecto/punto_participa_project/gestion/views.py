@@ -1510,6 +1510,15 @@ def _parse_rut_escaneo(rut_original):
         return 'CODIGO', rut_original.replace("'", "")
     return 'RUT', rut_original
 
+_RE_DOC_CORTO = re.compile(r"^[A-Za-z0-9.\-']{1,20}$")
+
+
+def _mensaje_no_encontrado(metodo, documento):
+    """No repite en pantalla el texto leido de un carnet (QR) ni textos largos o raros.
+    Un documento digitado a mano y corto se muestra para detectar errores de tipeo."""
+    if metodo != 'QR' and _RE_DOC_CORTO.match(documento or ''):
+        return f'Estudiante no encontrado con el documento: {documento}'
+    return 'Estudiante no encontrado.'
 
 def _procesar_escaneo(request):
     """
@@ -1546,10 +1555,7 @@ def _procesar_escaneo(request):
     # ============================================================
     alumno = buscar_alumno_por_documento(rut_procesado)
     if not alumno:
-        return _error_json(
-            f'Estudiante no encontrado con el documento: {rut_procesado}',
-            404
-        )
+        return _error_json(_mensaje_no_encontrado(metodo, rut_procesado), 404)
 
     # ============================================================
     # VALIDAR ACTIVIDAD
