@@ -1493,11 +1493,19 @@ def eliminar_ajax(request, pk):
 # ESCÁNER
 # ============================================================
 
+# RUN del QR del carnet, tolerante a la puntuacion que cambia segun el teclado:
+# 'RUN' + 1 a 3 simbolos + cuerpo + 0 a 2 simbolos + digito verificador.
+_RE_RUN_QR = re.compile(r'RUN[^0-9A-Z]{1,3}(\d{1,9})[^0-9A-Z]{0,2}([0-9K])', re.IGNORECASE)
+
+
 def _parse_rut_escaneo(rut_original):
-    """Detecta el método (QR/CODIGO/RUT) y devuelve el RUT normalizado."""
-    if 'portal.sidiv.registrocivil.cl' in rut_original or 'RUN=' in rut_original.upper():
-        m = re.search(r'[?&]RUN=([0-9kK-]+)', rut_original, re.IGNORECASE)
-        return 'QR', (m.group(1) if m else rut_original)
+    """Detecta el método (QR/CODIGO/RUT) y devuelve el documento normalizado."""
+    mayus = rut_original.upper()
+    if 'SIDIV' in mayus or 'REGISTROCIVIL' in mayus or 'RUN=' in mayus:
+        m = _RE_RUN_QR.search(rut_original)
+        if m:
+            return 'QR', f'{m.group(1)}-{m.group(2).upper()}'
+        return 'QR', rut_original
     if "'" in rut_original or '-' in rut_original:
         return 'CODIGO', rut_original.replace("'", "")
     return 'RUT', rut_original
@@ -1521,17 +1529,7 @@ def _procesar_escaneo(request):
     # ============================================================
     # DETECTAR MÉTODO DE INGRESO (QR / CÓDIGO / RUT)
     # ============================================================
-    metodo = 'RUT'
-    rut_procesado = rut_original
-
-    if 'portal.sidiv.registrocivil.cl' in rut_original or 'RUN=' in rut_original.upper():
-        metodo = 'QR'
-        m = re.search(r'[?&]RUN=([0-9kK-]+)', rut_original, re.IGNORECASE)
-        if m:
-            rut_procesado = m.group(1)
-    elif "'" in rut_original or '-' in rut_original:
-        metodo = 'CODIGO'
-        rut_procesado = rut_original.replace("'", "")
+    metodo, rut_procesado = _parse_rut_escaneo(rut_original)
 
     if not rut_procesado:
         return _error_json('Debes ingresar un RUT o Pasaporte válido.')
