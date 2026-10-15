@@ -160,17 +160,27 @@ def _colores_por_carrera(items, carreras_cache):
         colores.append(color_para_escuela(c.escuela if c else None))
     return colores
 
+def _filtrar_inscripciones(insc, carrera=None, jornada=None, escuela=None):
+    """Filtra inscripciones por la carrera, jornada o escuela del alumno,
+    con el mismo criterio con que se filtran las asistencias."""
+    if escuela:
+        carreras_escuela = list(
+            Carrera.objects.filter(escuela=escuela).values_list('nombre', flat=True)
+        )
+        insc = insc.filter(alumno__carrera__in=carreras_escuela)
+    if carrera:
+        insc = insc.annotate(_c=Lower(Trim('alumno__carrera'))).filter(_c=carrera.strip().lower())
+    if jornada:
+        insc = insc.annotate(_j=Lower(Trim('alumno__jornada'))).filter(_j=jornada.strip().lower())
+    return insc
 
-def _construir_desglose_tipo(act_qs, asis_qs, carrera=None, jornada=None):
+def _construir_desglose_tipo(act_qs, asis_qs, carrera=None, jornada=None, escuela=None):
     """Calcula masivas/talleres para dashboard y reportes."""
     ids_talleres = list(act_qs.filter(tipo='TALLER').values_list('id', flat=True))
     ids_masivas = list(act_qs.filter(tipo='MASIVA').values_list('id', flat=True))
 
     insc = Inscripcion.objects.filter(actividad_id__in=ids_talleres)
-    if carrera:
-        insc = insc.annotate(_c=Lower(Trim('alumno__carrera'))).filter(_c=carrera.strip().lower())
-    if jornada:
-        insc = insc.annotate(_j=Lower(Trim('alumno__jornada'))).filter(_j=jornada.strip().lower())
+    insc = _filtrar_inscripciones(insc, carrera, jornada, escuela)
 
     t_insc = insc.count()
     t_asis = asis_qs.filter(actividad_id__in=ids_talleres).count()
@@ -572,7 +582,9 @@ def dashboard(request):
         total=Count('id'),
     )
     total_asis = asis_qs.count()
-    total_inscritos = insc_qs.filter(actividad__in=act_qs).count()
+    total_inscritos = _filtrar_inscripciones(
+        insc_qs.filter(actividad__in=act_qs), carrera, jornada
+    ).count()
 
     # [REFACTOR] Uso del cache helper
     carreras_cache = _get_carreras_cache()
@@ -645,13 +657,26 @@ def reportes(request):
     ids_act = list(act_qs.values_list('id', flat=True))
     alumnos_ids = asis_qs.values('alumno')
 
+    filtro_insc = Q()
+    if escuela:
+        carreras_escuela = list(
+            Carrera.objects.filter(escuela=escuela).values_list('nombre', flat=True)
+        )
+        filtro_insc &= Q(inscripciones__alumno__carrera__in=carreras_escuela)
+    if carrera:
+        filtro_insc &= Q(inscripciones__alumno__carrera=carrera)
+    if jornada:
+        filtro_insc &= Q(inscripciones__alumno__jornada=jornada)
+
     act_qs = act_qs.select_related('creado_por').annotate(
         total_asistentes_calc=Count('asistencias', filter=Q(asistencias__alumno__in=alumnos_ids), distinct=True),
-        total_inscritos_calc=Count('inscripciones', filter=Q(inscripciones__alumno__in=alumnos_ids), distinct=True),
+        total_inscritos_calc=Count('inscripciones', filter=filtro_insc or None, distinct=True),
     ).prefetch_related('carreras', 'jornadas')
 
-    total_inscritos = Inscripcion.objects.filter(actividad_id__in=ids_act) \
-                                        .filter(alumno__in=alumnos_ids).count()
+    total_inscritos = _filtrar_inscripciones(
+        Inscripcion.objects.filter(actividad_id__in=ids_act),
+        carrera, jornada, escuela,
+    ).count()
     total_asistentes = asis_qs.count()
 
     # [REFACTOR] Uso del cache helper
@@ -769,7 +794,7 @@ def reportes(request):
         'actividad_seleccionada': actividad_id,
         'total_inscritos_filtrado': total_inscritos,
         'total_asistentes_filtrado': total_asistentes,
-        **_construir_desglose_tipo(act_qs, asis_qs, carrera, jornada),
+        **_construir_desglose_tipo(act_qs, asis_qs, carrera, jornada, escuela),
     }
     return render(request, 'gestion/reportes.html', context)
 
