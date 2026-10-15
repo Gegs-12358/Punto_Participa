@@ -815,7 +815,7 @@ HEADERS_REPORTE_DETALLE = [
 ]
 
 
-def _construir_datos_reporte(act_qs, asis_qs, agrupar_por_escuela=False):
+def _construir_datos_reporte(act_qs, asis_qs, agrupar_por_escuela=False, carrera=None, jornada=None, escuela=None):
     alumnos_ids = asis_qs.values('alumno')
     datos = []
 
@@ -832,7 +832,9 @@ def _construir_datos_reporte(act_qs, asis_qs, agrupar_por_escuela=False):
                 act.fecha_inicio.strftime("%d/%m/%Y"),
                 ", ".join(c.nombre for c in act.carreras.all()),
                 ", ".join(j.nombre for j in act.jornadas.all()),
-                Inscripcion.objects.filter(actividad=act).filter(alumno__in=alumnos_ids).count(),
+                _filtrar_inscripciones(
+                    Inscripcion.objects.filter(actividad=act), carrera, jornada, escuela
+                ).count(),
                 asis_act.count(),
             ])
         return datos
@@ -918,7 +920,7 @@ def _exportar_csv(datos, headers, filename):
     response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
     response.write('\ufeff')  # BOM: hace que Excel reconozca UTF-8 y muestre bien tildes y ñ
-    writer = csv.writer(response)
+    writer = csv.writer(response, delimiter=';')
     writer.writerow(headers)
     writer.writerows([[_sanitizar_celda(v) for v in fila] for fila in datos])
     return response
@@ -928,7 +930,12 @@ def _exportar_csv(datos, headers, filename):
 @role_required('Administrador', 'Creador de Evento', json_response=True)
 def exportar_reportes(request, formato):
     act_qs, asis_qs = _filtrar_actividades_export(request)
-    datos = _construir_datos_reporte(act_qs, asis_qs, agrupar_por_escuela=False)
+    datos = _construir_datos_reporte(
+        act_qs, asis_qs, agrupar_por_escuela=False,
+        carrera=request.GET.get('carrera', ''),
+        jornada=request.GET.get('jornada', ''),
+        escuela=request.GET.get('escuela', ''),
+    )
     if formato == 'csv':
         return _exportar_csv(datos, HEADERS_REPORTE_ACTIVIDADES, 'reporte_actividades')
     return _exportar_excel(datos, HEADERS_REPORTE_ACTIVIDADES, 'reporte_actividades', 'Reporte de Actividades')

@@ -68,7 +68,7 @@ class ExportarCsvTestCase(SimpleTestCase):
     def test_csv_conserva_nombres(self):
         r = _exportar_csv([[n] for n in TODOS], ['Nombre'], 'x')
         texto = r.content.decode('utf-8-sig')
-        filas = list(csv.reader(io.StringIO(texto)))
+        filas = list(csv.reader(io.StringIO(texto), delimiter=';'))
         self.assertEqual(filas[0], ['Nombre'])
         valores = [f[0] for f in filas[1:]]
         self.assertEqual(valores, [_sanitizar_celda(n) for n in TODOS])

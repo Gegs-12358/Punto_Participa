@@ -86,3 +86,26 @@ class KpiDashboardTests(BaseKpiTests):
         # 1 asistente de 2 inscritos informáticos = 50 %.
         self.assertEqual(r.context['tasa_asistencia'], 50.0)
 
+class KpiExportacionTests(BaseKpiTests):
+    def test_exportacion_cuenta_inscritos_que_no_asistieron(self):
+        r = self.client.get(reverse('exportar_reportes', args=['csv']))
+        self.assertEqual(r.status_code, 200)
+        filas = r.content.decode('utf-8-sig').splitlines()
+        cabecera = filas[0].split(';')
+        self.assertIn('Inscritos', cabecera)
+        fila = filas[1].split(';')
+        self.assertEqual(fila[cabecera.index('Inscritos')], '3')
+        self.assertEqual(fila[cabecera.index('Asistentes')], '1')
+
+    def test_exportacion_filtro_carrera_cuenta_solo_esa_carrera(self):
+        r = self.client.get(reverse('exportar_reportes', args=['csv']),
+                            {'carrera': 'Informática'})
+        filas = r.content.decode('utf-8-sig').splitlines()
+        cabecera = filas[0].split(';')
+        fila = filas[1].split(';')
+        self.assertEqual(fila[cabecera.index('Inscritos')], '2')
+
+    def test_csv_usa_punto_y_coma_como_separador(self):
+        r = self.client.get(reverse('exportar_reportes', args=['csv']))
+        cabecera = r.content.decode('utf-8-sig').splitlines()[0]
+        self.assertIn(';', cabecera)
