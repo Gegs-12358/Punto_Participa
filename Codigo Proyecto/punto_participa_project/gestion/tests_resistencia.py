@@ -153,21 +153,21 @@ class CargaControladaTests(BaseSistemaTestCase):
 
 
 class RollbackTransaccionalTests(BaseSistemaTestCase):
-    def test_error_durante_inscripcion_revierte_cupo_y_registro(self):
-        self.client.raise_request_exception = False
+    def test_falla_de_auditoria_no_tumba_la_inscripcion(self):
         cupos_iniciales = self.actividad.cupos_disponibles
         with patch(
             "gestion.views.registrar_log",
-            side_effect=RuntimeError("fallo controlado de auditoría"),
+            side_effect=RuntimeError("falla controlada de auditoria"),
         ):
             response = self.client.post(
                 reverse("inscripcion_taller", args=[self.actividad.pk]),
                 {"rut": self.alumno.rut},
             )
-        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Inscripci")
         self.actividad.refresh_from_db()
-        self.assertEqual(self.actividad.cupos_disponibles, cupos_iniciales)
-        self.assertFalse(
+        self.assertEqual(self.actividad.cupos_disponibles, cupos_iniciales - 1)
+        self.assertTrue(
             Inscripcion.objects.filter(
                 actividad=self.actividad, alumno=self.alumno
             ).exists()

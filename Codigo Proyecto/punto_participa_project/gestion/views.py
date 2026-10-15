@@ -1,6 +1,7 @@
 # ==================== IMPORTS ====================
 import csv
 import logging
+logger = logging.getLogger(__name__)
 import re
 
 from collections import defaultdict
@@ -1826,12 +1827,18 @@ def inscripcion_taller(request, actividad_id):
             act_lock.save(update_fields=['cupos_disponibles'])
 
             Inscripcion.objects.create(actividad=act_lock, alumno=alumno, estado='CONFIRMADA')
-            registrar_log(request, 'Inscripciones', 'Inscripción a taller',
-                          f'{alumno.nombres} {alumno.apellidos} - {act_lock.titulo}',
-                          'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
             cupos_restantes = act_lock.cupos_disponibles
     except IntegrityError:
         return _render_inscripcion(request, actividad, 'con_cupos', 'Ya estás inscrito en este taller.')
+    try:
+        registrar_log(request, 'Inscripciones', 'Inscripción a taller',
+                      f'{alumno.nombres} {alumno.apellidos} - {actividad.titulo}',
+                      'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
+    except Exception:
+        logger.exception(
+            'No se pudo registrar la auditoría de la inscripción (alumno %s, actividad %s)',
+            alumno.id, actividad_id,
+        )
 
     actividad.cupos_disponibles = cupos_restantes
     return _render_inscripcion(request, actividad, 'con_cupos', exito=
