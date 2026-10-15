@@ -88,11 +88,18 @@ def color_para_escuela(escuela):
 
 def registrar_log(request, modulo, accion, detalle, objeto_tipo=None, objeto_id=None,
                   objeto_nombre=None, cambios_json=None):
+    def _cortar(valor, largo):
+        return valor[:largo] if isinstance(valor, str) else valor
+
     LogAuditoria.objects.create(
         usuario_sistema=request.user if request.user.is_authenticated else None,
-        modulo=modulo, accion=accion, detalle=detalle,
-        objeto_tipo=objeto_tipo, objeto_id=objeto_id, objeto_nombre=objeto_nombre,
-        ip_address=request.META.get('REMOTE_ADDR'),
+        modulo=_cortar(modulo, 50),
+        accion=_cortar(accion, 200),
+        detalle=detalle,
+        objeto_tipo=_cortar(objeto_tipo, 50),
+        objeto_id=objeto_id,
+        objeto_nombre=_cortar(objeto_nombre, 200),
+        ip_address=request.META.get('REMOTE_ADDR') or None,
         user_agent=request.META.get('HTTP_USER_AGENT'),
         cambios_json=cambios_json,
     )
