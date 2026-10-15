@@ -1,9 +1,11 @@
+from django import forms
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 from .models import (
     Rol, UsuarioSistema, Alumno, Actividad, Carrera, Jornada,
     Inscripcion, Asistencia, NotificacionCorreo, LogAuditoria
 )
-from .utils import normalizar_rut
+from .utils import normalizar_rut, normalizar_documento
 
 
 # ============================================================
@@ -29,9 +31,31 @@ class RolAdmin(admin.ModelAdmin):
 # ============================================================
 # ADMIN: USUARIO SISTEMA
 # ============================================================
+class UsuarioSistemaAdminForm(forms.ModelForm):
+    rut = forms.CharField(
+        max_length=30, required=True,
+        label='RUT / RUN provisorio / Pasaporte',
+        help_text='Se guarda sin puntos ni guion y en mayúsculas.',
+    )
 
+    class Meta:
+        model = UsuarioSistema
+        fields = '__all__'
+
+    def clean_rut(self):
+        rut = normalizar_documento(self.cleaned_data.get('rut'))
+        if not rut:
+            raise ValidationError('El RUT es obligatorio.')
+        if len(rut) < 6:
+            raise ValidationError('El documento es demasiado corto (mínimo 6 caracteres).')
+        if len(rut) > 12:
+            raise ValidationError('El documento es demasiado largo (máximo 12 caracteres).')
+        return rut
+
+    
 @admin.register(UsuarioSistema)
 class UsuarioSistemaAdmin(admin.ModelAdmin):
+    form = UsuarioSistemaAdminForm
     list_display = ('user', 'rut', 'rol', 'activo', 'must_change_password')
     list_filter = ('rol', 'activo', 'must_change_password')
     search_fields = ('user__username', 'user__first_name', 'user__email', 'rut')

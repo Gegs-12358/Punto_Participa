@@ -175,3 +175,50 @@ class PantallaUsuariosTests(TestCase):
            r = self.client.get('/usuarios/')
            self.assertEqual(r.status_code, 200)
            self.assertContains(r, 'admin_pantalla')
+
+class AdminUsuarioSistemaTests(TestCase):
+    def setUp(self):
+        self.rol = Rol.objects.create(nombre='Creador de Evento')
+        User.objects.create_superuser('super_admin', 's@duocuc.cl', 'clave123')
+        self.assertTrue(self.client.login(username='super_admin', password='clave123'))
+        self.url = '/admin/gestion/usuariosistema/add/'
+
+    def _post(self, username, rut):
+        u = User.objects.create_user(username=username, password='clave123')
+        return u, self.client.post(self.url, {
+            'user': u.pk, 'rut': rut, 'rol': self.rol.pk, 'activo': 'on',
+        })
+
+    def test_admin_rechaza_usuario_sin_rut(self):
+        u, r = self._post('sinrut', '')
+        self.assertEqual(r.status_code, 200)  # vuelve al formulario con el error
+        self.assertContains(r, 'obligatorio')
+        self.assertFalse(UsuarioSistema.objects.filter(user=u).exists())
+
+    def test_admin_guarda_el_rut_normalizado(self):
+        u, r = self._post('conrut', '12.345.678-5')
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(UsuarioSistema.objects.get(user=u).rut, '123456785')
+
+    def test_admin_rechaza_rut_de_otro_usuario(self):
+        UsuarioSistema.objects.create(
+            user=User.objects.create_user('primero', password='x'),
+            rol=self.rol, rut='123456785')
+        u, r = self._post('segundo', '12.345.678-5')
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(UsuarioSistema.objects.filter(user=u).exists())
+
+    def test_admin_acepta_pasaporte_con_guion(self):
+        u, r = self._post('pasaporte', 'ab-123.456')
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(UsuarioSistema.objects.get(user=u).rut, 'AB123456')
+
+    def test_admin_acepta_run_provisorio_sin_modulo_11(self):
+        u, r = self._post('provisorio', '100.000.000-3')
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(UsuarioSistema.objects.get(user=u).rut, '1000000003')
+
+    def test_admin_rechaza_documento_demasiado_corto(self):
+        u, r = self._post('corto', '123')
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(UsuarioSistema.objects.filter(user=u).exists())
