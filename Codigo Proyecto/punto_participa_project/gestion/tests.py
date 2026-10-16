@@ -55,32 +55,27 @@ ENTRADAS_HOSTILES = [
 class RutHelpersTestCase(TestCase):
     """Prueba rut_limpio() y rut_formateado() con distintos formatos."""
 
-    def test_rut_limpio_con_puntos_y_guion(self):
-        self.assertEqual(rut_limpio('20.001.550-9'), '200015509')
+    def test_rut_limpio(self):
+        casos = [
+            ('20.001.550-9', '200015509'),
+            ('200015509', '200015509'),
+            ('11.111.111-k', '11111111K'),
+            ('', ''),
+            (None, ''),
+        ]
+        for entrada, esperado in casos:
+            with self.subTest(entrada=entrada):
+                self.assertEqual(rut_limpio(entrada), esperado)
 
-    def test_rut_limpio_sin_nada(self):
-        self.assertEqual(rut_limpio('200015509'), '200015509')
-
-    def test_rut_limpio_con_k_minuscula(self):
-        self.assertEqual(rut_limpio('11.111.111-k'), '11111111K')
-
-    def test_rut_limpio_vacio(self):
-        self.assertEqual(rut_limpio(''), '')
-        self.assertEqual(rut_limpio(None), '')
-
-    def test_rut_formateado_desde_numero_plano(self):
-        self.assertEqual(rut_formateado('200015509'), '20001550-9')
-
-    def test_rut_formateado_desde_formato_con_puntos(self):
-        self.assertEqual(rut_formateado('20.001.550-9'), '20001550-9')
-
-    def test_rut_formateado_pasaporte_no_se_rompe(self):
-        # Un pasaporte no tiene cuerpo numérico -> se devuelve limpio, sin guion forzado
-        # ⚠️ PENDIENTE: este test falla actualmente porque rut_limpio() elimina
-        # las letras del pasaporte (solo conserva dígitos y 'K'). Ver conversación
-        # aparte antes de decidir si se corrige utils.py o se ajusta este test.
-        resultado = rut_formateado('AB123456')
-        self.assertEqual(resultado, 'AB123456')
+    def test_rut_formateado(self):
+        casos = [
+            ('200015509', '20001550-9'),
+            ('20.001.550-9', '20001550-9'),
+            ('AB123456', 'AB123456'),  # pasaporte: se devuelve limpio, sin guion
+        ]
+        for entrada, esperado in casos:
+            with self.subTest(entrada=entrada):
+                self.assertEqual(rut_formateado(entrada), esperado)
 
 
 # ============================================================
@@ -103,17 +98,10 @@ class BuscarAlumnoPorDocumentoTestCase(TestCase):
             jornada='Diurno',
         )
 
-    def test_busca_con_formato_bbdd_exacto(self):
-        alumno = buscar_alumno_por_documento('20001550-9')
-        self.assertEqual(alumno, self.alumno)
-
-    def test_busca_sin_guion(self):
-        alumno = buscar_alumno_por_documento('200015509')
-        self.assertEqual(alumno, self.alumno)
-
-    def test_busca_con_puntos(self):
-        alumno = buscar_alumno_por_documento('20.001.550-9')
-        self.assertEqual(alumno, self.alumno)
+    def test_busca_en_distintos_formatos(self):
+        for consulta in ['20001550-9', '200015509', '20.001.550-9']:
+            with self.subTest(consulta=consulta):
+                self.assertEqual(buscar_alumno_por_documento(consulta), self.alumno)
 
     def test_no_encuentra_rut_inexistente(self):
         alumno = buscar_alumno_por_documento('99999999-9')
