@@ -154,6 +154,13 @@ class BaseSistemaTestCase(TestCase):
     def login_as(self, user):
         self.client.force_login(user)
 
+    def seleccionar_actividad(self, actividad=None, usuario=None):
+        """Inicia sesión como registrador y deja elegida la actividad del escáner."""
+        self.client.force_login(usuario or self.registrador)
+        session = self.client.session
+        session["actividad_escaneo_id"] = (actividad or self.actividad_masiva).pk
+        session.save()
+
 
 class ModeloYFormularioIntegralTests(BaseSistemaTestCase):
     def test_propiedades_y_recalculo_de_cupos_del_taller(self):
@@ -279,10 +286,7 @@ class InscripcionYAsistenciaIntegralTests(BaseSistemaTestCase):
         self.assertContains(response, "No estás registrado")
 
     def test_escaneo_confirma_y_registra_asistencia(self):
-        self.login_as(self.registrador)
-        session = self.client.session
-        session["actividad_escaneo_id"] = self.actividad_masiva.pk
-        session.save()
+        self.seleccionar_actividad()
 
         url = reverse("escaneo")
         primera = self.client.post(url, {"rut": "200015509"})
@@ -311,10 +315,7 @@ class InscripcionYAsistenciaIntegralTests(BaseSistemaTestCase):
             metodo_ingreso="RUT",
             registrado_por=self.registrador,
         )
-        self.login_as(self.registrador)
-        session = self.client.session
-        session["actividad_escaneo_id"] = self.actividad_masiva.pk
-        session.save()
+        self.seleccionar_actividad()
 
         response = self.client.post(
             reverse("escaneo"), {"rut": "200015509"}
@@ -323,10 +324,7 @@ class InscripcionYAsistenciaIntegralTests(BaseSistemaTestCase):
         self.assertIn("ya fue registrada", response.json()["message"])
 
     def test_escaneo_rechaza_taller_sin_inscripcion(self):
-        self.login_as(self.registrador)
-        session = self.client.session
-        session["actividad_escaneo_id"] = self.actividad.pk
-        session.save()
+        self.seleccionar_actividad(self.actividad)
 
         response = self.client.post(
             reverse("escaneo"), {"rut": "200015509"}

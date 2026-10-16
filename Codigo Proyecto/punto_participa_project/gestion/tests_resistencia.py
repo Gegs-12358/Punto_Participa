@@ -174,15 +174,12 @@ class RollbackTransaccionalTests(BaseSistemaTestCase):
         )
 
     def test_error_durante_asistencia_revierte_el_registro(self):
-        self.client.force_login(self.registrador)
-        session = self.client.session
-        session["actividad_escaneo_id"] = self.actividad_masiva.pk
-        session.save()
+        self.seleccionar_actividad()
         self.client.raise_request_exception = False
 
         with patch(
             "gestion.views.registrar_log",
-            side_effect=RuntimeError("fallo controlado de auditoría"),
+            side_effect=RuntimeError("fallo controlado de auditoria"),
         ):
             self.client.post(
                 reverse("escaneo"),

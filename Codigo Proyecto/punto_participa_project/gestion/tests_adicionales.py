@@ -131,10 +131,7 @@ class EstadosYCuposTests(BaseSistemaTestCase):
     def test_no_se_registra_asistencia_en_actividad_inactiva(self):
         self.actividad_masiva.estado = "FINALIZADA"
         self.actividad_masiva.save(update_fields=["estado"])
-        self.client.force_login(self.registrador)
-        session = self.client.session
-        session["actividad_escaneo_id"] = self.actividad_masiva.pk
-        session.save()
+        self.seleccionar_actividad()
         response = self.client.post(
             reverse("escaneo"), {"rut": self.alumno.rut}
         )
@@ -143,13 +140,7 @@ class EstadosYCuposTests(BaseSistemaTestCase):
 
 
 class EscanerFormatosYSesionTests(BaseSistemaTestCase):
-    def seleccionar_actividad(self, actividad=None):
-        actividad = actividad or self.actividad_masiva
-        self.client.force_login(self.registrador)
-        session = self.client.session
-        session["actividad_escaneo_id"] = actividad.pk
-        session.save()
-
+   
     def test_escaneo_por_qr_detecta_metodo_qr(self):
         self.seleccionar_actividad()
         qr = "https://portal.sidiv.registrocivil.cl/consulta?RUN=20001550-9"
