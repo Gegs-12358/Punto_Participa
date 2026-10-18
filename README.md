@@ -1,3 +1,5 @@
+
+
 # Punto Participa
 
 Plataforma web para la gestión de actividades, talleres, inscripciones y control de asistencia del Punto Estudiantil de Duoc UC Sede Alameda.
