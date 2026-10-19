@@ -13,6 +13,7 @@ Ejecución completa:
 La prueba concurrente requiere PostgreSQL porque usa select_for_update().
 """
 
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import timedelta
 from unittest import skipUnless
@@ -26,6 +27,21 @@ from django.utils import timezone
 
 from .models import Actividad, Alumno, Asistencia, Inscripcion, LogAuditoria
 from .tests_integrales import BaseSistemaTestCase
+
+
+# ---------------------------------------------------------------------------
+# Silenciar logging durante esta suite.
+# Los RuntimeError("fallo/falla controlada de auditoria") son intencionales:
+# los tests los inyectan con patch(...) y la vista los captura con
+# logger.exception(...). Sin esto, la salida de `manage.py test` muestra
+# tracebacks que parecen fallos pero no lo son.
+# ---------------------------------------------------------------------------
+def setUpModule():
+    logging.disable(logging.CRITICAL)
+
+
+def tearDownModule():
+    logging.disable(logging.NOTSET)
 
 
 class CargaControladaTests(BaseSistemaTestCase):

@@ -1,12 +1,21 @@
-# gestion/migrations/XXXX_actualizar_escuelas_carreras_v2.py
+# gestion/migrations/0016_actualizar_escuelas_carreras_v2.py
+
+import logging
 
 from django.db import migrations
+
+logger = logging.getLogger(__name__)
+
 
 def actualizar_escuelas(apps, schema_editor):
     # Obtenemos el modelo Carrera en su estado histórico (seguro para migraciones)
     Carrera = apps.get_model('gestion', 'Carrera')
 
-    # Mapeo exacto según las 13 carreras de la Sede Alameda (el mismo que funcionó en el shell)
+    # BD recién creada (tests, CI, entornos vacíos): no hay carreras que actualizar.
+    if not Carrera.objects.exists():
+        return
+
+    # Mapeo exacto según las 13 carreras de la Sede Alameda
     escuelas_por_carrera = {
         # Escuela de Construcción
         'Ingeniería en Construcción': 'Construcción',
@@ -31,13 +40,18 @@ def actualizar_escuelas(apps, schema_editor):
         # Usamos update() para eficiencia
         updated = Carrera.objects.filter(nombre=nombre).update(escuela=escuela)
         if updated:
-            print(f"✅ Actualizada: '{nombre}' -> '{escuela}'")
+            logger.info("Actualizada: '%s' -> '%s'", nombre, escuela)
         else:
-            print(f"⚠️ No encontrada: '{nombre}' (no se actualizó)")
+            logger.debug("No encontrada: '%s' (no se actualizó)", nombre)
+
 
 def reverse_actualizar_escuelas(apps, schema_editor):
     # Revertir: poner escuela=NULL para las carreras que actualizamos
     Carrera = apps.get_model('gestion', 'Carrera')
+
+    if not Carrera.objects.exists():
+        return
+
     nombres_actualizados = [
         'Ingeniería en Construcción', 'Ingeniería en Prevención de Riesgos',
         'Técnico en Construcción', 'Técnico Topógrafo Geomático',
@@ -45,15 +59,16 @@ def reverse_actualizar_escuelas(apps, schema_editor):
         'Dibujo y Modelamiento Arquitectónico y Estructural',
         'Restauración de Bienes Patrimoniales', 'Ingeniería en Administración Financiera',
         'Ingeniería en Administración de Recursos Humanos', 'Ingeniería en Gestión Logística',
-        'Ingeniería en Comercio Exterior', 'Auditoría', 'Ingeniería en Informática'
+        'Ingeniería en Comercio Exterior', 'Auditoría', 'Ingeniería en Informática',
     ]
     Carrera.objects.filter(nombre__in=nombres_actualizados).update(escuela=None)
-    print("🔄 Migración revertida: escuelas puestas en NULL")
+    logger.debug("Migración revertida: escuelas puestas en NULL")
+
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gestion', '0015_merge_20260902_2140'),  # <-- IMPORTANTE: este es el número de la última migración que tienes (según tu showmigrations)
+        ('gestion', '0015_merge_20260902_2140'),
     ]
 
     operations = [

@@ -6,8 +6,15 @@ No requiere Docker. Se ejecuta contra la base de datos temporal de Django:
 
 Incluye validaciones de contraseñas, autenticación, restricciones de datos,
 creación AJAX, correos fallidos, límites de invitaciones y casos inválidos.
+
+Nota: algunos tests simulan fallos intencionales (auditoría forzada, SMTP
+caído) para verificar que las vistas los manejan correctamente. Para que
+esos errores simulados no ensucien la salida de `manage.py test` con
+tracebacks que parecen fallos pero no lo son, se silencian los logs
+durante la ejecución de este módulo (ver `setUpModule` / `tearDownModule`).
 """
 
+import logging
 from datetime import timedelta
 from io import BytesIO
 
@@ -23,8 +30,28 @@ from django.utils import timezone
 from openpyxl import load_workbook
 
 from .forms import ActividadForm
-from .models import Actividad, Asistencia, Inscripcion, LogAuditoria, NotificacionCorreo
+from .models import (
+    Actividad,
+    Asistencia,
+    Inscripcion,
+    LogAuditoria,
+    NotificacionCorreo,
+)
 from .tests_integrales import BaseSistemaTestCase
+
+
+# ---------------------------------------------------------------------------
+# Silenciar logging durante esta suite.
+# Los RuntimeError/OSError que aparecen en la salida son intencionales:
+# los tests los inyectan con `mock.patch` o con un backend de correo
+# defectuoso, y las vistas los capturan con `logger.exception(...)`.
+# ---------------------------------------------------------------------------
+def setUpModule():
+    logging.disable(logging.CRITICAL)
+
+
+def tearDownModule():
+    logging.disable(logging.NOTSET)
 
 
 class BackendCorreoFallido(BaseEmailBackend):
@@ -309,7 +336,9 @@ class IntegridadDeExportacionesTests(BaseSistemaTestCase):
             reverse("reportes"), {"actividad": self.actividad.pk}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["actividad_seleccionada"], str(self.actividad.pk))
+        self.assertEqual(
+            response.context["actividad_seleccionada"], str(self.actividad.pk)
+        )
 
     def test_auditoria_guarda_datos_de_peticion(self):
         self.client.force_login(self.admin)

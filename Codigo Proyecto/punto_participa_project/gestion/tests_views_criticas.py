@@ -12,7 +12,7 @@ Cubre los flujos de seguridad y operación:
 Ejecutar con:
     python manage.py test gestion.tests_views_criticas -v 2
 """
-
+import logging
 import re
 from datetime import timedelta
 from unittest.mock import patch
@@ -30,6 +30,20 @@ from django.utils.http import urlsafe_base64_encode
 from .models import Actividad, Alumno, Asistencia, Carrera, Inscripcion, Jornada, LogAuditoria, Rol, UsuarioSistema
 from .tests_integrales import BaseSistemaTestCase
 from .views import color_para_escuela, _parse_rut_escaneo
+
+# ---------------------------------------------------------------------------
+# Silenciar logging durante esta suite.
+# Los fallos simulados (SMTP caído vía BackendCorreoFallido, auditoría
+# forzada con patch) los captura la vista con logger.exception(...). Sin
+# esto, la salida de `manage.py test` muestra tracebacks que parecen
+# fallos pero no lo son.
+# ---------------------------------------------------------------------------
+def setUpModule():
+    logging.disable(logging.CRITICAL)
+
+
+def tearDownModule():
+    logging.disable(logging.NOTSET)
 
 
 # ============================================================
