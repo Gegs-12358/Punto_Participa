@@ -271,7 +271,7 @@ Toast dedicado `#toast-conexion` (en `base.html`) con la clase `.toast-conexion`
 
 ### 7.9 Correcciones de conteos, auditoría y limpieza de la suite `[CONFIRMADO]`
 
-La suite pasó de 258 a **307 pruebas, todas en OK, con 92 % de cobertura** (`views.py` 88 %, `utils.py` 97 %, `models.py` 99 %, `forms.py` 96 %). Las pruebas se corren dentro de Docker, porque la base no se publica hacia Windows. Con `--parallel` tardan cerca de 72 s, frente a unos 290 s en serie.
+La suite pasó de 258 a **313 pruebas, todas en OK, con 92 % de cobertura** (`views.py` 88 %, `utils.py` 97 %, `models.py` 99 %, `forms.py` 97 %). Las pruebas se corren dentro de Docker, porque la base no se publica hacia Windows. Con `--parallel` tardan cerca de 72 s, frente a unos 290 s en serie.
 
 | Commit | Cambio |
 |---|---|
@@ -286,6 +286,8 @@ La suite pasó de 258 a **307 pruebas, todas en OK, con 92 % de cobertura** (`vi
 | `4171bc4` | `.gitignore` ampliado (`.env`, `venv/`, `staticfiles/`, `*.bak`), `logger` y comentario duplicados eliminados en `views.py`. |
 | `4210cd0` | Se renombra `test_formulario_rechaza_archivo_que_no_es_imagen` y se reescribe la prueba de inscripción para que verifique primero que la inscripción se hizo y luego que no hay correos. |
 | `13c7490` | 8 pruebas nuevas de `clean_imagen` (tamaño, contenido falso, formato no permitido, GIF, limpieza de EXIF y respaldo ante fallo). `forms.py` sube de 75 % a 96 %. |
+| `2f74b8e` | 5 pruebas nuevas de `ActividadForm`: fecha de término igual o anterior al inicio, y taller con cupo 0 o sin cupo. |
+| (este commit) | Prueba de fecha de inicio en el pasado. `forms.py` queda en 97 %. |
 
 También se actualizó el README (299 pruebas, ejecución en paralelo, CSV con `;` y nota sobre el conteo de inscritos).
 

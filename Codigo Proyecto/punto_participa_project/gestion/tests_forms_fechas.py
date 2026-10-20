@@ -1,4 +1,4 @@
-﻿from datetime import timedelta
+from datetime import timedelta
 
 from django.test import TestCase
 from django.utils import timezone
@@ -65,3 +65,15 @@ class ActividadFormReglasTests(TestCase):
         form = ActividadForm(data=self._datos(tipo="TALLER"))
         self.assertFalse(form.is_valid())
         self.assertIn("cupos_totales", form.errors)
+
+    def test_fecha_de_inicio_en_el_pasado_es_error(self):
+        pasado = timezone.localtime(timezone.now() - timedelta(days=1))
+        fin = pasado + timedelta(hours=1)
+        form = ActividadForm(data=self._datos(
+            fecha_inicio_fecha=pasado.strftime("%Y-%m-%d"),
+            fecha_inicio_hora=pasado.strftime("%H:%M"),
+            fecha_fin_fecha=fin.strftime("%Y-%m-%d"),
+            fecha_fin_hora=fin.strftime("%H:%M"),
+        ))
+        self.assertFalse(form.is_valid())
+        self.assertIn("fecha_inicio_fecha", form.errors)
