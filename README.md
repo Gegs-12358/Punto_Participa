@@ -42,7 +42,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**.
 
-* Suite de pruebas automatizadas: 287 tests (detalle en la sección 8).
+* Suite de pruebas automatizadas: 299 tests (detalle en la sección 8).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 
 ---
@@ -217,10 +217,16 @@ Codigo Proyecto/
 
 ## 8. Pruebas automatizadas
 
-La suite tiene **287 tests** y se ejecuta con:
+La suite tiene **299 tests** y se ejecuta con:
 
 ```powershell
 docker compose exec web python manage.py test --noinput
+```
+
+En paralelo termina en cerca de 70 segundos, frente a unos 290 en serie:
+
+```powershell
+docker compose exec web python manage.py test --parallel --noinput
 ```
 
 Las pruebas usan una base de datos temporal con datos inventados, así que no tocan los datos del sistema. Para correr solo un área, indica su archivo, por ejemplo:
@@ -228,6 +234,8 @@ Las pruebas usan una base de datos temporal con datos inventados, así que no to
 ```powershell
 docker compose exec web python manage.py test gestion.tests_ratelimit --noinput
 ```
+
+Los reportes y el dashboard cuentan como inscritos a quienes tienen una inscripción confirmada, sin exigir asistencia, y respetan los filtros de carrera, jornada y escuela. Hoy todas las inscripciones están confirmadas, porque la cancelación y la lista de espera aún no están habilitadas.
 
 Qué se verifica, por tema:
 
@@ -240,7 +248,7 @@ Qué se verifica, por tema:
 | RUT, RUN provisorio y pasaporte | Limpieza de puntos y guion, validación del dígito verificador, documentos extranjeros, búsqueda del alumno en distintos formatos y formato de pantalla (`20.001.550-9`). | `tests`, `tests_decorators_utils`, `tests_formato_rut` |
 | Escáner de asistencia | Registro por RUT, QR y código de barras, confirmación en dos etapas, rechazo de asistencia duplicada, de talleres sin inscripción y de actividades inactivas, lectura con teclado en español e inglés y que el aviso no repita el texto del carnet. | `tests_views_criticas`, `tests_escaner_teclado`, `tests_integrales`, `tests_adicionales` |
 | Datos hostiles y caracteres especiales | Apóstrofes y tildes en los nombres, caracteres nulos y de control, normalización Unicode, y que entradas o parámetros hostiles no generen error 500 ni reflejen HTML. | `tests`, `tests_caracteres`, `tests_parametros` |
-| Exportaciones | Protección contra fórmulas en CSV y Excel, limpieza de caracteres de control, BOM para abrir bien en Excel y libros válidos. | `tests_exportaciones`, `tests_extremos`, `tests_integrales` |
+| Exportaciones | Protección contra fórmulas en CSV y Excel, limpieza de caracteres de control, BOM y separador `;` para que los CSV se abran en columnas en el Excel chileno, y libros válidos. | `tests_exportaciones`, `tests_extremos`, `tests_integrales` |
 | Actividades, inscripciones y cupos | Crear, editar y eliminar actividades, confirmación al editar una con datos, validación de fechas y cupos, inscripción pública (duplicados, alumno inexistente, sin cupos, actividad finalizada o cancelada) y recálculo de cupos. | `tests_integrales`, `tests_adicionales`, `tests_extremos` |
 | Invitaciones por correo | Envío y registro de la notificación, fallo de SMTP registrado como fallido, límite por envío y previsualización. | `tests_adicionales`, `tests_extremos`, `tests_integrales` |
 | Reportes y auditoría | Dashboard y reportes exigen inicio de sesión, cada creador ve solo lo suyo, la auditoría guarda datos de la petición y su exportación es solo para el Administrador. | `tests_integrales`, `tests_extremos`, `tests_roles_completo` |
