@@ -440,7 +440,7 @@ class UsuariosAuditoriaYMiddlewareIntegralTests(BaseSistemaTestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("cambiar_contrasena"))
 
-    def test_archivo_de_imagen_se_puede_recibir_en_el_formulario(self):
+    def test_formulario_rechaza_archivo_que_no_es_imagen(self):
         futuro = timezone.localtime(timezone.now() + timedelta(days=3))
         imagen = SimpleUploadedFile(
             "banner.txt", b"contenido-de-prueba", content_type="text/plain"
@@ -489,9 +489,16 @@ class AutenticacionYCorreoIntegralTests(BaseSistemaTestCase):
         self.assertTrue(response.json()["success"])
         self.assertIn("html", response.json())
 
-    def test_inscripcion_no_envia_correo_externo_en_modo_local(self):
-        self.client.post(
+    def test_inscripcion_exitosa_no_envia_correo(self):
+        response = self.client.post(
             reverse("inscripcion_taller", args=[self.actividad.pk]),
             {"rut": "AB123456"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            Inscripcion.objects.filter(
+                actividad=self.actividad, alumno=self.alumno_pasaporte
+            ).count(),
+            1,
         )
         self.assertEqual(len(mail.outbox), 0)
