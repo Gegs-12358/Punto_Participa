@@ -45,11 +45,8 @@ from .models import (
     LogAuditoria, NotificacionCorreo, Rol, UsuarioSistema,
 )
 # [REFACTOR Opción B] Permisos centralizados
-# [REFACTOR Opción B] Permisos centralizados
 from .permissions import ( ROLES_VALIDOS, get_perfil, puede_gestionar_actividad,tiene_rol,)
 from .utils import buscar_alumno_por_documento, formatear_rut, normalizar_documento
-
-logger = logging.getLogger(__name__)
 
 
 # ==================== COLORES OFICIALES DUOC UC ====================

@@ -10,3 +10,9 @@ backup_local.*
 traslado.sql
 .coverage
 docs/*.zip
+
+# Entorno y generados
+.env
+venv/
+staticfiles/
+*.bak
