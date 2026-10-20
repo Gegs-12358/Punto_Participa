@@ -269,6 +269,33 @@ Toast dedicado `#toast-conexion` (en `base.html`) con la clase `.toast-conexion`
 4. Asterisco de obligatorio junto al label (sección 43 de `styles.css`).
 5. Banner "Los campos marcados con * son obligatorios."
 
+### 7.9 Correcciones de conteos, auditoría y limpieza de la suite `[CONFIRMADO]`
+
+La suite pasó de 258 a **299 pruebas, todas en OK, con 90 % de cobertura** (`views.py` 88 %, `utils.py` 97 %, `models.py` 99 %, `forms.py` 75 %). Las pruebas se corren dentro de Docker, porque la base no se publica hacia Windows. Con `--parallel` tardan cerca de 72 s, frente a unos 290 s en serie.
+
+| Commit | Cambio |
+|---|---|
+| `3b894de` | Admin de Django: exige RUT, RUN provisorio o pasaporte, lo guarda normalizado y rechaza duplicados (sin módulo 11, igual que la vista). 6 pruebas nuevas. |
+| `258511b` | Inscripción a taller: `registrar_log` salió del bloque `atomic`, así que una falla de la auditoría ya no deshace una inscripción válida. |
+| `8f9f856` | `registrar_log` recorta `modulo`, `accion`, `objeto_tipo` y `objeto_nombre` a su largo de columna y convierte la IP vacía en nula. 3 pruebas nuevas. |
+| `edd4e30` | KPI de inscritos: helper `_filtrar_inscripciones`. Dashboard y reportes ya no exigen asistencia para contar inscritos y respetan carrera, jornada y escuela. Se corrigieron el conteo por actividad y la tasa de asistencia. 7 pruebas nuevas. |
+| `ee0c182` | Exportaciones: la columna "Inscritos" usa el conteo correcto y los CSV usan `;` como separador para abrirse en columnas en el Excel chileno. 3 pruebas nuevas. |
+| `5b75805` | Pruebas de `tests.py` agrupadas con `subTest`. |
+| `357758e` | Clase base: `seleccionar_actividad` en `BaseSistemaTestCase`. En total, 7 pruebas menos por consolidación, sin bajar la cobertura. |
+| `9dd647c` | Se silencian los logs simulados de la suite (`logging.disable` en `setUpModule`/`tearDownModule`) y los `print()` de las migraciones 0014 y 0016 pasan a `logger.debug` con retorno anticipado si no hay carreras. Salida sin tracebacks ni warnings. |
+| `4171bc4` | `.gitignore` ampliado (`.env`, `venv/`, `staticfiles/`, `*.bak`), `logger` y comentario duplicados eliminados en `views.py`. |
+
+También se actualizó el README (299 pruebas, ejecución en paralelo, CSV con `;` y nota sobre el conteo de inscritos).
+
+**Hallazgos**
+
+- El KPI de reportes subcontaba incluso sin filtros, y el desglose por tipo ignoraba la Escuela. El dashboard estaba bien sin filtros.
+- Los tracebacks que aparecían al correr las pruebas no eran fallos: venían de errores inyectados a propósito con `mock.patch` y registrados con `logger.exception`.
+
+**Pendiente al habilitar cancelación y lista de espera** `[PENDIENTE]`
+
+Hoy las 131 inscripciones están `CONFIRMADA`, por eso el conteo no filtra por estado. Cuando esas funciones existan hay que revisar que los conteos cuenten solo `CONFIRMADA` y definir si cancelar una inscripción devuelve el cupo.
+
 ---
 
 ## 8. Incidente del dashboard con error 500 (28/09) `[CONFIRMADO]`
