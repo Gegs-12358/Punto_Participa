@@ -256,7 +256,7 @@ class InscripcionYAsistenciaIntegralTests(BaseSistemaTestCase):
     def test_inscripcion_publica_crea_registro_y_recalcula_cupo(self):
         response = self.client.post(
             reverse("inscripcion_taller", args=[self.actividad.pk]),
-            {"rut": "20.001.550-9"},
+            {"rut": "20.001.550-9", "acepta_politica": "on"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
@@ -272,7 +272,7 @@ class InscripcionYAsistenciaIntegralTests(BaseSistemaTestCase):
         Inscripcion.objects.create(actividad=self.actividad, alumno=self.alumno)
         response = self.client.post(
             reverse("inscripcion_taller", args=[self.actividad.pk]),
-            {"rut": "200015509"},
+            {"rut": "200015509", "acepta_politica": "on"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Ya estás inscrito")
@@ -280,7 +280,7 @@ class InscripcionYAsistenciaIntegralTests(BaseSistemaTestCase):
     def test_inscripcion_publica_rechaza_alumno_inexistente(self):
         response = self.client.post(
             reverse("inscripcion_taller", args=[self.actividad.pk]),
-            {"rut": "99999999-9"},
+            {"rut": "99999999-9", "acepta_politica": "on"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No estás registrado")
@@ -492,7 +492,7 @@ class AutenticacionYCorreoIntegralTests(BaseSistemaTestCase):
     def test_inscripcion_exitosa_no_envia_correo(self):
         response = self.client.post(
             reverse("inscripcion_taller", args=[self.actividad.pk]),
-            {"rut": "AB123456"},
+            {"rut": "AB123456", "acepta_politica": "on"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(

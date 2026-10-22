@@ -71,7 +71,7 @@ class CargaControladaTests(BaseSistemaTestCase):
         for alumno in alumnos:
             response = self.client.post(
                 reverse("inscripcion_taller", args=[self.actividad.pk]),
-                {"rut": alumno.rut},
+                {"rut": alumno.rut, "acepta_politica": "on"},
             )
             self.assertEqual(response.status_code, 200)
             if Inscripcion.objects.filter(actividad=self.actividad, alumno=alumno).exists():
@@ -177,7 +177,7 @@ class RollbackTransaccionalTests(BaseSistemaTestCase):
         ):
             response = self.client.post(
                 reverse("inscripcion_taller", args=[self.actividad.pk]),
-                {"rut": self.alumno.rut},
+                {"rut": self.alumno.rut, "acepta_politica": "on"},
             )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Inscripci")
@@ -279,7 +279,7 @@ class ConcurrenciaDeCuposTests(TransactionTestCase):
             cliente = Client()
             response = cliente.post(
                 reverse("inscripcion_taller", args=[self.actividad.pk]),
-                {"rut": alumno.rut},
+                {"rut": alumno.rut, "acepta_politica": "on"},
             )
             return response.status_code
         finally:

@@ -1830,6 +1830,12 @@ def inscripcion_taller(request, actividad_id):
     if request.method != 'POST':
         return _render_inscripcion(request, actividad, 'con_cupos')
 
+    if not request.POST.get('acepta_politica'):
+        return _render_inscripcion(
+            request, actividad, 'con_cupos',
+            'Debes aceptar la Política de Privacidad para inscribirte.'
+        )
+
     rut_original = limpiar_documento(request.POST.get('rut'), 40)
     if not rut_original:
         return _render_inscripcion(request, actividad, 'con_cupos', 'Debes ingresar tu RUT.')
@@ -1868,7 +1874,7 @@ def inscripcion_taller(request, actividad_id):
         return _render_inscripcion(request, actividad, 'con_cupos', 'Ya estás inscrito en este taller.')
     try:
         registrar_log(request, 'Inscripciones', 'Inscripción a taller',
-                      f'{alumno.nombres} {alumno.apellidos} - {actividad.titulo}',
+                      f'{alumno.nombres} {alumno.apellidos} - {actividad.titulo} - Política de Privacidad v2026-1 aceptada',
                       'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
     except Exception:
         logger.exception(

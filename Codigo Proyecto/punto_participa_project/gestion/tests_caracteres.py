@@ -151,7 +151,7 @@ class InscripcionPublicaHostilTestCase(TestCase):
         for texto in ENTRADAS:
             with self.subTest(texto=repr(texto)[:50]):
                 cache.clear()  # por si la vista tiene límite de intentos
-                r = self.client.post(self.url, {'rut': texto})
+                r = self.client.post(self.url, {'rut': texto, 'acepta_politica': 'on'})
                 self.assertEqual(r.status_code, 200)
                 self.assertNotIn('<script>alert(1)</script>', r.content.decode())
 
@@ -160,7 +160,7 @@ class InscripcionPublicaHostilTestCase(TestCase):
             rut='20001550-9', nombres='Bernardo', apellidos='O`higgins',
             correo='b@duocuc.cl', carrera='Informática', jornada='Diurno',
         )
-        r = self.client.post(self.url, {'rut': '20.001.550-9'})
+        r = self.client.post(self.url, {'rut': '20.001.550-9', 'acepta_politica': 'on'})
         self.assertEqual(r.status_code, 200)
         self.assertTrue(Inscripcion.objects.filter(actividad=self.taller).exists())
 

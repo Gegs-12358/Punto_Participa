@@ -104,7 +104,7 @@ class EstadosYCuposTests(BaseSistemaTestCase):
         self.actividad.save(update_fields=["estado"])
         response = self.client.post(
             reverse("inscripcion_taller", args=[self.actividad.pk]),
-            {"rut": self.alumno.rut},
+            {"rut": self.alumno.rut, "acepta_politica": "on"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "finalizado")

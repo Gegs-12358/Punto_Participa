@@ -251,7 +251,7 @@ class FlujoRolCompletoTests(BaseSistemaTestCase):
         self.client.force_login(self.creador)
         response = self.client.post(
             reverse("inscripcion_taller", args=[self.actividad.pk]),
-            {"rut": self.alumno.rut},
+            {"rut": self.alumno.rut, "acepta_politica": "on"},
         )
         # La inscripción pública no exige autenticación; el creador también debe
         # poder abrir el flujo y dejar registrada la inscripción.

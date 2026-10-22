@@ -118,6 +118,13 @@
                                 </small>
                             </div>
 
+                            <label for="acepta_politica" style="display: flex; gap: 8px; align-items: flex-start; font-size: 14px;">
+                                <input type="checkbox" name="acepta_politica" id="acepta_politica" required>
+                                <span>He leído y acepto la
+                                    <a href="{% url 'privacidad' %}" target="_blank" rel="noopener">Política de Privacidad</a>
+                                    <span class="required">*</span></span>
+                            </label>
+
                             <button type="submit" class="btn btn-block">
                                 ✓ Inscribirme
                             </button>
