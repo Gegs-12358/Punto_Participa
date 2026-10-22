@@ -271,7 +271,7 @@ Toast dedicado `#toast-conexion` (en `base.html`) con la clase `.toast-conexion`
 
 ### 7.9 Correcciones de conteos, auditoría y limpieza de la suite `[CONFIRMADO]`
 
-La suite pasó de 258 a **319 pruebas, todas en OK, con 92 % de cobertura** (`views.py` 88 %, `utils.py` 97 %, `models.py` 99 %, `forms.py` 97 %). Las pruebas se corren dentro de Docker, porque la base no se publica hacia Windows. Con `--parallel` tardan cerca de 72 s, frente a unos 290 s en serie.
+La suite pasó de 258 a **323 pruebas, todas en OK, con 92 % de cobertura** (`views.py` 88 %, `utils.py` 97 %, `models.py` 99 %, `forms.py` 97 %). Las pruebas se corren dentro de Docker, porque la base no se publica hacia Windows. Con `--parallel` tardan cerca de 72 s, frente a unos 290 s en serie.
 
 | Commit | Cambio |
 |---|---|
@@ -290,6 +290,7 @@ La suite pasó de 258 a **319 pruebas, todas en OK, con 92 % de cobertura** (`vi
 | `20132e7` | Prueba de fecha de inicio en el pasado. `forms.py` queda en 97 %. |
 | `6995dbb` | Página pública `/privacidad/` con la Política de Privacidad (borrador con puntos `[POR CONFIRMAR]`), enlazada desde la inscripción. |
 | `ea3eb2a` | La inscripción pública exige aceptar la política. Se valida en el servidor antes de buscar al alumno (sin la casilla tampoco se revela si un documento existe) y la aceptación, con la versión `v2026-1`, queda en la auditoría. 6 pruebas nuevas y 11 existentes actualizadas. |
+| `08a45f1` | Límite de intentos en la inscripción pública: 15 documentos inexistentes por IP cada 15 minutos, contado sobre el caché de Django. No cuentan las inscripciones válidas, las repetidas ni los envíos sin la casilla. 4 pruebas nuevas. |
 
 También se actualizó el README (299 pruebas, ejecución en paralelo, CSV con `;` y nota sobre el conteo de inscritos).
 
@@ -374,7 +375,7 @@ No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de
 
 - Decidir qué hacer con `ip_address`, `user_agent` y `cambios_json` de la auditoría.
 - Derecho a supresión: anonimizar, no borrar en cascada.
-- Límite de intentos en la inscripción pública: hoy permite comprobar si un documento existe.
+- Límite de intentos en la inscripción pública: implementado (`08a45f1`). Limitaciones por resolver antes de producción: el caché es local a cada proceso de Gunicorn, así que el tope efectivo es mayor; y detrás de un proxy sin `X-Forwarded-For` todos los estudiantes comparten IP, de modo que 15 errores sumados bloquearían la inscripción para todos durante 15 minutos.
 - La pantalla de auditoría recorta visualmente el detalle (en la base está completo).
 - IP real tras el proxy (`X-Forwarded-For`): hoy la bitácora guarda la IP interna de Docker.
 ---

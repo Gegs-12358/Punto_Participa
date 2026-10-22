@@ -42,7 +42,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**.
 
-* Suite de pruebas automatizadas: 319 tests (detalle en la sección 8).
+* Suite de pruebas automatizadas: 323 tests (detalle en la sección 8).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 
 ---
@@ -206,6 +206,7 @@ Codigo Proyecto/
 * Tolerancia a caracteres especiales en los datos de entrada y escape en la salida.
 * Registro de auditoría de las acciones del sistema.
 * Política de Privacidad pública (`/privacidad/`) y aceptación obligatoria al inscribirse, registrada en la auditoría. El texto es un borrador pendiente de revisión de Duoc UC.
+* Límite de intentos en la inscripción pública: 15 documentos inexistentes por IP cada 15 minutos (las inscripciones válidas no cuentan).
 
 ### Pendientes antes de producción
 
@@ -218,7 +219,7 @@ Codigo Proyecto/
 
 ## 8. Pruebas automatizadas
 
-La suite tiene **319 tests** y se ejecuta con:
+La suite tiene **323 tests** y se ejecuta con:
 
 ```powershell
 docker compose exec web python manage.py test --noinput
