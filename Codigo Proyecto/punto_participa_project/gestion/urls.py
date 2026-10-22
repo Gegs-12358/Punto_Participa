@@ -58,5 +58,6 @@ urlpatterns = [
     # INSCRIPCIÓN PÚBLICA
     # ============================================================
     path('taller/<int:actividad_id>/', views.inscripcion_taller, name='inscripcion_taller'),
+    path('privacidad/', views.politica_privacidad, name='privacidad'),
 
 ]

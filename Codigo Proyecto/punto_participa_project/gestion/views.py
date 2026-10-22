@@ -1879,3 +1879,7 @@ def inscripcion_taller(request, actividad_id):
     actividad.cupos_disponibles = cupos_restantes
     return _render_inscripcion(request, actividad, 'con_cupos', exito=
                                f'¡Inscripción exitosa! Cupos disponibles: {cupos_restantes}')
+
+def politica_privacidad(request):
+    """Página pública con la Política de Privacidad."""
+    return render(request, 'gestion/politica_privacidad.html')
