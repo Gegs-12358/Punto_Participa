@@ -1,6 +1,7 @@
 # ==================== IMPORTS ====================
 import csv
 import logging
+from django.core.cache import cache as cache_django
 logger = logging.getLogger(__name__)
 import re
 
@@ -1836,6 +1837,12 @@ def inscripcion_taller(request, actividad_id):
             'Debes aceptar la Política de Privacidad para inscribirte.'
         )
 
+    if _inscripcion_bloqueada(request):
+        return _render_inscripcion(
+            request, actividad, 'con_cupos',
+            'Demasiados intentos fallidos. Espera unos minutos e inténtalo de nuevo.'
+        )
+
     rut_original = limpiar_documento(request.POST.get('rut'), 40)
     if not rut_original:
         return _render_inscripcion(request, actividad, 'con_cupos', 'Debes ingresar tu RUT.')
@@ -1843,6 +1850,7 @@ def inscripcion_taller(request, actividad_id):
     # [REFACTOR] Búsqueda inteligente: acepta múltiples formatos
     alumno = buscar_alumno_por_documento(rut_original)
     if not alumno:
+        _registrar_fallo_inscripcion(request)
         return _render_inscripcion(
             request, actividad, 'con_cupos',
             'No estás registrado en el sistema. Verifica tu RUT o contacta a Punto Estudiantil.'
@@ -1885,6 +1893,29 @@ def inscripcion_taller(request, actividad_id):
     actividad.cupos_disponibles = cupos_restantes
     return _render_inscripcion(request, actividad, 'con_cupos', exito=
                                f'¡Inscripción exitosa! Cupos disponibles: {cupos_restantes}')
+
+LIMITE_FALLOS_INSCRIPCION = 15
+VENTANA_FALLOS_INSCRIPCION = 15 * 60  # segundos
+
+
+def _clave_fallos_inscripcion(request):
+    return 'insc_fallos:' + (request.META.get('REMOTE_ADDR') or 'desconocida')
+
+
+def _inscripcion_bloqueada(request):
+    """True si esta IP acumuló demasiados documentos inexistentes."""
+    return cache_django.get(_clave_fallos_inscripcion(request), 0) >= LIMITE_FALLOS_INSCRIPCION
+
+
+def _registrar_fallo_inscripcion(request):
+    clave = _clave_fallos_inscripcion(request)
+    if cache_django.add(clave, 1, VENTANA_FALLOS_INSCRIPCION):
+        return
+    try:
+        cache_django.incr(clave)
+    except ValueError:  # la clave venció justo ahora
+        cache_django.set(clave, 1, VENTANA_FALLOS_INSCRIPCION)
+
 
 def politica_privacidad(request):
     """Página pública con la Política de Privacidad."""
