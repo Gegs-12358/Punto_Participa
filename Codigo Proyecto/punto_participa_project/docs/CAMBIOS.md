@@ -287,7 +287,7 @@ La suite pasó de 258 a **313 pruebas, todas en OK, con 92 % de cobertura** (`vi
 | `4210cd0` | Se renombra `test_formulario_rechaza_archivo_que_no_es_imagen` y se reescribe la prueba de inscripción para que verifique primero que la inscripción se hizo y luego que no hay correos. |
 | `13c7490` | 8 pruebas nuevas de `clean_imagen` (tamaño, contenido falso, formato no permitido, GIF, limpieza de EXIF y respaldo ante fallo). `forms.py` sube de 75 % a 96 %. |
 | `2f74b8e` | 5 pruebas nuevas de `ActividadForm`: fecha de término igual o anterior al inicio, y taller con cupo 0 o sin cupo. |
-| (este commit) | Prueba de fecha de inicio en el pasado. `forms.py` queda en 97 %. |
+| `20132e7` | Prueba de fecha de inicio en el pasado. `forms.py` queda en 97 %. |
 
 También se actualizó el README (299 pruebas, ejecución en paralelo, CSV con `;` y nota sobre el conteo de inscritos).
 
