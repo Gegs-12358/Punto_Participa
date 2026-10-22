@@ -390,6 +390,7 @@ No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de
 - [ ] `DEBUG=False` y `ALLOWED_HOSTS` reales (el valor por defecto es `midominio.com`).
 - [ ] Activar HTTPS: `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, HSTS y `CSRF_TRUSTED_ORIGINS`. Hoy están dentro del bloque de texto muerto de `settings.py`.
 - [ ] Reactivar el rate limiting (`RATELIMIT_ENABLE = False` hoy, con sus checks silenciados). Detrás de un proxy, la clave `ip` debe usar la IP real del cliente. Verificar `createcachetable`.
+- [ ] Límite de intentos en la inscripción pública (`08a45f1`): cuenta por `REMOTE_ADDR` sobre el caché de Django y funciona aunque `RATELIMIT_ENABLE` esté en `False`. Antes de publicar: (a) configurar la IP real del cliente (`X-Forwarded-For`), porque con una IP compartida 15 errores de cualquier estudiante bloquearían la inscripción para todos durante 15 minutos; (b) usar un caché compartido entre procesos de Gunicorn (por ejemplo Redis), o el tope efectivo es mayor; (c) revisar `CACHES` en `settings.py`.
 - [ ] Limpiar el bloque `"""..."""` sobrante al final de `settings.py`.
 - [ ] Confirmar `EMAIL_BACKEND`: en el `settings.py` revisado estaba en modo consola (no envía correos).
 - [ ] Cuenta de correo institucional.
@@ -405,19 +406,19 @@ No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de
 **Datos**
 - [ ] Respaldos programados de la base **y** del volumen `media_volume`. `docker compose down -v` borra ambos.
 - [ ] Excluir de ZIPs, imagen y repositorio: `*.sql`, `*.dump`, `cookies*.txt`, `dash_*.html`, `*.bak`, `.coverage`, `docs/htmlcov/` (los dumps contienen RUT, nombres y correos reales).
-- [ ] Política de Privacidad y consentimiento en la inscripción pública.
+- [ ] Política de Privacidad y consentimiento en la inscripción pública: implementados (`6995dbb`, `ea3eb2a`). Falta la revisión y aprobación de Duoc UC (ver 10.4).
 - [ ] Definir el borrado o anonimización de datos.
 
 **Calidad**
-- [ ] Suite completa de tests en verde y cobertura recalculada.
+- [x] Suite completa de tests en verde y cobertura recalculada (323 pruebas, 92 %).
 - [ ] Usar Git (los ZIPs numerados, los `.bak` y las copias duplicadas indican que hoy el versionado es manual).
 
 ---
 
 ## 12. Observaciones a verificar
 
-1. **"Inscritos" en Reportes.** En `reportes()`, el total de inscritos se calcula con `Inscripcion.filter(alumno__in=alumnos_ids)`, donde `alumnos_ids` son los alumnos **que asistieron**. Sin filtros, eso cuenta solo inscripciones de quienes asistieron y subestima la cifra. Revisar si es lo deseado.
-2. **Desglose por tipo y filtro de Escuela.** `_construir_desglose_tipo()` recibe `carrera` y `jornada`, pero no `escuela`. Con el filtro de Escuela activo, los inscritos a talleres podrían no reflejarlo.
+1. **"Inscritos" en Reportes.** En `reportes()`, el total de inscritos se calcula con `Inscripcion.filter(alumno__in=alumnos_ids)`, donde `alumnos_ids` son los alumnos **que asistieron**. Sin filtros, eso cuenta solo inscripciones de quienes asistieron y subestima la cifra. Revisar si es lo deseado. **Resuelto en `edd4e30`.**
+2. **Desglose por tipo y filtro de Escuela.** `_construir_desglose_tipo()` recibe `carrera` y `jornada`, pero no `escuela`. Con el filtro de Escuela activo, los inscritos a talleres podrían no reflejarlo. **Resuelto en `edd4e30`.**
 3. **Chips de filtros activos.** La condición del bloque de chips en `reportes.html` no incluye `escuela`, así que ese filtro no genera chip.
 4. **CSS duplicado.** `.filters-bar`, `.filter-group` y `.filter-actions` están definidas dos veces en `styles.css` (secciones 2 y 8). La segunda pisa parte de la primera. Funciona, pero conviene unificarlas.
 5. **`waitress`** sigue en `requirements.txt` aunque el contenedor usa Gunicorn (útil solo para correr local en Windows).
