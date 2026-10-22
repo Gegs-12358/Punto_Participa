@@ -271,7 +271,7 @@ Toast dedicado `#toast-conexion` (en `base.html`) con la clase `.toast-conexion`
 
 ### 7.9 Correcciones de conteos, auditoría y limpieza de la suite `[CONFIRMADO]`
 
-La suite pasó de 258 a **313 pruebas, todas en OK, con 92 % de cobertura** (`views.py` 88 %, `utils.py` 97 %, `models.py` 99 %, `forms.py` 97 %). Las pruebas se corren dentro de Docker, porque la base no se publica hacia Windows. Con `--parallel` tardan cerca de 72 s, frente a unos 290 s en serie.
+La suite pasó de 258 a **319 pruebas, todas en OK, con 92 % de cobertura** (`views.py` 88 %, `utils.py` 97 %, `models.py` 99 %, `forms.py` 97 %). Las pruebas se corren dentro de Docker, porque la base no se publica hacia Windows. Con `--parallel` tardan cerca de 72 s, frente a unos 290 s en serie.
 
 | Commit | Cambio |
 |---|---|
@@ -288,6 +288,8 @@ La suite pasó de 258 a **313 pruebas, todas en OK, con 92 % de cobertura** (`vi
 | `13c7490` | 8 pruebas nuevas de `clean_imagen` (tamaño, contenido falso, formato no permitido, GIF, limpieza de EXIF y respaldo ante fallo). `forms.py` sube de 75 % a 96 %. |
 | `2f74b8e` | 5 pruebas nuevas de `ActividadForm`: fecha de término igual o anterior al inicio, y taller con cupo 0 o sin cupo. |
 | `20132e7` | Prueba de fecha de inicio en el pasado. `forms.py` queda en 97 %. |
+| `6995dbb` | Página pública `/privacidad/` con la Política de Privacidad (borrador con puntos `[POR CONFIRMAR]`), enlazada desde la inscripción. |
+| `ea3eb2a` | La inscripción pública exige aceptar la política. Se valida en el servidor antes de buscar al alumno (sin la casilla tampoco se revela si un documento existe) y la aceptación, con la versión `v2026-1`, queda en la auditoría. 6 pruebas nuevas y 11 existentes actualizadas. |
 
 También se actualizó el README (299 pruebas, ejecución en paralelo, CSV con `;` y nota sobre el conteo de inscritos).
 
@@ -351,9 +353,30 @@ Imágenes: extensión o tipo MIME falsos, "decompression bomb", archivos polígl
 
 No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de sesión y CSRF (esenciales, sin banner de consentimiento).
 
-### 10.4 Marco legal (a verificar)
-Rige la Ley 19.628. La Ley 21.719 tenía vigencia prevista para el 1/12/2026, pero el 1/09/2026 el Gobierno ingresó un proyecto para postergarla a diciembre de 2027. **Verificar el estado actual antes de decidir plazos.** Para producción con datos reales, conviene revisión del área legal de Duoc.
+### 10.4 Marco legal (verificado el 21/10/2026; revisión institucional pendiente)
 
+- La Ley 21.719 (que reforma la Ley 19.628 y crea la Agencia de Protección de Datos Personales) se publicó el 13/12/2024 y entra en vigencia el **1/12/2026**.
+- El 31/08/2026 el Gobierno presentó un proyecto (Boletín 18.623-07) que la posterga al 1/12/2027 y extiende a todas las empresas la sanción por amonestación escrita durante el primer año. **No es ley mientras no se promulgue y publique**, así que el proyecto se diseña para diciembre de 2026.
+- A octubre de 2026 la Agencia no tiene consejo constituido (el Senado desechó la terna en mayo de 2026). Las obligaciones rigen igual desde la vigencia.
+- La responsable de los datos es Duoc UC, no el equipo del proyecto. El texto de la política es un borrador técnico y no constituye asesoría legal.
+
+**Implementado:** página pública `/privacidad/` (versión `v2026-1`), casilla de aceptación obligatoria en la inscripción pública, validada en el servidor, y registro de la aceptación en la auditoría.
+
+**Pendiente de confirmar con Duoc UC** (marcado `[POR CONFIRMAR]` en la política):
+
+- Razón social y datos de contacto del responsable.
+- Base de licitud del tratamiento (la casilla no debería ser la única).
+- Plazo de conservación de inscripciones, asistencia, correos y bitácora.
+- Proveedor de correo y país de procesamiento (hoy Gmail, mientras no exista la cuenta institucional).
+- Procedimiento y plazo de respuesta para ejercer derechos.
+
+**Pendiente del proyecto:**
+
+- Decidir qué hacer con `ip_address`, `user_agent` y `cambios_json` de la auditoría.
+- Derecho a supresión: anonimizar, no borrar en cascada.
+- Límite de intentos en la inscripción pública: hoy permite comprobar si un documento existe.
+- La pantalla de auditoría recorta visualmente el detalle (en la base está completo).
+- IP real tras el proxy (`X-Forwarded-For`): hoy la bitácora guarda la IP interna de Docker.
 ---
 
 ## 11. Checklist antes de producción
