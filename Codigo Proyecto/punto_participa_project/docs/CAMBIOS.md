@@ -342,7 +342,7 @@ carrera y jornada contra las tablas `Carrera` y `Jornada` (no se crean carreras 
 **Pendiente:** vista web de Administrador con vista previa; pruebas de escáner, inscripción
 pública e invitaciones con un alumno bloqueado; decidir el mensaje que ve el bloqueado y si
 su inscripción futura sigue ocupando cupo; confirmar con Duoc UC la autorización de la carga
-y el formato real del archivo; respaldo de la base antes de cada importación real.
+y el formato real del archivo; respaldo de la base antes de cada importación real; tope de tamaño descomprimido para `.xlsx` antes de habilitar la subida desde la web (hoy solo se limita el tamaño comprimido).
 
 ## 8. Incidente del dashboard con error 500 (28/09) `[CONFIRMADO]`
 
@@ -501,6 +501,8 @@ No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de
 
 Ver errores y logs: `docker compose logs -f web`. Crear superusuario: `docker compose exec web python manage.py createsuperuser`.
 
+Importar alumnos: `docker compose exec web python manage.py importar_alumnos <archivo> --simular` y revisar el resumen; solo si es correcto, repetir sin `--simular`. El archivo debe estar dentro de la carpeta del proyecto para que el contenedor lo vea. Antes de la primera importación real, respaldar la base (ver 7.10).
+
 ---
 
 ## 15. Estructura de referencia
@@ -525,10 +527,12 @@ docs/                   CAMBIOS.md · coverage_report.txt · htmlcov/
 
 Reportado como "no guarda imágenes nuevas al editar". La investigación encontró 4 causas encadenadas, no una sola:
 
+## 16. Anexo: correcciones del formulario de actividades (28/09)
+
 Fechas no se prellenaban al editar. forms.py declaraba los 4 campos (fecha_inicio_fecha, fecha_inicio_hora, fecha_fin_fecha, fecha_fin_hora) sin fijar input_formats/format. Con LANGUAGE_CODE='es-es', Django formateaba la fecha como 28/09/2026, que el <input type="date"> del navegador no reconoce (exige AAAA-MM-DD) y descarta en silencio. Corregido fijando input_formats=['%Y-%m-%d'] / format='%Y-%m-%d' (y %H:%M para hora) en los 4 campos, sin depender del idioma configurado.
 Checkboxes de Carreras/Jornadas se veían vacíos tras un reintento fallido. El template comparaba carrera.id in form.carreras.value: la primera carga compara enteros contra enteros (funciona), pero tras un POST inválido form.carreras.value vuelve como lista de strings — 24 in ["24", "15"] da False aunque sean "la misma" carrera. Visualmente parecía que el formulario "perdía" todo lo marcado. Corregido en actividad_form_partial.html comparando ambos lados con stringformat:"s" dentro de un {% with %} que captura form.carreras.value/form.jornadas.value una sola vez.
 Imagen actual no se mostraba al editar. El #preview-container siempre estaba vacío al abrir el formulario de edición, sin forma de saber si la actividad ya tenía imagen. Corregido agregando una miniatura condicional ({% if form.instance.imagen %}) con la imagen guardada y una nota de que solo hace falta subir una nueva si se quiere reemplazar.
-Causa raíz real de "no guarda nada, imagen incluida". La validación "la fecha de inicio no puede ser en el pasado" comparaba self.instance.fecha_inicio == fecha_inicio con precisión de microsegundos. Como fecha_inicio se reconstruye desde los campos separados (siempre en :00.000000) y el valor guardado en BBDD podía diferir en segundos/microsegundos, la comparación de "¿la fecha no cambió?" casi nunca era True — así que cualquier edición de una actividad con fecha ya pasada (algo común en un sistema con meses de datos reales) disparaba el error y Django rechazaba todo el formulario, incluida la imagen. Corregido comparando ambos datetimes truncados a minuto (.replace(second=0, microsecond=0)).
+Causa raíz real de "no guarda nada, imagen incluida". La validación "la fecha de inicio no puede ser en el pasado" comparaba self.instance.fecha_inicio == fecha_inicio con precisión de microsegundos. Como fecha_inicio se reconstruye desde los campos separados (siempre en :00.000000) y el valor guardado en BBDD podía diferir en segundos/microsegundos, la comparación de "¿la fecha no cambió?" casi nunca era True — así que cualquier edición de una actividad con fecha ya pasada (algo común en un sistema con meses de datos de prueba) disparaba el error y Django rechazaba todo el formulario, incluida la imagen. Corregido comparando ambos datetimes truncados a minuto (.replace(second=0, microsecond=0)).
 
 Las cuatro correcciones se verificaron en conjunto sobre la actividad de prueba id=98: fechas, horas, carreras, jornadas e imagen ya se conservan correctamente al editar.
 
