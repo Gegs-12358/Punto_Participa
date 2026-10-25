@@ -77,10 +77,15 @@ class UsuarioSistemaAdmin(admin.ModelAdmin):
 # ============================================================
 @admin.register(Alumno)
 class AlumnoAdmin(admin.ModelAdmin):
-    list_display = ('rut', 'tipo_documento', 'nombres', 'apellidos', 'carrera', 'jornada')
-    list_filter = ('tipo_documento', 'carrera', 'jornada')
+    list_display = ('rut', 'tipo_documento', 'nombres', 'apellidos', 'carrera', 'jornada', 'activo')
+    list_filter = ('activo', 'tipo_documento', 'carrera', 'jornada')
     search_fields = ('rut', 'nombres', 'apellidos', 'correo')
     ordering = ('apellidos', 'nombres')
+
+    def has_delete_permission(self, request, obj=None):
+        """Los alumnos no se borran: la cascada eliminaria sus inscripciones y
+        asistencias. Para darlos de baja se bloquean (campo activo)."""
+        return False
 
     def save_model(self, request, obj, form, change):
         """Normaliza el RUT antes de guardar."""

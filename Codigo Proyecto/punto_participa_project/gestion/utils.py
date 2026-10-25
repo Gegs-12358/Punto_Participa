@@ -51,7 +51,6 @@ def limpiar_documento(valor, max_len=40):
     valor = limpiar_texto(valor) or ''
     return valor[:max_len]
 
-
 __all__ = [
     # Documentos de identidad
     'rut_limpio',
@@ -412,7 +411,7 @@ def buscar_alumno_por_documento(valor):
     if len(valor_upper) >= 6:
         q |= Q(rut__icontains=valor_upper)
 
-    return Alumno.objects.filter(q).first()
+    return Alumno.objects.filter(q, activo=True).first()
 
 
 # ============================================================

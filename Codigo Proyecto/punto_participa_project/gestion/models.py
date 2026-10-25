@@ -67,6 +67,7 @@ class Alumno(models.Model):
     correo = models.EmailField()
     carrera = models.CharField(max_length=100)
     jornada = models.CharField(max_length=20)
+    activo = models.BooleanField(default=True, db_index=True, verbose_name='Activo')
 
     class Meta:
         verbose_name = 'Alumno'
@@ -82,7 +83,7 @@ class Alumno(models.Model):
         self.nombres = limpiar_texto(self.nombres)
         self.apellidos = limpiar_texto(self.apellidos)
         self.carrera = limpiar_texto(self.carrera)
-        self.jornada = limpiar_texto(self.jornada)
+        self.jornada = limpiar_texto(self.jornada) 
         self.correo = limpiar_texto(self.correo)
         self.rut = normalizar_documento(self.rut) or None  # '' -> None (evita choque de unique)
         super().save(*args, **kwargs)

@@ -1421,7 +1421,7 @@ def enviar_invitaciones(request):
         carreras = list(actividad.carreras.values_list('nombre', flat=True))
         jornadas = list(actividad.jornadas.values_list('nombre', flat=True))
 
-        alumnos = Alumno.objects.all()
+        alumnos = Alumno.objects.filter(activo=True)
         if carreras:
             alumnos = alumnos.filter(carrera__in=carreras)
         if jornadas:
@@ -1478,7 +1478,7 @@ def previsualizar_invitacion(request, pk):
 
         carreras = [c.nombre for c in actividad.carreras.all()]
         jornadas = [j.nombre for j in actividad.jornadas.all()]
-        alumnos = Alumno.objects.all()
+        alumnos = Alumno.objects.filter(activo=True)
         if carreras:
             alumnos = alumnos.filter(carrera__in=carreras)
         if jornadas:
