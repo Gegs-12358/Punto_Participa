@@ -19,7 +19,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 
 **Estado actual: listo para piloto interno. No está listo para producción abierta** (ver sección 11).
 
-Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con los datos reales ya migrados.
+Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
 
 **Roles**
 
@@ -305,6 +305,45 @@ Hoy las 131 inscripciones están `CONFIRMADA`, por eso el conteo no filtra por e
 
 ---
 
+### 7.10 Importador de alumnos con sincronización y bloqueo de ausentes `[CONFIRMADO]`
+
+Commit `ffce13a`. Comando `importar_alumnos` (`gestion/management/commands/`) y módulo
+`gestion/importador_alumnos.py`, separado del comando para reutilizarlo en una vista web.
+
+**Archivo:** `.xlsx` o `.csv` (separador `;`, `,` o tabulación; UTF-8 o Latin-1), máximo
+5 MB y 5.000 filas. Se valida el contenido, no solo la extensión. Columnas: `rut`,
+`tipo_documento` (opcional), `nombres`, `apellidos`, `correo`, `carrera`, `jornada`.
+El formato es una propuesta: Duoc UC aún no entrega un archivo real (ver pendientes).
+
+**Reglas de sincronización:**
+
+- La clave es el documento normalizado (`normalizar_documento`).
+- Si existe, se compara campo por campo y se actualiza solo lo que cambió.
+- Si no existe, se crea.
+- Si está activo en la base y no viene en el archivo, se **bloquea** (`Alumno.activo = False`).
+  Nunca se borra: se conservan sus inscripciones y asistencias.
+- Si un bloqueado vuelve a venir en el archivo, se reactiva.
+- Una fila con error no bloquea al alumno (su documento sí viene en el archivo).
+
+**Efecto del bloqueo:** el alumno deja de encontrarse en la inscripción pública y el escáner
+(`buscar_alumno_por_documento`) y de recibir invitaciones y su vista previa. Las
+actividades pasadas conservan su historial y los reportes no cambian. En el admin se
+agregó la columna y el filtro `activo`, y se quitó el permiso de borrar alumnos.
+
+**Resguardos:** `--simular` no guarda nada; si se fuera a bloquear a más del 20 % de los
+activos el comando se detiene salvo `--confirmar-bloqueo-masivo`; la escritura es atómica;
+cada importación real queda en la auditoría.
+
+**Validación por fila:** documento según su tipo (no solo módulo 11), correo, largos, y
+carrera y jornada contra las tablas `Carrera` y `Jornada` (no se crean carreras nuevas).
+
+**Pruebas:** `tests_importador.py` (32). Total de la suite: 355, todas en OK.
+
+**Pendiente:** vista web de Administrador con vista previa; pruebas de escáner, inscripción
+pública e invitaciones con un alumno bloqueado; decidir el mensaje que ve el bloqueado y si
+su inscripción futura sigue ocupando cupo; confirmar con Duoc UC la autorización de la carga
+y el formato real del archivo; respaldo de la base antes de cada importación real.
+
 ## 8. Incidente del dashboard con error 500 (28/09) `[CONFIRMADO]`
 
 Causa: `dashboard.html` tenía **3 tags de Django partidos en dos líneas** (`{%` en una línea y `endif %}` en otra), en las tasas de masivas y talleres y en los cupos de la tabla, además de comparaciones sin espacios (`rango_actual=='hoy'`). Un tag de Django no puede partirse entre líneas, así que quedaba un `{% if %}` sin cerrar (`TemplateSyntaxError`).
@@ -409,8 +448,13 @@ No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de
 - [ ] Política de Privacidad y consentimiento en la inscripción pública: implementados (`6995dbb`, `ea3eb2a`). Falta la revisión y aprobación de Duoc UC (ver 10.4).
 - [ ] Definir el borrado o anonimización de datos.
 
+**Datos de prueba y carga de alumnos**
+- [ ] No ejecutar nunca `seed_data` ni `perf_seed` en producción. `seed_data` crea `admin / admin12345` y otros usuarios con contraseñas fijas, y su `--flush` borra todos los alumnos, actividades, inscripciones, asistencias, carreras y jornadas. Idea: que se nieguen a correr con `DEBUG=False`.
+- [ ] Antes de la primera importación real: respaldo de la base, `--simular` y revisar el resumen.
+- [ ] Confirmar con Duoc UC la autorización de la carga y el formato real del archivo.
+
 **Calidad**
-- [x] Suite completa de tests en verde y cobertura recalculada (323 pruebas, 92 %).
+- [x] Suite completa de tests en verde (355 pruebas). El 92 % de cobertura se midió con 323 y está pendiente de recalcular.
 - [ ] Usar Git (los ZIPs numerados, los `.bak` y las copias duplicadas indican que hoy el versionado es manual).
 
 ---
