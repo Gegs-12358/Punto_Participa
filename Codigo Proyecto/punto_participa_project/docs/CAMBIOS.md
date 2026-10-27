@@ -337,10 +337,9 @@ cada importación real queda en la auditoría.
 **Validación por fila:** documento según su tipo (no solo módulo 11), correo, largos, y
 carrera y jornada contra las tablas `Carrera` y `Jornada` (no se crean carreras nuevas).
 
-**Pruebas:** `tests_importador.py` (32). Total de la suite: 355, todas en OK.
+**Pruebas:** `tests_importador.py` (32) y `tests_alumnos_bloqueados.py` (18, commit `4a694ee`): un bloqueado no puede inscribirse, no se reconoce en el escáner (primera y segunda etapa) y no recibe invitaciones ni queda en las notificaciones, y la vista previa lo ignora. Total de la suite: 373, todas en OK.
 
-**Pendiente:** vista web de Administrador con vista previa; pruebas de escáner, inscripción
-pública e invitaciones con un alumno bloqueado; decidir el mensaje que ve el bloqueado y si
+**Pendiente:** vista web de Administrador con vista previa; decidir el mensaje que ve el bloqueado y si
 su inscripción futura sigue ocupando cupo; confirmar con Duoc UC la autorización de la carga
 y el formato real del archivo; respaldo de la base antes de cada importación real; tope de tamaño descomprimido para `.xlsx` antes de habilitar la subida desde la web (hoy solo se limita el tamaño comprimido).
 
@@ -454,7 +453,7 @@ No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de
 - [ ] Confirmar con Duoc UC la autorización de la carga y el formato real del archivo.
 
 **Calidad**
-- [x] Suite completa de tests en verde (355 pruebas). El 92 % de cobertura se midió con 323 y está pendiente de recalcular.
+- [x] Suite completa de tests en verde (373 pruebas). El 92 % de cobertura se midió con 323 y está pendiente de recalcular.
 - [ ] Usar Git (los ZIPs numerados, los `.bak` y las copias duplicadas indican que hoy el versionado es manual).
 
 ---
@@ -502,6 +501,8 @@ No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de
 Ver errores y logs: `docker compose logs -f web`. Crear superusuario: `docker compose exec web python manage.py createsuperuser`.
 
 Importar alumnos: `docker compose exec web python manage.py importar_alumnos <archivo> --simular` y revisar el resumen; solo si es correcto, repetir sin `--simular`. El archivo debe estar dentro de la carpeta del proyecto para que el contenedor lo vea. Antes de la primera importación real, respaldar la base (ver 7.10).
+
+Flujo con dos carpetas (desde el 26/10/2026): se edita y se prueba en `punto_participa_export` (VS Code y Docker; su `.env` lleva `COMPOSE_PROJECT_NAME=punto_participa_project` para reutilizar la misma base) y se sube desde `repo_historial\Codigo Proyecto\punto_participa_project`. Para pasar los cambios: `herramientas\sync.ps1 a-repo` (simula) y con `-Aplicar` (copia); luego `git status`, `git commit` y `git push` en la carpeta del repo. No se ejecuta `docker compose` desde la carpeta del repo. Lo que se borra o se renombra en `export` no se propaga: hay que hacerlo en el repo con `git rm`.
 
 ---
 
