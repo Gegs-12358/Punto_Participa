@@ -337,13 +337,13 @@ cada importación real queda en la auditoría.
 **Validación por fila:** documento según su tipo (no solo módulo 11), correo, largos, y
 carrera y jornada contra las tablas `Carrera` y `Jornada` (no se crean carreras nuevas).
 
-**Vista web (commit `dbcc968`):** `/alumnos/importar/`, solo Administrador (`gestion/views_importar.py` y plantilla `alumnos_importar.html`). Flujo en dos pasos: vista previa (no guarda nada; las filas validadas quedan en la sesión y el archivo no se guarda en disco) y confirmación (se vuelve a analizar contra la base y se aplica; si se bloquea a más del 20 % de los activos exige marcar una casilla). Muestra el resumen, los errores por fila, el `antes → después` de cada cambio y los alumnos que se bloquean (primeros 50). Registra la importación en la auditoría. Para `.xlsx` se limita además el tamaño descomprimido (50 MB). Probado a mano con alta, cambio, bloqueo y reactivación.
+**Vista web (commit `dbcc968`):** `/alumnos/importar/`, solo Administrador (`gestion/views_importar.py` y plantilla `alumnos_importar.html`). Flujo en dos pasos: vista previa (no guarda nada; las filas validadas quedan en la sesión y el archivo no se guarda en disco) y confirmación (se vuelve a analizar contra la base y se aplica; si se bloquea a más del 20 % de los activos exige marcar una casilla). Muestra el resumen, los errores por fila, el `antes → después` de cada cambio y los alumnos que se bloquean (primeros 50). Registra la importación en la auditoría. Para `.xlsx` se limita además el tamaño descomprimido (50 MB). Enlace «▤ Importar» en el menú del Administrador (commit `5f21d29`). Probado a mano con alta, cambio, bloqueo y reactivación.
 
-**Pruebas:** `tests_importador.py` (33), `tests_alumnos_bloqueados.py` (18, commit `4a694ee`) y `tests_importar_web.py` (13): un bloqueado no puede inscribirse, no se reconoce en el escáner (primera y segunda etapa) y no recibe invitaciones ni queda en las notificaciones, y la vista previa lo ignora. Total de la suite: 387, todas en OK.
+**Pruebas:** `tests_importador.py` (33), `tests_alumnos_bloqueados.py` (18, commit `4a694ee`) y `tests_importar_web.py` (15, con 2 del menú): un bloqueado no puede inscribirse, no se reconoce en el escáner (primera y segunda etapa) y no recibe invitaciones ni queda en las notificaciones, y la vista previa lo ignora. Total de la suite: 389, todas en OK.
 
 **Pendiente:** decidir el mensaje que ve el bloqueado y si
 su inscripción futura sigue ocupando cupo; confirmar con Duoc UC la autorización de la carga
-y el formato real del archivo; respaldo de la base antes de cada importación real; enlazar la página de importación desde el menú.
+y el formato real del archivo; respaldo de la base antes de cada importación real.
 
 ## 8. Incidente del dashboard con error 500 (28/09) `[CONFIRMADO]`
 
@@ -455,7 +455,7 @@ No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de
 - [ ] Confirmar con Duoc UC la autorización de la carga y el formato real del archivo.
 
 **Calidad**
-- [x] Suite completa de tests en verde (387 pruebas). El 92 % de cobertura se midió con 323 y está pendiente de recalcular.
+- [x] Suite completa de tests en verde (389 pruebas). El 92 % de cobertura se midió con 323 y está pendiente de recalcular.
 - [ ] Usar Git (los ZIPs numerados, los `.bak` y las copias duplicadas indican que hoy el versionado es manual).
 
 ---
