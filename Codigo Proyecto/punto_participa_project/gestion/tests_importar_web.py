@@ -170,3 +170,22 @@ class ImportarAlumnosWebTests(TestCase):
         self.assertEqual(Alumno.objects.count(), 1)           # no se duplica
         self.assertIn('error', r.context)                     # ya no hay nada que guardar
         self.assertEqual(LogAuditoria.objects.filter(accion='Importación de alumnos').count(), 0)
+
+
+class EnlaceDelMenuTests(TestCase):
+    def _entrar(self, rol_nombre, username):
+        rol, _ = Rol.objects.get_or_create(nombre=rol_nombre)
+        user = User.objects.create_user(username=username, password='clave123')
+        UsuarioSistema.objects.create(
+            user=user, rol=rol, activo=True, must_change_password=False, rut='11111111K')
+        self.assertTrue(self.client.login(username=username, password='clave123'))
+
+    def test_el_administrador_ve_el_enlace_en_el_menu(self):
+        self._entrar('Administrador', 'admin_menu')
+        r = self.client.get(reverse('dashboard'))
+        self.assertContains(r, reverse('importar_alumnos'))
+
+    def test_un_creador_de_evento_no_ve_el_enlace(self):
+        self._entrar('Creador de Evento', 'creador_menu')
+        r = self.client.get(reverse('dashboard'))
+        self.assertNotContains(r, reverse('importar_alumnos'))

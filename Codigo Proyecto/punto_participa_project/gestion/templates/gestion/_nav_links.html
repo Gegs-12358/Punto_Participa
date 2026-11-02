@@ -23,6 +23,12 @@
 </a>
 {% endif %}
 
+{% if rol_usuario == 'Administrador' %}
+<a href="{% url 'importar_alumnos' %}" class="{% if 'alumnos/importar' in request.path %}active{% endif %}">
+    ▤ Importar
+</a>
+{% endif %}
+
 {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' or rol_usuario == 'Encargado de Registrar' %}
 <a href="{% url 'escaneo' %}" class="{% if 'escaneo' in request.path %}active{% endif %}">
     ▢ Escáner
