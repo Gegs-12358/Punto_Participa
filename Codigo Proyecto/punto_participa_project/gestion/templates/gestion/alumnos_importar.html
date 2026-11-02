@@ -1,0 +1,189 @@
+{% extends 'gestion/base.html' %}
+{% load static %}
+{% block title %}Importar alumnos{% endblock %}
+
+{% block content %}
+
+<div class="page-title">
+    <div>
+        <span class="eyebrow">ADMINISTRACIÓN</span>
+        <h1>Importar alumnos</h1>
+        <p>Sincroniza la nómina de estudiantes desde un archivo .xlsx o .csv.</p>
+    </div>
+</div>
+
+{% if error %}
+<div class="panel" role="alert">
+    <p><strong>No se pudo continuar:</strong> {{ error }}</p>
+</div>
+{% endif %}
+
+{% if resultado %}
+<!-- ============================================================ -->
+<!-- RESULTADO FINAL -->
+<!-- ============================================================ -->
+<div class="panel" role="status">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">LISTO</span>
+            <h2>Importación completada</h2>
+            <p class="panel-subtitle">Archivo: {{ resultado.nombre }}</p>
+        </div>
+    </div>
+    <ul>
+        <li>Alumnos creados: <strong>{{ resultado.creados }}</strong></li>
+        <li>Alumnos actualizados: <strong>{{ resultado.actualizados }}</strong></li>
+        <li>Alumnos bloqueados: <strong>{{ resultado.bloqueados }}</strong></li>
+        <li>Filas con error (no importadas): <strong>{{ resultado.errores }}</strong></li>
+    </ul>
+    <p><a class="btn" href="{% url 'importar_alumnos' %}">Importar otro archivo</a></p>
+</div>
+
+{% elif vista_previa %}
+<!-- ============================================================ -->
+<!-- VISTA PREVIA (no se ha guardado nada) -->
+<!-- ============================================================ -->
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">VISTA PREVIA</span>
+            <h2>Revisa antes de confirmar</h2>
+            <p class="panel-subtitle">Archivo: {{ nombre_archivo }}. Todavía no se guardó nada.</p>
+        </div>
+    </div>
+    <ul>
+        <li>Filas leídas: <strong>{{ resumen.total }}</strong></li>
+        <li>Alumnos nuevos: <strong>{{ resumen.nuevos }}</strong></li>
+        <li>Alumnos que cambian: <strong>{{ resumen.actualizados }}</strong></li>
+        <li>Sin cambios: <strong>{{ resumen.sin_cambios }}</strong></li>
+        <li>Filas con error (no se importarán): <strong>{{ resumen.errores }}</strong></li>
+        <li>Alumnos que se bloquearán: <strong>{{ resumen.bloqueos }}</strong> de {{ resumen.activos }} activos</li>
+    </ul>
+    <p>Un alumno bloqueado no se borra: conserva su historial, pero deja de aparecer en inscripciones, escáner e invitaciones.</p>
+</div>
+
+{% if errores %}
+<div class="panel">
+    <div class="panel-head"><div><span class="eyebrow">ERRORES</span><h2>Filas con error</h2></div></div>
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Filas con error</caption>
+            <thead><tr><th>Fila</th><th>Detalle</th></tr></thead>
+            <tbody>
+                {% for fila, mensaje in errores %}
+                <tr><td>{{ fila }}</td><td>{{ mensaje }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if errores_extra %}<p>… y {{ errores_extra }} más.</p>{% endif %}
+</div>
+{% endif %}
+
+{% if cambios %}
+<div class="panel">
+    <div class="panel-head"><div><span class="eyebrow">CAMBIOS</span><h2>Alumnos que se actualizarán</h2></div></div>
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Alumnos que se actualizarán</caption>
+            <thead><tr><th>Fila</th><th>Documento</th><th>Cambios (antes → después)</th></tr></thead>
+            <tbody>
+                {% for fila, documento, lista in cambios %}
+                <tr>
+                    <td>{{ fila }}</td>
+                    <td>{{ documento }}</td>
+                    <td>{% for campo, antes, despues in lista %}{{ campo }}: {{ antes }} → {{ despues }}{% if not forloop.last %}; {% endif %}{% endfor %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if cambios_extra %}<p>… y {{ cambios_extra }} más.</p>{% endif %}
+</div>
+{% endif %}
+
+{% if bloqueos %}
+<div class="panel">
+    <div class="panel-head"><div><span class="eyebrow">BLOQUEOS</span><h2>Alumnos que se bloquearán</h2></div></div>
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Alumnos que se bloquearán</caption>
+            <thead><tr><th>Documento</th><th>Nombre</th></tr></thead>
+            <tbody>
+                {% for documento, nombre in bloqueos %}
+                <tr><td>{{ documento }}</td><td>{{ nombre }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if bloqueos_extra %}<p>… y {{ bloqueos_extra }} más.</p>{% endif %}
+</div>
+{% endif %}
+
+{% if avisos %}
+<div class="panel">
+    <div class="panel-head"><div><span class="eyebrow">AVISOS</span><h2>Para revisar</h2></div></div>
+    <ul>
+        {% for fila, mensaje in avisos %}<li>Fila {{ fila }}: {{ mensaje }}</li>{% endfor %}
+    </ul>
+    {% if avisos_extra %}<p>… y {{ avisos_extra }} más.</p>{% endif %}
+</div>
+{% endif %}
+
+<div class="panel">
+    {% if hay_algo %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="confirmar">
+        {% if bloqueo_masivo %}
+        <p><strong>Atención:</strong> se bloquearía a más del 20 % de los alumnos activos. Casi siempre es un archivo equivocado o incompleto.</p>
+        <p>
+            <label>
+                <input type="checkbox" name="confirmar_bloqueo_masivo">
+                Confirmo que el archivo es la nómina completa y quiero bloquear a estos alumnos.
+            </label>
+        </p>
+        {% endif %}
+        <button class="btn" type="submit">Confirmar e importar</button>
+        <a href="{% url 'importar_alumnos' %}">Cancelar</a>
+    </form>
+    {% else %}
+    <p>No hay cambios que guardar.</p>
+    <p><a class="btn" href="{% url 'importar_alumnos' %}">Volver</a></p>
+    {% endif %}
+</div>
+
+{% else %}
+<!-- ============================================================ -->
+<!-- FORMULARIO DE SUBIDA -->
+<!-- ============================================================ -->
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">PASO 1</span>
+            <h2>Sube el archivo</h2>
+            <p class="panel-subtitle">Primero verás una vista previa; no se guarda nada hasta que confirmes.</p>
+        </div>
+    </div>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="previsualizar">
+        <p>
+            <label for="archivo">Archivo (.xlsx o .csv, máximo 5 MB)</label><br>
+            <input type="file" id="archivo" name="archivo" accept=".xlsx,.csv" required>
+        </p>
+        <p>
+            Columnas: <code>rut</code>, <code>tipo_documento</code> (opcional), <code>nombres</code>,
+            <code>apellidos</code>, <code>correo</code>, <code>carrera</code>, <code>jornada</code>.
+            La carrera y la jornada deben existir en el sistema.
+        </p>
+        <p>
+            Los alumnos que ya no vengan en el archivo se <strong>bloquean</strong> (no se borran).
+            Haz un respaldo de la base antes de la primera importación real.
+        </p>
+        <button class="btn" type="submit">Ver vista previa</button>
+    </form>
+</div>
+{% endif %}
+
+{% endblock %}

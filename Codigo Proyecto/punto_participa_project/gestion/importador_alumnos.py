@@ -40,6 +40,7 @@ from .utils import (
 
 MAX_FILAS = 5000
 MAX_BYTES = 5 * 1024 * 1024
+MAX_BYTES_DESCOMPRIMIDO = 50 * 1024 * 1024   # un .xlsx es un zip: evita las "zip bombs"
 
 COLUMNAS_OBLIGATORIAS = ['rut', 'nombres', 'apellidos', 'correo', 'carrera', 'jornada']
 
@@ -106,6 +107,12 @@ def _filas_csv(contenido):
 def _filas_xlsx(contenido):
     import zipfile
     from openpyxl import load_workbook
+    try:
+        with zipfile.ZipFile(io.BytesIO(contenido)) as z:
+            if sum(i.file_size for i in z.infolist()) > MAX_BYTES_DESCOMPRIMIDO:
+                raise ArchivoInvalido('El archivo descomprimido es demasiado grande.')
+    except zipfile.BadZipFile:
+        raise ArchivoInvalido('El archivo no es un .xlsx válido.')
     try:
         wb = load_workbook(io.BytesIO(contenido), read_only=True, data_only=True)
     except (zipfile.BadZipFile, KeyError, OSError, ValueError):

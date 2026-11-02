@@ -286,6 +286,18 @@ class LecturaDeArchivoTests(ImportadorBase):
             with self.assertRaises(ArchivoInvalido):
                 leer_filas(io.BytesIO(texto3), 'datos.csv')
 
+    def test_xlsx_que_descomprimido_supera_el_tope(self):
+        from openpyxl import Workbook
+        wb = Workbook()
+        wb.active.append(COLS)
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        with mock.patch('gestion.importador_alumnos.MAX_BYTES_DESCOMPRIMIDO', 10):
+            with self.assertRaises(ArchivoInvalido) as ctx:
+                leer_filas(buf, 'nomina.xlsx')
+        self.assertIn('descomprimido', str(ctx.exception))
+
     def test_alias_de_encabezados_y_bom(self):
         texto = ('\ufeffRUN;Nombre;Apellido;Email;Carrera;Jornada\n'
                  f'{rut_valido(20000001)};Ana;Pérez;a@example.com;'
