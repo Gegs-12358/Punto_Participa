@@ -41,6 +41,7 @@
                 <p style="margin: 5px 0;"><strong>Horario:</strong> {{ actividad.fecha_inicio|date:"H:i" }} a {{actividad.fecha_fin|date:"H:i" }} horas.</p>
             </div>
 
+{% if actividad.tipo == 'TALLER' %}
             <p style="font-size: 16px; line-height: 1.6;">Asegura tu cupo registrándote en el siguiente enlace:</p>
 
             <div style="text-align: center; margin-bottom: 20px;">
@@ -49,6 +50,9 @@
                     Inscribirme
                 </a>
             </div>
+{% else %}
+            <p style="font-size: 16px; line-height: 1.6;">Esta actividad no requiere inscripción previa: solo tienes que asistir.</p>
+{% endif %}
 
             <!-- Cierre Genérico -->
             <p style="font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
@@ -56,10 +60,12 @@
                 esperamos!
             </p>
 
+{% if actividad.tipo == 'TALLER' %}
             <p style="font-size: 12px; color: #888888;">
                 Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
                 {{ site_url }}/taller/{{ actividad.id }}/
             </p>
+{% endif %}
         </div>
 
         <!-- Footer -->
