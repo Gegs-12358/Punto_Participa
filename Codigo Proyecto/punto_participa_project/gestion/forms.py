@@ -8,6 +8,9 @@ import io
 from PIL import Image
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import UploadedFile
+from django.db.models import Q
+
+from .models import Actividad, Lugar
 
 
 class LimpiarTextoMixin:
@@ -116,12 +119,7 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
                 'class': 'form-select',
                 'required': True,
             }),
-            'lugar': forms.TextInput(attrs={
-                'class': 'floating-input',
-                'placeholder': ' ',
-                'maxlength': '200',
-                'required': True,
-            }),
+            
             'cupos_totales': forms.NumberInput(attrs={
                 'class': 'floating-input',
                 'placeholder': ' ',
@@ -150,6 +148,28 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
 
         # Placeholder en español para el select de tipo
         self.fields['tipo'].empty_label = 'Selecciona un tipo'
+
+
+        # Lugar: desplegable con los lugares activos del catálogo. Si se edita una
+        # actividad cuyo lugar ya está bloqueado, ese lugar se sigue ofreciendo
+        # para no obligar a cambiarlo.
+        actual = self.instance.lugar if self.instance and self.instance.pk else None
+        filtro = Q(activo=True)
+        if actual:
+            filtro |= Q(nombre=actual)
+        self.fields['lugar'] = forms.ModelChoiceField(
+            queryset=Lugar.objects.filter(filtro).order_by('nombre'),
+            to_field_name='nombre',
+            empty_label='Selecciona un lugar',
+            label='Lugar',
+            error_messages={
+                'required': 'Debes seleccionar un lugar.',
+                'invalid_choice': 'Selecciona un lugar de la lista.',
+            },
+            widget=forms.Select(attrs={'class': 'form-select', 'required': True}),
+        )
+        if actual:
+            self.initial['lugar'] = actual
 
         # Si estamos editando, prellenar los campos de fecha/hora
         if self.instance and self.instance.pk:
@@ -218,6 +238,12 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
 
         return cleaned_data
 
+    def clean_lugar(self):
+        # El modelo guarda el nombre del lugar (texto), no el objeto
+        lugar = self.cleaned_data.get('lugar')
+        return lugar.nombre if lugar else ''
+
+    
     def clean_carreras(self):
         carreras = self.cleaned_data.get('carreras')
         if not carreras or carreras.count() == 0:

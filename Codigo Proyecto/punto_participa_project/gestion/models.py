@@ -113,6 +113,26 @@ class Jornada(models.Model):
     def __str__(self):
         return self.nombre
 
+    
+class Lugar(models.Model):
+    """
+    Catálogo de lugares donde se realizan las actividades.
+
+    Actividad.lugar guarda el NOMBRE del lugar (texto), igual que Alumno.carrera
+    guarda el nombre de la carrera. El formulario de actividad solo ofrece los
+    lugares activos de este catálogo, así todas las actividades quedan escritas
+    igual y el filtro por lugar funciona.
+    """
+    nombre = models.CharField(max_length=200, unique=True)
+    activo = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        verbose_name = 'Lugar'
+        verbose_name_plural = 'Lugares'
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
 
 class Actividad(models.Model):
     TIPO_CHOICES = [('MASIVA', 'Masiva'), ('TALLER', 'Taller')]

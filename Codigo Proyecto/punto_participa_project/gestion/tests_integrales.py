@@ -37,6 +37,7 @@ from .models import (
     Inscripcion,
     Jornada,
     LogAuditoria,
+    Lugar,
     Rol,
     UsuarioSistema,
 )
@@ -49,6 +50,9 @@ class BaseSistemaTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.rol_admin = Rol.objects.create(nombre="Administrador")
+                # Lugares del catálogo que usan los formularios de estas pruebas
+        for nombre in ("Sala 1", "Sala nueva", "Auditorio", "Sala AJAX", "Sala auditoría"):
+            Lugar.objects.create(nombre=nombre)
         cls.rol_creador = Rol.objects.create(nombre="Creador de Evento")
         cls.rol_registrador = Rol.objects.create(nombre="Encargado de Registrar")
 

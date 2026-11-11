@@ -1,192 +1,270 @@
 {% extends 'gestion/base.html' %}
 {% load static %}
-{% block title %}Auditoría{% endblock %}
+{% block title %}Actividades{% endblock %}
 
 {% block content %}
 
 <!-- ============================================================ -->
-<!-- TÍTULO Y EXPORTAR -->
+<!-- TÍTULO + BOTÓN CREAR -->
 <!-- ============================================================ -->
 <div class="page-title">
     <div>
-        <span class="eyebrow">AUDITORÍA</span>
-        <h1>Auditoría del Sistema</h1>
-        <p>Registro histórico de acciones realizadas en el sistema.</p>
+        <span class="eyebrow">GESTIÓN</span>
+        <h1>Actividades</h1>
+        <p>Administra las actividades y talleres del Punto Estudiantil.</p>
     </div>
-    <a href="{% url 'exportar_auditoria' %}?{{ request.GET.urlencode }}" class="btn secondary">
-        ⇩ Exportar a Excel
-    </a>
+    <button class="btn" id="btnNuevaActividad" data-action="activity-new">
+        + Nueva Actividad
+    </button>
 </div>
 
 <!-- ============================================================ -->
 <!-- FILTROS -->
 <!-- ============================================================ -->
-<form method="GET" action="" class="filters" role="search">
-
-    <!-- USUARIO (label flotante) -->
-    <div class="floating-group">
-        <input type="text" id="usuario" name="usuario" class="floating-input"
-               placeholder=" " value="{{ request.GET.usuario }}" aria-label="Filtrar por usuario">
-        <label for="usuario" class="floating-label">Usuario</label>
+<form method="get" class="filters-bar" role="search">
+    <div class="filter-group">
+        <label for="filtro-fecha-creacion">Fecha de Creación</label>
+        <input type="date" id="filtro-fecha-creacion" name="fecha_creacion" value="{{ request.GET.fecha_creacion }}">
     </div>
 
-    <!-- ACCIÓN (select - sin cambio) -->
-    <div>
-        <label for="accion" class="form-label">Acción</label>
-        <select name="accion" id="accion" aria-label="Filtrar por acción">
-            <option value="">Todas</option>
-            {% for accion in acciones_disponibles %}
-                <option value="{{ accion }}" {% if request.GET.accion == accion %}selected{% endif %}>{{ accion }}</option>
+    <div class="filter-group">
+        <label for="filtro-tipo">Tipo</label>
+        <select name="tipo" id="filtro-tipo">
+            {% for valor, etiqueta in tipos %}
+            <option value="{{ valor }}" {% if request.GET.tipo == valor %}selected{% endif %}>{{ etiqueta }}</option>
             {% endfor %}
         </select>
     </div>
 
-    <!-- MÓDULO (select - sin cambio) -->
-    <div>
-        <label for="modulo" class="form-label">Módulo</label>
-        <select name="modulo" id="modulo" aria-label="Filtrar por módulo">
+    <div class="filter-group">
+        <label for="filtro-fecha">Fecha de Inicio</label>
+        <input type="date" id="filtro-fecha" name="fecha" value="{{ request.GET.fecha }}">
+    </div>
+
+    <div class="filter-group">
+        <label for="filtro-estado">Estado</label>
+        <select name="estado" id="filtro-estado">
+            {% for valor, etiqueta in estados %}
+            <option value="{{ valor }}" {% if request.GET.estado == valor %}selected{% endif %}>{{ etiqueta }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="filter-group">
+        <label for="filtro-lugar">Lugar</label>
+        <select name="lugar" id="filtro-lugar">
             <option value="">Todos</option>
-            {% for modulo in modulos_disponibles %}
-                <option value="{{ modulo }}" {% if request.GET.modulo == modulo %}selected{% endif %}>{{ modulo }}</option>
+            {% for lug in lugares_opciones %}
+                <option value="{{ lug }}" {% if request.GET.lugar == lug %}selected{% endif %}>{{ lug }}</option>
             {% endfor %}
         </select>
     </div>
 
-    <!-- FECHA (date - sin cambio) -->
-    <div>
-        <label for="fecha" class="form-label">Fecha</label>
-        <input type="date" id="fecha" name="fecha" value="{{ request.GET.fecha }}" aria-label="Filtrar por fecha">
+    <div class="filter-actions">
+        <button type="submit" class="btn">▽ Filtrar</button>
+        <a href="{% url 'lista_actividades' %}" class="link-button">× Limpiar</a>
     </div>
-
-    <button type="submit" class="btn">▽ Filtrar</button>
-    <a href="{% url 'auditoria' %}" class="btn secondary" title="Limpiar filtros">× Limpiar</a>
 </form>
 
 <!-- ============================================================ -->
 <!-- CHIPS DE FILTROS ACTIVOS -->
 <!-- ============================================================ -->
-{% if request.GET.usuario or request.GET.accion or request.GET.modulo or request.GET.fecha %}
+{% if request.GET.tipo or request.GET.estado or request.GET.lugar or request.GET.fecha or request.GET.fecha_creacion %}
 <div class="filter-chips">
     <span class="filter-chips-label">Filtros activos:</span>
-    {% if request.GET.usuario %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'usuario' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Usuario: {{ request.GET.usuario }} · quitar ×</a>
+    {% if request.GET.tipo %}
+    <a class="filter-chip"
+        href="?{% for k, v in request.GET.items %}{% if k != 'tipo' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Tipo:
+        {{ request.GET.tipo }} · quitar ×</a>
     {% endif %}
-    {% if request.GET.accion %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'accion' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Acción: {{ request.GET.accion }} · quitar ×</a>
+    {% if request.GET.estado %}
+    <a class="filter-chip"
+        href="?{% for k, v in request.GET.items %}{% if k != 'estado' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Estado:
+        {{ request.GET.estado }} · quitar ×</a>
     {% endif %}
-    {% if request.GET.modulo %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'modulo' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Módulo: {{ request.GET.modulo }} · quitar ×</a>
+    {% if request.GET.lugar %}
+    <a class="filter-chip"
+        href="?{% for k, v in request.GET.items %}{% if k != 'lugar' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Lugar:
+        {{ request.GET.lugar }} · quitar ×</a>
     {% endif %}
     {% if request.GET.fecha %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'fecha' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Fecha: {{ request.GET.fecha }} · quitar ×</a>
+    <a class="filter-chip"
+        href="?{% for k, v in request.GET.items %}{% if k != 'fecha' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Inicio:
+        {{ request.GET.fecha }} · quitar ×</a>
     {% endif %}
-    <a class="filter-chip filter-chip-clear" href="{% url 'auditoria' %}">Limpiar todos</a>
+    {% if request.GET.fecha_creacion %}
+    <a class="filter-chip"
+        href="?{% for k, v in request.GET.items %}{% if k != 'fecha_creacion' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Creada:
+        {{ request.GET.fecha_creacion }} · quitar ×</a>
+    {% endif %}
+    <a class="filter-chip filter-chip-clear" href="{% url 'lista_actividades' %}">Limpiar todos</a>
 </div>
 {% endif %}
 
 <!-- ============================================================ -->
-<!-- TABLA DE AUDITORÍA -->
+<!-- TABLA -->
 <!-- ============================================================ -->
 <div class="panel">
     <div class="panel-head">
         <div>
-            <span class="eyebrow">REGISTROS</span>
-            <h2>Historial de acciones</h2>
-            <p class="panel-subtitle">Mostrando {{ logs|length }} de {{ logs.paginator.count }} registro{{ logs.paginator.count|pluralize:"s" }}</p>
+            <span class="eyebrow">LISTADO</span>
+            <h2>Actividades registradas</h2>
+            <p class="panel-subtitle">Mostrando {{ actividades|length }} de {{ actividades.paginator.count }}
+                actividad{{ actividades.paginator.count|pluralize:"es" }}</p>
         </div>
+    </div>
+
+    <div class="hint-banner" role="status">
+        <span class="hint-icon">i</span>
+        <span>
+            <strong>Tip:</strong> Haz click en el <strong>nombre</strong> de la actividad para ver el detalle, o en el
+            ícono <strong>👥</strong> para ver los participantes.
+        </span>
     </div>
 
     <div class="table-wrap">
         <table>
-            <caption class="visually-hidden">Registros de auditoría del sistema</caption>
+            <caption class="visually-hidden">Lista de actividades</caption>
             <thead>
                 <tr>
-                    <th>Fecha y Hora</th>
-                    <th>Usuario</th>
-                    <th>Módulo</th>
-                    <th>Acción</th>
-                    <th>Objeto</th>
-                    <th>ID</th>
-                    <th>IP</th>
-                    <th>Detalle</th>
+                    <th>{% include 'gestion/includes/orden_link.html' with campo='titulo' label='Nombre' %}</th>
+                    <th>{% include 'gestion/includes/orden_link.html' with campo='tipo' label='Tipo' %}</th>
+                    {% if es_admin %}<th>Creador</th>{% endif %}
+                    <th>{% include 'gestion/includes/orden_link.html' with campo='fecha_inicio' label='Inicio' %}</th>
+                    <th>{% include 'gestion/includes/orden_link.html' with campo='cupos_disponibles' label='Cupos' %}
+                    </th>
+                    <th>Disponibles</th>
+                    <th>{% include 'gestion/includes/orden_link.html' with campo='total_inscritos' label='Inscritos' %}
+                    </th>
+                    <th>{% include 'gestion/includes/orden_link.html' with campo='total_asistentes' label='Asistentes'%}
+                    </th>
+                    <th>Invit. OK</th>
+                    <th>Invit. fallidas</th>
+                    <th>{% include 'gestion/includes/orden_link.html' with campo='estado' label='Estado' %}</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                {% for log in logs %}
+                {% now "Y-m-d H:i" as ahora %}
+                {% for actividad in actividades %}
                 <tr>
-                    <td class="text-nowrap">
-                        {{ log.fecha_registro|date:"d/m/Y H:i" }}
-                    </td>
                     <td>
-                        {% if log.usuario_sistema %}
-                            <strong>{{ log.usuario_sistema.username }}</strong>
-                        {% else %}
-                            <span class="text-muted">Sistema</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if log.modulo %}
-                            <span class="role">{{ log.modulo }}</span>
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <span class="badge {% if 'Eliminar' in log.accion or 'Eliminación' in log.accion %}inactive{% elif 'Crear' in log.accion or 'Guardar' in log.accion %}badge-success{% else %}draft{% endif %}">
-                            {{ log.accion }}
-                        </span>
-                    </td>
-                    <td>
-                        {% if log.objeto_tipo %}
-                            {{ log.objeto_tipo }}
-                            {% if log.objeto_nombre %}
-                                <br><small class="text-muted">{{ log.objeto_nombre }}</small>
+                        <a href="{% url 'actividad_detalle' actividad.pk %}" class="activity-link"
+                            title="Ver detalle de {{ actividad.titulo }}">
+                            {% if actividad.imagen %}
+                            <img src="{{ actividad.imagen.url }}" alt="{{ actividad.titulo }}" class="activity-thumb">
+                            {% else %}
+                            <div class="activity-thumb-placeholder">▣</div>
                             {% endif %}
+                            <strong>{{ actividad.titulo }}</strong>
+                        </a>
+                    </td>
+                    <td>
+                        {% if actividad.tipo == 'TALLER' %}
+                        <span class="role">Taller</span>
                         {% else %}
-                            <span class="text-muted">—</span>
+                        <span class="badge">Masiva</span>
+                        {% endif %}
+                    </td>
+                    {% if es_admin %}
+                    <td>{{ actividad.creado_por.username|default:"N/A" }}</td>
+                    {% endif %}
+                    <td>{{ actividad.fecha_inicio|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if actividad.cupos_totales is not None %}{{ actividad.cupos_totales }}{% else %}<span
+                            class="text-muted">—</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if actividad.cupos_disponibles is not None %}{{ actividad.cupos_disponibles }}{% else %}<span
+                            class="text-muted">—</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if actividad.tipo == 'TALLER' %}
+                        <span class="badge draft">{{ actividad.total_inscritos }}</span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge">{{ actividad.total_asistentes }}</span></td>
+                    <td>
+                        <a href="{% url 'notificaciones_actividad' actividad.pk %}" class="badge"
+                            title="Ver notificaciones enviadas">{{ actividad.total_invitaciones_exito }}</a>
+                    </td>
+                    <td>
+                        {% if actividad.total_invitaciones_fallo > 0 %}
+                        <a href="{% url 'notificaciones_actividad' actividad.pk %}" class="badge inactive"
+                            title="Ver notificaciones fallidas">{{ actividad.total_invitaciones_fallo }}</a>
+                        {% else %}
+                        <span class="text-muted">0</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% if log.objeto_id %}
-                            <code>{{ log.objeto_id }}</code>
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
+                        {% if actividad.estado == 'CANCELADA' %}
+                        <span class="badge inactive">Cancelada</span>
+                        {% elif actividad.estado == 'FINALIZADA' %}
+                        <span class="badge draft">Finalizada</span>
+                        {% elif actividad.fecha_inicio|date:"Y-m-d H:i" > ahora %}
+                        <span class="badge draft">Próxima</span>
+                        {% elif actividad.fecha_fin|date:"Y-m-d H:i" < ahora %} <span class="badge draft">
+                            Finalizada</span>
+                            {% else %}
+                            <span class="badge">En curso</span>
+                            {% endif %}
                     </td>
                     <td>
-                        {% if log.ip_address %}
-                            <code>{{ log.ip_address }}</code>
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-                    <td class="detalle-cell">
-                        {% if log.detalle %}
-                            <span title="{{ log.detalle }}">{{ log.detalle|truncatechars:120 }}</span>
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
+                        <div class="action-group">
+                            <a href="{% url 'actividad_detalle' actividad.pk %}" class="link-button"
+                                title="Ver detalle">👁 Ver</a>
+                            <a href="{% url 'participantes_actividad' actividad.pk %}" class="link-button"
+                                title="Ver participantes">👥</a>
+                            <button class="link-button btn-editar" data-url="{% url 'editar_actividad' actividad.pk %}"
+                                title="Editar">✎</button>
+                            <button class="danger-button btn-eliminar" data-url="{% url 'eliminar_ajax' actividad.pk %}"
+                                data-nombre="{{ actividad.titulo }}" title="Eliminar">✕</button>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" class="text-center text-muted" style="padding: 40px;">
+                    <td colspan="12" class="text-center text-muted" style="padding: 30px;">
                         <div class="empty-state" style="min-height: auto;">
-                            <span>☰</span>
-                            <h3>Sin resultados</h3>
-                            <p>No se encontraron registros con esos filtros.</p>
-                            <a href="{% url 'auditoria' %}" class="btn secondary">Limpiar filtros</a>
+                            <span>▦</span>
+                            <h3>Sin actividades</h3>
+                            <p>No hay actividades que coincidan con los filtros.</p>
+                            <button class="btn" id="btnNuevaActividadVacio" data-action="activity-new">+ Crear la
+                                primera</button>
                         </div>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
+            {% if actividades %}
+            <tfoot>
+                <tr class="table-total-row">
+                    <td colspan="{% if es_admin %}3{% else %}2{% endif %}">
+                        <strong>TOTAL</strong>
+                        <small class="text-muted">
+                            {{ totales.actividades }} actividad{{ totales.actividades|pluralize:"es" }}
+                            · {{ totales.talleres }} taller{{ totales.talleres|pluralize:"es" }}
+                            · {{ totales.masivas }} masiva{{ totales.masivas|pluralize:"s" }}
+                        </small>
+                    </td>
+                    <td colspan="2"></td>
+                    <td><strong>{{ totales.inscritos }}</strong></td>
+                    <td><strong>{{ totales.asistentes }}</strong></td>
+                    <td colspan="4"></td>
+                </tr>
+            </tfoot>
+            {% endif %}
         </table>
     </div>
 
-    {% if logs.has_other_pages %}
-        {% include 'gestion/includes/paginacion.html' with pagina=logs param='page' %}
+    {% if actividades.paginator.num_pages > 1 %}
+    {% include 'gestion/includes/paginacion.html' with pagina=actividades param='page' %}
     {% endif %}
 </div>
+
+<!-- Modal global para crear/editar actividad -->
+{% include 'gestion/includes/modal_actividad.html' %}
 
 {% endblock %}

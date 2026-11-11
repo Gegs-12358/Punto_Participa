@@ -2,7 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.core.exceptions import ValidationError
 from .models import (
-    Rol, UsuarioSistema, Alumno, Actividad, Carrera, Jornada,
+    Rol, UsuarioSistema, Alumno, Actividad, Carrera, Jornada, Lugar,
     Inscripcion, Asistencia, NotificacionCorreo, LogAuditoria
 )
 from .utils import normalizar_rut, normalizar_documento
@@ -104,7 +104,17 @@ class CarreraAdmin(admin.ModelAdmin):
     search_fields = ('nombre', 'escuela')
     ordering = ('escuela', 'nombre')
 
+# ============================================================
+# ADMIN: LUGAR
+# ============================================================
 
+@admin.register(Lugar)
+class LugarAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombre', 'activo')
+    list_filter = ('activo',)
+    search_fields = ('nombre',)
+    ordering = ('nombre',)
+    
 # ============================================================
 # ADMIN: JORNADA
 # ============================================================

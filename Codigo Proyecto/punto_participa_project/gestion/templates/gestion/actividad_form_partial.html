@@ -77,12 +77,12 @@
                 {% endif %}
             </div>
 
-            <!-- LUGAR (label flotante) -->
-            <div class="floating-group">
-                {{ form.lugar }}
-                <label for="{{ form.lugar.id_for_label }}" class="floating-label">
+            <!-- LUGAR (desplegable del catálogo) -->
+            <div class="form-field">
+                <label for="{{ form.lugar.id_for_label }}">
                     Lugar <span class="required">*</span>
                 </label>
+                {{ form.lugar }}
                 {% if form.lugar.errors %}
                 <span class="field-error">{{ form.lugar.errors.0 }}</span>
                 {% endif %}

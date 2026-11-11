@@ -26,6 +26,7 @@ from django.utils import timezone
 from gestion.utils import normalizar_documento
 
 from gestion.models import (
+    Lugar,
     Actividad,
     Alumno,
     Asistencia,
@@ -567,6 +568,7 @@ class Command(BaseCommand):
                 f'Cupos limitados según disponibilidad.'
             )
 
+            Lugar.objects.get_or_create(nombre=lugar)
             actividad = Actividad.objects.create(
                 titulo=titulo,
                 descripcion=descripcion,

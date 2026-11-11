@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from .forms import ActividadForm
-from .models import Carrera, Jornada
+from .models import Carrera, Jornada, Lugar
 
 
 class ActividadFormReglasTests(TestCase):
@@ -15,6 +15,7 @@ class ActividadFormReglasTests(TestCase):
             escuela="Escuela de Informática y Telecomunicaciones",
         )
         cls.jornada = Jornada.objects.create(nombre="Diurno")
+        Lugar.objects.create(nombre="Sala 2")
 
     def _datos(self, **cambios):
         inicio = timezone.localtime(timezone.now() + timedelta(days=3))

@@ -42,7 +42,7 @@ from django.views.decorators.debug import sensitive_post_parameters
 from .decorators import role_required
 from .forms import ActividadForm
 from .models import (
-    Actividad, Alumno, Asistencia, Carrera, Inscripcion, Jornada,
+    Actividad, Alumno, Asistencia, Carrera, Inscripcion, Jornada,Lugar,
     LogAuditoria, NotificacionCorreo, Rol, UsuarioSistema,
 )
 # [REFACTOR Opción B] Permisos centralizados
@@ -326,6 +326,9 @@ def _aplicar_filtros_dashboard(qs_act, qs_asis, rango, tipo, carrera, jornada, a
         qs_asis = qs_asis.annotate(_j=Lower(Trim('alumno__jornada'))).filter(_j=j_norm)
     return qs_act.distinct(), qs_asis.distinct()
 
+def _lugares_para_filtro():
+    """Todos los lugares del catálogo (también los bloqueados: hay actividades antiguas en ellos)."""
+    return list(Lugar.objects.order_by('nombre').values_list('nombre', flat=True))
 
 # [REFACTOR] Filtros de reportes/export unificados
 def _aplicar_filtros_reporte(request, act_qs=None, asis_qs=None):
@@ -338,6 +341,7 @@ def _aplicar_filtros_reporte(request, act_qs=None, asis_qs=None):
     escuela = request.GET.get('escuela', '')          
     carrera = request.GET.get('carrera', '')
     jornada = request.GET.get('jornada', '')
+    lugar = request.GET.get('lugar', '')
     fecha_inicio = fecha_o_none(request.GET.get('fecha_inicio'))
     fecha_fin = fecha_o_none(request.GET.get('fecha_fin'))
 
@@ -350,6 +354,8 @@ def _aplicar_filtros_reporte(request, act_qs=None, asis_qs=None):
         act_qs = act_qs.filter(pk=actividad_id)
     if escuela:                                        # <-- nuevo
         act_qs = act_qs.filter(carreras__escuela=escuela).distinct()
+    if lugar:
+        act_qs = act_qs.filter(lugar=lugar)
     if fecha_inicio:
         act_qs = act_qs.filter(fecha_inicio__date__gte=fecha_inicio)
     if fecha_fin:
@@ -789,6 +795,7 @@ def reportes(request):
         'escuela_seleccionada': escuela,                                     # <-- nuevo
         'carreras_opciones': Carrera.objects.all(),
         'jornadas_opciones': Jornada.objects.all(),
+        'lugares_opciones': _lugares_para_filtro(),
         'actividad_seleccionada': actividad_id,
         'total_inscritos_filtrado': total_inscritos,
         'total_asistentes_filtrado': total_asistentes,
@@ -1127,6 +1134,7 @@ def lista_actividades(request):
     fecha = fecha_o_none(request.GET.get('fecha'))
     fecha_creacion = fecha_o_none(request.GET.get('fecha_creacion'))
     estado = request.GET.get('estado', '')
+    lugar = request.GET.get('lugar', '')
     orden = request.GET.get('orden', '-fecha_inicio')
 
     validos = {
@@ -1151,7 +1159,7 @@ def lista_actividades(request):
 
     if tiene_rol(request.user, ['Creador de Evento']) and not es_admin:
         qs = qs.filter(creado_por=request.user)
-    for campo, val in [('tipo', tipo), ('estado', estado)]:
+    for campo, val in [('tipo', tipo), ('estado', estado), ('lugar', lugar)]:
         if val:
             qs = qs.filter(**{campo: val})
     if fecha:
@@ -1172,6 +1180,7 @@ def lista_actividades(request):
         'actividades': paginar(request, qs),
         'tipos': [('', 'Todos los tipos')] + list(Actividad.TIPO_CHOICES),
         'estados': [('', 'Todos los estados')] + list(Actividad.ESTADO_CHOICES),
+        'lugares_opciones': _lugares_para_filtro(),
         'es_admin': es_admin, 'orden_actual': orden_seguro, 'totales': totales,
     })
 

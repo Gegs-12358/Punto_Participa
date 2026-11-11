@@ -61,6 +61,15 @@
             {% endfor %}
         </select>
     </div>
+    <div class="filter-group">
+        <label for="filtro-lugar">Lugar</label>
+        <select name="lugar" id="filtro-lugar" autocomplete="off">
+            <option value="">Todos</option>
+            {% for lug in lugares_opciones %}
+                <option value="{{ lug }}" {% if request.GET.lugar == lug %}selected{% endif %}>{{ lug }}</option>
+            {% endfor %}
+        </select>
+    </div>
     <div class="filter-group filter-group--date">
         <label for="filtro-fecha-inicio">Desde</label>
         <input type="date" id="filtro-fecha-inicio" name="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
@@ -87,7 +96,7 @@
 <!-- ============================================================ -->
 <!-- CHIPS DE FILTROS ACTIVOS -->
 <!-- ============================================================ -->
-{% if request.GET.actividad or request.GET.escuela or request.GET.carrera or request.GET.jornada or request.GET.fecha_inicio or request.GET.fecha_fin %}
+{% if request.GET.actividad or request.GET.escuela or request.GET.carrera or request.GET.jornada or request.GET.lugar or request.GET.fecha_inicio or request.GET.fecha_fin %}
 <div class="filter-chips">
     <span class="filter-chips-label">Filtros activos:</span>
     {% if request.GET.actividad %}
@@ -101,6 +110,9 @@
     {% endif %}
     {% if request.GET.jornada %}
     <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'jornada' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Jornada: {{ request.GET.jornada }} · quitar ×</a>
+    {% endif %}
+    {% if request.GET.lugar %}
+    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'lugar' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Lugar: {{ request.GET.lugar }} · quitar ×</a>
     {% endif %}
     {% if request.GET.fecha_inicio %}
     <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'fecha_inicio' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Desde: {{ request.GET.fecha_inicio }} · quitar ×</a>
