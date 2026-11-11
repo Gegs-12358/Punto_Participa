@@ -11,7 +11,8 @@ Uso:
 IMPORTANTE:
 - Los correos usan @example.com (nunca llegan a ningún lado).
 - Las fechas son relativas a NOW(): 90 días atrás -> 30 días adelante.
-- Es idempotente: si lo corres dos veces sin --flush, no duplica datos.
+- Sin --flush es seguro repetirlo: no duplica usuarios, carreras ni alumnos y, si ya hay
+  actividades, omite actividades, inscripciones, asistencias, notificaciones y logs.
 """
 
 import random
@@ -21,6 +22,8 @@ from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
+
+from gestion.utils import normalizar_documento
 
 from gestion.models import (
     Actividad,
@@ -201,17 +204,23 @@ class Command(BaseCommand):
             self.stdout.write('[5/9] Creando alumnos...')
             self.alumnos = self._crear_alumnos()
 
-            self.stdout.write('[6/9] Creando actividades...')
-            self.actividades = self._crear_actividades()
+            if Actividad.objects.exists():
+                self.stdout.write(self.style.NOTICE(
+                    '[6-9/9] Ya hay actividades: se omiten actividades, inscripciones, '
+                    'asistencias, notificaciones y logs (usa --flush para regenerarlos).'
+                ))
+            else:
+                self.stdout.write('[6/9] Creando actividades...')
+                self.actividades = self._crear_actividades()
 
-            self.stdout.write('[7/9] Creando inscripciones y asistencias...')
-            self._crear_inscripciones_y_asistencias()
+                self.stdout.write('[7/9] Creando inscripciones y asistencias...')
+                self._crear_inscripciones_y_asistencias()
 
-            self.stdout.write('[8/9] Creando notificaciones de correo...')
-            self._crear_notificaciones()
+                self.stdout.write('[8/9] Creando notificaciones de correo...')
+                self._crear_notificaciones()
 
-            self.stdout.write('[9/9] Creando logs de auditoría...')
-            self._crear_logs()
+                self.stdout.write('[9/9] Creando logs de auditoría...')
+                self._crear_logs()
 
         self.stdout.write(self.style.SUCCESS('\n' + '=' * 60))
         self.stdout.write(self.style.SUCCESS('  SEED COMPLETADO EXITOSAMENTE'))
@@ -418,7 +427,7 @@ class Command(BaseCommand):
                 jornada = elegir_jornada()
 
                 alumno, created = Alumno.objects.get_or_create(
-                    rut=rut,
+                    rut=normalizar_documento(rut),
                     defaults={
                         'tipo_documento': 'RUT',
                         'nombres': nombre,
