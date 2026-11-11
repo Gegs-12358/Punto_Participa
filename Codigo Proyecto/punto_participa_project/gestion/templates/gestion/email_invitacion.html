@@ -52,6 +52,13 @@
             </div>
 {% else %}
             <p style="font-size: 16px; line-height: 1.6;">Esta actividad no requiere inscripción previa: solo tienes que asistir.</p>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <a href="{{ site_url }}/actividad/{{ actividad.id }}/"
+                    style="background-color: #FFC107; color: #003366; padding: 15px 30px; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 16px;">
+                    Ver detalles
+                </a>
+            </div>
 {% endif %}
 
             <!-- Cierre Genérico -->
@@ -64,6 +71,11 @@
             <p style="font-size: 12px; color: #888888;">
                 Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
                 {{ site_url }}/taller/{{ actividad.id }}/
+            </p>
+{% else %}
+            <p style="font-size: 12px; color: #888888;">
+                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
+                {{ site_url }}/actividad/{{ actividad.id }}/
             </p>
 {% endif %}
         </div>

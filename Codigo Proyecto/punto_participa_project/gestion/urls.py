@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, views_importar
+from . import views, views_actividad_publica, views_importar
 
 # Sin app_name para mantener compatibilidad con los templates existentes
 
@@ -63,6 +63,7 @@ urlpatterns = [
     # INSCRIPCIÓN PÚBLICA
     # ============================================================
     path('taller/<int:actividad_id>/', views.inscripcion_taller, name='inscripcion_taller'),
+    path('actividad/<int:actividad_id>/', views_actividad_publica.actividad_publica, name='actividad_publica'),
     path('privacidad/', views.politica_privacidad, name='privacidad'),
 
 ]

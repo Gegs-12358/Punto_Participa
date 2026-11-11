@@ -1,0 +1,105 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es-cl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="{{ actividad.titulo }} - Punto Estudiantil Duoc UC Sede Alameda">
+
+    <title>{{ actividad.titulo }} - Punto Participa</title>
+
+    <link rel="icon" href="{% static 'gestion/img/logo_duoc.png' %}" type="image/png">
+    <link rel="stylesheet" href="{% static 'gestion/css/styles.css' %}">
+</head>
+
+<body>
+
+    <header class="app-header">
+        <img class="project-logo" src="{% static 'gestion/img/duoc.png' %}" alt="Punto Participa Duoc UC">
+        <img class="duoc-logo" src="{% static 'gestion/img/logo_duoc.png' %}" alt="Duoc UC">
+    </header>
+
+    <main id="main-content" tabindex="-1">
+
+        <div class="enrollment-wrap">
+
+            <div class="event-card card">
+
+                <img class="event-logo" src="{% static 'gestion/img/logo.png' %}" alt="Punto Participa Duoc UC"
+                    onerror="this.style.display='none'">
+
+                <div class="event-banner">
+                    <div>
+                        <span>{{ actividad.get_tipo_display|upper }}</span>
+                        <h2>{{ actividad.titulo }}</h2>
+                    </div>
+                </div>
+
+                <div class="event-body">
+
+                    <div class="date-tile">
+                        <strong>{{ actividad.fecha_inicio|date:"d" }}</strong>
+                        <span>{{ actividad.fecha_inicio|date:"M"|upper }}</span>
+                    </div>
+
+                    <div class="event-copy">
+                        <h1>{{ actividad.titulo }}</h1>
+                        {% if actividad.imagen %}
+                        <img src="{{ actividad.imagen.url }}" alt="{{ actividad.titulo }}"
+                            style="max-width: 100%; border-radius: 8px;">
+                        {% endif %}
+                        <p>{{ actividad.descripcion }}</p>
+                        <ul>
+                            <li><strong>▦ Fecha:</strong>
+                                {% if actividad.cronograma %}
+                                {{ actividad.cronograma }}
+                                {% else %}
+                                {{ actividad.fecha_inicio|date:"d \d\e F \d\e Y, H:i" }} —
+                                {{ actividad.fecha_fin|date:"H:i" }}
+                                {% endif %}
+                            </li>
+                            <li><strong>⌖ Lugar:</strong> {{ actividad.lugar }}</li>
+                        </ul>
+                    </div>
+
+                    <div class="enroll-box">
+                        {% if estado == 'vigente' %}
+                        <div class="seat-note">
+                            <span>◎ ENTRADA LIBRE</span>
+                            <small>Esta actividad no requiere inscripción previa: solo tienes que asistir.</small>
+                        </div>
+                        {% elif estado == 'finalizada' %}
+                        <div class="alert alert-danger" role="status">
+                            <div>
+                                <strong>Actividad finalizada</strong>
+                                <span>Esta actividad ya se realizó.</span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-danger" role="status">
+                            <div>
+                                <strong>Actividad cancelada</strong>
+                                <span>Esta actividad fue cancelada. Si tienes dudas, contacta a Punto Estudiantil.</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="app-footer">
+        <div>Punto Estudiantil - Sede Alameda Duoc UC</div>
+        <div class="footer-links">
+            <a href="https://www.duoc.cl" target="_blank" rel="noopener">www.duoc.cl</a>
+        </div>
+    </footer>
+
+</body>
+
+</html>
