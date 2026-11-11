@@ -1,0 +1,135 @@
+{% extends 'gestion/base.html' %}
+{% load static %}
+{% block title %}Lugares{% endblock %}
+
+{% block content %}
+
+<!-- ============================================================ -->
+<!-- TÍTULO -->
+<!-- ============================================================ -->
+<div class="page-title">
+    <div>
+        <span class="eyebrow">ADMINISTRACIÓN · CATÁLOGOS</span>
+        <h1>Lugares</h1>
+        <p>Los lugares activos son los que aparecen al crear una actividad.</p>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- AGREGAR -->
+<!-- ============================================================ -->
+<form method="post" class="filters-bar" action="{% url 'catalogo_lugares' %}">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="crear">
+    <div class="filter-group">
+        <label for="nuevo-lugar">Nuevo lugar</label>
+        <input type="text" id="nuevo-lugar" name="nombre" maxlength="{{ max_nombre }}"
+            placeholder="Ej.: Sala 204 - Edificio A" autocomplete="off" required>
+    </div>
+    <div class="filter-actions">
+        <button type="submit" class="btn" style="white-space: nowrap;">+ Agregar</button>
+    </div>
+</form>
+
+<!-- ============================================================ -->
+<!-- TABLA -->
+<!-- ============================================================ -->
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">CATÁLOGO</span>
+            <h2>Lugares registrados</h2>
+            <p class="panel-subtitle">{{ lugares|length }} lugar{{ lugares|length|pluralize:"es" }}</p>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Listado de lugares</caption>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Actividades</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lugar in lugares %}
+                <tr>
+                    {% if lugar.id == editar_id %}
+                    <td colspan="4">
+                        <form method="post" class="action-group" action="{% url 'catalogo_lugares' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="accion" value="renombrar">
+                            <input type="hidden" name="lugar_id" value="{{ lugar.id }}">
+                            <label for="renombrar-{{ lugar.id }}" class="visually-hidden">Nuevo nombre</label>
+                            <input type="text" id="renombrar-{{ lugar.id }}" name="nombre" value="{{ lugar.nombre }}"
+                                maxlength="{{ max_nombre }}" autocomplete="off" required autofocus>
+                            <button type="submit" class="btn">✓ Guardar</button>
+                            <a href="{% url 'catalogo_lugares' %}" class="link-button">Cancelar</a>
+                        </form>
+                        {% if lugar.total_actividades %}
+                        <small class="text-muted">
+                            Se actualizará también en {{ lugar.total_actividades }} actividad{{ lugar.total_actividades|pluralize:"es" }}.
+                        </small>
+                        {% endif %}
+                    </td>
+                    {% else %}
+                    <td><strong>{{ lugar.nombre }}</strong></td>
+                    <td>{{ lugar.total_actividades }}</td>
+                    <td>
+                        {% if lugar.activo %}
+                        <span class="badge">Activo</span>
+                        {% else %}
+                        <span class="badge inactive">Bloqueado</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-group">
+                            <a href="?editar={{ lugar.id }}" class="link-button" title="Cambiar el nombre">✎ Renombrar</a>
+
+                            <form method="post" action="{% url 'catalogo_lugares' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="lugar_id" value="{{ lugar.id }}">
+                                {% if lugar.activo %}
+                                <input type="hidden" name="accion" value="bloquear">
+                                <button type="submit" class="danger-button"
+                                    title="Deja de ofrecerse al crear actividades">✕ Bloquear</button>
+                                {% else %}
+                                <input type="hidden" name="accion" value="desbloquear">
+                                <button type="submit" class="link-button"
+                                    title="Vuelve a ofrecerse al crear actividades">✓ Desbloquear</button>
+                                {% endif %}
+                            </form>
+
+                            {% if not lugar.total_actividades %}
+                            <form method="post" action="{% url 'catalogo_lugares' %}"
+                                data-confirmar="¿Eliminar el lugar &quot;{{ lugar.nombre }}&quot;? Esta acción no se puede deshacer.">
+                                {% csrf_token %}
+                                <input type="hidden" name="accion" value="eliminar">
+                                <input type="hidden" name="lugar_id" value="{{ lugar.id }}">
+                                <button type="submit" class="danger-button" title="Solo para lugares sin actividades">🗑 Eliminar</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted" style="padding: 30px;">
+                        Todavía no hay lugares. Agrega el primero arriba.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'gestion/js/catalogos.js' %}"></script>
+{% endblock %}

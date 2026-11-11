@@ -1,6 +1,5 @@
 from django.urls import path
-from . import views, views_actividad_publica, views_importar
-
+from . import views, views_actividad_publica, views_catalogos, views_importar
 # Sin app_name para mantener compatibilidad con los templates existentes
 
 urlpatterns = [
@@ -29,6 +28,7 @@ urlpatterns = [
     # ALUMNOS (IMPORTACIÓN)
     # ============================================================
     path('alumnos/importar/', views_importar.importar_alumnos_web, name='importar_alumnos'),
+    path('catalogos/lugares/', views_catalogos.catalogo_lugares, name='catalogo_lugares'),
 
     path('recuperar-contrasena/', views.solicitar_recuperacion, name='recuperar_contrasena'),
     path('restablecer-contrasena/<uidb64>/<token>/', views.restablecer_contrasena, name='restablecer_contrasena'),
