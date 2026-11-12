@@ -14,6 +14,7 @@ Hoy el registro de participación se hace en planillas Excel con macros que se t
 
 * Actividades masivas.
 * Talleres con cupos limitados.
+* Actividades con invitación, con lista cargada en Excel o CSV y acompañantes.
 * Inscripciones de estudiantes.
 * Registro de asistencia, con turnos de operador y contador en vivo.
 * Usuarios y roles.
@@ -37,7 +38,7 @@ El sistema tiene **tres roles con cuenta de usuario**:
 
 El registro de asistencia en el escáner está disponible para los tres roles; el Encargado de Registrar solo tiene acceso a esa pantalla.
 
-Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se inscriben con su RUT desde el formulario público de inscripción.
+Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se inscriben con su RUT desde el formulario público de inscripción. En las actividades con invitación responden desde un enlace personal que les llega por correo.
 
 ---
 
@@ -45,7 +46,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**. La entrega está fijada para el 1 de diciembre de 2026.
 
-* Suite de pruebas automatizadas: 598 tests (detalle en la sección 9).
+* Suite de pruebas automatizadas: 666 tests (detalle en la sección 9).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 * El historial detallado de cambios está en [`docs/CAMBIOS.md`](Codigo%20Proyecto/punto_participa_project/docs/CAMBIOS.md) y la guía de estilo de las pantallas en [`docs/GUIA_ESTILO.md`](Codigo%20Proyecto/punto_participa_project/docs/GUIA_ESTILO.md).
 
@@ -56,15 +57,16 @@ El proyecto está en desarrollo y funciona de punta a punta en un entorno local 
 | Pantalla | Para qué sirve | Roles |
 | --- | --- | --- |
 | **Inicio** | Resumen del período: actividades en curso, talleres con cupos, inscritos, asistencias del día, invitaciones enviadas, alertas y gráficos. | Administrador, Creador |
-| **Actividades** | Crear, editar y eliminar actividades y talleres, con buscador y filtros. El lugar se elige de una lista; si es una sala, se pide su número (por ejemplo, 1203). Desde aquí se envían las invitaciones por correo. | Administrador, Creador |
-| **Detalle de actividad** | Datos de la actividad y el recorrido de la participación: invitados, inscritos, asistieron y no asistieron, con la lista de quienes se inscribieron y no fueron. | Administrador, Creador |
+| **Actividades** | Crear, editar y eliminar actividades y talleres, con buscador y filtros. El lugar se elige de una lista; si es una sala, se pide su número (por ejemplo, 1203). Desde aquí se envían las invitaciones por correo. Tipos: masiva, taller y con invitación (sección 3.2). | Administrador, Creador |
+| **Detalle de actividad** | Datos de la actividad y el recorrido de la participación: invitados, inscritos, asistieron y no asistieron, con la lista de quienes se inscribieron y no fueron. En las actividades con invitación: invitados, confirmados, rechazados, sin responder, entraron y acompañantes. | Administrador, Creador |
+| **Invitados** | Lista de una actividad con invitación: carga del Excel o CSV con vista previa, estado de cada invitado y sus acompañantes, enlace personal para copiar, envío de las invitaciones y quitar a quien aún no entra. | Administrador, Creador |
 | **Reportes** | Gráficos y tablas por actividad o por escuela y carrera, con filtros por actividad, tipo, lugar, escuela, carrera, jornada y fechas. Menú **Exportar** con tres reportes en Excel o CSV (sección 3.1). | Administrador, Creador |
 | **Usuarios** | Crear y editar cuentas, asignar el rol y bloquear el acceso, con buscador. | Administrador |
 | **Alumnos** | Directorio de la nómina con buscador; ficha de cada alumno con su historial de participación; bloqueo manual con motivo. Desde aquí se importa la nómina en Excel o CSV. | Administrador |
 | **Catálogos** | Lugares, escuelas (con su color para los gráficos) y carreras: agregar, renombrar, bloquear y eliminar lo que no se usa. | Administrador |
 | **Escáner** | Registro de asistencia por turnos, con contador en vivo (sección 6). | Los tres roles |
 | **Auditoría** | Registro de todas las acciones del sistema, con filtros y exportación. | Administrador |
-| **Páginas públicas** | Inscripción a talleres, página de las actividades masivas y Política de Privacidad. | Sin cuenta |
+| **Páginas públicas** | Inscripción a talleres, página de las actividades masivas, respuesta a una invitación (`/invitacion/<enlace>/`) y Política de Privacidad. | Sin cuenta |
 
 ### 3.1 Exportaciones
 
@@ -72,14 +74,28 @@ Todas usan los filtros aplicados en Reportes, y cada descarga queda registrada e
 
 | Reporte | Contenido |
 | --- | --- |
-| **Resumen por actividad** | Una fila por actividad: tipo, estado, inicio y término, lugar, creador, cupos, invitados, inscritos, asistentes, no asistieron y porcentaje de asistencia. |
+| **Resumen por actividad** | Una fila por actividad: tipo, estado, inicio y término, lugar, creador, cupos, invitados, inscritos, asistentes, no asistieron, porcentaje de asistencia y acompañantes. |
 | **Participación por escuela y carrera** | Inscritos, asistentes y no asistieron por actividad, escuela, carrera y jornada. |
-| **Listado de participantes** | Cada alumno con su inscripción y su asistencia (hora, método y quién la registró). Contiene datos personales. |
+| **Listado de participantes** | Cada alumno con su inscripción y su asistencia (hora, método y quién la registró). En las actividades con invitación incluye a los acompañantes, y la columna **Participa como** dice si es invitado, agregado en la entrada o acompañante. Contiene datos personales. |
 | **Todo en un Excel** | Los tres anteriores, cada uno en su hoja. |
 
 En Excel las fechas son fechas reales, el encabezado queda fijo, tiene autofiltro y trae una hoja **Información** con la fecha, el usuario, los filtros usados y qué significa cada columna. Los CSV usan `;` y coma decimal para abrirse directo en el Excel en español.
 
 La escuela, la carrera y la jornada de cada inscripción y asistencia son las que el alumno tenía **en ese momento**: si después se cambia de carrera o llega una nómina nueva, el historial no cambia.
+
+En las actividades con invitación, los reportes cuentan como **inscritos** a los invitados que confirmaron y como **asistentes** a los que entraron (invitados y agregados en la entrada). Los acompañantes van en su propia columna y no suman a la asistencia de alumnos.
+
+### 3.2 Actividades con invitación
+
+Son actividades cerradas, para una lista de alumnos que define quien las crea. No tienen página pública ni cupo total.
+
+1. Al crear la actividad se elige el tipo **Con invitación** y cuántos acompañantes puede llevar cada invitado (de 0 a 10, el mismo número para todos).
+2. En la pantalla **Invitados** se sube la lista en Excel o CSV con las columnas `rut`, `nombres`, `carrera` y `correo` (`jornada` es opcional). Hay una plantilla para descargar. Antes de guardar se muestra una vista previa con los avisos y errores por fila: RUT con dígito verificador incorrecto, RUT repetidos y alumnos bloqueados son errores; un alumno que no está en la nómina o con otra carrera se carga igual, con aviso.
+3. Se envían las invitaciones por correo: a quienes todavía no la recibieron, o también a quienes no han respondido. Cada invitado recibe un **enlace personal**, que también se puede copiar desde la pantalla para mandarlo por otro medio.
+4. El alumno abre el enlace, confirma o rechaza, y registra a sus acompañantes con RUT o pasaporte y nombre. Debe aceptar la Política de Privacidad. Puede cambiar su respuesta hasta que empiece la actividad; después el enlace queda solo para consulta.
+5. En la entrada se usa el escáner de siempre (sección 6). Un acompañante se registra con su propio documento.
+
+Si llega alguien que no está en la lista, el escáner ofrece agregarlo: un alumno de la nómina entra como invitado **agregado en la entrada**, y una persona externa entra como acompañante de un invitado que tenga cupo libre. Los datos de invitados y acompañantes se guardan el mismo tiempo que el resto de la información del sistema.
 
 ---
 
@@ -214,6 +230,7 @@ Detalles de funcionamiento:
 * Los documentos se guardan sin puntos ni guion y en mayúsculas, y en pantalla se muestran con formato (por ejemplo, `20.001.550-9`).
 * El campo no muestra el texto leído del carnet mientras se confirma, y el aviso de "estudiante no encontrado" no lo repite.
 * En los talleres solo se registra a quienes están inscritos. Los alumnos bloqueados no se pueden registrar.
+* En las actividades con invitación entran los invitados y sus acompañantes. Si el documento no está en la lista, el escáner ofrece agregar a la persona (sección 3.2), y el contador compara a los que entraron con los esperados (invitados y acompañantes).
 * Cada usuario puede hacer hasta 120 lecturas por minuto. El límite es por usuario y no por IP, porque en el Punto varios operadores comparten la misma red.
 
 Limitación conocida: los carnets más antiguos, cuyo código no es un QR con la dirección del Registro Civil, todavía no se reconocen. En ese caso se digita el RUT.
@@ -236,6 +253,10 @@ Codigo Proyecto/
     │   ├── views_importar.py  Importación de la nómina desde la web
     │   ├── exportaciones.py   Exportaciones de Reportes (Excel y CSV)
     │   ├── importador_alumnos.py  Lectura y validación de la nómina
+    │   ├── invitados.py       Lectura y validación de la lista de invitados
+    │   ├── views_invitados.py Pantalla Invitados y envío de las invitaciones
+    │   ├── views_invitacion_publica.py  Respuesta del alumno desde su enlace
+    │   ├── escaner_invitacion.py  Escáner en las actividades con invitación
     │   ├── management/commands/   seed_data, perf_seed e importar_alumnos
     │   ├── migrations/        Migraciones de la base de datos
     │   ├── static/            JavaScript, CSS, imágenes y Chart.js
@@ -266,6 +287,7 @@ Codigo Proyecto/
 * Validación de imágenes subidas, con eliminación de metadatos EXIF.
 * Protección de las exportaciones CSV y Excel contra inyección de fórmulas. El listado nominal de participantes solo lo descargan el Administrador y el creador de cada actividad, y cada descarga queda en la auditoría.
 * Alumnos bloqueados (por no venir en la nómina o a mano, con motivo): no pueden inscribirse, registrar asistencia ni recibir invitaciones. La nómina respeta los bloqueos manuales.
+* Actividades con invitación: el enlace personal es aleatorio y no se puede adivinar, la página no se indexa en buscadores, la respuesta tiene límite de 30 envíos por minuto por IP y queda en la auditoría. El envío de invitaciones por carrera está bloqueado en este tipo de actividad, para que el correo no le llegue a toda la nómina.
 * Tolerancia a caracteres especiales en los datos de entrada y escape en la salida.
 * Registro de auditoría de las acciones del sistema, incluidos los turnos del escáner y las exportaciones.
 * Respaldo automático con prueba de recuperación y copias mensuales permanentes.
@@ -285,7 +307,7 @@ Codigo Proyecto/
 
 ## 9. Pruebas automatizadas
 
-La suite tiene **598 tests** y se ejecuta con:
+La suite tiene **666 tests** y se ejecuta con:
 
 ```bash
 docker compose exec web python manage.py test --parallel --noinput
@@ -317,6 +339,7 @@ Qué se verifica, por tema:
 | Datos hostiles y caracteres especiales | Apóstrofes y tildes, caracteres nulos y de control, normalización Unicode, y que entradas o parámetros hostiles no generen error 500 ni reflejen HTML. | `tests`, `tests_caracteres`, `tests_parametros` |
 | Exportaciones | Protección contra fórmulas, BOM y separador `;`, contenido de los tres reportes (inscritos, asistentes, no asistieron, porcentaje), fechas reales, hoja Información, permisos y registro en la auditoría. | `tests_exportaciones`, `tests_exportaciones_p1`, `tests_extremos`, `tests_integrales` |
 | Actividades, inscripciones y cupos | Crear, editar y eliminar actividades, validación de fechas, cupos e imágenes, inscripción pública, página pública de las masivas, recálculo de cupos y panel de participación del detalle. | `tests_integrales`, `tests_adicionales`, `tests_extremos`, `tests_forms_fechas`, `tests_forms_imagen`, `tests_actividad_publica`, `tests_embudo` |
+| Actividades con invitación | Lectura y validación de la lista (columnas, dígito verificador, repetidos, nómina y bloqueados), permisos de la pantalla Invitados, envío con enlace personal, respuesta con acompañantes y su validación, cambios hasta que empieza la actividad, escáner con invitados, acompañantes y agregados en la entrada, y reportes y exportaciones con invitados. | `tests_invitados`, `tests_invitacion_respuesta`, `tests_escaner_invitacion`, `tests_reportes_invitacion` |
 | Invitaciones por correo | Envío y registro de la notificación, fallo de SMTP registrado como fallido, límite por envío, previsualización y enlace correcto según el tipo de actividad. | `tests_adicionales`, `tests_extremos`, `tests_integrales`, `tests_correo_invitacion` |
 | Reportes y auditoría | Inscritos y asistentes con filtros, filtro por tipo y lugar, pestañas, cada creador ve solo lo suyo, la auditoría guarda los datos de la petición y su exportación es solo para el Administrador. | `tests_kpi_inscritos`, `tests_reportes_tipo`, `tests_auditoria_limites`, `tests_integrales`, `tests_roles_completo` |
 | Interfaz | Botones con ícono y aviso, filtros activos, menú Exportar, pantallas sin símbolos de texto antiguos y menú con la página actual marcada. | `tests_ui` |

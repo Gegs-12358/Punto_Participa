@@ -21,8 +21,8 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
-> exportaciones nuevas, la pantalla Alumnos y el escáner con turnos y contador en vivo. La suite tiene
-> 598 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
+> actividades con invitación. La suite tiene 666 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -461,7 +461,7 @@ No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de
 - [ ] Confirmar con Duoc UC la autorización de la carga y el formato real del archivo.
 
 **Calidad**
-- [x] Suite completa de tests en verde (598 pruebas al 12/11/2026). El 92 % de cobertura se midió con 323 y está pendiente de recalcular.
+- [x] Suite completa de tests en verde (666 pruebas al 12/11/2026). El 92 % de cobertura se midió con 323 y está pendiente de recalcular.
 - [ ] Usar Git (los ZIPs numerados, los `.bak` y las copias duplicadas indican que hoy el versionado es manual).
 
 ---
@@ -639,7 +639,7 @@ El desglose por tipo (masivas/talleres) no aplica el filtro de Escuela
 
 En la reunión con el Punto Estudiantil surgieron ocho sugerencias. Se ordenaron junto con lo que
 quedaba del plan original en bloques: P0 (técnicos), P-UI (unificación visual), P1 (participación y
-reportes), P2 (escáner), P3 (correo), P4 (datos y privacidad) y P6 (participantes externos). Todo lo
+reportes), P2 (escáner), P3 (correo), P4 (datos y privacidad) y P6 (actividades con invitación). Todo lo
 de esta sección está aplicado, probado y subido a GitHub.
 
 ### 18.1 Catálogos de lugares, escuelas y carreras
@@ -698,7 +698,25 @@ Errores corregidos en el camino: al elegir la actividad aparecía un aviso que h
 estaba abierto la pistola no escribía en el campo; al agregar un registro a la lista se borraba el nombre
 del registro anterior; y el método aparecía siempre como "RUT".
 
-### 18.7 Pendiente
+### 18.7 P6: actividades con invitación
+
+Se pidió que algunas actividades se crearan con una lista de invitados subida en Excel o CSV y que
+pudieran incluir acompañantes. Lo acordado con el Punto: en la lista van solo alumnos; la planilla trae
+RUT, nombre, carrera y correo; el alumno responde desde su enlace y registra a sus acompañantes con RUT o
+pasaporte y nombre; todos los invitados tienen el mismo máximo de acompañantes; quien no está en la lista
+se agrega en la entrada; no hay cupo total; y los datos se guardan el mismo tiempo que todo lo demás.
+
+| Commit | Cambio |
+|---|---|
+| `37b1126` | Tipo **Con invitación** y campo `acompanantes_por_invitado` (de 0 a 10), modelos `Invitado` y `Acompanante` (migración `0033`). Pantalla **Invitados** (`/actividades/<id>/invitados/`) con carga del Excel o CSV, vista previa con errores y avisos por fila (`gestion/invitados.py`), plantilla para descargar y quitar a quien no ha entrado. Un RUT con dígito verificador incorrecto ya no se acepta como pasaporte. Estas actividades no tienen página pública (404). |
+| `93f6e76` | Página pública `/invitacion/<token>/` (`views_invitacion_publica.py`): el alumno confirma o rechaza, registra a sus acompañantes y acepta la Política de Privacidad. Puede cambiar la respuesta hasta que empiece la actividad. Límite de 30 respuestas por minuto por IP y `noindex`. Envío de invitaciones con el enlace personal, a los pendientes o también a quienes no han respondido, con el tope `MAX_INVITACIONES_POR_ENVIO` (migración `0034`). Botón para copiar el enlace. El envío por carrera queda bloqueado en este tipo, porque le habría escrito a toda la nómina. |
+| `c158c35` | Escáner (`gestion/escaner_invitacion.py`): registra a invitados y acompañantes con su documento. Si la persona no está en la lista, ofrece agregarla: un alumno de la nómina entra como invitado "agregado en la entrada" y una persona externa como acompañante de un invitado con cupo. Los alumnos bloqueados no entran. El contador compara a los que entraron con los esperados. |
+| `9d07fa6` | Reportes, detalle y exportaciones: inscritos son los que confirmaron y asistentes los que entraron. Panel del detalle con invitados, confirmados, rechazados, sin responder, entraron y acompañantes. Columna **Acompañantes** en el resumen y **Participa como** en el listado de participantes. |
+
+Pruebas nuevas: `tests_invitados`, `tests_invitacion_respuesta`, `tests_escaner_invitacion` y
+`tests_reportes_invitacion`.
+
+### 18.8 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001); corregir en el backlog el
   criterio "límite por IP" (lo implementado es por usuario, porque los operadores comparten red);
@@ -707,4 +725,3 @@ del registro anterior; y el método aparecía siempre como "RUT".
   con aviso a la lista de espera; cuenta institucional. Depende de que el Punto entregue la cuenta.
 - **P4, datos:** retención de dos años en la base principal (verificando antes que los datos estén en un
   respaldo mensual), decisión sobre la IP y el navegador de la auditoría y anonimización.
-- **P6, participantes externos:** se decide el 24/11.
