@@ -1,0 +1,224 @@
+{% extends 'gestion/base.html' %}
+{% load static %}
+{% block title %}Carreras{% endblock %}
+
+{% block content %}
+
+<!-- ============================================================ -->
+<!-- TÍTULO -->
+<!-- ============================================================ -->
+<div class="page-title">
+    <div>
+        <span class="eyebrow">ADMINISTRACIÓN · CATÁLOGOS</span>
+        <h1>Carreras</h1>
+        <p>Renombrar sirve para corregir el nombre de la misma carrera. Si es una carrera distinta (por ejemplo,
+            una malla nueva), créala como nueva y bloquea la antigua: así el historial no cambia.</p>
+    </div>
+</div>
+
+{% include 'gestion/_catalogos_tabs.html' %}
+
+{% if confirmacion %}
+<!-- ============================================================ -->
+<!-- CONFIRMACIÓN ANTES DE RENOMBRAR UNA CARRERA CON ALUMNOS -->
+<!-- ============================================================ -->
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">CONFIRMAR CAMBIO</span>
+            <h2>¿Es la misma carrera o una distinta?</h2>
+        </div>
+    </div>
+    <div class="alert alert-warning" style="margin-bottom: 14px;">
+        <p style="margin: 0;">
+            Vas a cambiar <strong>"{{ confirmacion.carrera.nombre }}"</strong> por
+            <strong>"{{ confirmacion.nuevo_nombre }}"</strong>.
+            Esta carrera tiene <strong>{{ confirmacion.alumnos }} alumno{{ confirmacion.alumnos|pluralize }}</strong>
+            y {{ confirmacion.actividades }} actividad{{ confirmacion.actividades|pluralize:"es" }}.
+        </p>
+    </div>
+
+    <div class="action-group" style="flex-wrap: wrap; gap: 10px;">
+        <form method="post" action="{% url 'catalogo_carreras' %}">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="editar">
+            <input type="hidden" name="carrera_id" value="{{ confirmacion.carrera.id }}">
+            <input type="hidden" name="nombre" value="{{ confirmacion.nuevo_nombre }}">
+            <input type="hidden" name="escuela" value="{{ confirmacion.nueva_escuela }}">
+            <input type="hidden" name="confirmado" value="1">
+            <button type="submit" class="btn"
+                title="Se corrige el nombre en la carrera y en sus {{ confirmacion.alumnos }} alumnos">
+                ✓ Es la misma: corregir el nombre en todas partes
+            </button>
+        </form>
+
+        <form method="post" action="{% url 'catalogo_carreras' %}">
+            {% csrf_token %}
+            <input type="hidden" name="accion" value="reemplazar">
+            <input type="hidden" name="carrera_id" value="{{ confirmacion.carrera.id }}">
+            <input type="hidden" name="nombre" value="{{ confirmacion.nuevo_nombre }}">
+            <input type="hidden" name="escuela" value="{{ confirmacion.nueva_escuela }}">
+            <button type="submit" class="btn secondary"
+                title="Los alumnos y actividades de la carrera antigua no cambian">
+                ＋ Es distinta: crear "{{ confirmacion.nuevo_nombre }}" y bloquear la antigua
+            </button>
+        </form>
+
+        <a href="{% url 'catalogo_carreras' %}" class="link-button">Cancelar</a>
+    </div>
+</div>
+
+{% else %}
+<!-- ============================================================ -->
+<!-- AGREGAR -->
+<!-- ============================================================ -->
+<form method="post" class="filters-bar" action="{% url 'catalogo_carreras' %}">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="crear">
+    <div class="filter-group">
+        <label for="nueva-carrera">Nueva carrera</label>
+        <input type="text" id="nueva-carrera" name="nombre" maxlength="{{ max_nombre }}"
+            placeholder="Ej.: Ingeniería en Informática" autocomplete="off" required>
+    </div>
+    <div class="filter-group">
+        <label for="nueva-carrera-escuela">Escuela</label>
+        <select id="nueva-carrera-escuela" name="escuela" required>
+            <option value="">Selecciona una escuela</option>
+            {% for esc in escuelas_activas %}
+            <option value="{{ esc.nombre }}">{{ esc.nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-actions">
+        <button type="submit" class="btn" style="white-space: nowrap;">+ Agregar</button>
+    </div>
+</form>
+
+<!-- ============================================================ -->
+<!-- TABLA -->
+<!-- ============================================================ -->
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">CATÁLOGO</span>
+            <h2>Carreras registradas</h2>
+            <p class="panel-subtitle">{{ carreras|length }} carrera{{ carreras|length|pluralize }}{% if escuela_filtro %} en {{ escuela_filtro }}{% endif %}</p>
+        </div>
+        <form method="get" class="action-group" action="{% url 'catalogo_carreras' %}">
+            <label for="filtro-escuela" class="visually-hidden">Filtrar por escuela</label>
+            <select id="filtro-escuela" name="escuela" style="width: auto;">
+                <option value="">Todas las escuelas</option>
+                {% for esc in escuelas_todas %}
+                <option value="{{ esc.nombre }}" {% if escuela_filtro == esc.nombre %}selected{% endif %}>{{ esc.nombre }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn secondary">▽ Filtrar</button>
+        </form>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Listado de carreras</caption>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Escuela</th>
+                    <th>Alumnos</th>
+                    <th>Actividades</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for carrera in carreras %}
+                <tr>
+                    {% if carrera.id == editar_id %}
+                    <td colspan="6">
+                        <form method="post" class="action-group" action="{% url 'catalogo_carreras' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="accion" value="editar">
+                            <input type="hidden" name="carrera_id" value="{{ carrera.id }}">
+                            <label for="editar-nombre-{{ carrera.id }}" class="visually-hidden">Nombre</label>
+                            <input type="text" id="editar-nombre-{{ carrera.id }}" name="nombre" value="{{ carrera.nombre }}"
+                                maxlength="{{ max_nombre }}" autocomplete="off" required autofocus>
+                            <label for="editar-escuela-{{ carrera.id }}" class="visually-hidden">Escuela</label>
+                            <select id="editar-escuela-{{ carrera.id }}" name="escuela" required style="width: auto;">
+                                {% if not carrera.escuela %}<option value="">Selecciona una escuela</option>{% endif %}
+                                {% for esc in escuelas_todas %}
+                                {% if esc.activo or esc.nombre == carrera.escuela %}
+                                <option value="{{ esc.nombre }}" {% if esc.nombre == carrera.escuela %}selected{% endif %}>{{ esc.nombre }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn">✓ Guardar</button>
+                            <a href="{% url 'catalogo_carreras' %}" class="link-button">Cancelar</a>
+                        </form>
+                        {% if carrera.total_alumnos %}
+                        <small class="text-muted">
+                            Tiene {{ carrera.total_alumnos }} alumno{{ carrera.total_alumnos|pluralize }}: si cambias el nombre,
+                            antes de guardar se te preguntará si es la misma carrera o una distinta.
+                        </small>
+                        {% endif %}
+                    </td>
+                    {% else %}
+                    <td><strong>{{ carrera.nombre }}</strong></td>
+                    <td>{{ carrera.escuela|default:"Sin escuela" }}</td>
+                    <td>{{ carrera.total_alumnos }}</td>
+                    <td>{{ carrera.total_actividades }}</td>
+                    <td>
+                        {% if carrera.activo %}
+                        <span class="badge">Activa</span>
+                        {% else %}
+                        <span class="badge inactive">Bloqueada</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-group">
+                            <a href="?editar={{ carrera.id }}{% if escuela_filtro %}&escuela={{ escuela_filtro|urlencode }}{% endif %}"
+                                class="link-button" title="Cambiar nombre o escuela">✎ Editar</a>
+
+                            <form method="post" action="{% url 'catalogo_carreras' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="carrera_id" value="{{ carrera.id }}">
+                                {% if carrera.activo %}
+                                <input type="hidden" name="accion" value="bloquear">
+                                <button type="submit" class="danger-button"
+                                    title="Deja de ofrecerse al crear actividades">✕ Bloquear</button>
+                                {% else %}
+                                <input type="hidden" name="accion" value="desbloquear">
+                                <button type="submit" class="link-button"
+                                    title="Vuelve a ofrecerse al crear actividades">✓ Desbloquear</button>
+                                {% endif %}
+                            </form>
+
+                            {% if not carrera.total_alumnos and not carrera.total_actividades %}
+                            <form method="post" action="{% url 'catalogo_carreras' %}"
+                                data-confirmar="¿Eliminar la carrera &quot;{{ carrera.nombre }}&quot;? Esta acción no se puede deshacer.">
+                                {% csrf_token %}
+                                <input type="hidden" name="accion" value="eliminar">
+                                <input type="hidden" name="carrera_id" value="{{ carrera.id }}">
+                                <button type="submit" class="danger-button" title="Solo para carreras sin alumnos ni actividades">🗑 Eliminar</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted" style="padding: 30px;">
+                        No hay carreras{% if escuela_filtro %} en esta escuela{% endif %}.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'gestion/js/catalogos.js' %}"></script>
+{% endblock %}

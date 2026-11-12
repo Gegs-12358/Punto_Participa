@@ -12,7 +12,7 @@ import re
 
 from django.db.models import Q
 
-from .models import Actividad, Lugar
+from .models import Actividad, Carrera, Escuela, Lugar
 
 # Número de sala: letras, números y guion ("102", "1203", "A-201"), hasta 10 caracteres
 PATRON_NUMERO_SALA = re.compile(r'^[A-Z0-9]+(-[A-Z0-9]+)*$')
@@ -197,6 +197,17 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
         lugar_inicial = limpiar_texto(str(lugar_inicial or ''))[:200]   # sin \x00 ni controles
         self.lugar_pide_numero = bool(lugar_inicial) and Lugar.objects.filter(
             nombre=lugar_inicial, pide_numero=True).exists()
+
+        
+        # Carreras: solo las activas de escuelas activas (o sin escuela). Al editar se
+        # mantienen las que la actividad ya tenía, aunque después se hayan bloqueado.
+        escuelas_bloqueadas = Escuela.objects.filter(activo=False).values_list('nombre', flat=True)
+        filtro_carreras = Q(activo=True) & ~Q(escuela__in=list(escuelas_bloqueadas))
+        if self.instance and self.instance.pk:
+            filtro_carreras |= Q(pk__in=self.instance.carreras.values_list('pk', flat=True))
+        self.fields['carreras'].queryset = (
+            Carrera.objects.filter(filtro_carreras).order_by('escuela', 'nombre')
+        )
 
         # Si estamos editando, prellenar los campos de fecha/hora
         if self.instance and self.instance.pk:

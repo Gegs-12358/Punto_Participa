@@ -1,0 +1,141 @@
+{% extends 'gestion/base.html' %}
+{% load static %}
+{% block title %}Escuelas{% endblock %}
+
+{% block content %}
+
+<!-- ============================================================ -->
+<!-- TÍTULO -->
+<!-- ============================================================ -->
+<div class="page-title">
+    <div>
+        <span class="eyebrow">ADMINISTRACIÓN · CATÁLOGOS</span>
+        <h1>Escuelas</h1>
+        <p>Al bloquear una escuela, sus carreras dejan de ofrecerse al crear actividades. Lo ya registrado no cambia.</p>
+    </div>
+</div>
+
+{% include 'gestion/_catalogos_tabs.html' %}
+
+<!-- ============================================================ -->
+<!-- AGREGAR -->
+<!-- ============================================================ -->
+<form method="post" class="filters-bar" action="{% url 'catalogo_escuelas' %}">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="crear">
+    <div class="filter-group">
+        <label for="nueva-escuela">Nueva escuela</label>
+        <input type="text" id="nueva-escuela" name="nombre" maxlength="{{ max_nombre }}"
+            placeholder="Ej.: Escuela de Salud" autocomplete="off" required>
+    </div>
+    <div class="filter-actions">
+        <button type="submit" class="btn" style="white-space: nowrap;">+ Agregar</button>
+    </div>
+</form>
+
+<!-- ============================================================ -->
+<!-- TABLA -->
+<!-- ============================================================ -->
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">CATÁLOGO</span>
+            <h2>Escuelas registradas</h2>
+            <p class="panel-subtitle">{{ escuelas|length }} escuela{{ escuelas|length|pluralize }}</p>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Listado de escuelas</caption>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Carreras</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for escuela in escuelas %}
+                <tr>
+                    {% if escuela.id == editar_id %}
+                    <td colspan="4">
+                        <form method="post" class="action-group" action="{% url 'catalogo_escuelas' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="accion" value="renombrar">
+                            <input type="hidden" name="escuela_id" value="{{ escuela.id }}">
+                            <label for="renombrar-{{ escuela.id }}" class="visually-hidden">Nuevo nombre</label>
+                            <input type="text" id="renombrar-{{ escuela.id }}" name="nombre" value="{{ escuela.nombre }}"
+                                maxlength="{{ max_nombre }}" autocomplete="off" required autofocus>
+                            <button type="submit" class="btn">✓ Guardar</button>
+                            <a href="{% url 'catalogo_escuelas' %}" class="link-button">Cancelar</a>
+                        </form>
+                        {% if escuela.total_carreras %}
+                        <small class="text-muted">
+                            Se actualizará también en {{ escuela.total_carreras }} carrera{{ escuela.total_carreras|pluralize }}.
+                        </small>
+                        {% endif %}
+                    </td>
+                    {% else %}
+                    <td><strong>{{ escuela.nombre }}</strong></td>
+                    <td>
+                        {% if escuela.total_carreras %}
+                        <a href="{% url 'catalogo_carreras' %}?escuela={{ escuela.nombre|urlencode }}">{{ escuela.total_carreras }}</a>
+                        {% else %}0{% endif %}
+                    </td>
+                    <td>
+                        {% if escuela.activo %}
+                        <span class="badge">Activa</span>
+                        {% else %}
+                        <span class="badge inactive">Bloqueada</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-group">
+                            <a href="?editar={{ escuela.id }}" class="link-button" title="Cambiar el nombre">✎ Renombrar</a>
+
+                            <form method="post" action="{% url 'catalogo_escuelas' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="escuela_id" value="{{ escuela.id }}">
+                                {% if escuela.activo %}
+                                <input type="hidden" name="accion" value="bloquear">
+                                <button type="submit" class="danger-button"
+                                    title="Sus carreras dejan de ofrecerse al crear actividades">✕ Bloquear</button>
+                                {% else %}
+                                <input type="hidden" name="accion" value="desbloquear">
+                                <button type="submit" class="link-button"
+                                    title="Sus carreras vuelven a ofrecerse">✓ Desbloquear</button>
+                                {% endif %}
+                            </form>
+
+                            {% if not escuela.total_carreras %}
+                            <form method="post" action="{% url 'catalogo_escuelas' %}"
+                                data-confirmar="¿Eliminar la escuela &quot;{{ escuela.nombre }}&quot;? Esta acción no se puede deshacer.">
+                                {% csrf_token %}
+                                <input type="hidden" name="accion" value="eliminar">
+                                <input type="hidden" name="escuela_id" value="{{ escuela.id }}">
+                                <button type="submit" class="danger-button" title="Solo para escuelas sin carreras">🗑 Eliminar</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted" style="padding: 30px;">
+                        Todavía no hay escuelas. Agrega la primera arriba.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'gestion/js/catalogos.js' %}"></script>
+{% endblock %}

@@ -27,6 +27,7 @@ from django.utils import timezone
 from gestion.utils import normalizar_documento
 
 from gestion.models import (
+    Escuela,
     Lugar,
     Actividad,
     Alumno,
@@ -252,6 +253,7 @@ class Command(BaseCommand):
         Carrera.objects.all().delete()
         Jornada.objects.all().delete()
         Lugar.objects.all().delete()
+        Escuela.objects.all().delete()
 
         self.stdout.write(self.style.WARNING(
             '       Datos del seed eliminados.'
@@ -379,6 +381,7 @@ class Command(BaseCommand):
     def _crear_carreras(self):
         carreras = []
         for escuela, nombres in CARRERAS_POR_ESCUELA.items():
+            Escuela.objects.get_or_create(nombre=escuela)
             for nombre in nombres:
                 carrera, created = Carrera.objects.get_or_create(
                     nombre=nombre,

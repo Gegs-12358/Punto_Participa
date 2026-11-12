@@ -88,10 +88,28 @@ class Alumno(models.Model):
         self.rut = normalizar_documento(self.rut) or None  # '' -> None (evita choque de unique)
         super().save(*args, **kwargs)
 
+class Escuela(models.Model):
+    """
+    Catálogo de escuelas. Carrera.escuela guarda el NOMBRE de la escuela (texto), que es
+    lo que usan los reportes, los filtros y los colores; este catálogo solo controla qué
+    escuelas existen y cuáles están activas.
+    """
+    nombre = models.CharField(max_length=100, unique=True)
+    activo = models.BooleanField(default=True, db_index=True)
 
+    class Meta:
+        verbose_name = 'Escuela'
+        verbose_name_plural = 'Escuelas'
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
+    
 class Carrera(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
     escuela = models.CharField(max_length=100, blank=True, null=True)
+    # Bloqueada: deja de ofrecerse al crear actividades, pero conserva su historial
+    activo = models.BooleanField(default=True, db_index=True)
 
     class Meta:
         verbose_name = 'Carrera'
