@@ -1,0 +1,2 @@
+{# Etiqueta del tipo de actividad. Uso: {% include 'gestion/includes/tipo_actividad.html' with tipo=actividad.tipo %} #}
+{% if tipo == 'TALLER' %}<span class="role">Taller</span>{% elif tipo == 'INVITACION' %}<span class="badge tipo-invitacion">Con invitación</span>{% else %}<span class="badge">Masiva</span>{% endif %}

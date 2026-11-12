@@ -1,4 +1,4 @@
-from django.core.validators import RegexValidator
+from django.core.validators import MaxValueValidator, RegexValidator
 from django.db import models
 from django.contrib.auth.models import User
 from .utils import limpiar_texto, normalizar_documento
@@ -179,7 +179,10 @@ class Lugar(models.Model):
 
 
 class Actividad(models.Model):
-    TIPO_CHOICES = [('MASIVA', 'Masiva'), ('TALLER', 'Taller')]
+    # INVITACION: solo entran los alumnos de una lista cargada desde Excel o CSV, cada uno
+    # con hasta `acompanantes_por_invitado` acompañantes (ver Invitado y Acompanante).
+    TIPO_CHOICES = [('MASIVA', 'Masiva'), ('TALLER', 'Taller'), ('INVITACION', 'Con invitación')]
+    MAX_ACOMPANANTES = 10
     ESTADO_CHOICES = [
         ('ACTIVA', 'Activa'),
         ('FINALIZADA', 'Finalizada'),
@@ -203,6 +206,10 @@ class Actividad(models.Model):
     jornadas = models.ManyToManyField(Jornada, blank=True, related_name='actividades')
     cronograma = models.TextField(blank=True, null=True, verbose_name="Cronograma de fechas")
     fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    # Solo actividades con invitación: cuántos acompañantes puede registrar cada invitado
+    acompanantes_por_invitado = models.PositiveSmallIntegerField(
+        default=0, validators=[MaxValueValidator(MAX_ACOMPANANTES)],
+        verbose_name='Acompañantes por invitado')
 
     class Meta:
         verbose_name = 'Actividad'
@@ -231,6 +238,10 @@ class Actividad(models.Model):
     @property
     def es_taller(self):
         return self.tipo == 'TALLER'
+
+    @property
+    def es_con_invitacion(self):
+        return self.tipo == 'INVITACION'
 
     @property
     def esta_lleno(self):
@@ -415,6 +426,96 @@ class NotificacionCorreo(models.Model):
 
     def __str__(self):
         return f'{self.actividad} - {self.estado_envio}'
+
+
+def _token_invitacion():
+    import secrets
+    return secrets.token_urlsafe(24)
+
+
+class Invitado(models.Model):
+    """
+    Alumno invitado a una actividad con invitación. Los datos (nombre, carrera, correo)
+    vienen de la lista que cargó el Punto, no de la nómina: la invitación se envía a ESE
+    correo. Si el documento está en la nómina, se enlaza con el alumno (historial y reportes).
+
+    El enlace personal de respuesta usa `token`. La asistencia se guarda aquí (también para
+    quien no está en la nómina); a los que sí están se les crea además su Asistencia.
+    """
+    ESTADO_CHOICES = [
+        ('PENDIENTE', 'Sin responder'),
+        ('CONFIRMADO', 'Confirmó'),
+        ('RECHAZADO', 'No asistirá'),
+    ]
+
+    actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, related_name='invitados')
+    alumno = models.ForeignKey(Alumno, on_delete=models.SET_NULL, null=True, blank=True,
+                               related_name='invitaciones')
+    rut = models.CharField(max_length=30, verbose_name='Documento')     # normalizado
+    nombre = models.CharField(max_length=200)
+    correo = models.EmailField()
+    carrera = models.CharField(max_length=100, blank=True, default='')
+    escuela = models.CharField(max_length=100, blank=True, default='')
+    jornada = models.CharField(max_length=20, blank=True, default='')
+    token = models.CharField(max_length=64, unique=True, default=_token_invitacion, editable=False)
+    estado = models.CharField(max_length=12, choices=ESTADO_CHOICES, default='PENDIENTE', db_index=True)
+    fecha_respuesta = models.DateTimeField(null=True, blank=True)
+    agregado_en_entrada = models.BooleanField(default=False)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    ingreso = models.DateTimeField(null=True, blank=True)
+    metodo_ingreso = models.CharField(max_length=10, blank=True, default='')
+    registrado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                       related_name='+')
+
+    class Meta:
+        verbose_name = 'Invitado'
+        verbose_name_plural = 'Invitados'
+        ordering = ['nombre']
+        constraints = [
+            models.UniqueConstraint(fields=['actividad', 'rut'], name='unico_invitado_por_actividad'),
+        ]
+
+    def __str__(self):
+        return f'{self.nombre} ({self.actividad})'
+
+    def save(self, *args, **kwargs):
+        self.rut = normalizar_documento(self.rut) or ''
+        self.nombre = limpiar_texto(self.nombre)
+        self.correo = limpiar_texto(self.correo)
+        super().save(*args, **kwargs)
+
+
+class Acompanante(models.Model):
+    """Acompañante de un invitado: lo registra el alumno al responder (o se agrega en la
+    entrada) y entra escaneando su propio documento."""
+    actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, related_name='acompanantes')
+    invitado = models.ForeignKey(Invitado, on_delete=models.CASCADE, related_name='acompanantes')
+    rut = models.CharField(max_length=30, verbose_name='Documento')     # normalizado
+    nombre = models.CharField(max_length=200)
+    agregado_en_entrada = models.BooleanField(default=False)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    ingreso = models.DateTimeField(null=True, blank=True)
+    metodo_ingreso = models.CharField(max_length=10, blank=True, default='')
+    registrado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                       related_name='+')
+
+    class Meta:
+        verbose_name = 'Acompañante'
+        verbose_name_plural = 'Acompañantes'
+        ordering = ['nombre']
+        constraints = [
+            models.UniqueConstraint(fields=['actividad', 'rut'], name='unico_acompanante_por_actividad'),
+        ]
+
+    def __str__(self):
+        return f'{self.nombre} (acompaña a {self.invitado.nombre})'
+
+    def save(self, *args, **kwargs):
+        self.rut = normalizar_documento(self.rut) or ''
+        self.nombre = limpiar_texto(self.nombre)
+        if not self.actividad_id and self.invitado_id:
+            self.actividad_id = self.invitado.actividad_id
+        super().save(*args, **kwargs)
 
 
 class TurnoEscaneo(models.Model):

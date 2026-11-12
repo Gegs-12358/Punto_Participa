@@ -4667,3 +4667,50 @@ a.mini-stat:focus-visible {
         opacity: 1;
     }
 }
+
+/* ============================================================
+   Actividades con invitación
+   ============================================================ */
+.badge.tipo-invitacion {
+    background: #ece7f8;
+    color: #5b2fb0;
+}
+
+.mini-stats--5 {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.carga-resumen {
+    border-left: 4px solid var(--green);
+    margin-bottom: 12px;
+}
+
+.carga-resumen__detalle {
+    margin-top: 8px;
+}
+
+.carga-resumen__detalle > summary {
+    cursor: pointer;
+    color: var(--blue);
+    font-size: 13px;
+    font-weight: 800;
+    margin-bottom: 6px;
+}
+
+.subir-lista {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+#campos-invitacion {
+    display: grid;
+    gap: 4px;
+}
+
+@media (max-width: 900px) {
+    .mini-stats--5 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

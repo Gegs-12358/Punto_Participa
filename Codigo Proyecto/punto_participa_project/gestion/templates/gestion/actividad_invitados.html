@@ -1,0 +1,215 @@
+{% extends 'gestion/base.html' %}
+{% load static ui %}
+{% load formato %}
+{% block title %}Invitados: {{ actividad.titulo }}{% endblock %}
+
+{% block content %}
+
+<!-- ============================================================ -->
+<!-- ENCABEZADO -->
+<!-- ============================================================ -->
+<div class="page-title detail-header">
+    <div>
+        <nav class="breadcrumbs" aria-label="Navegación">
+            <a href="{% url 'dashboard' %}">Inicio</a>
+            <span class="sep">›</span>
+            <a href="{% url 'lista_actividades' %}">Actividades</a>
+            <span class="sep">›</span>
+            <a href="{% url 'actividad_detalle' actividad.pk %}">{{ actividad.titulo }}</a>
+            <span class="sep">›</span>
+            <span class="current">Invitados</span>
+        </nav>
+        <h1>Invitados</h1>
+        <p>
+            <span class="role">Con invitación</span>
+            {{ actividad.fecha_inicio|date:"d/m/Y H:i" }}, {{ actividad.lugar_completo }}.
+            Cada invitado puede registrar hasta <strong>{{ actividad.acompanantes_por_invitado }}</strong>
+            acompañante{{ actividad.acompanantes_por_invitado|pluralize }}.
+        </p>
+    </div>
+    <div class="btn-group detail-actions">
+        <a href="{% url 'actividad_detalle' actividad.pk %}" class="btn secondary">{% icono "ver" %} Ver actividad</a>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- RESULTADO DE LA ÚLTIMA CARGA -->
+<!-- ============================================================ -->
+{% if resumen %}
+<section class="panel carga-resumen" role="status" aria-labelledby="titulo-carga">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">LISTA CARGADA</span>
+            <h2 id="titulo-carga">
+                {{ resumen.nuevos }} agregado{{ resumen.nuevos|pluralize }},
+                {{ resumen.actualizados }} actualizado{{ resumen.actualizados|pluralize }}
+                {% if resumen.sin_cambios %}y {{ resumen.sin_cambios }} sin cambios{% endif %}
+            </h2>
+            <p class="panel-subtitle">
+                {% if resumen.total_errores %}{{ resumen.total_errores }} fila{{ resumen.total_errores|pluralize }} no se cargaron (ver abajo).{% else %}Todas las filas válidas se cargaron.{% endif %}
+            </p>
+        </div>
+    </div>
+
+    {% if resumen.errores %}
+    <details class="carga-resumen__detalle" open>
+        <summary>Filas con errores ({{ resumen.total_errores }}): corrígelas en el archivo y vuelve a subirlo</summary>
+        <div class="table-wrap">
+            <table>
+                <caption class="visually-hidden">Filas que no se cargaron</caption>
+                <thead><tr><th>Fila</th><th>Problema</th></tr></thead>
+                <tbody>
+                    {% for fila, mensaje in resumen.errores %}
+                    <tr><td>{{ fila }}</td><td>{{ mensaje }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if resumen.total_errores > resumen.errores|length %}<p class="text-muted">Se muestran los primeros {{ resumen.errores|length }}.</p>{% endif %}
+    </details>
+    {% endif %}
+
+    {% if resumen.avisos %}
+    <details class="carga-resumen__detalle">
+        <summary>Avisos ({{ resumen.total_avisos }}): se cargaron, pero conviene revisarlos</summary>
+        <div class="table-wrap">
+            <table>
+                <caption class="visually-hidden">Avisos de la carga</caption>
+                <thead><tr><th>Fila</th><th>Aviso</th></tr></thead>
+                <tbody>
+                    {% for fila, mensaje in resumen.avisos %}
+                    <tr><td>{{ fila }}</td><td>{{ mensaje }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </details>
+    {% endif %}
+</section>
+{% endif %}
+
+<div class="mini-stats mini-stats--5">
+    <div class="mini-stat"><span>INVITADOS</span><strong>{{ totales.total }}</strong>
+        {% if totales.fuera_de_nomina %}<small class="mini-stat__nota">{{ totales.fuera_de_nomina }} fuera de la nómina</small>{% endif %}</div>
+    <div class="mini-stat"><span>CONFIRMARON</span><strong>{{ totales.confirmados }}</strong></div>
+    <div class="mini-stat"><span>NO ASISTIRÁN</span><strong>{{ totales.rechazados }}</strong></div>
+    <div class="mini-stat"><span>SIN RESPONDER</span><strong>{{ totales.pendientes }}</strong></div>
+    <div class="mini-stat"><span>ACOMPAÑANTES</span><strong>{{ totales.acompanantes }}</strong></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- CARGAR MÁS -->
+<!-- ============================================================ -->
+<section class="panel" aria-labelledby="titulo-subir">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">LISTA</span>
+            <h2 id="titulo-subir">Agregar o actualizar invitados</h2>
+            <p class="panel-subtitle">Excel o CSV con rut, nombre, carrera y correo (jornada opcional). Los que ya
+                están se actualizan; nadie se borra y las respuestas se conservan.
+                <a href="{% url 'plantilla_invitados' %}">Descargar plantilla</a>.</p>
+        </div>
+    </div>
+    <form method="post" enctype="multipart/form-data" class="subir-lista">
+        {% csrf_token %}
+        <label for="archivo" class="visually-hidden">Archivo con la lista</label>
+        <input type="file" id="archivo" name="archivo" accept=".xlsx,.csv" required>
+        <button type="submit" class="btn">{% icono "subir" %} Cargar lista</button>
+    </form>
+</section>
+
+<!-- ============================================================ -->
+<!-- FILTROS Y LISTA -->
+<!-- ============================================================ -->
+<form method="get" class="filters-bar" role="search">
+    <div class="filter-group filter-group--buscar">
+        <label for="filtro-buscar">Buscar</label>
+        <input type="search" id="filtro-buscar" name="q" value="{{ request.GET.q }}" maxlength="100"
+            placeholder="Nombre, RUT, correo o carrera">
+    </div>
+    <div class="filter-group">
+        <label for="filtro-estado">Respuesta</label>
+        <select name="estado" id="filtro-estado">
+            <option value="">Todas</option>
+            {% for valor, texto in estados_opciones %}
+            <option value="{{ valor }}" {% if request.GET.estado == valor %}selected{% endif %}>{{ texto }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% url 'invitados_actividad' actividad.pk as url_limpiar %}{% acciones_filtro url_limpiar %}
+</form>
+{% chips_filtros "q=Búsqueda,estado=Respuesta" url_limpiar %}
+
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">INVITADOS</span>
+            <h2>Lista de invitados</h2>
+            <p class="panel-subtitle">Mostrando {{ invitados|length }} de {{ invitados.paginator.count }}</p>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Invitados a {{ actividad.titulo }}</caption>
+            <thead>
+                <tr>
+                    <th>Invitado</th>
+                    <th>Documento</th>
+                    <th>Carrera</th>
+                    <th>Nómina</th>
+                    <th>Respuesta</th>
+                    <th>Acompañantes</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inv in invitados %}
+                <tr>
+                    <td>
+                        {% if inv.alumno %}<a href="{% url 'alumno_detalle' inv.alumno.pk %}" class="enlace-fila"><strong>{{ inv.nombre }}</strong></a>{% else %}<strong>{{ inv.nombre }}</strong>{% endif %}
+                        <small class="text-muted celda-sub">{{ inv.correo }}</small>
+                    </td>
+                    <td><code>{{ inv.rut|rut_fmt }}</code></td>
+                    <td>{{ inv.carrera }}{% if inv.jornada %}<small class="text-muted celda-sub">{{ inv.jornada }}</small>{% endif %}</td>
+                    <td>{% if inv.alumno %}<span class="badge">En la nómina</span>{% else %}<span class="badge draft" title="Se cargó con los datos de la lista">Fuera de la nómina</span>{% endif %}
+                        {% if inv.agregado_en_entrada %}<small class="text-muted celda-sub">Agregado en la entrada</small>{% endif %}</td>
+                    <td>
+                        {% if inv.estado == 'CONFIRMADO' %}<span class="badge">Confirmó</span>
+                        {% elif inv.estado == 'RECHAZADO' %}<span class="badge inactive">No asistirá</span>
+                        {% else %}<span class="badge draft">Sin responder</span>{% endif %}
+                    </td>
+                    <td>{{ inv.total_acompanantes }} de {{ actividad.acompanantes_por_invitado }}</td>
+                    <td>
+                        <div class="acciones-fila">
+                            {% if not inv.ingreso %}
+                            <form method="post" action="{% url 'quitar_invitado' actividad.pk inv.pk %}"
+                                data-confirmar="¿Quitar a {{ inv.nombre }} de la lista?{% if inv.total_acompanantes %} También se quitan sus acompañantes.{% endif %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-icon btn-icon--sm btn-icon--danger" data-tooltip="Quitar de la lista"
+                                    aria-label="Quitar a {{ inv.nombre }} de la lista">{% icono "eliminar" %}</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <span>{% icono "participantes" "icono--grande" %}</span>
+                            <h3>{% if request.GET %}Ningún invitado coincide{% else %}Todavía no hay invitados{% endif %}</h3>
+                            <p>{% if request.GET %}Prueba con otra búsqueda o limpia los filtros.{% else %}Sube la lista con el formulario de arriba.{% endif %}</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include 'gestion/includes/paginacion.html' with pagina=invitados param='page' %}
+</div>
+
+<script src="{% static 'gestion/js/catalogos.js' %}"></script>
+{% endblock %}

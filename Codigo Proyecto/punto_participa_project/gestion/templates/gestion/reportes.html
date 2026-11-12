@@ -303,7 +303,7 @@
                     {% for act in actividades %}
                     <tr>
                         <td><strong>{{ act.titulo }}</strong></td>
-                        <td>{% if act.tipo == 'TALLER' %}<span class="role">Taller</span>{% else %}<span class="badge">Masiva</span>{% endif %}</td>
+                        <td>{% include 'gestion/includes/tipo_actividad.html' with tipo=act.tipo %}</td>
                         <td>{{ act.creador }}</td>
                         <td>{{ act.registrado_por_detalle }}</td>
                         <td>{{ act.fecha_inicio|date:"d/m/Y" }}</td>

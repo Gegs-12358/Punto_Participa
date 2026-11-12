@@ -122,8 +122,9 @@ def _filas_xlsx(contenido):
     return [[_celda_a_texto(c) for c in fila] for fila in ws.iter_rows(values_only=True)]
 
 
-def leer_filas(archivo, nombre):
-    """Devuelve [(numero_fila, {columna: texto})]. `archivo` es un objeto con .read()."""
+def leer_filas(archivo, nombre, obligatorias=None):
+    """Devuelve [(numero_fila, {columna: texto})]. `archivo` es un objeto con .read().
+    `obligatorias`: columnas que deben venir (por defecto, las de la nómina)."""
     contenido = archivo.read()
     if len(contenido) > MAX_BYTES:
         raise ArchivoInvalido(f'El archivo supera {MAX_BYTES // (1024 * 1024)} MB.')
@@ -145,7 +146,7 @@ def leer_filas(archivo, nombre):
         raise ArchivoInvalido('El archivo está vacío.')
 
     columnas = [_clave_columna(c) for c in matriz[0]]
-    faltan = [c for c in COLUMNAS_OBLIGATORIAS if c not in columnas]
+    faltan = [c for c in (obligatorias or COLUMNAS_OBLIGATORIAS) if c not in columnas]
     if faltan:
         raise ArchivoInvalido('Faltan columnas: ' + ', '.join(faltan))
 

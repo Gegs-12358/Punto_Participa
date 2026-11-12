@@ -293,7 +293,7 @@
                     <p>{% icono "lugar" "icono--texto" %} {{ act.lugar_completo }}</p>
                 </div>
                 <div class="upcoming-badge">
-                    {% if act.tipo == 'TALLER' %}<span class="badge">Taller</span>{% else %}<span class="badge draft">Masiva</span>{% endif %}
+                    {% include 'gestion/includes/tipo_actividad.html' with tipo=act.tipo %}
                 </div>
             </li>
             {% empty %}
@@ -397,11 +397,7 @@
                         </a>
                     </td>
                     <td>
-                        {% if actividad.tipo == 'TALLER' %}
-                        <span class="role">Taller</span>
-                        {% else %}
-                        <span class="badge">Masiva</span>
-                        {% endif %}
+                        {% include 'gestion/includes/tipo_actividad.html' with tipo=actividad.tipo %}
                     </td>
                     <td>{{ actividad.fecha_inicio|date:"d/m/Y H:i" }}</td>
                     <td>

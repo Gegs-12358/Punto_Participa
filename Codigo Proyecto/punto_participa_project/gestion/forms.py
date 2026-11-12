@@ -1,18 +1,18 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from datetime import datetime, time, date
-from .models import Actividad
-from .utils import limpiar_texto
-import io
-from PIL import Image
-from django.core.files.base import ContentFile
-from django.core.files.uploadedfile import UploadedFile
+from datetime import datetime
 import re
 
 from django.db.models import Q
 
 from .models import Actividad, Carrera, Escuela, Lugar
+from .utils import limpiar_texto
+import io
+from PIL import Image
+from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import UploadedFile
+
 
 # Número de sala: letras, números y guion ("102", "1203", "A-201"), hasta 10 caracteres
 PATRON_NUMERO_SALA = re.compile(r'^[A-Z0-9]+(-[A-Z0-9]+)*$')
@@ -27,6 +27,7 @@ class SelectLugar(forms.Select):
         if lugar is not None and lugar.pide_numero:
             opcion['attrs']['data-pide-numero'] = '1'
         return opcion
+
 
 class LimpiarTextoMixin:
     """Limpia automáticamente todos los CharField (incluye EmailField).
@@ -99,6 +100,11 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
             'required': True,
         }),
     )
+    # Solo actividades con invitación: lista de alumnos (.xlsx o .csv). Obligatoria al crear.
+    lista_invitados = forms.FileField(
+        label='Lista de invitados', required=False,
+        widget=forms.ClearableFileInput(attrs={'accept': '.xlsx,.csv', 'class': 'form-control'}),
+    )
     fecha_fin_hora = forms.TimeField(
         label='Hora de término',
         input_formats=['%H:%M'],
@@ -114,7 +120,7 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
         fields = [
             'titulo', 'descripcion', 'tipo', 'lugar', 'imagen',
             'lugar_numero', 'cupos_totales', 'cronograma',
-            'carreras', 'jornadas',
+            'carreras', 'jornadas', 'acompanantes_por_invitado',
         ]
         widgets = {
             'titulo': forms.TextInput(attrs={
@@ -134,11 +140,16 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
                 'class': 'form-select',
                 'required': True,
             }),
-            
             'cupos_totales': forms.NumberInput(attrs={
                 'class': 'floating-input',
                 'placeholder': ' ',
                 'min': '1',
+                'step': '1',
+            }),
+            'acompanantes_por_invitado': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '0',
+                'max': str(Actividad.MAX_ACOMPANANTES),
                 'step': '1',
             }),
             'imagen': forms.ClearableFileInput(attrs={
@@ -164,6 +175,8 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
         # Placeholder en español para el select de tipo
         self.fields['tipo'].empty_label = 'Selecciona un tipo'
 
+        # Acompañantes: solo se usa en las actividades con invitación; vacío = 0
+        self.fields['acompanantes_por_invitado'].required = False
 
         # Lugar: desplegable con los lugares activos del catálogo. Si se edita una
         # actividad cuyo lugar ya está bloqueado, ese lugar se sigue ofreciendo
@@ -198,7 +211,6 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
         self.lugar_pide_numero = bool(lugar_inicial) and Lugar.objects.filter(
             nombre=lugar_inicial, pide_numero=True).exists()
 
-        
         # Carreras: solo las activas de escuelas activas (o sin escuela). Al editar se
         # mantienen las que la actividad ya tenía, aunque después se hayan bloqueado.
         escuelas_bloqueadas = Escuela.objects.filter(activo=False).values_list('nombre', flat=True)
@@ -262,9 +274,21 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
         if fecha_fin and fecha_inicio and fecha_fin <= fecha_inicio:
             self.add_error('fecha_fin_fecha', 'La fecha de término debe ser posterior a la de inicio.')
 
-        # Si es MASIVA, limpiar cupos
-        if tipo == 'MASIVA':
+        # Si es MASIVA o con invitación, limpiar cupos (en la con invitación manda la lista)
+        if tipo in ('MASIVA', 'INVITACION'):
             cleaned_data['cupos_totales'] = None
+
+        # Carreras y jornadas: obligatorias salvo en las actividades con invitación
+        if tipo != 'INVITACION':
+            if not cleaned_data.get('carreras'):
+                self.add_error('carreras', 'Debes seleccionar al menos una carrera.')
+            if not cleaned_data.get('jornadas'):
+                self.add_error('jornadas', 'Debes seleccionar al menos una jornada.')
+            cleaned_data['acompanantes_por_invitado'] = 0
+        elif cleaned_data.get('acompanantes_por_invitado') is None:
+            cleaned_data['acompanantes_por_invitado'] = 0
+        self._validar_cambio_de_tipo(tipo)
+        self._leer_lista_invitados(tipo)
 
         # Si es TALLER, asegurar que hay cupos
         # Si es TALLER, validar cupos
@@ -294,18 +318,34 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
         self._lugar_obj = lugar
         return lugar.nombre if lugar else ''
 
-    
-    def clean_carreras(self):
-        carreras = self.cleaned_data.get('carreras')
-        if not carreras or carreras.count() == 0:
-            raise ValidationError('Debes seleccionar al menos una carrera.')
-        return carreras
+    def _validar_cambio_de_tipo(self, tipo):
+        """Una actividad con invitados no puede dejar de ser "con invitación", y una con
+        inscripciones o asistencias no puede pasar a serlo (se mezclarían los registros)."""
+        actividad = self.instance
+        if not (actividad and actividad.pk) or not tipo or tipo == actividad.tipo:
+            return
+        if actividad.tipo == 'INVITACION' and actividad.invitados.exists():
+            self.add_error('tipo', 'Esta actividad ya tiene invitados: no puede cambiar de tipo.')
+        elif tipo == 'INVITACION' and (actividad.inscripciones.exists() or actividad.asistencias.exists()):
+            self.add_error('tipo', 'Esta actividad ya tiene inscripciones o asistencias: '
+                                   'no puede pasar a ser con invitación.')
 
-    def clean_jornadas(self):
-        jornadas = self.cleaned_data.get('jornadas')
-        if not jornadas or jornadas.count() == 0:
-            raise ValidationError('Debes seleccionar al menos una jornada.')
-        return jornadas
+    def _leer_lista_invitados(self, tipo):
+        """Lee el archivo de invitados (solo si es con invitación). Las filas quedan en
+        self.filas_invitados; la vista las revisa y las carga después de guardar."""
+        from .invitados import ArchivoInvalido, leer
+        self.filas_invitados = None
+        archivo = self.cleaned_data.get('lista_invitados')
+        if tipo != 'INVITACION':
+            return
+        if not archivo:
+            if not (self.instance and self.instance.pk):
+                self.add_error('lista_invitados', 'Sube la lista de invitados (.xlsx o .csv).')
+            return
+        try:
+            self.filas_invitados = leer(archivo, archivo.name)
+        except ArchivoInvalido as e:
+            self.add_error('lista_invitados', str(e))
 
     # Tamaño máximo permitido para la imagen subida (5 MB)
     TAMANO_MAXIMO_IMAGEN = 5 * 1024 * 1024

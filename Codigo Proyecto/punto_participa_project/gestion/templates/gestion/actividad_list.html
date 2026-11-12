@@ -137,11 +137,7 @@
                         </a>
                     </td>
                     <td>
-                        {% if actividad.tipo == 'TALLER' %}
-                        <span class="role">Taller</span>
-                        {% else %}
-                        <span class="badge">Masiva</span>
-                        {% endif %}
+                        {% include 'gestion/includes/tipo_actividad.html' with tipo=actividad.tipo %}
                     </td>
                     {% if es_admin %}
                     <td>{{ actividad.creado_por.username|default:"N/A" }}</td>

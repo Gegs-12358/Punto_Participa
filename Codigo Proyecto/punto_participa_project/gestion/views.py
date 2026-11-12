@@ -30,6 +30,7 @@ from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncMonth
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.crypto import get_random_string
@@ -1306,6 +1307,9 @@ def _procesar_form_actividad(request, form, es_nueva):
 
     actividad.save()
     form.save_m2m()
+    if actividad.tipo == 'INVITACION' and getattr(form, 'filas_invitados', None):
+        from .views_invitados import cargar_lista
+        cargar_lista(request, actividad, form.filas_invitados)
     return actividad, None
 
 
@@ -1327,6 +1331,13 @@ def crear_actividad(request):
             registrar_log(request, 'Actividades', 'Crear Actividad',
                           f'Actividad "{actividad.titulo}" (ID: {actividad.id}) creada',
                           'Actividad', actividad.id, actividad.titulo)
+            if actividad.tipo == 'INVITACION':
+                # Sigue en la lista de invitados (resultado de la carga), no en el envío por carrera
+                url = reverse('invitados_actividad', args=[actividad.pk])
+                if _es_ajax(request):
+                    return JsonResponse({'success': True, 'id': actividad.id, 'tipo': actividad.tipo,
+                                         'es_nueva': True, 'redirect_url': url})
+                return redirect(url)
             if _es_ajax(request):
                 return JsonResponse({'success': True, 'id': actividad.id,
                                      'tipo': actividad.tipo, 'es_nueva': True})
@@ -1393,6 +1404,12 @@ def editar_actividad(request, pk):
                 detalle += ' FORZADAMENTE a pesar de tener datos asociados.'
             registrar_log(request, 'Actividades', 'Edición de actividad', detalle,
                           'Actividad', actividad.id, actividad.titulo)
+            if actividad.tipo == 'INVITACION':
+                url = reverse('invitados_actividad', args=[actividad.pk])
+                if _es_ajax(request):
+                    return JsonResponse({'success': True, 'id': actividad.id, 'tipo': actividad.tipo,
+                                         'es_nueva': False, 'redirect_url': url})
+                return redirect(url)
             if _es_ajax(request):
                 return JsonResponse({'success': True, 'id': actividad.id,
                                      'tipo': actividad.tipo, 'es_nueva': False})
@@ -1425,6 +1442,9 @@ def enviar_invitaciones(request):
         actividad = get_object_or_404(Actividad, pk=actividad_id)
         if not puede_gestionar_actividad(request.user, actividad):
             return _error_json('No tienes permisos sobre esta actividad.', 403)
+        if actividad.tipo == 'INVITACION':
+            # Sin este corte, una actividad sin carreras le escribiría a toda la nómina
+            return _error_json('Las invitaciones de esta actividad se envían a su lista de invitados.', 400)
 
         carreras = list(actividad.carreras.values_list('nombre', flat=True))
         jornadas = list(actividad.jornadas.values_list('nombre', flat=True))
@@ -1483,6 +1503,8 @@ def previsualizar_invitacion(request, pk):
         actividad = get_object_or_404(Actividad, pk=pk)
         if not puede_gestionar_actividad(request.user, actividad):
             return _error_json('No tienes permisos sobre esta actividad.', 403)
+        if actividad.tipo == 'INVITACION':
+            return _error_json('Las invitaciones de esta actividad se envían a su lista de invitados.', 400)
 
         carreras = [c.nombre for c in actividad.carreras.all()]
         jornadas = [j.nombre for j in actividad.jornadas.all()]
@@ -1715,6 +1737,13 @@ def _procesar_escaneo(request):
         registrar_log(request, 'Escáner', 'Intento de asistencia sin inscripción',
                       f'{alumno.nombres} {alumno.apellidos} en "{actividad.titulo}"',
                       'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
+
+    # Con invitación: solo entran los de la lista
+    if actividad.tipo == 'INVITACION' and not actividad.invitados.filter(rut=alumno.rut).exists():
+        registrar_log(request, 'Escáner', 'Intento de ingreso sin invitación',
+                      f'{alumno.nombres} {alumno.apellidos} en "{actividad.titulo}"',
+                      'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
+        return _error_json(f'{alumno.nombres} {alumno.apellidos} no está en la lista de invitados.', 403)
 
     # ============================================================
     # PRIMERA ETAPA: PEDIR CONFIRMACIÓN

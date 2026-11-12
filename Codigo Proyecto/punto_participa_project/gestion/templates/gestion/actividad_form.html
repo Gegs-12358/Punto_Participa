@@ -81,6 +81,7 @@
                         <option value="" disabled {% if not form.tipo.value %}selected{% endif %}>Selecciona un tipo</option>
                         <option value="MASIVA" {% if form.tipo.value == 'MASIVA' %}selected{% endif %}>Masiva</option>
                         <option value="TALLER" {% if form.tipo.value == 'TALLER' %}selected{% endif %}>Taller</option>
+                        <option value="INVITACION" {% if form.tipo.value == 'INVITACION' %}selected{% endif %}>Con invitación</option>
                     </select>
                     {% if form.tipo.errors %}
                         <span class="field-error">{{ form.tipo.errors.0 }}</span>
@@ -161,6 +162,32 @@
                     {% endif %}
                 </div>
 
+                <!-- SOLO CON INVITACIÓN: acompañantes y lista de invitados (los muestra scripts.js según el tipo) -->
+                <div id="campos-invitacion"{% if form.tipo.value != 'INVITACION' %} style="display: none;"{% endif %}>
+                    <div class="form-field">
+                        <label for="{{ form.acompanantes_por_invitado.id_for_label }}">Acompañantes por invitado</label>
+                        {{ form.acompanantes_por_invitado }}
+                        <small class="input-help">Cuántos acompañantes puede registrar cada alumno al responder (0 a 10).</small>
+                        {% if form.acompanantes_por_invitado.errors %}
+                        <span class="field-error">{{ form.acompanantes_por_invitado.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <label for="{{ form.lista_invitados.id_for_label }}">
+                            Lista de invitados{% if not form.instance.pk %} <span class="required">*</span>{% endif %}
+                        </label>
+                        {{ form.lista_invitados }}
+                        <small class="input-help">
+                            Excel o CSV con las columnas rut, nombre, carrera y correo (jornada es opcional).
+                            <a href="{% url 'plantilla_invitados' %}">Descargar plantilla</a>.
+                            {% if form.instance.pk %}Si subes otra lista, se agregan los nuevos y se actualizan los que ya estaban.{% endif %}
+                        </small>
+                        {% if form.lista_invitados.errors %}
+                        <span class="field-error">{{ form.lista_invitados.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
             </div>
 
             <!-- ============================================================ -->
@@ -188,7 +215,7 @@
                 </div>
 
                 <!-- CARRERAS (checkboxes - sin label flotante) -->
-                <div class="form-field">
+                <div class="form-field" data-segmentacion{% if form.tipo.value == 'INVITACION' %} style="display: none;"{% endif %}>
                     <label>
                         Carreras Asociadas <span class="required">*</span>
                     </label>
@@ -227,7 +254,7 @@
                 </div>
 
                 <!-- JORNADAS (checkboxes - sin label flotante) -->
-                <div class="form-field">
+                <div class="form-field" data-segmentacion{% if form.tipo.value == 'INVITACION' %} style="display: none;"{% endif %}>
                     <div class="career-group-head">
                         <label style="margin: 0;">
                             Jornadas Asociadas <span class="required">*</span>

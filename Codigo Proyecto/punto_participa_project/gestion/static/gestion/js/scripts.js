@@ -287,13 +287,21 @@ function toggleCamposCupos() {
     const tipoSelect = document.getElementById('id_tipo');
     const camposCupos = document.getElementById('campos-cupos');
     if (!tipoSelect || !camposCupos) return;
-    if (tipoSelect.value === 'MASIVA') {
+    const tipo = tipoSelect.value;
+    // Cupo: solo talleres. Lista de invitados y acompañantes: solo con invitación.
+    // Carreras y jornadas: no aplican a las actividades con invitación (manda la lista).
+    if (tipo === 'MASIVA' || tipo === 'INVITACION') {
         camposCupos.style.display = 'none';
         const cuposTotales = document.getElementById('id_cupos_totales');
         if (cuposTotales) cuposTotales.value = '';
     } else {
         camposCupos.style.display = 'block';
     }
+    const camposInvitacion = document.getElementById('campos-invitacion');
+    if (camposInvitacion) camposInvitacion.style.display = tipo === 'INVITACION' ? '' : 'none';
+    document.querySelectorAll('[data-segmentacion]').forEach(function (bloque) {
+        bloque.style.display = tipo === 'INVITACION' ? 'none' : '';
+    });
 }
 
 // ============================================================
@@ -671,6 +679,12 @@ document.addEventListener('submit', function (e) {
                     closeModal(document.getElementById('actividadModal'));
                     marcarFormularioGuardado();
 
+                    // Con invitación: se sigue en la lista de invitados (resultado de la carga)
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                        return;
+                    }
+
                     const modalInv = document.getElementById('modalConfirmarInvitaciones');
                     modalInv.dataset.actividadId = data.id;
                     modalInv.dataset.tipo = data.tipo;
@@ -855,13 +869,15 @@ document.addEventListener('submit', function (e) {
     if (form.id === 'formActividad') {
         const carrerasMarcadas = document.querySelectorAll('input[name="carreras"]:checked').length;
         const jornadasMarcadas = document.querySelectorAll('input[name="jornadas"]:checked').length;
+        const tipoActual = document.getElementById('id_tipo');
+        const conInvitacion = tipoActual && tipoActual.value === 'INVITACION';
 
-        if (carrerasMarcadas === 0) {
+        if (carrerasMarcadas === 0 && !conInvitacion) {
             e.preventDefault();
             mostrarMensaje('Debes seleccionar al menos una Carrera.', 'warning');
             return;
         }
-        if (jornadasMarcadas === 0) {
+        if (jornadasMarcadas === 0 && !conInvitacion) {
             e.preventDefault();
             mostrarMensaje('Debes seleccionar al menos una Jornada.', 'warning');
             return;
