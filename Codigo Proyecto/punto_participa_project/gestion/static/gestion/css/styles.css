@@ -4915,3 +4915,5 @@ a.mini-stat:focus-visible {
     border-color: var(--navy);
     background: var(--surface);
 }
+
+.embudo__paso--acompanantes .embudo__barra > span { background: #9a6fd6; }

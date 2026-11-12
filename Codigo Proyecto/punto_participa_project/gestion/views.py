@@ -45,7 +45,7 @@ from .decorators import role_required
 from .forms import ActividadForm
 from .models import (
     Actividad, Alumno, Asistencia, Carrera, Escuela, Inscripcion, Jornada, Lugar,
-    LogAuditoria, NotificacionCorreo, Rol, TurnoEscaneo, UsuarioSistema,
+    Acompanante, Invitado, LogAuditoria, NotificacionCorreo, Rol, TurnoEscaneo, UsuarioSistema,
 )
 # [REFACTOR Opción B] Permisos centralizados
 from .permissions import ( ROLES_VALIDOS, get_perfil, puede_gestionar_actividad,tiene_rol,)
@@ -731,9 +731,22 @@ def reportes(request):
         regs_por_act[item['actividad_id']].append(
             f"{item['registrado_por__username'] or 'Anónimo'} ({item['t']})"
         )
+    # Con invitación: inscritos = confirmaron; asistentes = invitados y acompañantes que entraron
+    ids_invitacion = [a.id for a in act_qs if a.tipo == 'INVITACION']
+    lista_inv = {}
+    if ids_invitacion:
+        for i in (Invitado.objects.filter(actividad_id__in=ids_invitacion).order_by().values('actividad_id')
+                  .annotate(conf=Count('id', filter=Q(estado='CONFIRMADO')),
+                            entraron=Count('id', filter=Q(ingreso__isnull=False)))):
+            lista_inv[i['actividad_id']] = [i['conf'], i['entraron']]
+        for i in (Acompanante.objects.filter(actividad_id__in=ids_invitacion, ingreso__isnull=False)
+                  .order_by().values('actividad_id').annotate(t=Count('id'))):
+            lista_inv.setdefault(i['actividad_id'], [0, 0])[1] += i['t']
     for a in act_qs:
         a.total_asistentes = a.total_asistentes_calc
         a.total_inscritos = a.total_inscritos_calc
+        if a.tipo == 'INVITACION':
+            a.total_inscritos, a.total_asistentes = lista_inv.get(a.id, [0, 0])
         a.creador = a.creado_por.username if a.creado_por else 'N/A'
         a.registrado_por_detalle = ", ".join(regs_por_act.get(a.id, [])) or "Sin registros"
 
@@ -1160,6 +1173,57 @@ def actividad_detalle(request, pk):
     })
 
 
+def _pasos_embudo(pasos):
+    """Barras proporcionales: cada valor como % del mayor."""
+    mayor = max([v for _, v, _ in pasos] + [1])
+    return [{'etiqueta': e, 'valor': v, 'clase': c, 'ancho': round(v / mayor * 100)} for e, v, c in pasos]
+
+
+def _embudo_invitacion(actividad, max_lista=15):
+    """
+    Recorrido en una actividad con invitación: invitados -> confirmaron -> asistieron ->
+    no asistieron, más los acompañantes (registrados y que entraron) y los agregados en la entrada.
+
+    - no_asistieron: invitados que no dijeron que no y no entraron (solo cuando ya empezó).
+    - tasa: invitados que entraron ÷ invitados que no dijeron que no.
+    """
+    ya_empezo = actividad.fecha_inicio <= timezone.now()
+    invitados = actividad.invitados.all()
+    c = invitados.aggregate(
+        total=Count('id'),
+        confirmados=Count('id', filter=Q(estado='CONFIRMADO')),
+        rechazados=Count('id', filter=Q(estado='RECHAZADO')),
+        entraron=Count('id', filter=Q(ingreso__isnull=False)),
+        agregados=Count('id', filter=Q(agregado_en_entrada=True)),
+    )
+    acomp = actividad.acompanantes.aggregate(
+        registrados=Count('id', filter=Q(agregado_en_entrada=False)),
+        entraron=Count('id', filter=Q(ingreso__isnull=False)),
+        agregados=Count('id', filter=Q(agregado_en_entrada=True)),
+    )
+    esperados = c['total'] - c['rechazados']
+    datos = {
+        'es_invitacion': True, 'es_taller': False, 'ya_empezo': ya_empezo,
+        'invitados': c['total'], 'confirmados': c['confirmados'], 'rechazados': c['rechazados'],
+        'asistieron': c['entraron'], 'agregados': c['agregados'] + acomp['agregados'],
+        'acompanantes_registrados': acomp['registrados'], 'acompanantes_entraron': acomp['entraron'],
+        'no_asistieron': None, 'faltantes': [], 'tasa': None, 'sin_invitacion': None,
+    }
+    if ya_empezo:
+        faltan = invitados.exclude(estado='RECHAZADO').filter(ingreso__isnull=True)
+        datos['no_asistieron'] = faltan.count()
+        datos['faltantes'] = list(faltan.order_by('nombre')[:max_lista])
+        datos['tasa'] = round(c['entraron'] / esperados * 100, 1) if esperados else None
+
+    pasos = [('Invitados', c['total'], 'invitados'), ('Confirmaron', c['confirmados'], 'inscritos'),
+             ('Asistieron', c['entraron'], 'asistieron')]
+    if datos['no_asistieron'] is not None:
+        pasos.append(('No asistieron', datos['no_asistieron'], 'no-asistieron'))
+    pasos.append(('Acompañantes', acomp['entraron'], 'acompanantes'))
+    datos['pasos'] = _pasos_embudo(pasos)
+    return datos
+
+
 def _embudo_actividad(actividad, max_lista=15):
     """
     Recorrido de la participación en una actividad (P1, reporte del taller):
@@ -1172,6 +1236,8 @@ def _embudo_actividad(actividad, max_lista=15):
       (todavía no se sabe) y la tasa también.
     - sin_invitacion: inscritos (o asistentes, en masivas) que no tenían invitación.
     """
+    if actividad.tipo == 'INVITACION':
+        return _embudo_invitacion(actividad, max_lista)
     es_taller = actividad.tipo == 'TALLER'
     ya_empezo = actividad.fecha_inicio <= timezone.now()
     invitados_ids = set(NotificacionCorreo.objects.filter(
@@ -1206,9 +1272,7 @@ def _embudo_actividad(actividad, max_lista=15):
     pasos.append(('Asistieron', datos['asistieron'], 'asistieron'))
     if datos['no_asistieron'] is not None:
         pasos.append(('No asistieron', datos['no_asistieron'], 'no-asistieron'))
-    mayor = max([v for _, v, _ in pasos] + [1])
-    datos['pasos'] = [{'etiqueta': e, 'valor': v, 'clase': c, 'ancho': round(v / mayor * 100)}
-                      for e, v, c in pasos]
+    datos['pasos'] = _pasos_embudo(pasos)
     return datos
 
 

@@ -44,6 +44,18 @@
 <!-- MINI KPIs (4 en fila) -->
 <!-- ============================================================ -->
 <div class="mini-stats detail-kpis">
+    {% if embudo.es_invitacion %}
+    <div class="mini-stat">
+        <span>CONFIRMARON</span>
+        <strong>{{ embudo.confirmados }}</strong>
+        <small class="mini-stat__nota">de {{ embudo.invitados }} invitado{{ embudo.invitados|pluralize }}</small>
+    </div>
+    <div class="mini-stat">
+        <span>ENTRARON</span>
+        <strong>{{ embudo.asistieron }}</strong>
+        <small class="mini-stat__nota">más {{ embudo.acompanantes_entraron }} acompañante{{ embudo.acompanantes_entraron|pluralize }}</small>
+    </div>
+    {% else %}
     <div class="mini-stat">
         <span>INSCRITOS</span>
         <strong>{{ total_inscritos }}</strong>
@@ -52,6 +64,7 @@
         <span>ASISTENTES</span>
         <strong>{{ total_asistentes }}</strong>
     </div>
+    {% endif %}
     <div class="mini-stat">
         <span>TASA DE ASISTENCIA</span>
         <strong>{% if tasa_asistencia is not None %}{{ tasa_asistencia }}%{% else %}—{% endif %}</strong>
@@ -67,16 +80,65 @@
 <!-- RECORRIDO DE LA PARTICIPACIÓN (invitados -> inscritos -> asistieron) -->
 <!-- ============================================================ -->
 {% if actividad.tipo == 'INVITACION' %}
-<section class="panel" aria-labelledby="titulo-invitacion">
+<section class="panel embudo" aria-labelledby="titulo-invitacion">
     <div class="panel-head">
         <div>
             <span class="eyebrow">CON INVITACIÓN</span>
-            <h2 id="titulo-invitacion">Solo entran los invitados de la lista</h2>
-            <p class="panel-subtitle">{{ actividad.invitados.count }} invitado{{ actividad.invitados.count|pluralize }}, hasta
-                {{ actividad.acompanantes_por_invitado }} acompañante{{ actividad.acompanantes_por_invitado|pluralize }} cada uno.</p>
+            <h2 id="titulo-invitacion">De la lista a la entrada</h2>
+            <p class="panel-subtitle">Solo entran los invitados de la lista y sus acompañantes (hasta
+                {{ actividad.acompanantes_por_invitado }} por invitado).</p>
         </div>
-        <a class="btn" href="{% url 'invitados_actividad' actividad.pk %}">{% icono "participantes" %} Ver invitados</a>
+        <div class="btn-group">
+            <a class="btn" href="{% url 'invitados_actividad' actividad.pk %}">{% icono "participantes" %} Ver invitados</a>
+            <a class="btn secondary" href="{% url 'exportar_reporte' 'participantes' 'excel' %}?actividad={{ actividad.pk }}">{% icono "exportar" %} Listado en Excel</a>
+        </div>
     </div>
+
+    <div class="embudo__pasos">
+        {% for paso in embudo.pasos %}
+        <div class="embudo__paso embudo__paso--{{ paso.clase }}">
+            <span class="embudo__etiqueta">{{ paso.etiqueta }}</span>
+            <span class="embudo__barra" aria-hidden="true"><span style="width: {{ paso.ancho }}%"></span></span>
+            <strong class="embudo__valor">{{ paso.valor }}</strong>
+        </div>
+        {% endfor %}
+    </div>
+
+    <ul class="embudo__notas">
+        {% if not embudo.ya_empezo %}
+        <li>La actividad todavía no empieza: los que no asistieron se verán cuando comience.</li>
+        {% elif embudo.tasa is not None %}
+        <li>Entró el <strong>{{ embudo.tasa }}%</strong> de los invitados que no dijeron que no.</li>
+        {% endif %}
+        {% if embudo.rechazados %}<li>{{ embudo.rechazados }} invitado{{ embudo.rechazados|pluralize }} avisó{{ embudo.rechazados|pluralize:"aron" }} que no asistiría{{ embudo.rechazados|pluralize:"n" }}.</li>{% endif %}
+        <li>Acompañantes: {{ embudo.acompanantes_registrados }} registrado{{ embudo.acompanantes_registrados|pluralize }} por los invitados, {{ embudo.acompanantes_entraron }} entraron.</li>
+        {% if embudo.agregados %}<li>{{ embudo.agregados }} persona{{ embudo.agregados|pluralize }} se agregó{{ embudo.agregados|pluralize:"aron" }} en la entrada (no estaba{{ embudo.agregados|pluralize:"n" }} en la lista).</li>{% endif %}
+    </ul>
+
+    {% if embudo.faltantes %}
+    <details class="embudo__faltantes">
+        <summary>Ver quiénes no asistieron ({{ embudo.no_asistieron }})</summary>
+        <div class="table-wrap">
+            <table>
+                <caption class="visually-hidden">Invitados que no asistieron</caption>
+                <thead><tr><th>Invitado</th><th>Documento</th><th>Carrera</th><th>Respuesta</th></tr></thead>
+                <tbody>
+                    {% for i in embudo.faltantes %}
+                    <tr>
+                        <td><strong>{{ i.nombre }}</strong><small class="text-muted celda-sub">{{ i.correo }}</small></td>
+                        <td>{{ i.rut|rut_fmt }}</td>
+                        <td>{{ i.carrera }}</td>
+                        <td>{% if i.estado == 'CONFIRMADO' %}Confirmó{% else %}Sin responder{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if embudo.no_asistieron > embudo.faltantes|length %}
+        <p class="embudo__mas">Se muestran {{ embudo.faltantes|length }} de {{ embudo.no_asistieron }}. El listado completo está en el Excel.</p>
+        {% endif %}
+    </details>
+    {% endif %}
 </section>
 {% else %}
 <section class="panel embudo" aria-labelledby="titulo-embudo">

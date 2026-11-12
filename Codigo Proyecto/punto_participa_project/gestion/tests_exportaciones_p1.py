@@ -114,7 +114,7 @@ class ResumenTests(BaseExportTests):
         ws = wb['Resumen por actividad']
         self.assertEqual(ws['A1'].value, 'Actividad')
         self.assertEqual(ws.freeze_panes, 'A2')
-        self.assertTrue(ws.auto_filter.ref.startswith('A1:M'))
+        self.assertTrue(ws.auto_filter.ref.startswith('A1:N'))
         encabezados = [c.value for c in ws[1]]
         fila = next(r for r in ws.iter_rows(min_row=2) if r[0].value == 'Taller integral')
         inicio = fila[encabezados.index('Inicio')]

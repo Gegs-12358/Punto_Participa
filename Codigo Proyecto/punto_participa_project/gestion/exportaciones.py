@@ -11,6 +11,10 @@ Tres reportes, cada uno en Excel o CSV, con los mismos filtros de la pantalla:
                  y su asistencia (hora, método y quién lo registró).
   libro          Los tres anteriores en un solo Excel (una hoja cada uno).
 
+Actividades con invitación: los números salen de la lista (Invitado y Acompanante), no de
+Inscripcion/Asistencia. Como el escáner les crea también una Asistencia a los invitados de la
+nómina, esas asistencias se excluyen aquí para no contar dos veces.
+
 Reglas:
   - Solo Administrador y Creador de Evento. El creador ve solo sus actividades
     (lo aplica _aplicar_filtros_reporte).
@@ -33,7 +37,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from .decorators import role_required
-from .models import Actividad, Alumno, Asistencia, Carrera, Inscripcion, NotificacionCorreo
+from .models import Acompanante, Actividad, Alumno, Asistencia, Carrera, Inscripcion, Invitado, NotificacionCorreo
 from .utils import fecha_o_none, formatear_rut, id_o_none, limpiar_texto
 from .views import _aplicar_filtros_reporte, _filtrar_por_foto, _sanitizar_celda, registrar_log
 
@@ -99,7 +103,20 @@ def _base(request):
     insc_qs = _filtrar_por_foto(
         Inscripcion.objects.filter(actividad_id__in=ids), f['carrera'], f['jornada'], f['escuela']
     ).annotate(asistio=Exists(asistio))
+    # Con invitación: se cuentan desde la lista (ver _invitados)
+    asis_qs = asis_qs.exclude(actividad__tipo='INVITACION')
     return f, actividades, insc_qs, asis_qs
+
+
+def _invitados(actividades, f):
+    """Invitados de las actividades con invitación, con los filtros de escuela, carrera y jornada
+    (sobre los datos de la lista). Los acompañantes siguen a su invitado."""
+    ids = [a.id for a in actividades if a.tipo == 'INVITACION']
+    qs = Invitado.objects.filter(actividad_id__in=ids)
+    for campo in ('escuela', 'carrera', 'jornada'):
+        if f[campo]:
+            qs = qs.filter(**{f'{campo}__iexact': f[campo]})
+    return qs
 
 
 def _invitados_por_actividad(ids, f):
@@ -129,11 +146,31 @@ def reporte_resumen(request, datos=None):
     asistentes = {i['actividad_id']: i['t'] for i in
                   asis_qs.order_by().values('actividad_id').annotate(t=Count('id'))}
     invitados = _invitados_por_actividad(ids, f)
+    lista = {i['actividad_id']: i for i in _invitados(actividades, f).order_by().values('actividad_id').annotate(
+        total=Count('id'), confirmados=Count('id', filter=Q(estado='CONFIRMADO')),
+        rechazados=Count('id', filter=Q(estado='RECHAZADO')), entraron=Count('id', filter=Q(ingreso__isnull=False)))}
+    acompanantes = {i['actividad_id']: i['t'] for i in Acompanante.objects.filter(
+        invitado__in=_invitados(actividades, f), ingreso__isnull=False).order_by()
+        .values('actividad_id').annotate(t=Count('id'))}
 
     filas = []
     for act in actividades:
         n_insc, n_asistieron = inscritos.get(act.id, (0, 0))
         n_asis = asistentes.get(act.id, 0)
+        if act.tipo == 'INVITACION':
+            d = lista.get(act.id, {'total': 0, 'confirmados': 0, 'rechazados': 0, 'entraron': 0})
+            esperados = d['total'] - d['rechazados']
+            empezo = _ya_empezo(act)
+            filas.append([
+                act.titulo, act.get_tipo_display(), act.get_estado_display(),
+                _local(act.fecha_inicio), _local(act.fecha_fin), act.lugar_completo,
+                act.creado_por.username if act.creado_por else '',
+                None, d['total'], d['confirmados'], d['entraron'],
+                (esperados - d['entraron']) if empezo else None,
+                (d['entraron'] / esperados) if empezo and esperados else None,
+                acompanantes.get(act.id, 0),
+            ])
+            continue
         if not _ya_empezo(act):
             no_asistieron = pct = None
         elif act.tipo == 'TALLER':
@@ -147,14 +184,15 @@ def reporte_resumen(request, datos=None):
             _local(act.fecha_inicio), _local(act.fecha_fin), act.lugar_completo,
             act.creado_por.username if act.creado_por else '',
             act.cupos_totales, invitados.get(act.id, 0),
-            n_insc if act.tipo == 'TALLER' else None, n_asis, no_asistieron, pct,
+            n_insc if act.tipo == 'TALLER' else None, n_asis, no_asistieron, pct, None,
         ])
 
     return Reporte(
         'resumen', 'Resumen por actividad', 'Resumen por actividad',
         [('Actividad', TEXTO), ('Tipo', TEXTO), ('Estado', TEXTO), ('Inicio', FECHA), ('Término', FECHA),
          ('Lugar', TEXTO), ('Creador', TEXTO), ('Cupos', ENTERO), ('Invitados', ENTERO),
-         ('Inscritos', ENTERO), ('Asistentes', ENTERO), ('No asistieron', ENTERO), ('% asistencia', PORCENTAJE)],
+         ('Inscritos', ENTERO), ('Asistentes', ENTERO), ('No asistieron', ENTERO), ('% asistencia', PORCENTAJE),
+         ('Acompañantes', ENTERO)],
         filas,
         [('Invitados', 'Alumnos distintos a los que les llegó la invitación por correo.'),
          ('Inscritos', 'Solo talleres: inscripciones confirmadas.'),
@@ -163,7 +201,11 @@ def reporte_resumen(request, datos=None):
                            'Vacío si la actividad todavía no empieza.'),
          ('% asistencia', 'Talleres: inscritos que asistieron ÷ inscritos. '
                           'Masivas: asistentes ÷ cupos (vacío si no tiene cupos). '
-                          'Vacío si la actividad todavía no empieza.')],
+                          'Vacío si la actividad todavía no empieza.'),
+         ('Con invitación', 'Invitados = personas de la lista; Inscritos = confirmaron; Asistentes = invitados '
+                            'que entraron; No asistieron = invitados que no dijeron que no y no entraron; '
+                            '% = entraron ÷ los que no dijeron que no.'),
+         ('Acompañantes', 'Solo actividades con invitación: acompañantes que entraron.')],
     )
 
 
@@ -181,18 +223,28 @@ def reporte_participacion(request, datos=None):
     for i in (asis_qs.order_by().values('actividad_id', 'escuela', 'carrera', 'jornada')
               .annotate(t=Count('id'))):
         grupos[(i['actividad_id'], i['escuela'], i['carrera'], i['jornada'])]['asis'] += i['t']
+    # Con invitación: por los datos de la lista. "Inscritos" = confirmaron; "No asistieron" =
+    # no dijeron que no y no entraron.
+    for i in (_invitados(actividades, f).order_by().values('actividad_id', 'escuela', 'carrera', 'jornada')
+              .annotate(conf=Count('id', filter=Q(estado='CONFIRMADO')),
+                        entraron=Count('id', filter=Q(ingreso__isnull=False)),
+                        no=Count('id', filter=Q(ingreso__isnull=True) & ~Q(estado='RECHAZADO')))):
+        g = grupos[(i['actividad_id'], i['escuela'], i['carrera'], i['jornada'])]
+        g['insc'] += i['conf']
+        g['asis'] += i['entraron']
+        g['no'] += i['no']
 
     orden = {a.id: n for n, a in enumerate(actividades)}
     filas = []
     for (act_id, escuela, carrera, jornada), g in sorted(
             grupos.items(), key=lambda kv: (orden[kv[0][0]], kv[0][1] or '~', kv[0][2], kv[0][3])):
         act = por_id[act_id]
-        es_taller = act.tipo == 'TALLER'
+        con_lista = act.tipo in ('TALLER', 'INVITACION')
         filas.append([
             act.titulo, act.get_tipo_display(), _local(act.fecha_inicio),
             escuela or 'Sin escuela', carrera or 'Sin carrera', jornada or 'Sin jornada',
-            g['insc'] if es_taller else None, g['asis'],
-            g['no'] if es_taller and _ya_empezo(act) else None,
+            g['insc'] if con_lista else None, g['asis'],
+            g['no'] if con_lista and _ya_empezo(act) else None,
         ])
 
     return Reporte(
@@ -201,7 +253,8 @@ def reporte_participacion(request, datos=None):
          ('Jornada', TEXTO), ('Inscritos', ENTERO), ('Asistentes', ENTERO), ('No asistieron', ENTERO)],
         filas,
         [('Escuela, Carrera, Jornada', 'Las que tenía el alumno al inscribirse o asistir.'),
-         ('Inscritos y No asistieron', 'Solo talleres (las masivas no tienen inscripción). '
+         ('Inscritos y No asistieron', 'Solo talleres y con invitación (las masivas no tienen inscripción). '
+                                       'En las con invitación, Inscritos son los que confirmaron. '
                                        'No asistieron queda vacío si la actividad todavía no empieza.')],
     )
 
@@ -226,10 +279,8 @@ def reporte_participantes(request, datos=None):
     metodos = dict(Asistencia.METODO_CHOICES)
     orden = {a.id: n for n, a in enumerate(actividades)}
 
-    filas = []
-    for (act_id, _), p in sorted(personas.items(), key=lambda kv: (
-            orden[kv[0][0]], (kv[1]['datos']['alumno__apellidos'] or '').lower(),
-            (kv[1]['datos']['alumno__nombres'] or '').lower())):
+    filas = []     # [(clave de orden, fila)]
+    for (act_id, _), p in personas.items():
         act, d, insc, asis = por_id[act_id], p['datos'], p['insc'], p['asis']
         documento = d['alumno__rut'] or ''
         if d['alumno__tipo_documento'] == 'RUT':
@@ -240,7 +291,8 @@ def reporte_participantes(request, datos=None):
             inscrito = SI if insc and insc['estado'] == 'CONFIRMADA' else NO
             estado = estados.get(insc['estado'], insc['estado']) if insc else ''
             fecha_insc = _local(insc['fecha_inscripcion']) if insc else None
-        filas.append([
+        clave = (orden[act_id], f"{d['alumno__apellidos'] or ''} {d['alumno__nombres'] or ''}".lower(), 0, '')
+        filas.append((clave, [
             act.titulo, _local(act.fecha_inicio), documento,
             tipos_doc.get(d['alumno__tipo_documento'], d['alumno__tipo_documento']),
             d['alumno__apellidos'], d['alumno__nombres'], d['alumno__correo'],
@@ -250,20 +302,67 @@ def reporte_participantes(request, datos=None):
             _local(asis['fecha_ingreso']) if asis else None,
             metodos.get(asis['metodo_ingreso'], asis['metodo_ingreso']) if asis else '',
             (asis['registrado_por__username'] or '') if asis else '',
-        ])
+            'Alumno',
+        ]))
+    filas += _filas_invitacion(actividades, f, orden, por_id, tipos_doc, metodos)
+    filas = [fila for _, fila in sorted(filas, key=lambda x: x[0])]
 
     return Reporte(
         'participantes', 'Listado de participantes', 'Participantes',
         [('Actividad', TEXTO), ('Inicio actividad', FECHA), ('Documento', TEXTO), ('Tipo de documento', TEXTO),
          ('Apellidos', TEXTO), ('Nombres', TEXTO), ('Correo', TEXTO), ('Escuela', TEXTO), ('Carrera', TEXTO),
          ('Jornada', TEXTO), ('Inscrito', TEXTO), ('Estado inscripción', TEXTO), ('Fecha inscripción', FECHA),
-         ('Asistió', TEXTO), ('Ingreso', FECHA), ('Método', TEXTO), ('Registrado por', TEXTO)],
+         ('Asistió', TEXTO), ('Ingreso', FECHA), ('Método', TEXTO), ('Registrado por', TEXTO),
+         ('Participa como', TEXTO)],
         filas,
         [('Listado', 'Una fila por alumno y actividad: quienes se inscribieron, quienes asistieron, o ambos.'),
          ('Inscrito', '"No aplica" en actividades masivas, que no tienen inscripción.'),
          ('Asistió', '"Pendiente" si la actividad todavía no empieza.'),
+         ('Participa como', 'Alumno (talleres y masivas), Invitado o Acompañante de… (con invitación). '
+                            'En las con invitación, Inscrito = confirmó y la fecha es la de su respuesta.'),
          ('Datos personales', 'Contiene datos personales de alumnos: no compartir fuera de la institución.')],
     )
+
+
+_RESPUESTA = {'CONFIRMADO': 'Confirmó', 'RECHAZADO': 'No asistirá', 'PENDIENTE': 'Sin responder'}
+
+
+def _filas_invitacion(actividades, f, orden, por_id, tipos_doc, metodos):
+    """Invitados y acompañantes de las actividades con invitación, para el listado."""
+    from .importador_alumnos import inferir_tipo
+    filas = []
+    invitados = (_invitados(actividades, f).select_related('alumno', 'registrado_por')
+                 .prefetch_related('acompanantes__registrado_por'))
+    for inv in invitados:
+        act = por_id[inv.actividad_id]
+        empezo = _ya_empezo(act)
+        alumno = inv.alumno
+        apellidos, nombres = (alumno.apellidos, alumno.nombres) if alumno else ('', inv.nombre)
+        tipo = alumno.tipo_documento if alumno else inferir_tipo(inv.rut)
+        nombre_orden = f'{apellidos} {nombres}'.lower()
+
+        def asistencia(r):
+            return [SI if r.ingreso else (NO if empezo else PENDIENTE), _local(r.ingreso),
+                    metodos.get(r.metodo_ingreso, r.metodo_ingreso) if r.ingreso else '',
+                    (r.registrado_por.username if r.registrado_por else '') if r.ingreso else '']
+
+        filas.append(((orden[act.id], nombre_orden, 0, ''), [
+            act.titulo, _local(act.fecha_inicio),
+            formatear_rut(inv.rut) if tipo == 'RUT' else inv.rut, tipos_doc.get(tipo, tipo),
+            apellidos, nombres, inv.correo, inv.escuela or 'Sin escuela', inv.carrera, inv.jornada,
+            SI if inv.estado == 'CONFIRMADO' else NO, _RESPUESTA.get(inv.estado, inv.estado),
+            _local(inv.fecha_respuesta), *asistencia(inv),
+            'Invitado (agregado en la entrada)' if inv.agregado_en_entrada else 'Invitado',
+        ]))
+        for ac in inv.acompanantes.all():
+            tipo_ac = inferir_tipo(ac.rut)
+            filas.append(((orden[act.id], nombre_orden, 1, ac.nombre.lower()), [
+                act.titulo, _local(act.fecha_inicio),
+                formatear_rut(ac.rut) if tipo_ac == 'RUT' else ac.rut, tipos_doc.get(tipo_ac, tipo_ac),
+                '', ac.nombre, '', '', '', '', NO_APLICA, '', _local(ac.fecha_registro), *asistencia(ac),
+                f'Acompañante de {inv.nombre}' + (' (agregado en la entrada)' if ac.agregado_en_entrada else ''),
+            ]))
+    return filas
 
 
 REPORTES = {
