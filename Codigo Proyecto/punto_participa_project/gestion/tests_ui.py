@@ -91,10 +91,12 @@ class PantallasUnificadasTests(BaseSistemaTestCase):
 
     def test_menu_exportar_explica_cada_archivo(self):
         resp = self.client.get(reverse('reportes'), {'tipo': 'TALLER'})
-        self.assertContains(resp, 'Resumen por actividad · Excel')
-        self.assertContains(resp, 'Detalle por escuela, carrera y jornada · CSV')
-        self.assertContains(resp, 'Todas las descargas usan los filtros aplicados.')
-        self.assertContains(resp, reverse('exportar_reportes_detalle', args=['csv']) + '?tipo=TALLER')
+        self.assertContains(resp, 'Resumen por actividad')
+        self.assertContains(resp, 'Participación por escuela y carrera')
+        self.assertContains(resp, 'Listado de participantes')
+        self.assertContains(resp, 'Todo en un Excel')
+        self.assertContains(resp, 'Todas las descargas usan los filtros aplicados')
+        self.assertContains(resp, reverse('exportar_reporte', args=['participacion', 'csv']) + '?tipo=TALLER')
 
     def test_ninguna_pantalla_usa_emojis_ni_simbolos_como_iconos(self):
         paginas = [reverse(n) for n in ('dashboard', 'lista_actividades', 'reportes', 'usuarios',

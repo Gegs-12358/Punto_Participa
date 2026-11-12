@@ -50,7 +50,7 @@ class BaseSistemaTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.rol_admin = Rol.objects.create(nombre="Administrador")
-                # Lugares del catálogo que usan los formularios de estas pruebas
+        # Lugares del catálogo que usan los formularios de estas pruebas
         for nombre in ("Sala 1", "Sala nueva", "Auditorio", "Sala AJAX", "Sala auditoría"):
             Lugar.objects.create(nombre=nombre)
         cls.rol_creador = Rol.objects.create(nombre="Creador de Evento")
@@ -388,7 +388,7 @@ class VistasPermisosYReportesIntegralTests(BaseSistemaTestCase):
             response["Content-Type"],
         )
         libro = load_workbook(filename=BytesIO(response.content), read_only=True)
-        hoja = libro["Reporte de Actividades"]
+        hoja = libro["Resumen por actividad"]
         self.assertEqual(hoja.cell(1, 1).value, "Actividad")
         self.assertTrue(any(fila[0] == self.actividad.titulo for fila in hoja.iter_rows(values_only=True)))
 

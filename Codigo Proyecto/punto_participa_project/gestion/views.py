@@ -27,7 +27,7 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Q, Sum
-from django.db.models.functions import TruncMonth, Trim, Lower
+from django.db.models.functions import TruncMonth
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -165,30 +165,40 @@ def _get_carreras_cache():
 
 def _colores_por_carrera(items, carreras_cache):
     """
-    Devuelve la lista de colores para una lista de dicts con clave 'alumno__carrera'.
-    Uso: gráficos de dona por carrera.
+    Devuelve la lista de colores para una lista de dicts con clave 'carrera'
+    (o 'alumno__carrera'). Uso: gráficos de dona por carrera.
     """
     colores = []
     mapa = colores_escuelas()
     for i in items:
-        nombre = (i['alumno__carrera'] or '').lower()
+        nombre = (i.get('carrera', i.get('alumno__carrera')) or '').lower()
         c = carreras_cache.get(nombre)
         colores.append(color_para_escuela(c.escuela if c else None, mapa))
     return colores
 
+def _filtrar_por_foto(qs, carrera=None, jornada=None, escuela=None, prefijo=''):
+    """
+    Filtra inscripciones o asistencias por la carrera, jornada o escuela que el alumno
+    tenía en ese momento (la "foto" académica), sin distinguir mayúsculas ni espacios.
+    Con prefijo (p. ej. 'asistencias__') sirve para armar un Q sobre actividades.
+    """
+    return qs.filter(_q_foto(carrera, jornada, escuela, prefijo))
+
+
+def _q_foto(carrera=None, jornada=None, escuela=None, prefijo=''):
+    q = Q()
+    if escuela and escuela.strip():
+        q &= Q(**{f'{prefijo}escuela__iexact': escuela.strip()})
+    if carrera and carrera.strip():
+        q &= Q(**{f'{prefijo}carrera__iexact': carrera.strip()})
+    if jornada and jornada.strip():
+        q &= Q(**{f'{prefijo}jornada__iexact': jornada.strip()})
+    return q
+
+
 def _filtrar_inscripciones(insc, carrera=None, jornada=None, escuela=None):
-    """Filtra inscripciones por la carrera, jornada o escuela del alumno,
-    con el mismo criterio con que se filtran las asistencias."""
-    if escuela:
-        carreras_escuela = list(
-            Carrera.objects.filter(escuela=escuela).values_list('nombre', flat=True)
-        )
-        insc = insc.filter(alumno__carrera__in=carreras_escuela)
-    if carrera:
-        insc = insc.annotate(_c=Lower(Trim('alumno__carrera'))).filter(_c=carrera.strip().lower())
-    if jornada:
-        insc = insc.annotate(_j=Lower(Trim('alumno__jornada'))).filter(_j=jornada.strip().lower())
-    return insc
+    """Filtra inscripciones con el mismo criterio que las asistencias (la foto académica)."""
+    return _filtrar_por_foto(insc, carrera, jornada, escuela)
 
 def _construir_desglose_tipo(act_qs, asis_qs, carrera=None, jornada=None, escuela=None):
     """Calcula masivas/talleres para dashboard y reportes."""
@@ -233,12 +243,12 @@ def _construir_graficos_dashboard(asis_qs, act_qs, carreras_cache, ahora):
     # ---- Dona de carreras (solo carreras con asistentes > 0) ----
     por_carrera = (
         asis_qs
-        .values('alumno__carrera')
+        .values('carrera')
         .annotate(t=Count('id'))
         .filter(t__gt=0)
         .order_by('-t')[:6]
     )
-    labels_pastel = [i['alumno__carrera'] or 'Sin carrera' for i in por_carrera]
+    labels_pastel = [i['carrera'] or 'Sin carrera' for i in por_carrera]
     data_pastel = [i['t'] for i in por_carrera]
     # [REFACTOR] Uso del helper
     data_colores_pastel = _colores_por_carrera(por_carrera, carreras_cache)
@@ -288,9 +298,8 @@ def _construir_graficos_dashboard(asis_qs, act_qs, carreras_cache, ahora):
 
     # ---- Dona de escuelas (solo escuelas con asistentes > 0) ----
     escuela_count = defaultdict(int)
-    for a in asis_qs.select_related('alumno'):
-        c = carreras_cache.get(a.alumno.carrera.lower())
-        escuela_count[c.escuela if c and c.escuela else 'Sin asignar'] += 1
+    for i in asis_qs.order_by().values('escuela').annotate(t=Count('id')):
+        escuela_count[i['escuela'] or 'Sin asignar'] += i['t']
 
     escuelas_con_datos = [(e, t) for e, t in escuela_count.items() if t > 0]
     escuelas_con_datos.sort(key=lambda x: -x[1])
@@ -336,13 +345,10 @@ def _aplicar_filtros_dashboard(qs_act, qs_asis, rango, tipo, carrera, jornada, a
         qs_act = qs_act.filter(tipo=tipo)
         qs_asis = qs_asis.filter(actividad__tipo=tipo)
     if carrera:
-        c_norm = carrera.strip().lower()
         qs_act = qs_act.filter(carreras__nombre=carrera)
-        qs_asis = qs_asis.annotate(_c=Lower(Trim('alumno__carrera'))).filter(_c=c_norm)
     if jornada:
-        j_norm = jornada.strip().lower()
         qs_act = qs_act.filter(jornadas__nombre=jornada)
-        qs_asis = qs_asis.annotate(_j=Lower(Trim('alumno__jornada'))).filter(_j=j_norm)
+    qs_asis = _filtrar_por_foto(qs_asis, carrera, jornada)
     return qs_act.distinct(), qs_asis.distinct()
 
 
@@ -374,7 +380,7 @@ def _aplicar_filtros_reporte(request, act_qs=None, asis_qs=None):
         act_qs = act_qs.filter(creado_por=request.user)
     if actividad_id:
         act_qs = act_qs.filter(pk=actividad_id)
-    if escuela:                                        # <-- nuevo
+    if escuela:
         act_qs = act_qs.filter(carreras__escuela=escuela).distinct()
     if lugar:
         act_qs = act_qs.filter(lugar=lugar)
@@ -393,15 +399,8 @@ def _aplicar_filtros_reporte(request, act_qs=None, asis_qs=None):
     else:
         asis_qs = asis_qs.filter(actividad_id__in=ids)
 
-    if escuela:                                        # <-- nuevo
-        carreras_de_escuela = list(
-            Carrera.objects.filter(escuela=escuela).values_list('nombre', flat=True)
-        )
-        asis_qs = asis_qs.filter(alumno__carrera__in=carreras_de_escuela)
-    if carrera:
-        asis_qs = asis_qs.filter(alumno__carrera=carrera)
-    if jornada:
-        asis_qs = asis_qs.filter(alumno__jornada=jornada)
+    # Escuela, carrera y jornada: las que el alumno tenía al asistir (foto académica)
+    asis_qs = _filtrar_por_foto(asis_qs, carrera, jornada, escuela)
 
     return act_qs, asis_qs
 
@@ -683,21 +682,12 @@ def reportes(request):
     act_qs, asis_qs = _aplicar_filtros_reporte(request)
 
     ids_act = list(act_qs.values_list('id', flat=True))
-    alumnos_ids = asis_qs.values('alumno')
 
-    filtro_insc = Q()
-    if escuela:
-        carreras_escuela = list(
-            Carrera.objects.filter(escuela=escuela).values_list('nombre', flat=True)
-        )
-        filtro_insc &= Q(inscripciones__alumno__carrera__in=carreras_escuela)
-    if carrera:
-        filtro_insc &= Q(inscripciones__alumno__carrera=carrera)
-    if jornada:
-        filtro_insc &= Q(inscripciones__alumno__jornada=jornada)
+    filtro_asis = _q_foto(carrera, jornada, escuela, prefijo='asistencias__')
+    filtro_insc = _q_foto(carrera, jornada, escuela, prefijo='inscripciones__')
 
     act_qs = act_qs.select_related('creado_por').annotate(
-        total_asistentes_calc=Count('asistencias', filter=Q(asistencias__alumno__in=alumnos_ids), distinct=True),
+        total_asistentes_calc=Count('asistencias', filter=filtro_asis or None, distinct=True),
         total_inscritos_calc=Count('inscripciones', filter=filtro_insc or None, distinct=True),
     ).prefetch_related('carreras', 'jornadas')
 
@@ -712,24 +702,24 @@ def reportes(request):
 
     # ---- Dona de Carreras (general) ----
     por_carrera = (
-        asis_qs.values('alumno__carrera')
+        asis_qs.values('carrera')
         .annotate(t=Count('id'))
         .filter(t__gt=0)
         .order_by('-t')
     )
-    labels_pastel = [i['alumno__carrera'] or 'Sin carrera' for i in por_carrera]
+    labels_pastel = [i['carrera'] or 'Sin carrera' for i in por_carrera]
     data_pastel = [i['t'] for i in por_carrera]
     # [REFACTOR] Uso del helper
     data_colores_pastel = _colores_por_carrera(por_carrera, carreras_cache)
 
     # ---- Barras de Jornada (general) ----
     por_jornada = (
-        asis_qs.values('alumno__jornada')
+        asis_qs.values('jornada')
         .annotate(t=Count('id'))
         .filter(t__gt=0)
         .order_by('-t')
     )
-    labels_jornada = [i['alumno__jornada'] or 'Sin jornada' for i in por_jornada]
+    labels_jornada = [i['jornada'] or 'Sin jornada' for i in por_jornada]
     data_jornada = [i['t'] for i in por_jornada]
 
     # ---- Registros por actividad ----
@@ -751,13 +741,15 @@ def reportes(request):
     det_escuelas, det_carreras = defaultdict(int), defaultdict(int)
     agrupado = defaultdict(lambda: defaultdict(lambda: {'t': 0, 'regs': defaultdict(int)}))
 
-    for a in asis_qs:
-        c = carreras_cache.get(a.alumno.carrera.lower())
-        escuela_item = c.escuela if c and c.escuela else 'Sin asignar'
-        clave = (escuela_item, a.alumno.carrera, a.alumno.jornada)
-        agrupado[a.actividad_id][clave]['t'] += 1
-        agrupado[a.actividad_id][clave]['regs'][
-            a.registrado_por.username if a.registrado_por else 'Anónimo'] += 1
+    escuela_de_carrera = {}
+    for i in (asis_qs.order_by()
+              .values('actividad_id', 'escuela', 'carrera', 'jornada', 'registrado_por__username')
+              .annotate(t=Count('id'))):
+        escuela_item = i['escuela'] or 'Sin asignar'
+        clave = (escuela_item, i['carrera'], i['jornada'])
+        escuela_de_carrera.setdefault(i['carrera'], i['escuela'])
+        agrupado[i['actividad_id']][clave]['t'] += i['t']
+        agrupado[i['actividad_id']][clave]['regs'][i['registrado_por__username'] or 'Anónimo'] += i['t']
 
     for a in act_qs:
         for (escuela_item, carrera_n, jornada_n), vals in agrupado.get(a.id, {}).items():
@@ -776,8 +768,7 @@ def reportes(request):
     data_colores_barras_detalle = [color_para_escuela(e, mapa) for e in det_escuelas.keys()]
     data_colores_pastel_detalle = []
     for carrera_n in det_carreras.keys():
-        c = carreras_cache.get(carrera_n.lower())
-        data_colores_pastel_detalle.append(color_para_escuela(c.escuela if c else None, mapa))
+        data_colores_pastel_detalle.append(color_para_escuela(escuela_de_carrera.get(carrera_n), mapa))
 
     actividades_opciones = (
         Actividad.objects.filter(creado_por=request.user) if (es_creador and not es_admin)
@@ -836,69 +827,6 @@ def reportes(request):
 # EXPORTAR REPORTES
 # ============================================================
 
-# [REFACTOR] Headers a nivel módulo
-HEADERS_REPORTE_ACTIVIDADES = [
-    'Actividad', 'Tipo', 'Creador', 'Registrado por (cantidad)', 'Fecha',
-    'Carrera', 'Jornada', 'Inscritos', 'Asistentes',
-]
-HEADERS_REPORTE_DETALLE = [
-    'Actividad', 'Tipo', 'Fecha', 'Escuela', 'Carrera', 'Jornada',
-    'Asistentes', 'Registrado por (cantidad)', 'Creador Actividad',
-    'Carreras Asociadas', 'Jornadas Asociadas',
-]
-
-
-def _construir_datos_reporte(act_qs, asis_qs, agrupar_por_escuela=False, carrera=None, jornada=None, escuela=None):
-    datos = []
-
-    if not agrupar_por_escuela:
-        for act in act_qs:
-            asis_act = asis_qs.filter(actividad=act)
-            regs = asis_act.values('registrado_por__username') \
-                            .annotate(t=Count('id')).order_by('-t')
-            datos.append([
-                act.titulo, act.get_tipo_display(),
-                act.creado_por.username if act.creado_por else 'N/A',
-                ", ".join(f"{r['registrado_por__username'] or 'Anónimo'} ({r['t']})"
-                          for r in regs) or "Sin registros",
-                act.fecha_inicio.strftime("%d/%m/%Y"),
-                ", ".join(c.nombre for c in act.carreras.all()),
-                ", ".join(j.nombre for j in act.jornadas.all()),
-                _filtrar_inscripciones(
-                    Inscripcion.objects.filter(actividad=act), carrera, jornada, escuela
-                ).count(),
-                asis_act.count(),
-            ])
-        return datos
-
-    carreras_cache = _get_carreras_cache()
-    for act in act_qs:
-        asis_act = asis_qs.filter(actividad=act)
-        agrupado = defaultdict(lambda: {'t': 0, 'regs': defaultdict(int)})
-        for a in asis_act:
-            c = carreras_cache.get(a.alumno.carrera.lower())
-            escuela = c.escuela if c and c.escuela else 'Sin asignar'
-            clave = (escuela, a.alumno.carrera, a.alumno.jornada)
-            agrupado[clave]['t'] += 1
-            agrupado[clave]['regs'][a.registrado_por.username if a.registrado_por else 'Anónimo'] += 1
-
-        carreras_act = ", ".join(c.nombre for c in act.carreras.all())
-        jornadas_act = ", ".join(j.nombre for j in act.jornadas.all())
-        for (escuela, carrera_n, jornada_n), vals in agrupado.items():
-            datos.append([
-                act.titulo, act.get_tipo_display(), act.fecha_inicio.strftime("%d/%m/%Y"),
-                escuela, carrera_n, jornada_n, vals['t'],
-                ", ".join(f"{u} ({c})" for u, c in vals['regs'].items()),
-                act.creado_por.username if act.creado_por else 'N/A',
-                carreras_act, jornadas_act,
-            ])
-    return datos
-
-
-# [REFACTOR] Delegado al helper unificado
-def _filtrar_actividades_export(request):
-    return _aplicar_filtros_reporte(request)
-
 # Caracteres con los que Excel/LibreOffice interpretan una celda como fórmula
 _PREFIJOS_FORMULA = ('=', '+', '-', '@', '\t', '\r')
 
@@ -956,31 +884,6 @@ def _exportar_csv(datos, headers, filename):
     writer.writerow(headers)
     writer.writerows([[_sanitizar_celda(v) for v in fila] for fila in datos])
     return response
-
-
-@login_required
-@role_required('Administrador', 'Creador de Evento', json_response=True)
-def exportar_reportes(request, formato):
-    act_qs, asis_qs = _filtrar_actividades_export(request)
-    datos = _construir_datos_reporte(
-        act_qs, asis_qs, agrupar_por_escuela=False,
-        carrera=request.GET.get('carrera', ''),
-        jornada=request.GET.get('jornada', ''),
-        escuela=request.GET.get('escuela', ''),
-    )
-    if formato == 'csv':
-        return _exportar_csv(datos, HEADERS_REPORTE_ACTIVIDADES, 'reporte_actividades')
-    return _exportar_excel(datos, HEADERS_REPORTE_ACTIVIDADES, 'reporte_actividades', 'Reporte de Actividades')
-
-
-@login_required
-@role_required('Administrador', 'Creador de Evento', json_response=True)
-def exportar_reportes_detalle(request, formato):
-    act_qs, asis_qs = _filtrar_actividades_export(request)
-    datos = _construir_datos_reporte(act_qs, asis_qs, agrupar_por_escuela=True)
-    if formato == 'csv':
-        return _exportar_csv(datos, HEADERS_REPORTE_DETALLE, 'reporte_detalle_participacion')
-    return _exportar_excel(datos, HEADERS_REPORTE_DETALLE, 'reporte_detalle_participacion', 'Detalle Participación')
 
 
 # ============================================================

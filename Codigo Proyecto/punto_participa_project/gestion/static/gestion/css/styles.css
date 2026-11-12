@@ -4076,3 +4076,81 @@ a.btn-icon {
         display: none;
     }
 }
+
+/* ============================================================
+   P1: menú Exportar de Reportes. Cada reporte con su descripción
+   y los formatos (Excel, CSV) como botones pequeños a la derecha.
+   ============================================================ */
+.menu-desplegable__panel.menu-exportar {
+    width: 440px;
+    max-width: calc(100vw - 24px);
+}
+
+.menu-exportar__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: 7px;
+}
+
+.menu-exportar__item:hover {
+    background: var(--surface);
+}
+
+.menu-exportar__texto {
+    display: grid;
+    gap: 2px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.menu-desplegable__panel .menu-exportar__formatos {
+    display: flex;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+
+.menu-desplegable__panel .menu-exportar__formatos a {
+    display: inline-flex;
+    width: auto;
+    padding: 5px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--white);
+    color: var(--navy);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.menu-desplegable__panel .menu-exportar__formatos a:hover,
+.menu-desplegable__panel .menu-exportar__formatos a:focus-visible {
+    border-color: var(--navy);
+    background: var(--navy);
+    color: var(--white);
+}
+
+.menu-exportar__aviso {
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--gold-soft);
+    color: #7a5a00;
+    font-size: 10.5px;
+    font-style: normal;
+    font-weight: 700;
+}
+
+@media (max-width: 520px) {
+    .menu-exportar__item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* En pantallas angostas el botón queda a la izquierda: el menú se abre hacia la derecha */
+@media (max-width: 640px) {
+    .menu-desplegable__panel {
+        left: 0;
+        right: auto;
+    }
+}

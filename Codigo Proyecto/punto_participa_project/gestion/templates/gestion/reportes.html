@@ -18,28 +18,48 @@
         <p class="globo-mascota">¡Revisa y exporta la participación!</p>
         <details class="menu-desplegable">
             <summary class="btn secondary">{% icono "exportar" %} Exportar <span aria-hidden="true">▾</span></summary>
-            <div class="menu-desplegable__panel" role="menu">
-                <a role="menuitem" href="{% url 'exportar_reportes' 'excel' %}?{{ request.GET.urlencode }}">
-                    <strong>Resumen por actividad · Excel</strong>
-                    <span>Una fila por actividad, con inscritos y asistentes.</span>
-                </a>
-                <a role="menuitem" href="{% url 'exportar_reportes' 'csv' %}?{{ request.GET.urlencode }}">
-                    <strong>Resumen por actividad · CSV</strong>
-                    <span>Lo mismo, en texto plano para otros programas.</span>
-                </a>
-                <a role="menuitem" href="{% url 'exportar_reportes_detalle' 'excel' %}?{{ request.GET.urlencode }}">
-                    <strong>Detalle por escuela, carrera y jornada · Excel</strong>
-                    <span>Una fila por cada combinación, para tablas dinámicas.</span>
-                </a>
-                <a role="menuitem" href="{% url 'exportar_reportes_detalle' 'csv' %}?{{ request.GET.urlencode }}">
-                    <strong>Detalle por escuela, carrera y jornada · CSV</strong>
-                    <span>Lo mismo, en texto plano.</span>
-                </a>
+            <div class="menu-desplegable__panel menu-exportar" role="menu">
+                {% with q=request.GET.urlencode %}
+                <div class="menu-exportar__item">
+                    <div class="menu-exportar__texto">
+                        <strong>Resumen por actividad</strong>
+                        <span>Una fila por actividad: lugar, horario, cupos, invitados, inscritos, asistentes y % de asistencia.</span>
+                    </div>
+                    <div class="menu-exportar__formatos">
+                        <a role="menuitem" href="{% url 'exportar_reporte' 'resumen' 'excel' %}?{{ q }}" aria-label="Resumen por actividad en Excel">Excel</a>
+                        <a role="menuitem" href="{% url 'exportar_reporte' 'resumen' 'csv' %}?{{ q }}" aria-label="Resumen por actividad en CSV">CSV</a>
+                    </div>
+                </div>
+                <div class="menu-exportar__item">
+                    <div class="menu-exportar__texto">
+                        <strong>Participación por escuela y carrera</strong>
+                        <span>Inscritos, asistentes y no asistieron por actividad, escuela, carrera y jornada.</span>
+                    </div>
+                    <div class="menu-exportar__formatos">
+                        <a role="menuitem" href="{% url 'exportar_reporte' 'participacion' 'excel' %}?{{ q }}" aria-label="Participación por escuela y carrera en Excel">Excel</a>
+                        <a role="menuitem" href="{% url 'exportar_reporte' 'participacion' 'csv' %}?{{ q }}" aria-label="Participación por escuela y carrera en CSV">CSV</a>
+                    </div>
+                </div>
+                <div class="menu-exportar__item">
+                    <div class="menu-exportar__texto">
+                        <strong>Listado de participantes <em class="menu-exportar__aviso">Datos personales</em></strong>
+                        <span>Cada alumno con su inscripción y asistencia: quiénes se inscribieron y no asistieron.</span>
+                    </div>
+                    <div class="menu-exportar__formatos">
+                        <a role="menuitem" href="{% url 'exportar_reporte' 'participantes' 'excel' %}?{{ q }}" aria-label="Listado de participantes en Excel">Excel</a>
+                        <a role="menuitem" href="{% url 'exportar_reporte' 'participantes' 'csv' %}?{{ q }}" aria-label="Listado de participantes en CSV">CSV</a>
+                    </div>
+                </div>
                 <hr>
+                <a role="menuitem" class="menu-exportar__libro" href="{% url 'exportar_reporte' 'libro' 'excel' %}?{{ q }}">
+                    <strong>{% icono "exportar" %} Todo en un Excel</strong>
+                    <span>Los tres reportes, cada uno en su hoja.</span>
+                </a>
                 <button type="button" role="menuitem" onclick="window.print()">
                     <strong>{% icono "imprimir" %} Imprimir esta página</strong>
                 </button>
-                <p class="menu-desplegable__nota">Todas las descargas usan los filtros aplicados.</p>
+                <p class="menu-desplegable__nota">Todas las descargas usan los filtros aplicados y quedan registradas en la auditoría.</p>
+                {% endwith %}
             </div>
         </details>
     </div>

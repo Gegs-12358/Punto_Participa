@@ -1,5 +1,6 @@
 from django.urls import path
-from . import views, views_actividad_publica, views_catalogos, views_importar
+from . import exportaciones, views, views_actividad_publica, views_catalogos, views_importar
+
 # Sin app_name para mantener compatibilidad con los templates existentes
 
 urlpatterns = [
@@ -15,8 +16,11 @@ urlpatterns = [
     # REPORTES
     # ============================================================
     path('reportes/', views.reportes, name='reportes'),
-    path('reportes/exportar/<str:formato>/', views.exportar_reportes, name='exportar_reportes'),
-    path('reportes/exportar-detalle/<str:formato>/', views.exportar_reportes_detalle, name='exportar_reportes_detalle'),
+    path('reportes/descargar/<str:tipo>/<str:formato>/', exportaciones.exportar_reporte, name='exportar_reporte'),
+    # Direcciones anteriores: resumen por actividad y participación por escuela/carrera/jornada
+    path('reportes/exportar/<str:formato>/', exportaciones.exportar_resumen, name='exportar_reportes'),
+    path('reportes/exportar-detalle/<str:formato>/', exportaciones.exportar_participacion,
+         name='exportar_reportes_detalle'),
 
     # ============================================================
     # USUARIOS
