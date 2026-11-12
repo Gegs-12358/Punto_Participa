@@ -4154,3 +4154,113 @@ a.btn-icon {
         right: auto;
     }
 }
+
+/* ============================================================
+   P1: recorrido de la participación en el detalle de actividad
+   (invitados -> inscritos -> asistieron -> no asistieron).
+   ============================================================ */
+.mini-stat__nota {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.panel.embudo {
+    margin-bottom: 12px;
+}
+
+.embudo .panel-head {
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.embudo__pasos {
+    display: grid;
+    gap: 8px;
+    margin: 6px 0 10px;
+}
+
+.embudo__paso {
+    display: grid;
+    grid-template-columns: 110px 1fr 48px;
+    align-items: center;
+    gap: 10px;
+}
+
+.embudo__etiqueta {
+    color: var(--ink);
+    font-size: 12.5px;
+    font-weight: 700;
+}
+
+.embudo__barra {
+    height: 14px;
+    border-radius: 999px;
+    background: var(--surface);
+    overflow: hidden;
+}
+
+.embudo__barra > span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--blue);
+}
+
+.embudo__paso--invitados .embudo__barra > span { background: #7fa6cf; }
+.embudo__paso--inscritos .embudo__barra > span { background: var(--blue); }
+.embudo__paso--asistieron .embudo__barra > span { background: var(--green); }
+.embudo__paso--no-asistieron .embudo__barra > span { background: var(--red); }
+
+.embudo__valor {
+    color: var(--navy);
+    font-size: 16px;
+    font-weight: 900;
+    text-align: right;
+}
+
+.embudo__notas {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--muted);
+    font-size: 12.5px;
+    display: grid;
+    gap: 3px;
+}
+
+.embudo__notas strong {
+    color: var(--navy);
+}
+
+.embudo__faltantes {
+    margin-top: 10px;
+    border-top: 1px solid var(--line);
+    padding-top: 8px;
+}
+
+.embudo__faltantes > summary {
+    cursor: pointer;
+    color: var(--blue);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.embudo__faltantes .table-wrap {
+    margin-top: 8px;
+}
+
+.embudo__mas {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+@media (max-width: 640px) {
+    .embudo .panel-head {
+        flex-direction: column;
+    }
+
+    .embudo__paso {
+        grid-template-columns: 90px 1fr 40px;
+    }
+}

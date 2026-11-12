@@ -58,9 +58,93 @@
     </div>
     <div class="mini-stat">
         <span>INVITACIONES</span>
-        <strong>{{ total_notificaciones_exito }} ✓ / {{ total_notificaciones_fallo }} ✗</strong>
+        <strong>{{ total_notificaciones_exito }}</strong>
+        <small class="mini-stat__nota">{% if total_notificaciones_fallo %}{{ total_notificaciones_fallo }} con error{% else %}enviada{{ total_notificaciones_exito|pluralize }}{% endif %}</small>
     </div>
 </div>
+
+<!-- ============================================================ -->
+<!-- RECORRIDO DE LA PARTICIPACIÓN (invitados -> inscritos -> asistieron) -->
+<!-- ============================================================ -->
+<section class="panel embudo" aria-labelledby="titulo-embudo">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">PARTICIPACIÓN</span>
+            <h2 id="titulo-embudo">De la invitación a la asistencia</h2>
+            <p class="panel-subtitle">
+                {% if embudo.es_taller %}
+                Cuántos alumnos fueron invitados, se inscribieron y asistieron.
+                {% else %}
+                Actividad masiva: no tiene inscripción, se cuentan invitados y asistentes.
+                {% endif %}
+            </p>
+        </div>
+        <a class="btn secondary" href="{% url 'exportar_reporte' 'participantes' 'excel' %}?actividad={{ actividad.pk }}">
+            {% icono "exportar" %} Listado en Excel
+        </a>
+    </div>
+
+    <div class="embudo__pasos">
+        {% for paso in embudo.pasos %}
+        <div class="embudo__paso embudo__paso--{{ paso.clase }}">
+            <span class="embudo__etiqueta">{{ paso.etiqueta }}</span>
+            <span class="embudo__barra" aria-hidden="true"><span style="width: {{ paso.ancho }}%"></span></span>
+            <strong class="embudo__valor">{{ paso.valor }}</strong>
+        </div>
+        {% endfor %}
+    </div>
+
+    <ul class="embudo__notas">
+        {% if not embudo.ya_empezo %}
+        <li>La actividad todavía no empieza: los que no asistieron se verán cuando comience.</li>
+        {% elif embudo.tasa is not None %}
+        <li>
+            {% if embudo.es_taller %}
+            Asistió el <strong>{{ embudo.tasa }}%</strong> de los inscritos.
+            {% else %}
+            Se ocupó el <strong>{{ embudo.tasa }}%</strong> de los cupos.
+            {% endif %}
+        </li>
+        {% endif %}
+        {% if embudo.sin_invitacion %}
+        <li>
+            {{ embudo.sin_invitacion }} {% if embudo.es_taller %}inscrito{{ embudo.sin_invitacion|pluralize }}{% else %}asistente{{ embudo.sin_invitacion|pluralize }}{% endif %}
+            no tenía{{ embudo.sin_invitacion|pluralize:"n" }} invitación por correo (llegaron por otro medio).
+        </li>
+        {% endif %}
+        {% if not embudo.invitados %}
+        <li>Aún no se han enviado invitaciones por correo para esta actividad.</li>
+        {% endif %}
+    </ul>
+
+    {% if embudo.faltantes %}
+    <details class="embudo__faltantes">
+        <summary>Ver quiénes se inscribieron y no asistieron ({{ embudo.no_asistieron }})</summary>
+        <div class="table-wrap">
+            <table>
+                <caption class="visually-hidden">Inscritos que no asistieron</caption>
+                <thead>
+                    <tr><th>Alumno</th><th>RUT</th><th>Carrera</th><th>Jornada</th><th>Inscripción</th></tr>
+                </thead>
+                <tbody>
+                    {% for i in embudo.faltantes %}
+                    <tr>
+                        <td><strong>{{ i.alumno.nombres }} {{ i.alumno.apellidos }}</strong></td>
+                        <td>{{ i.alumno.rut|rut_fmt }}</td>
+                        <td>{{ i.carrera }}</td>
+                        <td>{{ i.jornada }}</td>
+                        <td>{{ i.fecha_inscripcion|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if embudo.no_asistieron > embudo.faltantes|length %}
+        <p class="embudo__mas">Se muestran {{ embudo.faltantes|length }} de {{ embudo.no_asistieron }}. El listado completo está en el Excel.</p>
+        {% endif %}
+    </details>
+    {% endif %}
+</section>
 
 <!-- ============================================================ -->
 <!-- CUERPO PRINCIPAL EN 2 COLUMNAS -->
@@ -153,8 +237,8 @@
                         <tr>
                             <td><strong>{{ a.alumno.nombres }} {{ a.alumno.apellidos }}</strong></td>
                             <td>{{ a.alumno.rut|rut_fmt }}</td>
-                            <td>{{ a.alumno.carrera }}</td>
-                            <td>{{ a.alumno.jornada }}</td>
+                            <td>{{ a.carrera }}</td>
+                            <td>{{ a.jornada }}</td>
                             <td>{{ a.registrado_por.username|default:"N/A" }}</td>
                             <td>{{ a.fecha_ingreso|date:"d/m/Y H:i" }}</td>
                         </tr>

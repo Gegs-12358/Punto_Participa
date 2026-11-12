@@ -1140,13 +1140,15 @@ def actividad_detalle(request, pk):
     total_inscritos = Inscripcion.objects.filter(actividad=actividad).count()
     confirmados = Inscripcion.objects.filter(actividad=actividad, estado='CONFIRMADA').count()
     total_asistentes = Asistencia.objects.filter(actividad=actividad).count()
+    embudo = _embudo_actividad(actividad)
 
     return render(request, 'gestion/actividad_detalle.html', {
         'actividad': actividad,
         'total_inscritos': total_inscritos,
         'total_inscritos_confirmados': confirmados,
         'total_asistentes': total_asistentes,
-        'tasa_asistencia': round(total_asistentes / confirmados * 100, 1) if confirmados else None,
+        'tasa_asistencia': embudo['tasa'],
+        'embudo': embudo,
         'total_notificaciones_exito': NotificacionCorreo.objects.filter(
             actividad=actividad, estado_envio='EXITO').count(),
         'total_notificaciones_fallo': NotificacionCorreo.objects.filter(
@@ -1154,6 +1156,58 @@ def actividad_detalle(request, pk):
         'ultimas_asistencias': Asistencia.objects.filter(actividad=actividad)
             .select_related('alumno', 'registrado_por').order_by('-fecha_ingreso')[:10],
     })
+
+
+def _embudo_actividad(actividad, max_lista=15):
+    """
+    Recorrido de la participación en una actividad (P1, reporte del taller):
+    invitados -> inscritos -> asistieron -> no asistieron.
+
+    - invitados: alumnos distintos a los que les llegó la invitación (envío con éxito).
+    - inscritos: inscripciones confirmadas (solo talleres).
+    - asistieron: talleres, inscritos que registraron asistencia; masivas, todos los asistentes.
+    - no_asistieron: inscritos sin asistencia. Antes de que empiece la actividad es None
+      (todavía no se sabe) y la tasa también.
+    - sin_invitacion: inscritos (o asistentes, en masivas) que no tenían invitación.
+    """
+    es_taller = actividad.tipo == 'TALLER'
+    ya_empezo = actividad.fecha_inicio <= timezone.now()
+    invitados_ids = set(NotificacionCorreo.objects.filter(
+        actividad=actividad, estado_envio='EXITO', alumno__isnull=False).values_list('alumno_id', flat=True))
+    asistentes_ids = set(Asistencia.objects.filter(actividad=actividad).values_list('alumno_id', flat=True))
+
+    datos = {'es_taller': es_taller, 'ya_empezo': ya_empezo, 'invitados': len(invitados_ids),
+             'inscritos': None, 'no_asistieron': None, 'faltantes': [], 'tasa': None}
+    if es_taller:
+        inscritos_ids = set(Inscripcion.objects.filter(
+            actividad=actividad, estado='CONFIRMADA').values_list('alumno_id', flat=True))
+        asistieron = len(inscritos_ids & asistentes_ids)
+        datos.update(inscritos=len(inscritos_ids), asistieron=asistieron,
+                     sin_invitacion=len(inscritos_ids - invitados_ids) if invitados_ids else None)
+        if ya_empezo:
+            faltan = Inscripcion.objects.filter(
+                actividad=actividad, estado='CONFIRMADA').exclude(alumno_id__in=asistentes_ids)
+            datos['no_asistieron'] = len(inscritos_ids) - asistieron
+            datos['faltantes'] = list(faltan.select_related('alumno')
+                                      .order_by('alumno__apellidos', 'alumno__nombres')[:max_lista])
+            datos['tasa'] = round(asistieron / len(inscritos_ids) * 100, 1) if inscritos_ids else None
+    else:
+        datos.update(asistieron=len(asistentes_ids),
+                     sin_invitacion=len(asistentes_ids - invitados_ids) if invitados_ids else None)
+        if ya_empezo and actividad.cupos_totales:
+            datos['tasa'] = round(len(asistentes_ids) / actividad.cupos_totales * 100, 1)
+
+    # Barras: cada valor como % del mayor, para dibujarlas proporcionales
+    pasos = [('Invitados', datos['invitados'], 'invitados')]
+    if es_taller:
+        pasos.append(('Inscritos', datos['inscritos'], 'inscritos'))
+    pasos.append(('Asistieron', datos['asistieron'], 'asistieron'))
+    if datos['no_asistieron'] is not None:
+        pasos.append(('No asistieron', datos['no_asistieron'], 'no-asistieron'))
+    mayor = max([v for _, v, _ in pasos] + [1])
+    datos['pasos'] = [{'etiqueta': e, 'valor': v, 'clase': c, 'ancho': round(v / mayor * 100)}
+                      for e, v, c in pasos]
+    return datos
 
 
 @login_required
