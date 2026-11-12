@@ -1862,13 +1862,29 @@ def escaneo(request):
     return render(request, 'gestion/escaneo.html', {
         'actividad_seleccionada': actividad,
         'contador': _contador_escaneo(request, actividad) if actividad else None,
-        'actividades_disponibles': Actividad.objects.filter(estado='ACTIVA').order_by('-fecha_inicio'),
+        'actividades_disponibles': _actividades_para_escanear(),
         'ultimas_asistencias': (
             Asistencia.objects.filter(actividad=actividad)
             .select_related('alumno', 'registrado_por').order_by('-fecha_ingreso')[:10]
             if actividad else []
         ),
     })
+
+
+def _actividades_para_escanear():
+    """Actividades activas: primero las que están en curso, luego las próximas (la más cercana
+    primero) y al final las que ya terminaron pero siguen activas."""
+    ahora = timezone.now()
+    actividades = list(Actividad.objects.filter(estado='ACTIVA'))
+    for a in actividades:
+        a.en_curso = a.fecha_inicio <= ahora <= a.fecha_fin
+    def orden(a):
+        if a.en_curso:
+            return (0, a.fecha_inicio.timestamp())
+        if a.fecha_inicio > ahora:
+            return (1, a.fecha_inicio.timestamp())
+        return (2, -a.fecha_fin.timestamp())
+    return sorted(actividades, key=orden)
 
 
 @login_required

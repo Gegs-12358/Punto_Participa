@@ -171,26 +171,36 @@
             <button type="button" class="close-button" data-modal-close aria-label="Cerrar">×</button>
         </header>
 
-        <form method="post" action="{% url 'escaneo' %}">
+        {# Lista propia en vez de <select>: el menú nativo del select se cerraba solo dentro del modal (Linux). #}
+        <form method="post" action="{% url 'escaneo' %}" id="formElegirActividad">
             {% csrf_token %}
+            <input type="hidden" name="cambiar_actividad" value="1">
             <div class="modal-body">
-                <div class="form-field">
-                    <label for="actividadSelect">Selecciona la actividad</label>
-                    <select name="actividad_id" id="actividadSelect" required>
-                        <option value="">-- Seleccionar --</option>
-                        {% for actividad in actividades_disponibles %}
-                        <option value="{{ actividad.id }}"
-                                {% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %}selected{% endif %}>
-                            {{ actividad.titulo }}, {{ actividad.fecha_inicio|date:"d/m/Y H:i" }} ({{ actividad.get_tipo_display }})
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <small class="input-help">Solo aparecen las actividades activas. Al elegir otra, termina tu turno actual y empieza uno nuevo.</small>
+                <label for="buscarActividad" class="visually-hidden">Buscar actividad</label>
+                <input type="search" id="buscarActividad" class="elegir-actividad__buscar" autocomplete="off"
+                    placeholder="Buscar por nombre o lugar" aria-controls="listaActividades" autofocus>
+                <div class="elegir-actividad__lista" id="listaActividades" role="list">
+                    {% for actividad in actividades_disponibles %}
+                    <button type="submit" name="actividad_id" value="{{ actividad.id }}" role="listitem"
+                        class="elegir-actividad__opcion{% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %} es-actual{% endif %}"
+                        data-buscar="{{ actividad.titulo|lower }} {{ actividad.lugar_completo|lower }}">
+                        <strong>{{ actividad.titulo }}</strong>
+                        <small>
+                            {% if actividad.en_curso %}<span class="badge">En curso</span>{% endif %}
+                            {% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %}<span class="badge draft">Tu turno actual</span>{% endif %}
+                            {{ actividad.get_tipo_display }}, {{ actividad.fecha_inicio|date:"d/m/Y H:i" }}, {{ actividad.lugar_completo }}
+                        </small>
+                    </button>
+                    {% empty %}
+                    <p class="elegir-actividad__vacio">No hay actividades activas.</p>
+                    {% endfor %}
+                    <p class="elegir-actividad__vacio" id="sinCoincidencias" hidden>Ninguna actividad coincide con la búsqueda.</p>
                 </div>
+                <small class="input-help">Solo aparecen las actividades activas, primero las que están en curso.
+                    Al elegir otra, termina tu turno actual y empieza uno nuevo.</small>
             </div>
             <footer class="modal-footer">
                 <button type="button" class="btn secondary" data-modal-close>Cancelar</button>
-                <button type="submit" name="cambiar_actividad" value="1" class="btn">{% icono "guardar" %} Seleccionar</button>
             </footer>
         </form>
     </section>

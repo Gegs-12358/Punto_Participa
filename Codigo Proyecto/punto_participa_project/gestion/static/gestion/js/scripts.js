@@ -56,7 +56,11 @@ function openModal(modalOrSelector) {
     modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
 
-    const focusable = modal.querySelector('input, select, textarea, button, a[href]');
+    // El primer campo que se puede usar (no los ocultos, como el token CSRF)
+    // Preferir el campo marcado con autofocus; si no hay, el primero que se pueda usar
+    // (no los ocultos, como el token CSRF).
+    const focusable = modal.querySelector('[autofocus]') || modal.querySelector(
+        'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea, button:not([disabled]), a[href]');
     if (focusable) {
         focusable.focus();
     }

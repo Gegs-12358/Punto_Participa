@@ -195,3 +195,30 @@ class OperadoresEnTurnoTests(BaseTurnoTests):
         self.assertEqual(ultimos[0]['operador'], 'tú')
         self.assertEqual(ultimos[1]['operador'], self.admin.first_name or self.admin.username)
         self.assertEqual(ultimos[1]['metodo'], 'Código QR')
+
+
+class ElegirActividadTests(BaseTurnoTests):
+    """La actividad se elige en una lista (no en un <select>, que se cerraba solo en Linux)."""
+
+    def test_lista_en_curso_primero_y_sin_select(self):
+        from .models import Actividad
+        ahora = timezone.now()
+        Actividad.objects.filter(pk=self.actividad_otro.pk).update(
+            fecha_inicio=ahora - timedelta(hours=1), fecha_fin=ahora + timedelta(hours=1))
+        Actividad.objects.filter(pk=self.actividad.pk).update(
+            fecha_inicio=ahora + timedelta(days=5), fecha_fin=ahora + timedelta(days=5, hours=2))
+        self.client.force_login(self.registrador)
+        resp = self.client.get(URL)
+        titulos = [a.titulo for a in resp.context['actividades_disponibles']]
+        self.assertEqual(titulos, ['Actividad de otro creador', 'Actividad masiva', 'Taller integral'])
+        self.assertTrue(resp.context['actividades_disponibles'][0].en_curso)
+        self.assertNotContains(resp, 'id="actividadSelect"')
+        self.assertContains(resp, 'class="elegir-actividad__opcion')
+        self.assertContains(resp, 'En curso')
+
+    def test_cada_opcion_envia_su_actividad(self):
+        self.client.force_login(self.registrador)
+        resp = self.client.get(URL)
+        self.assertContains(resp, '<input type="hidden" name="cambiar_actividad" value="1">', html=True)
+        self.assertContains(resp, f'name="actividad_id" value="{self.actividad.pk}"')
+        self.assertNotContains(resp, 'name="actividad_id" value="" ')

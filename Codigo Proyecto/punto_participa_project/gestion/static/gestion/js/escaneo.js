@@ -137,6 +137,32 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Buscador de la lista de actividades (sin distinguir tildes ni mayúsculas)
+    const buscarActividad = document.getElementById('buscarActividad');
+    if (buscarActividad) {
+        const sinTildes = function (t) {
+            return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        };
+        buscarActividad.addEventListener('input', function () {
+            const texto = sinTildes(buscarActividad.value.trim());
+            let visibles = 0;
+            document.querySelectorAll('.elegir-actividad__opcion').forEach(function (op) {
+                const coincide = !texto || sinTildes(op.dataset.buscar || '').indexOf(texto) !== -1;
+                op.hidden = !coincide;
+                if (coincide) visibles++;
+            });
+            const aviso = document.getElementById('sinCoincidencias');
+            if (aviso) aviso.hidden = visibles > 0;
+        });
+        // Enter en el buscador elige la primera actividad visible
+        buscarActividad.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            const primera = document.querySelector('.elegir-actividad__opcion:not([hidden])');
+            if (primera) primera.click();
+        });
+    }
+
     if (btnAceptarAviso) {
         btnAceptarAviso.addEventListener('click', function () {
             closeModal(modalAviso);
