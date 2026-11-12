@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-{% load static %}
+{% load static ui %}
 {% block title %}Actividades{% endblock %}
 
 {% block content %}
@@ -13,15 +13,24 @@
         <h1>Actividades</h1>
         <p>Administra las actividades y talleres del Punto Estudiantil.</p>
     </div>
-    <button class="btn" id="btnNuevaActividad" data-action="activity-new">
-        + Nueva Actividad
-    </button>
+    <div class="page-title__acciones">
+        <img class="page-title__ilustracion" src="{% static 'gestion/img/encabezado/actividad.webp' %}" alt="" width="92" height="92">
+        <p class="globo-mascota">¡Acá puedes crear una actividad!</p>
+        <button class="btn" id="btnNuevaActividad" data-action="activity-new">
+            {% icono "agregar" %} Nueva actividad
+        </button>
+    </div>
 </div>
 
 <!-- ============================================================ -->
 <!-- FILTROS -->
 <!-- ============================================================ -->
 <form method="get" class="filters-bar" role="search">
+    <div class="filter-group filter-group--buscar">
+        <label for="filtro-buscar">Buscar</label>
+        <input type="search" id="filtro-buscar" name="q" value="{{ request.GET.q }}" maxlength="100"
+            placeholder="Nombre, descripción o lugar">
+    </div>
     <div class="filter-group">
         <label for="filtro-fecha-creacion">Fecha de Creación</label>
         <input type="date" id="filtro-fecha-creacion" name="fecha_creacion" value="{{ request.GET.fecha_creacion }}">
@@ -55,51 +64,18 @@
         <select name="lugar" id="filtro-lugar">
             <option value="">Todos</option>
             {% for lug in lugares_opciones %}
-            <option value="{{ lug }}" {% if request.GET.lugar == lug %}selected{% endif %}>{{ lug }}</option>
+                <option value="{{ lug }}" {% if request.GET.lugar == lug %}selected{% endif %}>{{ lug }}</option>
             {% endfor %}
         </select>
     </div>
 
-    <div class="filter-actions">
-        <button type="submit" class="btn">▽ Filtrar</button>
-        <a href="{% url 'lista_actividades' %}" class="link-button">× Limpiar</a>
-    </div>
+    {% url 'lista_actividades' as url_limpiar %}{% acciones_filtro url_limpiar %}
 </form>
 
 <!-- ============================================================ -->
 <!-- CHIPS DE FILTROS ACTIVOS -->
 <!-- ============================================================ -->
-{% if request.GET.tipo or request.GET.estado or request.GET.lugar or request.GET.fecha or request.GET.fecha_creacion %}
-<div class="filter-chips">
-    <span class="filter-chips-label">Filtros activos:</span>
-    {% if request.GET.tipo %}
-    <a class="filter-chip"
-        href="?{% for k, v in request.GET.items %}{% if k != 'tipo' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Tipo:
-        {{ request.GET.tipo }} · quitar ×</a>
-    {% endif %}
-    {% if request.GET.estado %}
-    <a class="filter-chip"
-        href="?{% for k, v in request.GET.items %}{% if k != 'estado' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Estado:
-        {{ request.GET.estado }} · quitar ×</a>
-    {% endif %}
-    {% if request.GET.lugar %}
-    <a class="filter-chip"
-        href="?{% for k, v in request.GET.items %}{% if k != 'lugar' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Lugar:
-        {{ request.GET.lugar }} · quitar ×</a>
-    {% endif %}
-    {% if request.GET.fecha %}
-    <a class="filter-chip"
-        href="?{% for k, v in request.GET.items %}{% if k != 'fecha' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Inicio:
-        {{ request.GET.fecha }} · quitar ×</a>
-    {% endif %}
-    {% if request.GET.fecha_creacion %}
-    <a class="filter-chip"
-        href="?{% for k, v in request.GET.items %}{% if k != 'fecha_creacion' and k != 'page' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Creada:
-        {{ request.GET.fecha_creacion }} · quitar ×</a>
-    {% endif %}
-    <a class="filter-chip filter-chip-clear" href="{% url 'lista_actividades' %}">Limpiar todos</a>
-</div>
-{% endif %}
+{% chips_filtros "q=Búsqueda,tipo=Tipo,estado=Estado,lugar=Lugar,fecha=Inicio,fecha_creacion=Creada" url_limpiar %}
 
 <!-- ============================================================ -->
 <!-- TABLA -->
@@ -117,8 +93,9 @@
     <div class="hint-banner" role="status">
         <span class="hint-icon">i</span>
         <span>
-            <strong>Tip:</strong> Haz click en el <strong>nombre</strong> de la actividad para ver el detalle, o en el
-            ícono <strong>👥</strong> para ver los participantes.
+            <strong>Tip:</strong> Haz clic en el <strong>nombre</strong> de la actividad para ver el detalle, o en el
+            ícono <span class="hint-icono" aria-label="participantes">{% icono "participantes" %}</span> para ver los
+            participantes. Pasa el mouse sobre cualquier ícono para ver qué hace.
         </span>
     </div>
 
@@ -212,15 +189,15 @@
                             {% endif %}
                     </td>
                     <td>
-                        <div class="action-group">
-                            <a href="{% url 'actividad_detalle' actividad.pk %}" class="link-button"
-                                title="Ver detalle">👁 Ver</a>
-                            <a href="{% url 'participantes_actividad' actividad.pk %}" class="link-button"
-                                title="Ver participantes">👥</a>
-                            <button class="link-button btn-editar" data-url="{% url 'editar_actividad' actividad.pk %}"
-                                title="Editar">✎</button>
-                            <button class="danger-button btn-eliminar" data-url="{% url 'eliminar_ajax' actividad.pk %}"
-                                data-nombre="{{ actividad.titulo }}" title="Eliminar">✕</button>
+                        <div class="acciones-fila">
+                            <a href="{% url 'actividad_detalle' actividad.pk %}" class="btn-icon btn-icon--sm"
+                                data-tooltip="Ver detalle" aria-label="Ver detalle de {{ actividad.titulo }}">{% icono "ver" %}</a>
+                            <a href="{% url 'participantes_actividad' actividad.pk %}" class="btn-icon btn-icon--sm"
+                                data-tooltip="Participantes" aria-label="Participantes de {{ actividad.titulo }}">{% icono "participantes" %}</a>
+                            <button type="button" class="btn-icon btn-icon--sm btn-editar" data-url="{% url 'editar_actividad' actividad.pk %}"
+                                data-tooltip="Editar" aria-label="Editar {{ actividad.titulo }}">{% icono "editar" %}</button>
+                            <button type="button" class="btn-icon btn-icon--sm btn-icon--danger btn-eliminar" data-url="{% url 'eliminar_ajax' actividad.pk %}"
+                                data-nombre="{{ actividad.titulo }}" data-tooltip="Eliminar" aria-label="Eliminar {{ actividad.titulo }}">{% icono "eliminar" %}</button>
                         </div>
                     </td>
                 </tr>
@@ -231,7 +208,7 @@
                             <span>▦</span>
                             <h3>Sin actividades</h3>
                             <p>No hay actividades que coincidan con los filtros.</p>
-                            <button class="btn" id="btnNuevaActividadVacio" data-action="activity-new">+ Crear la
+                            <button class="btn" id="btnNuevaActividadVacio" data-action="activity-new">{% icono "agregar" %} Crear la
                                 primera</button>
                         </div>
                     </td>

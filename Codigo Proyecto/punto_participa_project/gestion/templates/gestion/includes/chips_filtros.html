@@ -1,0 +1,9 @@
+{% if chips %}
+<div class="filter-chips" aria-label="Filtros activos">
+    <span class="filter-chips-label">Filtros activos:</span>
+    {% for chip in chips %}
+    <a class="filter-chip" href="{{ chip.url }}" aria-label="Quitar filtro {{ chip.etiqueta }}">{{ chip.etiqueta }}: {{ chip.valor }} <span aria-hidden="true">×</span></a>
+    {% endfor %}
+    <a class="filter-chip filter-chip-clear" href="{{ url_limpiar }}">Limpiar todos</a>
+</div>
+{% endif %}

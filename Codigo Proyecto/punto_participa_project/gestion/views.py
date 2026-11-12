@@ -1156,6 +1156,7 @@ def lista_actividades(request):
     fecha_creacion = fecha_o_none(request.GET.get('fecha_creacion'))
     estado = request.GET.get('estado', '')
     lugar = request.GET.get('lugar', '')
+    buscar = limpiar_texto(request.GET.get('q', ''))[:100]
     orden = request.GET.get('orden', '-fecha_inicio')
 
     validos = {
@@ -1183,6 +1184,9 @@ def lista_actividades(request):
     for campo, val in [('tipo', tipo), ('estado', estado), ('lugar', lugar)]:
         if val:
             qs = qs.filter(**{campo: val})
+    if buscar:
+        qs = qs.filter(Q(titulo__icontains=buscar) | Q(descripcion__icontains=buscar)
+                       | Q(lugar__icontains=buscar))
     if fecha:
         qs = qs.filter(fecha_inicio__date=fecha)
     if fecha_creacion:

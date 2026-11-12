@@ -3672,3 +3672,228 @@ label.floating-label,
     gap: 2px;
     flex-wrap: wrap;
 }
+/* ============================================================
+   P-UI · COMPONENTES UNIFICADOS
+   Guía: docs/GUIA_ESTILO.md. Este bloque va al final a propósito:
+   reemplaza las definiciones anteriores de .btn-icon.
+   ============================================================ */
+
+/* Íconos SVG ({% icono %}): toman el color del texto */
+.icono {
+    flex-shrink: 0;
+    display: block;
+}
+
+/* Botón de solo ícono: barras de filtro y acciones de fila */
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--white);
+    color: var(--navy);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.btn-icon:hover {
+    background: var(--surface);
+    border-color: var(--navy);
+}
+
+.btn-icon:focus-visible {
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
+}
+
+.btn-icon--primary {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--navy);
+}
+
+.btn-icon--primary:hover {
+    background: var(--gold);
+    border-color: var(--navy);
+    filter: brightness(0.97);
+}
+
+.btn-icon--ghost {
+    background: var(--white);
+    color: var(--muted);
+}
+
+.btn-icon--ghost:hover {
+    color: var(--navy);
+}
+
+.btn-icon--danger {
+    color: var(--red);
+}
+
+.btn-icon--danger:hover {
+    background: var(--red-soft);
+    border-color: var(--red);
+}
+
+/* Variante compacta para las filas de las tablas */
+.btn-icon--sm {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+}
+
+.btn-icon--sm .icono {
+    width: 16px;
+    height: 16px;
+}
+
+/* Grupo de acciones de cada fila */
+.acciones-fila {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+}
+
+.acciones-fila form {
+    display: contents;
+}
+
+/* Aviso al pasar el mouse o al llegar con Tab: data-tooltip="Texto" */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 7px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--ink);
+    color: var(--white);
+    font-size: 11.5px;
+    font-weight: 700;
+    line-height: 1.3;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.12s;
+    z-index: 50;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-tooltip]::after {
+        transition: none;
+    }
+}
+
+/* Encabezado de página con ilustración opcional de la mascota */
+.page-title__acciones {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+.page-title__ilustracion {
+    height: 92px;
+    width: auto;
+    border-radius: 10px;
+}
+
+@media (max-width: 900px) {
+    .page-title__ilustracion {
+        display: none;
+    }
+}
+
+/* Buscador de texto dentro de la barra de filtros */
+.filter-group--buscar {
+    flex: 2 1 220px;
+}
+
+/* Ícono dentro del texto de un aviso (por ejemplo, el "Tip" de Actividades) */
+.hint-icono {
+    display: inline-flex;
+    vertical-align: -3px;
+    color: var(--navy);
+}
+
+.hint-icono .icono {
+    width: 16px;
+    height: 16px;
+}
+
+/* Globo de diálogo de la mascota: el mensaje va como texto real (se lee en cualquier
+   tamaño y lo leen los lectores de pantalla), con el estilo de las ilustraciones. */
+.globo-mascota {
+    position: relative;
+    max-width: 210px;
+    padding: 8px 12px;
+    border: 2px solid var(--gold);
+    border-radius: 14px;
+    background: var(--white);
+    color: var(--navy);
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.25;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Colita del globo apuntando a la mascota, que queda a su izquierda */
+.globo-mascota::before,
+.globo-mascota::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    border-style: solid;
+    transform: translateY(-50%);
+}
+
+.globo-mascota::before {
+    left: -11px;
+    border-width: 8px 10px 8px 0;
+    border-color: transparent var(--gold) transparent transparent;
+}
+
+.globo-mascota::after {
+    left: -7px;
+    border-width: 6px 8px 6px 0;
+    border-color: transparent var(--white) transparent transparent;
+}
+
+.page-title__ilustracion {
+    border-radius: 14px;
+    background: var(--surface);
+}
+
+/* Más específico que ".page-title p" para que el globo no tome el estilo de la descripción */
+.page-title .globo-mascota {
+    margin: 0;
+    color: var(--navy);
+    font-size: 13px;
+    font-weight: 900;
+}
+
+@media (max-width: 900px) {
+    .globo-mascota {
+        display: none;
+    }
+}
