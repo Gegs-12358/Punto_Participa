@@ -54,7 +54,8 @@ llegar con Tab) y `aria-label` (para lectores de pantalla).
 ## Íconos
 
 `{% icono "nombre" %}`: `filtrar`, `limpiar`, `buscar`, `ver`, `editar`, `eliminar`, `bloquear`,
-`desbloquear`, `participantes`, `correo`, `exportar`, `agregar`, `guardar`, `imprimir`.
+`desbloquear`, `participantes`, `correo`, `exportar`, `agregar`, `guardar`, `imprimir`, `cambiar`,
+`finalizar`.
 No se usan emojis ni símbolos sueltos (👁, ✎, ✕, ▽) como íconos.
 
 ## Barra de filtros
@@ -73,6 +74,21 @@ No se usan emojis ni símbolos sueltos (👁, ✎, ✕, ▽) como íconos.
 
 - Siempre los mismos dos botones al final: **Filtrar** (amarillo) y **Limpiar filtros** (×).
 - Debajo, los chips de "Filtros activos": cada uno quita su filtro y "Limpiar todos" los quita todos.
+
+## Menú desplegable (varias acciones del mismo tipo)
+
+Cuando hay varias opciones parecidas (por ejemplo, los formatos de exportación), van en un solo
+botón con menú, y cada opción dice qué contiene. Funciona sin JavaScript y se cierra con Escape o
+al hacer clic afuera (`js/ui.js`).
+
+```html
+<details class="menu-desplegable">
+    <summary class="btn secondary">{% icono "exportar" %} Exportar <span aria-hidden="true">▾</span></summary>
+    <div class="menu-desplegable__panel" role="menu">
+        <a role="menuitem" href="..."><strong>Qué es · Formato</strong><span>Qué trae, en una frase.</span></a>
+    </div>
+</details>
+```
 
 ## Acciones de cada fila
 

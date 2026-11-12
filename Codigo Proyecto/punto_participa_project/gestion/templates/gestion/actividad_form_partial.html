@@ -1,4 +1,4 @@
-{% load static %}
+{% load static ui %}
 
 <form method="post" action="{{ request.path }}" id="formActividad" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
@@ -256,7 +256,7 @@
             × Cancelar
         </button>
         <button type="submit" class="btn" id="btnGuardarActividad">
-            ✓ Guardar
+            {% icono "guardar" %} Guardar
         </button>
     </div>
 </form>

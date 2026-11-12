@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-{% load static %}
+{% load static ui %}
 {% load formato %}
 {% block title %}{{ actividad.titulo }}{% endblock %}
 
@@ -34,9 +34,9 @@
         </p>
     </div>
     <div class="btn-group detail-actions">
-        <a href="{% url 'editar_actividad' actividad.pk %}" class="btn">✎ Editar</a>
-        <a href="{% url 'participantes_actividad' actividad.pk %}" class="btn secondary">◉ Participantes</a>
-        <a href="{% url 'notificaciones_actividad' actividad.pk %}" class="btn secondary">✉ Notificaciones</a>
+        <a href="{% url 'editar_actividad' actividad.pk %}" class="btn">{% icono "editar" %} Editar</a>
+        <a href="{% url 'participantes_actividad' actividad.pk %}" class="btn secondary">{% icono "participantes" %} Participantes</a>
+        <a href="{% url 'notificaciones_actividad' actividad.pk %}" class="btn secondary">{% icono "correo" %} Notificaciones</a>
     </div>
 </div>
 

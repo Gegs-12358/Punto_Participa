@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-{% load static %}
+{% load static ui %}
 {% block title %}Escáner{% endblock %}
 
 {% block content %}
@@ -33,16 +33,16 @@
             </p>
         </div>
         <div class="scanner-activity-actions">
-            <button type="button" class="btn secondary" id="btnCambiarActividad">⇄ Cambiar</button>
+            <button type="button" class="btn secondary" id="btnCambiarActividad">{% icono "cambiar" %} Cambiar</button>
             <form method="post" action="{% url 'escaneo' %}" style="display:inline;">
                 {% csrf_token %}
-                <button type="submit" name="finalizar_turno" value="1" class="btn danger">⇥ Finalizar turno</button>
+                <button type="submit" name="finalizar_turno" value="1" class="btn danger">{% icono "finalizar" %} Finalizar turno</button>
             </form>
         </div>
         {% else %}
         <div class="scanner-activity-empty">
             <p>⚠ No hay actividad seleccionada.</p>
-            <button type="button" class="btn" id="btnCambiarActividad">⇄ Seleccionar actividad</button>
+            <button type="button" class="btn" id="btnCambiarActividad">{% icono "cambiar" %} Seleccionar actividad</button>
         </div>
         {% endif %}
     </div>
@@ -86,7 +86,7 @@
                 </small>
 
                 <button type="submit" class="btn btn-block" style="margin-top: 12px;">
-                    ✓ Registrar asistencia
+                    {% icono "guardar" %} Registrar asistencia
                 </button>
             </form>
 
@@ -165,7 +165,7 @@
             </div>
             <footer class="modal-footer">
                 <button type="button" class="btn secondary" data-modal-close>Cancelar</button>
-                <button type="submit" name="cambiar_actividad" value="1" class="btn">✓ Seleccionar</button>
+                <button type="submit" name="cambiar_actividad" value="1" class="btn">{% icono "guardar" %} Seleccionar</button>
             </footer>
         </form>
     </section>
@@ -188,7 +188,7 @@
 
         <footer class="modal-footer">
             <button type="button" class="btn secondary" data-modal-close id="btnCancelarConfirmacion">× Cancelar</button>
-            <button type="button" class="btn" id="btnAceptarConfirmacion">✓ Aceptar</button>
+            <button type="button" class="btn" id="btnAceptarConfirmacion">{% icono "guardar" %} Aceptar</button>
         </footer>
     </section>
 </div>

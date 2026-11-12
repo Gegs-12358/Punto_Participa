@@ -16,7 +16,7 @@ from django import template
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
-from ..models import Actividad, Inscripcion
+from ..models import Actividad, Inscripcion, NotificacionCorreo
 
 register = template.Library()
 
@@ -37,6 +37,8 @@ _TRAZOS = {
     'agregar': '<path d="M12 5v14M5 12h14"/>',
     'guardar': '<path d="m5 12 5 5L20 7"/>',
     'imprimir': '<path d="M7 9V3h10v6M7 17H4v-7h16v7h-3"/><rect x="7" y="14" width="10" height="7"/>',
+    'cambiar': '<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
+    'finalizar': '<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
 }
 
 
@@ -61,17 +63,19 @@ def acciones_filtro(url_limpiar):
 # Valores que se muestran con su nombre legible en los chips
 _LEGIBLES = {
     'tipo': dict(Actividad.TIPO_CHOICES),
-    'estado': {**dict(Actividad.ESTADO_CHOICES), **dict(Inscripcion.ESTADO_CHOICES)},
+    'estado': {**dict(Actividad.ESTADO_CHOICES), **dict(Inscripcion.ESTADO_CHOICES),
+               **dict(NotificacionCorreo.ESTADO_CHOICES), 'activo': 'Activo', 'bloqueado': 'Bloqueado'},
 }
 _PAGINACION = {'page', 'page_act', 'page_det', 'orden'}
 
 
 @register.inclusion_tag('gestion/includes/chips_filtros.html', takes_context=True)
-def chips_filtros(context, etiquetas, url_limpiar):
+def chips_filtros(context, etiquetas, url_limpiar, valores=None):
     """
     Chips de los filtros que están activos en la URL.
 
     etiquetas: "param=Etiqueta,param2=Etiqueta 2" (solo esos parámetros se muestran).
+    valores: opcional, {param: {valor: texto}} para mostrar un nombre en vez de un id.
     Cada chip quita su filtro y deja los demás (y vuelve a la primera página).
     """
     request = context.get('request')
@@ -91,7 +95,7 @@ def chips_filtros(context, etiquetas, url_limpiar):
         resto = [(k, v) for k, v in request.GET.items() if k != clave and k not in _PAGINACION and v]
         chips.append({
             'etiqueta': etiqueta,
-            'valor': _LEGIBLES.get(clave, {}).get(valor, valor),
+            'valor': ((valores or {}).get(clave) or _LEGIBLES.get(clave, {})).get(valor, valor),
             'url': '?' + urlencode(resto) if resto else url_limpiar,
         })
     return {'chips': chips, 'url_limpiar': url_limpiar}

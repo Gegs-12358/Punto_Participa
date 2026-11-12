@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-{% load static %}
+{% load static ui %}
 {% block title %}Carreras{% endblock %}
 
 {% block content %}
@@ -48,7 +48,7 @@
             <input type="hidden" name="confirmado" value="1">
             <button type="submit" class="btn"
                 title="Se corrige el nombre en la carrera y en sus {{ confirmacion.alumnos }} alumnos">
-                ✓ Es la misma: corregir el nombre en todas partes
+                {% icono "guardar" %} Es la misma: corregir el nombre en todas partes
             </button>
         </form>
 
@@ -60,7 +60,7 @@
             <input type="hidden" name="escuela" value="{{ confirmacion.nueva_escuela }}">
             <button type="submit" class="btn secondary"
                 title="Los alumnos y actividades de la carrera antigua no cambian">
-                ＋ Es distinta: crear "{{ confirmacion.nuevo_nombre }}" y bloquear la antigua
+                {% icono "agregar" %} Es distinta: crear "{{ confirmacion.nuevo_nombre }}" y bloquear la antigua
             </button>
         </form>
 
@@ -90,7 +90,7 @@
         </select>
     </div>
     <div class="filter-actions">
-        <button type="submit" class="btn" style="white-space: nowrap;">+ Agregar</button>
+        <button type="submit" class="btn" style="white-space: nowrap;">{% icono "agregar" %} Agregar</button>
     </div>
 </form>
 
@@ -112,7 +112,8 @@
                 <option value="{{ esc.nombre }}" {% if escuela_filtro == esc.nombre %}selected{% endif %}>{{ esc.nombre }}</option>
                 {% endfor %}
             </select>
-            <button type="submit" class="btn secondary">▽ Filtrar</button>
+            <button type="submit" class="btn-icon btn-icon--primary" data-tooltip="Filtrar" aria-label="Filtrar">{% icono "filtrar" %}</button>
+            {% if escuela_filtro %}<a href="{% url 'catalogo_carreras' %}" class="btn-icon btn-icon--ghost" data-tooltip="Limpiar filtro" aria-label="Limpiar filtro">{% icono "limpiar" %}</a>{% endif %}
         </form>
     </div>
 
@@ -150,7 +151,7 @@
                                 {% endif %}
                                 {% endfor %}
                             </select>
-                            <button type="submit" class="btn">✓ Guardar</button>
+                            <button type="submit" class="btn">{% icono "guardar" %} Guardar</button>
                             <a href="{% url 'catalogo_carreras' %}" class="link-button">Cancelar</a>
                         </form>
                         {% if carrera.total_alumnos %}
@@ -173,21 +174,18 @@
                         {% endif %}
                     </td>
                     <td>
-                        <div class="action-group">
-                            <a href="?editar={{ carrera.id }}{% if escuela_filtro %}&escuela={{ escuela_filtro|urlencode }}{% endif %}"
-                                class="link-button" title="Cambiar nombre o escuela">✎ Editar</a>
+                        <div class="acciones-fila">
+                            <a href="?editar={{ carrera.id }}{% if escuela_filtro %}&escuela={{ escuela_filtro|urlencode }}{% endif %}" class="btn-icon btn-icon--sm" data-tooltip="Editar" aria-label="Editar {{ carrera.nombre }}" title="Cambiar nombre o escuela">{% icono "editar" %}</a>
 
                             <form method="post" action="{% url 'catalogo_carreras' %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="carrera_id" value="{{ carrera.id }}">
                                 {% if carrera.activo %}
                                 <input type="hidden" name="accion" value="bloquear">
-                                <button type="submit" class="danger-button"
-                                    title="Deja de ofrecerse al crear actividades">✕ Bloquear</button>
+                                <button type="submit" class="btn-icon btn-icon--sm btn-icon--danger" data-tooltip="Bloquear" aria-label="Bloquear {{ carrera.nombre }}" title="Deja de ofrecerse al crear actividades">{% icono "bloquear" %}</button>
                                 {% else %}
                                 <input type="hidden" name="accion" value="desbloquear">
-                                <button type="submit" class="link-button"
-                                    title="Vuelve a ofrecerse al crear actividades">✓ Desbloquear</button>
+                                <button type="submit" class="btn-icon btn-icon--sm" data-tooltip="Desbloquear" aria-label="Desbloquear {{ carrera.nombre }}" title="Vuelve a ofrecerse al crear actividades">{% icono "desbloquear" %}</button>
                                 {% endif %}
                             </form>
 
@@ -197,7 +195,7 @@
                                 {% csrf_token %}
                                 <input type="hidden" name="accion" value="eliminar">
                                 <input type="hidden" name="carrera_id" value="{{ carrera.id }}">
-                                <button type="submit" class="danger-button" title="Solo para carreras sin alumnos ni actividades">🗑 Eliminar</button>
+                                <button type="submit" class="btn-icon btn-icon--sm btn-icon--danger" data-tooltip="Eliminar" aria-label="Eliminar {{ carrera.nombre }}" title="Solo para carreras sin alumnos ni actividades">{% icono "eliminar" %}</button>
                             </form>
                             {% endif %}
                         </div>

@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-{% load static %}
+{% load static ui %}
 {% block title %}{{ titulo }}{% endblock %}
 
 {% block content %}
@@ -268,7 +268,7 @@
                 × Cancelar
             </a>
             <button type="submit" class="btn" id="btnGuardarActividad">
-                ✓ Guardar
+                {% icono "guardar" %} Guardar
             </button>
         </div>
     </form>

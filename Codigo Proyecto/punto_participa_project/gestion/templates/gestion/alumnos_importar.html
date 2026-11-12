@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-{% load static %}
+{% load static ui %}
 {% block title %}Importar alumnos{% endblock %}
 
 {% block content %}
@@ -9,6 +9,10 @@
         <span class="eyebrow">ADMINISTRACIÓN</span>
         <h1>Importar alumnos</h1>
         <p>Sincroniza la nómina de estudiantes desde un archivo .xlsx o .csv.</p>
+    </div>
+    <div class="page-title__acciones">
+        <img class="page-title__ilustracion" src="{% static 'gestion/img/encabezado/alumnos.webp' %}" alt="" width="92" height="92">
+        <p class="globo-mascota">¡Sube la nómina y yo la reviso antes de guardar!</p>
     </div>
 </div>
 

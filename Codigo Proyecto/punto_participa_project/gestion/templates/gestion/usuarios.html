@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-{% load static %}
+{% load static ui %}
 {% load formato %}
 {% block title %}Usuarios{% endblock %}
 
@@ -14,10 +14,44 @@
         <h1>Gestión de Usuarios</h1>
         <p>Administra las cuentas del sistema y sus permisos.</p>
     </div>
-    <button class="btn" id="btnNuevoUsuario" data-action="user-new">
-        + Nuevo Usuario
-    </button>
+    <div class="page-title__acciones">
+        <img class="page-title__ilustracion" src="{% static 'gestion/img/encabezado/usuarios.webp' %}" alt="" width="92" height="92">
+        <p class="globo-mascota">¡Administra quién entra y qué puede hacer!</p>
+        <button class="btn" id="btnNuevoUsuario" data-action="user-new">
+            {% icono "agregar" %} Nuevo usuario
+        </button>
+    </div>
 </div>
+
+<!-- ============================================================ -->
+<!-- BUSCADOR -->
+<!-- ============================================================ -->
+<form method="get" class="filters-bar" role="search">
+    <div class="filter-group filter-group--buscar">
+        <label for="filtro-buscar">Buscar</label>
+        <input type="search" id="filtro-buscar" name="q" value="{{ request.GET.q }}" maxlength="100"
+            placeholder="Usuario, nombre, correo o RUT">
+    </div>
+    <div class="filter-group">
+        <label for="filtro-rol">Rol</label>
+        <select name="rol" id="filtro-rol">
+            <option value="">Todos</option>
+            {% for r in roles %}
+            <option value="{{ r.nombre }}" {% if request.GET.rol == r.nombre %}selected{% endif %}>{{ r.nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label for="filtro-estado">Estado</label>
+        <select name="estado" id="filtro-estado">
+            <option value="">Todos</option>
+            <option value="activo" {% if request.GET.estado == 'activo' %}selected{% endif %}>Activo</option>
+            <option value="bloqueado" {% if request.GET.estado == 'bloqueado' %}selected{% endif %}>Bloqueado</option>
+        </select>
+    </div>
+    {% url 'usuarios' as url_limpiar %}{% acciones_filtro url_limpiar %}
+</form>
+{% chips_filtros "q=Búsqueda,rol=Rol,estado=Estado" url_limpiar %}
 
 <!-- ============================================================ -->
 <!-- TABLA DE USUARIOS -->
@@ -80,24 +114,24 @@
                     </td>
                     <td>{{ u.user.date_joined|date:"d/m/Y" }}</td>
                     <td>
-                        <div class="action-group">
-                            <button class="link-button btn-editar-usuario" data-id="{{ u.id }}"
+                        <div class="acciones-fila">
+                            <button type="button" class="btn-icon btn-icon--sm btn-editar-usuario" data-id="{{ u.id }}"
                                 data-username="{{ u.user.username }}" data-nombre="{{ u.user.first_name }}"
                                 data-email="{{ u.user.email }}" data-rol="{% if u.rol %}{{ u.rol.id }}{% endif %}"
                                 data-rut="{{ u.rut|default:'' }}" data-activo="{{ u.activo|yesno:'1,0' }}"
-                                title="Editar">✎ Editar</button>
+                                data-tooltip="Editar" aria-label="Editar {{ u.user.username }}">{% icono "editar" %}</button>
 
                             {% if u.user == request.user %}
-                            <span class="link-button" style="opacity: 0.5; cursor: not-allowed;"
-                                title="No puedes bloquearte a ti mismo">◉ Protegido</span>
+                            <span class="btn-icon btn-icon--sm" style="opacity: 0.45; cursor: not-allowed;" tabindex="0"
+                                data-tooltip="No puedes bloquearte a ti mismo" aria-label="Tu propia cuenta no se puede bloquear">{% icono "bloquear" %}</span>
                             {% elif u.activo %}
-                            <button class="danger-button btn-bloquear-usuario" data-id="{{ u.id }}"
+                            <button type="button" class="btn-icon btn-icon--sm btn-icon--danger btn-bloquear-usuario" data-id="{{ u.id }}"
                                 data-username="{{ u.user.username }}" data-accion="bloquear"
-                                title="Bloquear acceso al sistema">✕ Bloquear</button>
+                                data-tooltip="Bloquear acceso" aria-label="Bloquear a {{ u.user.username }}">{% icono "bloquear" %}</button>
                             {% else %}
-                            <button class="link-button btn-bloquear-usuario" data-id="{{ u.id }}"
+                            <button type="button" class="btn-icon btn-icon--sm btn-bloquear-usuario" data-id="{{ u.id }}"
                                 data-username="{{ u.user.username }}" data-accion="desbloquear"
-                                title="Restaurar acceso al sistema">✓ Desbloquear</button>
+                                data-tooltip="Desbloquear" aria-label="Desbloquear a {{ u.user.username }}">{% icono "desbloquear" %}</button>
                             {% endif %}
                         </div>
                     </td>
@@ -284,7 +318,7 @@
 
             <footer class="modal-footer">
                 <button type="button" class="btn secondary" data-modal-close>× Cancelar</button>
-                <button type="submit" class="btn">✓ Guardar</button>
+                <button type="submit" class="btn">{% icono "guardar" %} Guardar</button>
             </footer>
         </form>
 

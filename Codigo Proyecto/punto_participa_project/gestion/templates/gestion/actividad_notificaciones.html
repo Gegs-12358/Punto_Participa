@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-{% load static %}
+{% load static ui %}
 {% block title %}Notificaciones - {{ actividad.titulo }}{% endblock %}
 
 {% block content %}
@@ -51,11 +51,9 @@
             <option value="FALLO" {% if filtro_estado == 'FALLO' %}selected{% endif %}>Fallo</option>
         </select>
     </div>
-    <div class="filter-actions">
-        <button type="submit" class="btn">▽ Filtrar</button>
-        <a href="{% url 'notificaciones_actividad' actividad.pk %}" class="link-button">× Limpiar</a>
-    </div>
+    {% url 'notificaciones_actividad' actividad.pk as url_limpiar %}{% acciones_filtro url_limpiar %}
 </form>
+{% chips_filtros "estado=Estado" url_limpiar %}
 
 <!-- ============================================================ -->
 <!-- TABLA -->

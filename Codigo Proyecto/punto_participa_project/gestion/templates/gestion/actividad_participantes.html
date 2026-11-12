@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-{% load static %}
+{% load static ui %}
 {% load formato %}
 {% block title %}Participantes - {{ actividad.titulo }}{% endblock %}
 
@@ -58,11 +58,9 @@
                 <option value="LISTA_ESPERA" {% if filtro_estado == 'LISTA_ESPERA' %}selected{% endif %}>Lista de espera</option>
             </select>
         </div>
-        <div class="filter-actions">
-            <button type="submit" class="btn">▽ Filtrar</button>
-            <a href="{% url 'participantes_actividad' actividad.pk %}" class="link-button">× Limpiar</a>
-        </div>
+        {% url 'participantes_actividad' actividad.pk as url_limpiar %}{% acciones_filtro url_limpiar %}
     </form>
+    {% chips_filtros "estado=Estado" url_limpiar %}
 
     <div class="table-wrap">
         <table>

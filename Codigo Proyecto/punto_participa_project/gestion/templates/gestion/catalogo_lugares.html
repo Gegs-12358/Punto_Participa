@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-{% load static %}
+{% load static ui %}
 {% block title %}Lugares{% endblock %}
 
 {% block content %}
@@ -36,7 +36,7 @@
         </label>
     </div>
     <div class="filter-actions">
-        <button type="submit" class="btn" style="white-space: nowrap;">+ Agregar</button>
+        <button type="submit" class="btn" style="white-space: nowrap;">{% icono "agregar" %} Agregar</button>
     </div>
 </form>
 
@@ -76,7 +76,7 @@
                             <label for="renombrar-{{ lugar.id }}" class="visually-hidden">Nuevo nombre</label>
                             <input type="text" id="renombrar-{{ lugar.id }}" name="nombre" value="{{ lugar.nombre }}"
                                 maxlength="{{ max_nombre }}" autocomplete="off" required autofocus>
-                            <button type="submit" class="btn">✓ Guardar</button>
+                            <button type="submit" class="btn">{% icono "guardar" %} Guardar</button>
                             <a href="{% url 'catalogo_lugares' %}" class="link-button">Cancelar</a>
                         </form>
                         {% if lugar.total_actividades %}
@@ -112,20 +112,18 @@
                         {% endif %}
                     </td>
                     <td>
-                        <div class="action-group">
-                            <a href="?editar={{ lugar.id }}" class="link-button" title="Cambiar el nombre">✎ Renombrar</a>
+                        <div class="acciones-fila">
+                            <a href="?editar={{ lugar.id }}" class="btn-icon btn-icon--sm" data-tooltip="Renombrar" aria-label="Renombrar {{ lugar.nombre }}" title="Cambiar el nombre">{% icono "editar" %}</a>
 
                             <form method="post" action="{% url 'catalogo_lugares' %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="lugar_id" value="{{ lugar.id }}">
                                 {% if lugar.activo %}
                                 <input type="hidden" name="accion" value="bloquear">
-                                <button type="submit" class="danger-button"
-                                    title="Deja de ofrecerse al crear actividades">✕ Bloquear</button>
+                                <button type="submit" class="btn-icon btn-icon--sm btn-icon--danger" data-tooltip="Bloquear" aria-label="Bloquear {{ lugar.nombre }}" title="Deja de ofrecerse al crear actividades">{% icono "bloquear" %}</button>
                                 {% else %}
                                 <input type="hidden" name="accion" value="desbloquear">
-                                <button type="submit" class="link-button"
-                                    title="Vuelve a ofrecerse al crear actividades">✓ Desbloquear</button>
+                                <button type="submit" class="btn-icon btn-icon--sm" data-tooltip="Desbloquear" aria-label="Desbloquear {{ lugar.nombre }}" title="Vuelve a ofrecerse al crear actividades">{% icono "desbloquear" %}</button>
                                 {% endif %}
                             </form>
 
@@ -135,7 +133,7 @@
                                 {% csrf_token %}
                                 <input type="hidden" name="accion" value="eliminar">
                                 <input type="hidden" name="lugar_id" value="{{ lugar.id }}">
-                                <button type="submit" class="danger-button" title="Solo para lugares sin actividades">🗑 Eliminar</button>
+                                <button type="submit" class="btn-icon btn-icon--sm btn-icon--danger" data-tooltip="Eliminar" aria-label="Eliminar {{ lugar.nombre }}" title="Solo para lugares sin actividades">{% icono "eliminar" %}</button>
                             </form>
                             {% endif %}
                         </div>

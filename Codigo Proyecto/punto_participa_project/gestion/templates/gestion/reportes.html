@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-{% load static %}
+{% load static ui %}
 {% block title %}Reportes{% endblock %}
 
 {% block content %}
@@ -13,11 +13,35 @@
         <h1>Reportes</h1>
         <p>Visualiza y exporta las estadísticas de participación.</p>
     </div>
-    <div class="btn-group">
-        <a href="{% url 'exportar_reportes' 'excel' %}?{{ request.GET.urlencode }}" class="btn secondary">⇩ Excel</a>
-        <a href="{% url 'exportar_reportes' 'csv' %}?{{ request.GET.urlencode }}" class="btn secondary">⇩ CSV</a>
-        <a href="{% url 'exportar_reportes_detalle' 'excel' %}?{{ request.GET.urlencode }}" class="btn secondary">⇩ Detalle</a>
-        <button type="button" class="btn secondary" onclick="window.print()">⎙ Imprimir</button>
+    <div class="page-title__acciones">
+        <img class="page-title__ilustracion" src="{% static 'gestion/img/encabezado/reportes.webp' %}" alt="" width="92" height="92">
+        <p class="globo-mascota">¡Revisa y exporta la participación!</p>
+        <details class="menu-desplegable">
+            <summary class="btn secondary">{% icono "exportar" %} Exportar <span aria-hidden="true">▾</span></summary>
+            <div class="menu-desplegable__panel" role="menu">
+                <a role="menuitem" href="{% url 'exportar_reportes' 'excel' %}?{{ request.GET.urlencode }}">
+                    <strong>Resumen por actividad · Excel</strong>
+                    <span>Una fila por actividad, con inscritos y asistentes.</span>
+                </a>
+                <a role="menuitem" href="{% url 'exportar_reportes' 'csv' %}?{{ request.GET.urlencode }}">
+                    <strong>Resumen por actividad · CSV</strong>
+                    <span>Lo mismo, en texto plano para otros programas.</span>
+                </a>
+                <a role="menuitem" href="{% url 'exportar_reportes_detalle' 'excel' %}?{{ request.GET.urlencode }}">
+                    <strong>Detalle por escuela, carrera y jornada · Excel</strong>
+                    <span>Una fila por cada combinación, para tablas dinámicas.</span>
+                </a>
+                <a role="menuitem" href="{% url 'exportar_reportes_detalle' 'csv' %}?{{ request.GET.urlencode }}">
+                    <strong>Detalle por escuela, carrera y jornada · CSV</strong>
+                    <span>Lo mismo, en texto plano.</span>
+                </a>
+                <hr>
+                <button type="button" role="menuitem" onclick="window.print()">
+                    <strong>{% icono "imprimir" %} Imprimir esta página</strong>
+                </button>
+                <p class="menu-desplegable__nota">Todas las descargas usan los filtros aplicados.</p>
+            </div>
+        </details>
     </div>
 </div>
 
@@ -31,6 +55,15 @@
             <option value="">Todas</option>
             {% for act in actividades_opciones %}
                 <option value="{{ act.id }}" {% if actividad_seleccionada == act.id|stringformat:"s" %}selected{% endif %}>{{ act.titulo }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label for="filtro-tipo">Tipo</label>
+        <select name="tipo" id="filtro-tipo" autocomplete="off">
+            <option value="">Todos</option>
+            {% for valor, etiqueta in tipos_opciones %}
+                <option value="{{ valor }}" {% if request.GET.tipo == valor %}selected{% endif %}>{{ etiqueta }}</option>
             {% endfor %}
         </select>
     </div>
@@ -78,51 +111,13 @@
         <label for="filtro-fecha-fin">Hasta</label>
         <input type="date" id="filtro-fecha-fin" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
     </div>
-    <div class="filter-actions">
-        <button type="submit" class="btn-icon btn-icon--primary" title="Filtrar" aria-label="Filtrar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-            </svg>
-        </button>
-        <a href="{% url 'reportes' %}" class="btn-icon btn-icon--ghost" title="Limpiar filtros" aria-label="Limpiar filtros">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </a>
-    </div>
+    {% url 'reportes' as url_limpiar %}{% acciones_filtro url_limpiar %}
 </form>
 
 <!-- ============================================================ -->
 <!-- CHIPS DE FILTROS ACTIVOS -->
 <!-- ============================================================ -->
-{% if request.GET.actividad or request.GET.escuela or request.GET.carrera or request.GET.jornada or request.GET.lugar or request.GET.fecha_inicio or request.GET.fecha_fin %}
-<div class="filter-chips">
-    <span class="filter-chips-label">Filtros activos:</span>
-    {% if request.GET.actividad %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'actividad' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Actividad · quitar ×</a>
-    {% endif %}
-    {% if request.GET.escuela %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'escuela' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Escuela: {{ request.GET.escuela }} · quitar ×</a>
-    {% endif %}
-    {% if request.GET.carrera %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'carrera' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Carrera: {{ request.GET.carrera }} · quitar ×</a>
-    {% endif %}
-    {% if request.GET.jornada %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'jornada' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Jornada: {{ request.GET.jornada }} · quitar ×</a>
-    {% endif %}
-    {% if request.GET.lugar %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'lugar' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Lugar: {{ request.GET.lugar }} · quitar ×</a>
-    {% endif %}
-    {% if request.GET.fecha_inicio %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'fecha_inicio' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Desde: {{ request.GET.fecha_inicio }} · quitar ×</a>
-    {% endif %}
-    {% if request.GET.fecha_fin %}
-    <a class="filter-chip" href="?{% for k, v in request.GET.items %}{% if k != 'fecha_fin' and k != 'page_act' and k != 'page_det' %}{{ k|urlencode }}={{ v|urlencode }}&{% endif %}{% endfor %}">Hasta: {{ request.GET.fecha_fin }} · quitar ×</a>
-    {% endif %}
-    <a class="filter-chip filter-chip-clear" href="{% url 'reportes' %}">Limpiar todos</a>
-</div>
-{% endif %}
+{% chips_filtros "actividad=Actividad,tipo=Tipo,escuela=Escuela,carrera=Carrera,jornada=Jornada,lugar=Lugar,fecha_inicio=Desde,fecha_fin=Hasta" url_limpiar valores_chips %}
 
 <!-- ============================================================ -->
 <!-- DESGLOSE POR TIPO -->

@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-{% load static %}
+{% load static ui %}
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
@@ -14,7 +14,7 @@
         <p><span class="badge">▦</span> Actualizado: {% now "d/m/Y H:i" %}</p>
     </div>
     <button class="btn" id="btnNuevaActividad" data-action="activity-new">
-        + Crear Nueva Actividad
+        {% icono "agregar" %} Nueva actividad
     </button>
 </div>
 
@@ -57,10 +57,7 @@
             {% endfor %}
         </select>
     </div>
-    <div class="filter-actions">
-        <button type="submit" class="btn">Aplicar</button>
-        <a href="{% url 'dashboard' %}" class="link-button">Limpiar</a>
-    </div>
+    {% url 'dashboard' as url_limpiar %}{% acciones_filtro url_limpiar %}
 </form>
 
 <!-- ============================================================ -->
@@ -427,15 +424,11 @@
                     </td>
                     <td>{{ actividad.creado_por.username|default:"N/A" }}</td>
                     <td>
-                        <div class="action-group">
-                            <a href="{% url 'actividad_detalle' actividad.pk %}" class="link-button"
-                                title="Ver detalle">
-                                👁 Ver
-                            </a>
-                            <button class="link-button btn-editar" data-url="{% url 'editar_actividad' actividad.pk %}"
-                                aria-label="Editar {{ actividad.titulo }}">
-                                ✎ Editar
-                            </button>
+                        <div class="acciones-fila">
+                            <a href="{% url 'actividad_detalle' actividad.pk %}" class="btn-icon btn-icon--sm"
+                                data-tooltip="Ver detalle" aria-label="Ver detalle de {{ actividad.titulo }}">{% icono "ver" %}</a>
+                            <button type="button" class="btn-icon btn-icon--sm btn-editar" data-url="{% url 'editar_actividad' actividad.pk %}"
+                                data-tooltip="Editar" aria-label="Editar {{ actividad.titulo }}">{% icono "editar" %}</button>
                         </div>
                     </td>
                 </tr>

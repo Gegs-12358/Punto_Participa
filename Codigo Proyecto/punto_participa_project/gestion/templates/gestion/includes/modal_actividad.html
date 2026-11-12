@@ -1,4 +1,4 @@
-{% load static %}
+{% load static ui %}
 
 <!-- ============================================================ -->
 <!-- MODAL PARA CREAR/EDITAR ACTIVIDAD -->
@@ -81,7 +81,7 @@
             <button type="button"
                     class="btn danger d-none"
                     id="btnEliminarActividad">
-                ✕ Eliminar actividad
+                {% icono "eliminar" %} Eliminar actividad
             </button>
             <button type="button"
                     class="btn secondary"

@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-{% load static %}
+{% load static ui %}
 {% block title %}Escuelas{% endblock %}
 
 {% block content %}
@@ -35,7 +35,7 @@
             title="Color de la escuela en los gráficos" style="width: 56px; padding: 2px;">
     </div>
     <div class="filter-actions">
-        <button type="submit" class="btn" style="white-space: nowrap;">+ Agregar</button>
+        <button type="submit" class="btn" style="white-space: nowrap;">{% icono "agregar" %} Agregar</button>
     </div>
 </form>
 
@@ -79,7 +79,7 @@
                             <label for="renombrar-{{ escuela.id }}" class="visually-hidden">Nuevo nombre</label>
                             <input type="text" id="renombrar-{{ escuela.id }}" name="nombre" value="{{ escuela.nombre }}"
                                 maxlength="{{ max_nombre }}" autocomplete="off" required autofocus>
-                            <button type="submit" class="btn">✓ Guardar</button>
+                            <button type="submit" class="btn">{% icono "guardar" %} Guardar</button>
                             <a href="{% url 'catalogo_escuelas' %}" class="link-button">Cancelar</a>
                         </form>
                         {% if escuela.total_carreras %}
@@ -107,20 +107,18 @@
                         {% endif %}
                     </td>
                     <td>
-                        <div class="action-group">
-                            <a href="?editar={{ escuela.id }}" class="link-button" title="Cambiar el nombre o el color">✎ Editar</a>
+                        <div class="acciones-fila">
+                            <a href="?editar={{ escuela.id }}" class="btn-icon btn-icon--sm" data-tooltip="Editar" aria-label="Editar {{ escuela.nombre }}" title="Cambiar el nombre o el color">{% icono "editar" %}</a>
 
                             <form method="post" action="{% url 'catalogo_escuelas' %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="escuela_id" value="{{ escuela.id }}">
                                 {% if escuela.activo %}
                                 <input type="hidden" name="accion" value="bloquear">
-                                <button type="submit" class="danger-button"
-                                    title="Sus carreras dejan de ofrecerse al crear actividades">✕ Bloquear</button>
+                                <button type="submit" class="btn-icon btn-icon--sm btn-icon--danger" data-tooltip="Bloquear" aria-label="Bloquear {{ escuela.nombre }}" title="Sus carreras dejan de ofrecerse al crear actividades">{% icono "bloquear" %}</button>
                                 {% else %}
                                 <input type="hidden" name="accion" value="desbloquear">
-                                <button type="submit" class="link-button"
-                                    title="Sus carreras vuelven a ofrecerse">✓ Desbloquear</button>
+                                <button type="submit" class="btn-icon btn-icon--sm" data-tooltip="Desbloquear" aria-label="Desbloquear {{ escuela.nombre }}" title="Sus carreras vuelven a ofrecerse">{% icono "desbloquear" %}</button>
                                 {% endif %}
                             </form>
 
@@ -130,7 +128,7 @@
                                 {% csrf_token %}
                                 <input type="hidden" name="accion" value="eliminar">
                                 <input type="hidden" name="escuela_id" value="{{ escuela.id }}">
-                                <button type="submit" class="danger-button" title="Solo para escuelas sin carreras">🗑 Eliminar</button>
+                                <button type="submit" class="btn-icon btn-icon--sm btn-icon--danger" data-tooltip="Eliminar" aria-label="Eliminar {{ escuela.nombre }}" title="Solo para escuelas sin carreras">{% icono "eliminar" %}</button>
                             </form>
                             {% endif %}
                         </div>

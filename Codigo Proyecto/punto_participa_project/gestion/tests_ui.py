@@ -71,3 +71,44 @@ class ActividadesUnificadaTests(BaseSistemaTestCase):
         self.assertContains(resp, 'btn-editar')          # el JavaScript del modal sigue funcionando
         self.assertNotContains(resp, '👁')
         self.assertContains(resp, 'img/encabezado/actividad.webp')
+
+
+class PantallasUnificadasTests(BaseSistemaTestCase):
+    """P-UI parte 2: Reportes, Usuarios, Auditoría, Catálogos, Inicio y Detalle."""
+
+    def setUp(self):
+        self.login_as(self.admin)
+
+    def test_buscador_y_filtros_de_usuarios(self):
+        url = reverse('usuarios')
+        nombres = lambda **f: {u.user.username for u in self.client.get(url, f).context['usuarios']}
+        self.assertEqual(nombres(q='registrador'), {'registrador_integral'})
+        self.assertEqual(nombres(rol='Creador de Evento'), {'creador_integral', 'creador_otro'})
+        self.assertNotIn('admin_integral', nombres(estado='bloqueado'))
+        resp = self.client.get(url, {'q': "<script>x</script>' OR 1=1"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, '<script>x</script>')
+
+    def test_menu_exportar_explica_cada_archivo(self):
+        resp = self.client.get(reverse('reportes'), {'tipo': 'TALLER'})
+        self.assertContains(resp, 'Resumen por actividad · Excel')
+        self.assertContains(resp, 'Detalle por escuela, carrera y jornada · CSV')
+        self.assertContains(resp, 'Todas las descargas usan los filtros aplicados.')
+        self.assertContains(resp, reverse('exportar_reportes_detalle', args=['csv']) + '?tipo=TALLER')
+
+    def test_ninguna_pantalla_usa_emojis_ni_simbolos_como_iconos(self):
+        paginas = [reverse(n) for n in ('dashboard', 'lista_actividades', 'reportes', 'usuarios',
+                                        'auditoria', 'catalogo_lugares', 'catalogo_escuelas',
+                                        'catalogo_carreras', 'escaneo')]
+        paginas += [reverse('actividad_detalle', args=[self.actividad.pk]),
+                    reverse('participantes_actividad', args=[self.actividad.pk])]
+        for url in paginas:
+            with self.subTest(url=url):
+                html = self.client.get(url).content.decode()
+                for simbolo in ('👁', '👥', '✎', '🗑', '⇩', '⎙', '▽ Filtrar', '× Limpiar</a>'):
+                    self.assertNotIn(simbolo, html)
+
+    def test_filtros_de_auditoria_con_chips(self):
+        resp = self.client.get(reverse('auditoria'), {'usuario': 'admin'})
+        self.assertContains(resp, 'Usuario: admin')
+        self.assertContains(resp, 'data-tooltip="Filtrar"')

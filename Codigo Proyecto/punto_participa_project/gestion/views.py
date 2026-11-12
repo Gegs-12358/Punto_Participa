@@ -363,6 +363,7 @@ def _aplicar_filtros_reporte(request, act_qs=None, asis_qs=None):
     carrera = request.GET.get('carrera', '')
     jornada = request.GET.get('jornada', '')
     lugar = request.GET.get('lugar', '')
+    tipo = request.GET.get('tipo', '')
     fecha_inicio = fecha_o_none(request.GET.get('fecha_inicio'))
     fecha_fin = fecha_o_none(request.GET.get('fecha_fin'))
 
@@ -377,6 +378,8 @@ def _aplicar_filtros_reporte(request, act_qs=None, asis_qs=None):
         act_qs = act_qs.filter(carreras__escuela=escuela).distinct()
     if lugar:
         act_qs = act_qs.filter(lugar=lugar)
+    if tipo in dict(Actividad.TIPO_CHOICES):          # historia 005; valores desconocidos se ignoran
+        act_qs = act_qs.filter(tipo=tipo)
     if fecha_inicio:
         act_qs = act_qs.filter(fecha_inicio__date__gte=fecha_inicio)
     if fecha_fin:
@@ -818,6 +821,9 @@ def reportes(request):
         'carreras_opciones': Carrera.objects.all(),
         'jornadas_opciones': Jornada.objects.all(),
         'lugares_opciones': _lugares_para_filtro(),
+        'tipos_opciones': Actividad.TIPO_CHOICES,
+        # Para que el chip del filtro Actividad muestre el nombre y no el número
+        'valores_chips': {'actividad': {str(a.id): a.titulo for a in actividades_opciones}},
         'actividad_seleccionada': actividad_id,
         'total_inscritos_filtrado': total_inscritos,
         'total_asistentes_filtrado': total_asistentes,
@@ -985,8 +991,18 @@ def exportar_reportes_detalle(request, formato):
 @role_required('Administrador')
 def usuarios(request):
     from .utils import paginar
+    qs = UsuarioSistema.objects.select_related('user', 'rol').order_by('-id')
+    buscar = limpiar_texto(request.GET.get('q', ''))[:100]
+    if buscar:
+        qs = qs.filter(Q(user__username__icontains=buscar) | Q(user__first_name__icontains=buscar)
+                       | Q(user__email__icontains=buscar)
+                       | Q(rut__icontains=normalizar_documento(buscar) or buscar))
+    if request.GET.get('rol'):
+        qs = qs.filter(rol__nombre=request.GET['rol'])
+    if request.GET.get('estado') in ('activo', 'bloqueado'):
+        qs = qs.filter(activo=request.GET['estado'] == 'activo')
     return render(request, 'gestion/usuarios.html', {
-        'usuarios': paginar(request, UsuarioSistema.objects.all().order_by('-id')),
+        'usuarios': paginar(request, qs),
         'logs': LogAuditoria.objects.all().order_by('-fecha_registro')[:10],
         'roles': Rol.objects.all(),
     })
