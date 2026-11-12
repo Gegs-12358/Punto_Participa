@@ -253,7 +253,49 @@ class Actividad(models.Model):
 
 # ==================== MODELOS TRANSACCIONALES ====================
 
-class Inscripcion(models.Model):
+def foto_academica(alumno):
+    """
+    Carrera, escuela y jornada que tiene el alumno AHORA, como textos.
+    La escuela se busca en el catálogo de carreras (sin distinguir mayúsculas);
+    si la carrera no está en el catálogo, queda vacía.
+    """
+    carrera = limpiar_texto(alumno.carrera or '')[:100]
+    jornada = limpiar_texto(alumno.jornada or '')[:20]
+    escuela = ''
+    if carrera:
+        escuela = (Carrera.objects.filter(nombre__iexact=carrera)
+                   .values_list('escuela', flat=True).first() or '')
+    return {'carrera': carrera, 'escuela': escuela[:100], 'jornada': jornada}
+
+
+class FotoAcademica(models.Model):
+    """
+    "Foto" de la carrera, escuela y jornada del alumno en el momento de inscribirse
+    o de registrar su asistencia. Los reportes usan estos campos, así el historial no
+    cambia si después el alumno se cambia de carrera, llega una nómina nueva o se
+    renombra una carrera.
+
+    Se llenan solos al crear el registro (objects.create pasa por save()).
+    OJO: bulk_create() NO pasa por save(); quien lo use debe llenarlos con foto_academica().
+    """
+    carrera = models.CharField(max_length=100, blank=True, default='',
+                               verbose_name='Carrera (en ese momento)')
+    escuela = models.CharField(max_length=100, blank=True, default='',
+                               verbose_name='Escuela (en ese momento)')
+    jornada = models.CharField(max_length=20, blank=True, default='',
+                               verbose_name='Jornada (en ese momento)')
+
+    class Meta:
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        if self._state.adding and self.alumno_id and not (self.carrera or self.jornada):
+            for campo, valor in foto_academica(self.alumno).items():
+                setattr(self, campo, valor)
+        super().save(*args, **kwargs)
+
+
+class Inscripcion(FotoAcademica):
     ESTADO_CHOICES = [
         ('CONFIRMADA', 'Confirmada'),
         ('CANCELADA', 'Cancelada'),
@@ -275,7 +317,7 @@ class Inscripcion(models.Model):
         return f"{self.alumno} - {self.actividad}"
 
 
-class Asistencia(models.Model):
+class Asistencia(FotoAcademica):
     METODO_CHOICES = [('RUT', 'RUT'), ('QR', 'Código QR'), ('CODIGO', 'Código de barras')]
 
     actividad = models.ForeignKey(

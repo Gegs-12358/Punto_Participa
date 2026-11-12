@@ -33,8 +33,15 @@
         <p style="margin: 0;">
             Vas a cambiar <strong>"{{ confirmacion.carrera.nombre }}"</strong> por
             <strong>"{{ confirmacion.nuevo_nombre }}"</strong>.
-            Esta carrera tiene <strong>{{ confirmacion.alumnos }} alumno{{ confirmacion.alumnos|pluralize }}</strong>
-            y {{ confirmacion.actividades }} actividad{{ confirmacion.actividades|pluralize:"es" }}.
+            Esta carrera tiene <strong>{{ confirmacion.alumnos }} alumno{{ confirmacion.alumnos|pluralize }}</strong>,
+            {{ confirmacion.actividades }} actividad{{ confirmacion.actividades|pluralize:"es" }}
+            y {{ confirmacion.registros }} registro{{ confirmacion.registros|pluralize }} de participación
+            (inscripciones y asistencias).
+        </p>
+        <p style="margin: 6px 0 0;">
+            Si es <strong>la misma carrera</strong> con el nombre mal escrito, se corrige en todas partes,
+            también en los reportes. Si es <strong>otra carrera</strong>, crea la nueva y el historial
+            de la antigua queda como está.
         </p>
     </div>
 
@@ -47,7 +54,7 @@
             <input type="hidden" name="escuela" value="{{ confirmacion.nueva_escuela }}">
             <input type="hidden" name="confirmado" value="1">
             <button type="submit" class="btn"
-                title="Se corrige el nombre en la carrera y en sus {{ confirmacion.alumnos }} alumnos">
+                title="Se corrige el nombre en la carrera, sus alumnos y su historial de participación">
                 {% icono "guardar" %} Es la misma: corregir el nombre en todas partes
             </button>
         </form>

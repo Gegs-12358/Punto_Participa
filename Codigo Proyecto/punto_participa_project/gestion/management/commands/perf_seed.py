@@ -227,6 +227,11 @@ class Command(BaseCommand):
                             alumno=alumno,
                             metodo_ingreso="RUT",
                             registrado_por=creador,
+                            # bulk_create no pasa por save(): la foto
+                            # académica se llena aquí.
+                            carrera=carrera.nombre,
+                            escuela=carrera.escuela or "",
+                            jornada=jornada.nombre,
                         )
                     )
 

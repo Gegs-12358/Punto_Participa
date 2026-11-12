@@ -104,6 +104,7 @@ class CarreraAdmin(admin.ModelAdmin):
     search_fields = ('nombre', 'escuela')
     ordering = ('escuela', 'nombre')
 
+
 # ============================================================
 # ADMIN: ESCUELA
 # ============================================================
@@ -115,6 +116,7 @@ class EscuelaAdmin(admin.ModelAdmin):
     search_fields = ('nombre',)
     ordering = ('nombre',)
 
+
 # ============================================================
 # ADMIN: LUGAR
 # ============================================================
@@ -125,7 +127,8 @@ class LugarAdmin(admin.ModelAdmin):
     list_filter = ('activo', 'pide_numero')
     search_fields = ('nombre',)
     ordering = ('nombre',)
-    
+
+
 # ============================================================
 # ADMIN: JORNADA
 # ============================================================
@@ -197,12 +200,14 @@ class ActividadAdmin(admin.ModelAdmin):
 
 @admin.register(Inscripcion)
 class InscripcionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'actividad', 'alumno', 'fecha_inscripcion', 'estado')
-    list_filter = ('estado', 'fecha_inscripcion')
+    list_display = ('id', 'actividad', 'alumno', 'carrera', 'jornada', 'fecha_inscripcion', 'estado')
+    list_filter = ('estado', 'fecha_inscripcion', 'escuela', 'jornada')
     search_fields = ('alumno__rut', 'alumno__nombres', 'alumno__apellidos', 'actividad__titulo')
     list_select_related = ('actividad', 'alumno')
     ordering = ('-fecha_inscripcion',)
     date_hierarchy = 'fecha_inscripcion'
+    # La foto académica es historia: no se edita a mano.
+    readonly_fields = ('carrera', 'escuela', 'jornada')
 
 
 # ============================================================
@@ -211,13 +216,14 @@ class InscripcionAdmin(admin.ModelAdmin):
 
 @admin.register(Asistencia)
 class AsistenciaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'actividad', 'alumno', 'metodo_ingreso', 'fecha_ingreso', 'registrado_por')
-    list_filter = ('metodo_ingreso', 'fecha_ingreso')
+    list_display = ('id', 'actividad', 'alumno', 'carrera', 'jornada', 'metodo_ingreso', 'fecha_ingreso',
+                    'registrado_por')
+    list_filter = ('metodo_ingreso', 'fecha_ingreso', 'escuela', 'jornada')
     search_fields = ('alumno__rut', 'alumno__nombres', 'alumno__apellidos', 'actividad__titulo')
     list_select_related = ('actividad', 'alumno', 'registrado_por')
     ordering = ('-fecha_ingreso',)
     date_hierarchy = 'fecha_ingreso'
-    readonly_fields = ('fecha_ingreso',)
+    readonly_fields = ('fecha_ingreso', 'carrera', 'escuela', 'jornada')
 
 
 # ============================================================

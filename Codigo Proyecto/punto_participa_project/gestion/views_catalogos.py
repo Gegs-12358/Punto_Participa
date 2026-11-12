@@ -15,13 +15,15 @@ Lugares (/catalogos/lugares/):
     número de la sala ("1203"), así el desplegable no necesita una opción por sala.
 
 Escuelas (/catalogos/escuelas/):
-  - Renombrar actualiza también sus carreras (Carrera.escuela guarda el nombre).
+  - Renombrar actualiza también sus carreras (Carrera.escuela guarda el nombre) y la
+    escuela guardada en inscripciones y asistencias (renombrar = corregir).
   - Cada escuela tiene un color, que es el que usan los gráficos del dashboard y reportes.
   - Bloquear una escuela deja de ofrecer sus carreras al crear actividades.
 
 Carreras (/catalogos/carreras/):
   - Renombrar es para CORREGIR el nombre de la misma carrera: actualiza también a los
-    alumnos, y si hay alumnos pide confirmación antes de hacerlo.
+    alumnos y la carrera guardada en inscripciones y asistencias. Si hay alumnos o
+    historial, pide confirmación antes de hacerlo.
   - Si es una carrera DISTINTA (cambio de malla, fusión), se usa "crear nueva y bloquear
     la antigua": alumnos y actividades antiguas conservan su carrera y el historial
     no cambia.
@@ -36,7 +38,7 @@ from django.db.models import Count, IntegerField, OuterRef, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import redirect, render
 
-from .models import Actividad, Alumno, Carrera, Escuela, Lugar
+from .models import Actividad, Alumno, Asistencia, Carrera, Escuela, Inscripcion, Lugar
 from .utils import limpiar_texto
 from .views import COLORES_FALLBACK, COLOR_SIN_ESCUELA, registrar_log, role_required
 
@@ -272,6 +274,9 @@ def _procesar_escuela(request):
         with transaction.atomic():
             if cambia_nombre:
                 actualizadas = Carrera.objects.filter(escuela=anterior).update(escuela=nuevo)
+                # Renombrar es corregir: el historial de participación también se corrige.
+                for Modelo in (Inscripcion, Asistencia):
+                    Modelo.objects.filter(escuela=anterior).update(escuela=nuevo)
                 escuela.nombre = nuevo
             if cambia_color:
                 escuela.color = color
@@ -430,17 +435,24 @@ def _editar_carrera(request, carrera, nuevo, escuela):
             messages.error(request, error)
             return None
 
-    alumnos = Alumno.objects.filter(carrera=carrera.nombre).count() if cambia_nombre else 0
-    if alumnos and request.POST.get('confirmado') != '1':
+    alumnos = registros = 0
+    if cambia_nombre:
+        alumnos = Alumno.objects.filter(carrera=carrera.nombre).count()
+        registros = _registros_historial(carrera.nombre)
+    if (alumnos or registros) and request.POST.get('confirmado') != '1':
         return {
             'carrera': carrera, 'nuevo_nombre': nuevo, 'nueva_escuela': escuela,
-            'alumnos': alumnos, 'actividades': carrera.actividades.count(),
+            'alumnos': alumnos, 'registros': registros, 'actividades': carrera.actividades.count(),
         }
 
     anterior_nombre, anterior_escuela = carrera.nombre, carrera.escuela
     with transaction.atomic():
         if cambia_nombre:
             Alumno.objects.filter(carrera=anterior_nombre).update(carrera=nuevo)
+        # Editar es corregir: la "foto" guardada en inscripciones y asistencias se
+        # corrige igual, para que los reportes no muestren la carrera con dos nombres.
+        for Modelo in (Inscripcion, Asistencia):
+            Modelo.objects.filter(carrera=anterior_nombre).update(carrera=nuevo, escuela=escuela)
         carrera.nombre, carrera.escuela = nuevo, escuela
         carrera.save(update_fields=['nombre', 'escuela'])
 
@@ -461,6 +473,12 @@ def _editar_carrera(request, carrera, nuevo, escuela):
         mensaje += ' Las actividades siguen el cambio solas.'
     messages.success(request, mensaje)
     return None
+
+
+def _registros_historial(nombre_carrera):
+    """Inscripciones y asistencias guardadas con esta carrera (la "foto" del momento)."""
+    return (Inscripcion.objects.filter(carrera=nombre_carrera).count()
+            + Asistencia.objects.filter(carrera=nombre_carrera).count())
 
 
 def _reemplazar_carrera(request, carrera, nuevo, escuela):
