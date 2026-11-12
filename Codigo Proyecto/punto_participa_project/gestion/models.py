@@ -1,3 +1,4 @@
+from django.core.validators import RegexValidator
 from django.db import models
 from django.contrib.auth.models import User
 from .utils import limpiar_texto, normalizar_documento
@@ -88,6 +89,7 @@ class Alumno(models.Model):
         self.rut = normalizar_documento(self.rut) or None  # '' -> None (evita choque de unique)
         super().save(*args, **kwargs)
 
+
 class Escuela(models.Model):
     """
     Catálogo de escuelas. Carrera.escuela guarda el NOMBRE de la escuela (texto), que es
@@ -96,6 +98,12 @@ class Escuela(models.Model):
     """
     nombre = models.CharField(max_length=100, unique=True)
     activo = models.BooleanField(default=True, db_index=True)
+    # Color de la escuela en los gráficos ("#307FE2"). Vacío: se usa el color oficial
+    # conocido por nombre (views.COLOR_POR_ESCUELA) o gris.
+    color = models.CharField(
+        max_length=7, blank=True, default='',
+        validators=[RegexValidator(r'^#[0-9A-Fa-f]{6}$', 'Usa un color como #307FE2.')],
+    )
 
     class Meta:
         verbose_name = 'Escuela'
@@ -104,7 +112,8 @@ class Escuela(models.Model):
 
     def __str__(self):
         return self.nombre
-    
+
+
 class Carrera(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
     escuela = models.CharField(max_length=100, blank=True, null=True)
@@ -131,7 +140,7 @@ class Jornada(models.Model):
     def __str__(self):
         return self.nombre
 
-    
+
 class Lugar(models.Model):
     """
     Catálogo de lugares donde se realizan las actividades.
@@ -143,7 +152,7 @@ class Lugar(models.Model):
     """
     nombre = models.CharField(max_length=200, unique=True)
     activo = models.BooleanField(default=True, db_index=True)
-        # Si está marcado (por ejemplo "Sala"), al crear la actividad se pide el número
+    # Si está marcado (por ejemplo "Sala"), al crear la actividad se pide el número
     # de la sala, que se guarda aparte en Actividad.lugar_numero.
     pide_numero = models.BooleanField(default=False)
 
@@ -154,6 +163,7 @@ class Lugar(models.Model):
 
     def __str__(self):
         return self.nombre
+
 
 class Actividad(models.Model):
     TIPO_CHOICES = [('MASIVA', 'Masiva'), ('TALLER', 'Taller')]
@@ -167,7 +177,7 @@ class Actividad(models.Model):
     descripcion = models.TextField()
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
     lugar = models.CharField(max_length=200)
-        # Número de sala cuando el lugar lo pide ("102", "1203"). Vacío en los demás lugares.
+    # Número de sala cuando el lugar lo pide ("102", "1203"). Vacío en los demás lugares.
     lugar_numero = models.CharField(max_length=10, blank=True, default='')
     imagen = models.ImageField(upload_to='actividades/', null=True, blank=True)
     cupos_totales = models.IntegerField(null=True, blank=True)
@@ -195,11 +205,12 @@ class Actividad(models.Model):
     # ============================================================
     # [REFACTOR] Propiedades y métodos de negocio
     # ============================================================
+
     @property
     def lugar_completo(self):
         """Lugar tal como se muestra: "Sala 102", o solo "Auditorio Principal"."""
         return f'{self.lugar} {self.lugar_numero}'.strip()
-    
+
     @property
     def esta_activa(self):
         return self.estado == 'ACTIVA'

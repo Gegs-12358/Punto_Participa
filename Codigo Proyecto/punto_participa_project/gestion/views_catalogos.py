@@ -16,6 +16,7 @@ Lugares (/catalogos/lugares/):
 
 Escuelas (/catalogos/escuelas/):
   - Renombrar actualiza también sus carreras (Carrera.escuela guarda el nombre).
+  - Cada escuela tiene un color, que es el que usan los gráficos del dashboard y reportes.
   - Bloquear una escuela deja de ofrecer sus carreras al crear actividades.
 
 Carreras (/catalogos/carreras/):
@@ -26,6 +27,8 @@ Carreras (/catalogos/carreras/):
     no cambia.
   - Las actividades guardan un enlace a la carrera, así que siguen el cambio de nombre solas.
 """
+import re
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
@@ -35,7 +38,7 @@ from django.shortcuts import redirect, render
 
 from .models import Actividad, Alumno, Carrera, Escuela, Lugar
 from .utils import limpiar_texto
-from .views import registrar_log, role_required
+from .views import COLORES_FALLBACK, COLOR_SIN_ESCUELA, registrar_log, role_required
 
 MAX_NOMBRE = Lugar._meta.get_field('nombre').max_length
 
@@ -73,6 +76,15 @@ def _obj_o_none(modelo, valor):
         return modelo.objects.get(pk=int(valor))
     except (TypeError, ValueError, modelo.DoesNotExist):
         return None
+
+
+PATRON_COLOR = re.compile(r'^#[0-9A-Fa-f]{6}$')
+
+
+def _color_o_none(valor):
+    """'#307fe2' -> '#307FE2'; cualquier otra cosa -> None."""
+    valor = (valor or '').strip()
+    return valor.upper() if PATRON_COLOR.match(valor) else None
 
 
 def _id_o_none(valor):
@@ -210,8 +222,13 @@ def catalogo_escuelas(request):
     escuelas = Escuela.objects.annotate(
         total_carreras=_subconsulta_conteo(Carrera, 'escuela'),
     ).order_by('-activo', 'nombre')
+    usados = {e.color for e in escuelas}
+    sugerido = next((c for c in COLORES_FALLBACK if c not in usados and c != COLOR_SIN_ESCUELA),
+                    COLORES_FALLBACK[0])
     return render(request, 'gestion/catalogo_escuelas.html', {
         'escuelas': escuelas,
+        'color_sugerido': sugerido,
+        'color_sin_escuela': COLOR_SIN_ESCUELA,
         'editar_id': _id_o_none(request.GET.get('editar')),
         'max_nombre': Escuela._meta.get_field('nombre').max_length,
         'pestana': 'escuelas',
@@ -227,7 +244,7 @@ def _procesar_escuela(request):
         if error:
             messages.error(request, error)
             return
-        escuela = Escuela.objects.create(nombre=nombre)
+        escuela = Escuela.objects.create(nombre=nombre, color=_color_o_none(request.POST.get('color')) or '')
         registrar_log(request, 'Catálogos', 'Crear escuela', f'Escuela "{nombre}" agregada.',
                       'Escuela', escuela.id, nombre)
         messages.success(request, f'Escuela "{nombre}" agregada.')
@@ -238,25 +255,40 @@ def _procesar_escuela(request):
         messages.error(request, 'La escuela no existe.')
         return
 
-    if accion == 'renombrar':
+    if accion == 'renombrar':           # editar nombre y/o color
         nuevo = _limpiar_nombre(request.POST.get('nombre'))
-        if nuevo == escuela.nombre:
+        color = _color_o_none(request.POST.get('color'))
+        cambia_nombre = nuevo != escuela.nombre
+        cambia_color = color is not None and color != escuela.color
+        if not (cambia_nombre or cambia_color):
             return
-        error = _validar_nombre(Escuela, nuevo, 'una escuela', excluir_pk=escuela.pk)
-        if error:
-            messages.error(request, error)
-            return
-        anterior = escuela.nombre
+        if cambia_nombre:
+            error = _validar_nombre(Escuela, nuevo, 'una escuela', excluir_pk=escuela.pk)
+            if error:
+                messages.error(request, error)
+                return
+        anterior, color_anterior = escuela.nombre, escuela.color
+        actualizadas = 0
         with transaction.atomic():
-            actualizadas = Carrera.objects.filter(escuela=anterior).update(escuela=nuevo)
-            escuela.nombre = nuevo
-            escuela.save(update_fields=['nombre'])
-        registrar_log(request, 'Catálogos', 'Renombrar escuela',
-                      f'"{anterior}" ahora se llama "{nuevo}" ({actualizadas} carreras actualizadas).',
-                      'Escuela', escuela.id, nuevo,
-                      cambios_json={'nombre': {'antes': anterior, 'despues': nuevo}})
-        messages.success(request, f'"{anterior}" ahora se llama "{nuevo}". '
-                                  f'Se actualizaron {actualizadas} carreras.')
+            if cambia_nombre:
+                actualizadas = Carrera.objects.filter(escuela=anterior).update(escuela=nuevo)
+                escuela.nombre = nuevo
+            if cambia_color:
+                escuela.color = color
+            escuela.save(update_fields=['nombre', 'color'])
+
+        cambios = {}
+        partes = []
+        if cambia_nombre:
+            cambios['nombre'] = {'antes': anterior, 'despues': nuevo}
+            partes.append(f'"{anterior}" ahora se llama "{nuevo}" ({actualizadas} carreras actualizadas)')
+        if cambia_color:
+            cambios['color'] = {'antes': color_anterior, 'despues': color}
+            partes.append(f'color {color}')
+        registrar_log(request, 'Catálogos', 'Renombrar escuela' if cambia_nombre else 'Cambiar color de escuela',
+                      '; '.join(partes) + '.', 'Escuela', escuela.id, escuela.nombre, cambios_json=cambios)
+        messages.success(request, f'Escuela "{escuela.nombre}" actualizada.' if not cambia_nombre else
+                         f'"{anterior}" ahora se llama "{nuevo}". Se actualizaron {actualizadas} carreras.')
 
     elif accion in ('bloquear', 'desbloquear'):
         _cambiar_activo(request, escuela, accion == 'desbloquear', 'escuela', 'a')

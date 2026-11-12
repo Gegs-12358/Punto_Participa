@@ -25,6 +25,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from gestion.utils import normalizar_documento
+from gestion.views import COLOR_POR_ESCUELA
 
 from gestion.models import (
     Escuela,
@@ -381,7 +382,8 @@ class Command(BaseCommand):
     def _crear_carreras(self):
         carreras = []
         for escuela, nombres in CARRERAS_POR_ESCUELA.items():
-            Escuela.objects.get_or_create(nombre=escuela)
+            Escuela.objects.get_or_create(nombre=escuela,
+                                          defaults={'color': COLOR_POR_ESCUELA.get(escuela, '')})
             for nombre in nombres:
                 carrera, created = Carrera.objects.get_or_create(
                     nombre=nombre,

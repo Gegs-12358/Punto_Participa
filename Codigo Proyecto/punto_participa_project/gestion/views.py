@@ -42,7 +42,7 @@ from django.views.decorators.debug import sensitive_post_parameters
 from .decorators import role_required
 from .forms import ActividadForm
 from .models import (
-    Actividad, Alumno, Asistencia, Carrera, Inscripcion, Jornada,Lugar,
+    Actividad, Alumno, Asistencia, Carrera, Escuela, Inscripcion, Jornada, Lugar,
     LogAuditoria, NotificacionCorreo, Rol, UsuarioSistema,
 )
 # [REFACTOR Opción B] Permisos centralizados
@@ -50,7 +50,10 @@ from .permissions import ( ROLES_VALIDOS, get_perfil, puede_gestionar_actividad,
 from .utils import buscar_alumno_por_documento, formatear_rut, normalizar_documento
 
 
-# ==================== COLORES OFICIALES DUOC UC ====================
+# ==================== COLORES DE LAS ESCUELAS ====================
+# El color de cada escuela se elige en Catálogos > Escuelas. Esta lista de colores
+# oficiales web de Duoc UC se usa para llenar el catálogo la primera vez y como respaldo
+# para escuelas sin color.
 COLOR_POR_ESCUELA = {
     'Escuela de Administración y Negocios': '#AC4FC6',
     'Escuela de Administración y Finanzas': '#AC4FC6',
@@ -73,11 +76,25 @@ COLORES_FALLBACK = [
 ]
 
 
-def color_para_escuela(escuela):
-    """Devuelve el color oficial web de una escuela, o gris neutro si no está mapeada."""
+COLOR_SIN_ESCUELA = '#666666'
+
+
+def colores_escuelas():
+    """{nombre de escuela: color} según el catálogo (una sola consulta)."""
+    return dict(Escuela.objects.exclude(color='').values_list('nombre', 'color'))
+
+
+def color_para_escuela(escuela, colores=None):
+    """Color de la escuela: el del catálogo, el oficial conocido o gris.
+
+    En ciclos, pasa `colores=colores_escuelas()` para no consultar la BBDD cada vez.
+    """
     if not escuela:
-        return '#666666'
-    return COLOR_POR_ESCUELA.get(escuela.strip(), '#666666')
+        return COLOR_SIN_ESCUELA
+    nombre = escuela.strip()
+    if colores is None:
+        colores = colores_escuelas()
+    return colores.get(nombre) or COLOR_POR_ESCUELA.get(nombre, COLOR_SIN_ESCUELA)
 
 
 # ============================================================
@@ -152,10 +169,11 @@ def _colores_por_carrera(items, carreras_cache):
     Uso: gráficos de dona por carrera.
     """
     colores = []
+    mapa = colores_escuelas()
     for i in items:
         nombre = (i['alumno__carrera'] or '').lower()
         c = carreras_cache.get(nombre)
-        colores.append(color_para_escuela(c.escuela if c else None))
+        colores.append(color_para_escuela(c.escuela if c else None, mapa))
     return colores
 
 def _filtrar_inscripciones(insc, carrera=None, jornada=None, escuela=None):
@@ -280,7 +298,8 @@ def _construir_graficos_dashboard(asis_qs, act_qs, carreras_cache, ahora):
 
     labels_escuela = [e for e, _ in escuelas_con_datos]
     data_escuela = [t for _, t in escuelas_con_datos]
-    data_colores_escuela = [color_para_escuela(e) for e in labels_escuela]
+    mapa = colores_escuelas()
+    data_colores_escuela = [color_para_escuela(e, mapa) for e in labels_escuela]
 
     return {
         'labels_barras': labels_barras,
@@ -326,11 +345,13 @@ def _aplicar_filtros_dashboard(qs_act, qs_asis, rango, tipo, carrera, jornada, a
         qs_asis = qs_asis.annotate(_j=Lower(Trim('alumno__jornada'))).filter(_j=j_norm)
     return qs_act.distinct(), qs_asis.distinct()
 
+
+# [REFACTOR] Filtros de reportes/export unificados
 def _lugares_para_filtro():
     """Todos los lugares del catálogo (también los bloqueados: hay actividades antiguas en ellos)."""
     return list(Lugar.objects.order_by('nombre').values_list('nombre', flat=True))
 
-# [REFACTOR] Filtros de reportes/export unificados
+
 def _aplicar_filtros_reporte(request, act_qs=None, asis_qs=None):
     """
     Aplica los filtros comunes de reportes/export a actividades y asistencias.
@@ -748,11 +769,12 @@ def reportes(request):
             det_carreras[carrera_n] += vals['t']
 
     # ---- Colores del detalle ----
-    data_colores_barras_detalle = [color_para_escuela(e) for e in det_escuelas.keys()]
+    mapa = colores_escuelas()
+    data_colores_barras_detalle = [color_para_escuela(e, mapa) for e in det_escuelas.keys()]
     data_colores_pastel_detalle = []
     for carrera_n in det_carreras.keys():
         c = carreras_cache.get(carrera_n.lower())
-        data_colores_pastel_detalle.append(color_para_escuela(c.escuela if c else None))
+        data_colores_pastel_detalle.append(color_para_escuela(c.escuela if c else None, mapa))
 
     actividades_opciones = (
         Actividad.objects.filter(creado_por=request.user) if (es_creador and not es_admin)
@@ -821,7 +843,6 @@ HEADERS_REPORTE_DETALLE = [
 
 
 def _construir_datos_reporte(act_qs, asis_qs, agrupar_por_escuela=False, carrera=None, jornada=None, escuela=None):
-    alumnos_ids = asis_qs.values('alumno')
     datos = []
 
     if not agrupar_por_escuela:

@@ -20,11 +20,6 @@ SILENCED_SYSTEM_CHECKS = [
     'django_ratelimit.W001',
 ]
 
-# ==================== DEBUG Y HOSTS ====================
-# DEBUG = True
-
-#ALLOWED_HOSTS = []
-
 # ==================== APLICACIONES ====================
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -154,14 +149,17 @@ if TESTING:
     }
 
 # ==================== CONFIGURACIÓN DE CORREO ====================
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Por defecto los correos se imprimen en la consola. Para enviarlos de verdad:
+# EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend en .env
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = 'Punto Participa <casicasi1723@gmail.com>'
+# Remitente de los correos. Con Gmail debe ser la misma cuenta de EMAIL_HOST_USER.
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=f'Punto Participa <{EMAIL_HOST_USER}>')
 # URL del sitio (para correos y enlaces absolutos)
 SITE_URL = config('SITE_URL', default='http://127.0.0.1:8000')
 
@@ -199,40 +197,28 @@ LOGGING = {
 }
 
 # =============================================================
-# CONFIGURACIÓN PARA PRODUCCIÓN (DESCOMENTAR AL DESPLEGAR)
+# MODO DE EJECUCIÓN Y SEGURIDAD (todo se lee desde .env)
 # =============================================================
-# ATENCIÓN: Antes de desplegar en un servidor real, debes:
-#   1. Cambiar DEBUG = False (o leerlo desde .env)
-#   2. Poner tu dominio real en ALLOWED_HOSTS
-#   3. Tener un certificado SSL configurado (HTTPS)
-#   4. Configurar las variables en el .env para producción
-# Comentar las líneas DEBUG = True y ALLOWED_HOSTS = [] de la parte de arriba.
-# =============================================================
-# === PRODUCCIÓN ===
+# Los valores por defecto sirven para trabajar en local con Docker. Para producción
+# (con dominio y HTTPS) se activan en .env; ver la sección "Solo para produccion"
+# de env.example.
+def _lista(valor):
+    """'a, b,,c' -> ['a', 'b', 'c']"""
+    return [v.strip() for v in valor.split(',') if v.strip()]
+
+
 DEBUG = config('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='midominio.com,www.midominio.com').split(',')
-"""
-# === DESCOMENTAR PARA PRODUCCIÓN (Y COMENTAR LAS LÍNEAS DE ARRIBA) ===
+ALLOWED_HOSTS = _lista(config('ALLOWED_HOSTS', default='localhost,127.0.0.1'))
+# Con HTTPS y dominio propio, Django exige declarar el origen para aceptar formularios:
+# CSRF_TRUSTED_ORIGINS=https://participa.ejemplo.cl
+CSRF_TRUSTED_ORIGINS = _lista(config('CSRF_TRUSTED_ORIGINS', default=''))
 
-# 1. Desactivar modo debug
-DEBUG = config('DEBUG', default=False, cast=bool)
-
-# 2. Dominios permitidos (cambiar por el dominio real)
-# ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='midominio.com,www.midominio.com').split(',')
-
-# 3. Seguridad SSL (requiere certificado HTTPS)
-# SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
-# SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=True, cast=bool)
-# CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=True, cast=bool)
-
-# 4. HSTS (HTTP Strict Transport Security)
-# SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=31536000, cast=int)
-# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-# SECURE_HSTS_PRELOAD = True
-
-# 5. Archivos estáticos en producción
-# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-# MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
-
-# === FIN CONFIGURACIÓN PRODUCCIÓN ===
-"""
+SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
+SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=False, cast=bool)
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)
+SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=0, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = config('SECURE_HSTS_INCLUDE_SUBDOMAINS', default=False, cast=bool)
+SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=False, cast=bool)
+# Detrás de un proxy (Nginx) que termina el HTTPS, para que Django sepa que la conexión es segura
+if config('USAR_PROXY_HTTPS', default=False, cast=bool):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

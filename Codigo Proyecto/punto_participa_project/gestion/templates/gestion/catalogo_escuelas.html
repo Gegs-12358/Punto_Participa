@@ -11,7 +11,8 @@
     <div>
         <span class="eyebrow">ADMINISTRACIÓN · CATÁLOGOS</span>
         <h1>Escuelas</h1>
-        <p>Al bloquear una escuela, sus carreras dejan de ofrecerse al crear actividades. Lo ya registrado no cambia.</p>
+        <p>El color de cada escuela es el que usan los gráficos. Al bloquear una escuela, sus carreras dejan de
+            ofrecerse al crear actividades; lo ya registrado no cambia.</p>
     </div>
 </div>
 
@@ -27,6 +28,11 @@
         <label for="nueva-escuela">Nueva escuela</label>
         <input type="text" id="nueva-escuela" name="nombre" maxlength="{{ max_nombre }}"
             placeholder="Ej.: Escuela de Salud" autocomplete="off" required>
+    </div>
+    <div class="filter-group" style="flex: 0 0 auto;">
+        <label for="nueva-escuela-color">Color</label>
+        <input type="color" id="nueva-escuela-color" name="color" value="{{ color_sugerido }}"
+            title="Color de la escuela en los gráficos" style="width: 56px; padding: 2px;">
     </div>
     <div class="filter-actions">
         <button type="submit" class="btn" style="white-space: nowrap;">+ Agregar</button>
@@ -50,6 +56,7 @@
             <caption class="visually-hidden">Listado de escuelas</caption>
             <thead>
                 <tr>
+                    <th>Color</th>
                     <th>Nombre</th>
                     <th>Carreras</th>
                     <th>Estado</th>
@@ -60,11 +67,15 @@
                 {% for escuela in escuelas %}
                 <tr>
                     {% if escuela.id == editar_id %}
-                    <td colspan="4">
+                    <td colspan="5">
                         <form method="post" class="action-group" action="{% url 'catalogo_escuelas' %}">
                             {% csrf_token %}
                             <input type="hidden" name="accion" value="renombrar">
                             <input type="hidden" name="escuela_id" value="{{ escuela.id }}">
+                            <label for="color-{{ escuela.id }}" class="visually-hidden">Color</label>
+                            <input type="color" id="color-{{ escuela.id }}" name="color"
+                                value="{{ escuela.color|default:color_sin_escuela }}" title="Color en los gráficos"
+                                style="width: 56px; padding: 2px; flex: 0 0 auto;">
                             <label for="renombrar-{{ escuela.id }}" class="visually-hidden">Nuevo nombre</label>
                             <input type="text" id="renombrar-{{ escuela.id }}" name="nombre" value="{{ escuela.nombre }}"
                                 maxlength="{{ max_nombre }}" autocomplete="off" required autofocus>
@@ -78,6 +89,10 @@
                         {% endif %}
                     </td>
                     {% else %}
+                    <td>
+                        <span title="{{ escuela.color|default:'Sin color: se muestra gris' }}"
+                            style="display: inline-block; width: 22px; height: 22px; border-radius: 6px; border: 1px solid rgba(0,0,0,.15); background: {{ escuela.color|default:color_sin_escuela }};"></span>
+                    </td>
                     <td><strong>{{ escuela.nombre }}</strong></td>
                     <td>
                         {% if escuela.total_carreras %}
@@ -93,7 +108,7 @@
                     </td>
                     <td>
                         <div class="action-group">
-                            <a href="?editar={{ escuela.id }}" class="link-button" title="Cambiar el nombre">✎ Renombrar</a>
+                            <a href="?editar={{ escuela.id }}" class="link-button" title="Cambiar el nombre o el color">✎ Editar</a>
 
                             <form method="post" action="{% url 'catalogo_escuelas' %}">
                                 {% csrf_token %}
@@ -124,7 +139,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center text-muted" style="padding: 30px;">
+                    <td colspan="5" class="text-center text-muted" style="padding: 30px;">
                         Todavía no hay escuelas. Agrega la primera arriba.
                     </td>
                 </tr>
