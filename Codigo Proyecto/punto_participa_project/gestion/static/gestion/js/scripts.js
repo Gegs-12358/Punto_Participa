@@ -689,7 +689,7 @@ document.addEventListener('submit', function (e) {
                         let mensaje = '<ul class="mb-0">';
                         const nombresCampos = {
                             titulo: 'Nombre', descripcion: 'Descripción', tipo: 'Tipo',
-                            lugar: 'Lugar',
+                            lugar: 'Lugar', lugar_numero: 'Número de sala',
                             fecha_inicio_fecha: 'Fecha Inicio',
                             fecha_inicio_hora: 'Hora Inicio',
                             fecha_fin_fecha: 'Fecha Término',

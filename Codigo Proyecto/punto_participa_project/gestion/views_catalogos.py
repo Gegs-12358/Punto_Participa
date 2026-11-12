@@ -10,6 +10,8 @@ lugares. Reglas:
   - Bloquear lo saca del desplegable de actividades nuevas, pero las actividades que ya
     lo usan lo conservan. Es la opción para un lugar que dejó de usarse.
   - Solo se puede eliminar un lugar que ninguna actividad usa.
+  - "Pide número" (por ejemplo, en "Sala") hace que el formulario de actividad pida el
+    número de la sala ("1203"), así el desplegable no necesita una opción por sala.
 Cada cambio queda en la auditoría.
 """
 from django.contrib import messages
@@ -84,8 +86,10 @@ def _procesar(request):
         if error:
             messages.error(request, error)
             return
-        lugar = Lugar.objects.create(nombre=nombre)
-        registrar_log(request, 'Catálogos', 'Crear lugar', f'Lugar "{nombre}" agregado.',
+        pide_numero = request.POST.get('pide_numero') == 'on'
+        lugar = Lugar.objects.create(nombre=nombre, pide_numero=pide_numero)
+        registrar_log(request, 'Catálogos', 'Crear lugar',
+                      f'Lugar "{nombre}" agregado{" (pide número de sala)" if pide_numero else ""}.',
                       'Lugar', lugar.id, nombre)
         messages.success(request, f'Lugar "{nombre}" agregado.')
         return
@@ -126,6 +130,17 @@ def _procesar(request):
                           'Lugar', lugar.id, lugar.nombre)
         messages.success(request, f'Lugar "{lugar.nombre}" '
                                   f'{"desbloqueado" if activo else "bloqueado"}.')
+
+    elif accion == 'pide_numero':
+        pide = request.POST.get('valor') == 'si'
+        if lugar.pide_numero != pide:
+            lugar.pide_numero = pide
+            lugar.save(update_fields=['pide_numero'])
+            registrar_log(request, 'Catálogos', 'Cambiar número de sala del lugar',
+                          f'Lugar "{lugar.nombre}": {"ahora pide" if pide else "ya no pide"} número de sala.',
+                          'Lugar', lugar.id, lugar.nombre)
+        messages.success(request, f'"{lugar.nombre}" {"ahora pide" if pide else "ya no pide"} '
+                                  f'número de sala.')
 
     elif accion == 'eliminar':
         en_uso = Actividad.objects.filter(lugar=lugar.nombre).count()

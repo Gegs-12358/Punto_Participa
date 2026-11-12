@@ -86,7 +86,7 @@
 
                 <div class="activity-detail-body">
                     <p><strong>Descripción:</strong> {{ actividad.descripcion }}</p>
-                    <p><strong>Lugar:</strong> {{ actividad.lugar }}</p>
+                    <p><strong>Lugar:</strong> {{ actividad.lugar_completo }}</p>
                     <p><strong>Fecha de inicio:</strong> {{ actividad.fecha_inicio|date:"d/m/Y H:i" }}</p>
                     <p><strong>Fecha de fin:</strong> {{ actividad.fecha_fin|date:"d/m/Y H:i" }}</p>
                     <p><strong>Creada por:</strong> {{ actividad.creado_por.username|default:"N/A" }}</p>

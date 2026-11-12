@@ -110,8 +110,8 @@ class CarreraAdmin(admin.ModelAdmin):
 
 @admin.register(Lugar)
 class LugarAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombre', 'activo')
-    list_filter = ('activo',)
+    list_display = ('id', 'nombre', 'pide_numero', 'activo')
+    list_filter = ('activo', 'pide_numero')
     search_fields = ('nombre',)
     ordering = ('nombre',)
     
@@ -162,7 +162,7 @@ class ActividadAdmin(admin.ModelAdmin):
             'fields': ('titulo', 'descripcion', 'imagen')
         }),
         ('Configuración del evento', {
-            'fields': ('tipo', 'estado', 'lugar')
+            'fields': ('tipo', 'estado', 'lugar', 'lugar_numero')
         }),
         ('Fechas', {
             'fields': ('fecha_inicio', 'fecha_fin', 'cronograma')

@@ -16,6 +16,7 @@ IMPORTANTE:
 """
 
 import random
+import re
 from datetime import timedelta
 
 from django.contrib.auth.models import User
@@ -250,6 +251,7 @@ class Command(BaseCommand):
 
         Carrera.objects.all().delete()
         Jornada.objects.all().delete()
+        Lugar.objects.all().delete()
 
         self.stdout.write(self.style.WARNING(
             '       Datos del seed eliminados.'
@@ -568,12 +570,18 @@ class Command(BaseCommand):
                 f'Cupos limitados según disponibilidad.'
             )
 
-            Lugar.objects.get_or_create(nombre=lugar)
+            # "Sala 201 - Edificio A" -> lugar "Sala" (pide número) y número "201"
+            numero = ''
+            sala = re.match(r'^Sala (\d+)', lugar)
+            if sala:
+                lugar, numero = 'Sala', sala.group(1)
+            Lugar.objects.get_or_create(nombre=lugar, defaults={'pide_numero': bool(numero)})
             actividad = Actividad.objects.create(
                 titulo=titulo,
                 descripcion=descripcion,
                 tipo=tipo,
                 lugar=lugar,
+                lugar_numero=numero,
                 cupos_totales=cupos_totales,
                 cupos_disponibles=cupos_disponibles,
                 fecha_inicio=fecha_inicio,

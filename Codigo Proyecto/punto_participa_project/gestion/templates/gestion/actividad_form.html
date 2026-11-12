@@ -98,6 +98,17 @@
                     {% endif %}
                 </div>
 
+                <!-- NÚMERO DE SALA (solo si el lugar elegido lo pide; lo muestra lugar_numero.js) -->
+                <div class="form-field" data-lugar-numero-wrap{% if not form.lugar_pide_numero %} style="display: none;"{% endif %}>
+                    <label for="{{ form.lugar_numero.id_for_label }}">
+                        Número de sala <span class="required">*</span>
+                    </label>
+                    {{ form.lugar_numero }}
+                    {% if form.lugar_numero.errors %}
+                    <span class="field-error">{{ form.lugar_numero.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
                 <!-- FECHAS Y HORAS SEPARADAS (4 columnas) -->
                 <div class="form-row-4">
                     <div class="form-field">

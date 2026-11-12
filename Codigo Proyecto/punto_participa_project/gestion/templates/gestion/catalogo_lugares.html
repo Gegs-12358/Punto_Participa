@@ -11,7 +11,8 @@
     <div>
         <span class="eyebrow">ADMINISTRACIÓN · CATÁLOGOS</span>
         <h1>Lugares</h1>
-        <p>Los lugares activos son los que aparecen al crear una actividad.</p>
+        <p>Los lugares activos son los que aparecen al crear una actividad. Para las salas, crea un solo
+            lugar "Sala" que pida número: al crear la actividad se escribe el número (por ejemplo, 1203).</p>
     </div>
 </div>
 
@@ -24,7 +25,13 @@
     <div class="filter-group">
         <label for="nuevo-lugar">Nuevo lugar</label>
         <input type="text" id="nuevo-lugar" name="nombre" maxlength="{{ max_nombre }}"
-            placeholder="Ej.: Sala 204 - Edificio A" autocomplete="off" required>
+            placeholder="Ej.: Sala, Auditorio Principal, Patio Central" autocomplete="off" required>
+    </div>
+    <div class="filter-actions">
+        <label class="check-line" for="nuevo-pide-numero" title="Para lugares como &quot;Sala&quot;: al crear la actividad se escribe el número">
+            <input type="checkbox" id="nuevo-pide-numero" name="pide_numero">
+            Pide número de sala
+        </label>
     </div>
     <div class="filter-actions">
         <button type="submit" class="btn" style="white-space: nowrap;">+ Agregar</button>
@@ -49,6 +56,7 @@
             <thead>
                 <tr>
                     <th>Nombre</th>
+                    <th>Número de sala</th>
                     <th>Actividades</th>
                     <th>Estado</th>
                     <th>Acciones</th>
@@ -58,7 +66,7 @@
                 {% for lugar in lugares %}
                 <tr>
                     {% if lugar.id == editar_id %}
-                    <td colspan="4">
+                    <td colspan="5">
                         <form method="post" class="action-group" action="{% url 'catalogo_lugares' %}">
                             {% csrf_token %}
                             <input type="hidden" name="accion" value="renombrar">
@@ -77,6 +85,22 @@
                     </td>
                     {% else %}
                     <td><strong>{{ lugar.nombre }}</strong></td>
+                    <td>
+                        <form method="post" action="{% url 'catalogo_lugares' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="accion" value="pide_numero">
+                            <input type="hidden" name="lugar_id" value="{{ lugar.id }}">
+                            {% if lugar.pide_numero %}
+                            <input type="hidden" name="valor" value="no">
+                            <span class="badge">Se pide</span>
+                            <button type="submit" class="link-button" title="Dejar de pedir el número de sala">Quitar</button>
+                            {% else %}
+                            <input type="hidden" name="valor" value="si">
+                            <span class="text-muted">No</span>
+                            <button type="submit" class="link-button" title="Pedir el número de sala al crear la actividad">Pedir</button>
+                            {% endif %}
+                        </form>
+                    </td>
                     <td>{{ lugar.total_actividades }}</td>
                     <td>
                         {% if lugar.activo %}
@@ -118,7 +142,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center text-muted" style="padding: 30px;">
+                    <td colspan="5" class="text-center text-muted" style="padding: 30px;">
                         Todavía no hay lugares. Agrega el primero arriba.
                     </td>
                 </tr>

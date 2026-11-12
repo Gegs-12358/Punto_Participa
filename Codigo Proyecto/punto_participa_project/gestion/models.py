@@ -125,6 +125,9 @@ class Lugar(models.Model):
     """
     nombre = models.CharField(max_length=200, unique=True)
     activo = models.BooleanField(default=True, db_index=True)
+        # Si está marcado (por ejemplo "Sala"), al crear la actividad se pide el número
+    # de la sala, que se guarda aparte en Actividad.lugar_numero.
+    pide_numero = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Lugar'
@@ -146,6 +149,8 @@ class Actividad(models.Model):
     descripcion = models.TextField()
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
     lugar = models.CharField(max_length=200)
+        # Número de sala cuando el lugar lo pide ("102", "1203"). Vacío en los demás lugares.
+    lugar_numero = models.CharField(max_length=10, blank=True, default='')
     imagen = models.ImageField(upload_to='actividades/', null=True, blank=True)
     cupos_totales = models.IntegerField(null=True, blank=True)
     cupos_disponibles = models.IntegerField(null=True, blank=True)
@@ -172,7 +177,11 @@ class Actividad(models.Model):
     # ============================================================
     # [REFACTOR] Propiedades y métodos de negocio
     # ============================================================
-
+    @property
+    def lugar_completo(self):
+        """Lugar tal como se muestra: "Sala 102", o solo "Auditorio Principal"."""
+        return f'{self.lugar} {self.lugar_numero}'.strip()
+    
     @property
     def esta_activa(self):
         return self.estado == 'ACTIVA'

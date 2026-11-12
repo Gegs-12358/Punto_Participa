@@ -8,10 +8,25 @@ import io
 from PIL import Image
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import UploadedFile
+import re
+
 from django.db.models import Q
 
 from .models import Actividad, Lugar
 
+# Número de sala: letras, números y guion ("102", "1203", "A-201"), hasta 10 caracteres
+PATRON_NUMERO_SALA = re.compile(r'^[A-Z0-9]+(-[A-Z0-9]+)*$')
+
+
+class SelectLugar(forms.Select):
+    """Desplegable de lugares que marca con data-pide-numero los que piden número de sala."""
+
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        opcion = super().create_option(name, value, label, selected, index, subindex, attrs)
+        lugar = getattr(value, 'instance', None)
+        if lugar is not None and lugar.pide_numero:
+            opcion['attrs']['data-pide-numero'] = '1'
+        return opcion
 
 class LimpiarTextoMixin:
     """Limpia automáticamente todos los CharField (incluye EmailField).
@@ -98,7 +113,7 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
         model = Actividad
         fields = [
             'titulo', 'descripcion', 'tipo', 'lugar', 'imagen',
-            'cupos_totales', 'cronograma',
+            'lugar_numero', 'cupos_totales', 'cronograma',
             'carreras', 'jornadas',
         ]
         widgets = {
@@ -166,10 +181,22 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
                 'required': 'Debes seleccionar un lugar.',
                 'invalid_choice': 'Selecciona un lugar de la lista.',
             },
-            widget=forms.Select(attrs={'class': 'form-select', 'required': True}),
+            widget=SelectLugar(attrs={'class': 'form-select', 'required': True}),
         )
         if actual:
             self.initial['lugar'] = actual
+
+        # Número de sala: se muestra solo si el lugar elegido lo pide (lo controla
+        # gestion/js/lugar_numero.js); la validación real está en clean().
+        self.fields['lugar_numero'].label = 'Número de sala'
+        self.fields['lugar_numero'].widget = forms.TextInput(attrs={
+            'class': 'form-control', 'maxlength': '10', 'autocomplete': 'off',
+            'placeholder': 'Ej.: 1203', 'data-lugar-numero': '1',
+        })
+        lugar_inicial = self.data.get(self.add_prefix('lugar')) if self.is_bound else actual
+        lugar_inicial = limpiar_texto(str(lugar_inicial or ''))[:200]   # sin \x00 ni controles
+        self.lugar_pide_numero = bool(lugar_inicial) and Lugar.objects.filter(
+            nombre=lugar_inicial, pide_numero=True).exists()
 
         # Si estamos editando, prellenar los campos de fecha/hora
         if self.instance and self.instance.pk:
@@ -236,11 +263,24 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
             elif cupos_totales < 1:
                 self.add_error('cupos_totales', 'El cupo debe ser al menos 1.')
 
+        # Número de sala: obligatorio solo si el lugar lo pide; si no, se descarta
+        lugar_obj = getattr(self, '_lugar_obj', None)
+        numero = (cleaned_data.get('lugar_numero') or '').replace(' ', '').upper()
+        if lugar_obj and lugar_obj.pide_numero:
+            if not numero:
+                self.add_error('lugar_numero', f'Indica el número de {lugar_obj.nombre.lower()}.')
+            elif not PATRON_NUMERO_SALA.match(numero):
+                self.add_error('lugar_numero', 'Usa solo letras, números y guion (ej.: 1203 o A-201).')
+        else:
+            numero = ''
+        cleaned_data['lugar_numero'] = numero
+
         return cleaned_data
 
     def clean_lugar(self):
         # El modelo guarda el nombre del lugar (texto), no el objeto
         lugar = self.cleaned_data.get('lugar')
+        self._lugar_obj = lugar
         return lugar.nombre if lugar else ''
 
     

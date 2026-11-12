@@ -293,7 +293,7 @@
                 <div class="upcoming-body">
                     <h4>{{ act.titulo }}</h4>
                     <p><span>◷</span> {{ act.fecha_inicio|date:"H:i" }}</p>
-                    <p><span>◉</span> {{ act.lugar }}</p>
+                    <p><span>◉</span> {{ act.lugar_completo }}</p>
                 </div>
                 <div class="upcoming-badge">
                     {% if act.tipo == 'TALLER' %}<span class="badge">Taller</span>{% else %}<span class="badge draft">Masiva</span>{% endif %}
