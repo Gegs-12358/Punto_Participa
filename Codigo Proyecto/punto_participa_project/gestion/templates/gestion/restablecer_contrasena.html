@@ -1,4 +1,4 @@
-{% load static %}
+{% load static ui %}
 <!DOCTYPE html>
 <html lang="es-CL">
 
@@ -112,7 +112,7 @@
                                 <button type="button" class="toggle-password" data-target="nueva_contrasena"
                                     aria-label="Mostrar contraseña" aria-pressed="false">
 
-                                    <span aria-hidden="true">◎</span>
+                                    <span aria-hidden="true" class="ojo">{% icono "ver" "ojo__abierto" %}{% icono "ocultar" "ojo__cerrado" %}</span>
 
                                 </button>
                             </div>
@@ -136,7 +136,7 @@
                                 <button type="button" class="toggle-password" data-target="confirmar_contrasena"
                                     aria-label="Mostrar contraseña" aria-pressed="false">
 
-                                    <span aria-hidden="true">◎</span>
+                                    <span aria-hidden="true" class="ojo">{% icono "ver" "ojo__abierto" %}{% icono "ocultar" "ojo__cerrado" %}</span>
 
                                 </button>
                             </div>

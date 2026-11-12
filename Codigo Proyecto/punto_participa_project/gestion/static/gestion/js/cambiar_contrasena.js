@@ -68,7 +68,7 @@ function alternarPassword(boton) {
         );
 
         if (icono) {
-            icono.textContent = '◎';
+            // el ícono lo cambia el CSS según aria-pressed
         }
     } else {
         campo.type = 'text';
@@ -84,7 +84,7 @@ function alternarPassword(boton) {
         );
 
         if (icono) {
-            icono.textContent = '◉';
+            // el ícono lo cambia el CSS según aria-pressed
         }
     }
 }
@@ -225,7 +225,7 @@ function inicializarCoincidencia() {
 
         if (nueva.value === confirmacion.value) {
             mensaje.textContent =
-                '✓ Las contraseñas coinciden.';
+                'Las contraseñas coinciden.';
 
             mensaje.className =
                 'input-help text-success';
@@ -233,7 +233,7 @@ function inicializarCoincidencia() {
             confirmacion.setCustomValidity('');
         } else {
             mensaje.textContent =
-                '✗ Las contraseñas no coinciden.';
+                'Las contraseñas no coinciden.';
 
             mensaje.className =
                 'input-help text-danger';

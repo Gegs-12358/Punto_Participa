@@ -61,7 +61,8 @@ class AccesoCatalogosTests(BaseCatalogoTests):
         resp = self.client.get(URL_CARRERAS)
         for url in (reverse('catalogo_lugares'), URL_ESCUELAS, URL_CARRERAS):
             self.assertContains(resp, f'href="{url}"')
-        self.assertContains(resp, 'aria-current="page">◈ Carreras')
+        self.assertContains(resp, 'aria-current="page"><svg')   # la pestaña activa (con su ícono)
+        self.assertContains(resp, '</svg> Carreras</a>')
 
 
 # ============================================================

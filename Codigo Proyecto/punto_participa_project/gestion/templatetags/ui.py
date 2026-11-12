@@ -42,6 +42,25 @@ _TRAZOS = {
     'actividad': '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
     'escuela': '<path d="M3 21h18M5 21V10M19 21V10M9 21v-6h6v6M2 10l10-6 10 6"/>',
     'subir': '<path d="M12 21V9M7 14l5-5 5 5M5 3h14"/>',
+    # Menú principal
+    'inicio': '<path d="M3 11 12 4l9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
+    'grafico': '<path d="M3 21h18M6 17v-6M11 17V7M16 17v-4M21 17V4"/>',
+    'usuario': '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    'alumnos': '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5M22 9v6"/>',
+    'ajustes': '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/>'
+               '<circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
+    'escanear': '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3'
+                'M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/>',
+    'auditoria': '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/>',
+    'salir': '<path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/>',
+    'menu': '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    'ocultar': '<path d="M3 3l18 18"/><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.1 4'
+               'M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+    'enviar': '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>',
+    'lugar': '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+    'reloj': '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    'imagen': '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>',
+    'alerta': '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/>',
 }
 
 

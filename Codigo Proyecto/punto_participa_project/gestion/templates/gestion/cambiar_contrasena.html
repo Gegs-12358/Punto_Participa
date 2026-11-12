@@ -1,5 +1,5 @@
 {% extends 'gestion/base.html' %}
-{% load static %}
+{% load static ui %}
 
 {% block title %}
     Cambiar contraseña
@@ -65,7 +65,7 @@
                         aria-label="Mostrar contraseña"
                         aria-pressed="false">
 
-                        <span aria-hidden="true">◎</span>
+                        <span aria-hidden="true" class="ojo">{% icono "ver" "ojo__abierto" %}{% icono "ocultar" "ojo__cerrado" %}</span>
                     </button>
                 </div>
             </div>
@@ -95,7 +95,7 @@
                         aria-label="Mostrar contraseña"
                         aria-pressed="false">
 
-                        <span aria-hidden="true">◎</span>
+                        <span aria-hidden="true" class="ojo">{% icono "ver" "ojo__abierto" %}{% icono "ocultar" "ojo__cerrado" %}</span>
                     </button>
                 </div>
 
@@ -160,7 +160,7 @@
                         aria-label="Mostrar contraseña"
                         aria-pressed="false">
 
-                        <span aria-hidden="true">◎</span>
+                        <span aria-hidden="true" class="ojo">{% icono "ver" "ojo__abierto" %}{% icono "ocultar" "ojo__cerrado" %}</span>
                     </button>
                 </div>
 

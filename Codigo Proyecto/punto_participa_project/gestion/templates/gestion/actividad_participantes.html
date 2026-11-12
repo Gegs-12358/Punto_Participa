@@ -99,7 +99,7 @@
                 <tr>
                     <td colspan="7" class="text-center text-muted" style="padding: 30px;">
                         <div class="empty-state" style="min-height: auto;">
-                            <span>◉</span>
+                            <span>{% icono "participantes" "icono--grande" %}</span>
                             <h3>Sin inscritos</h3>
                             <p>No hay inscripciones con este filtro.</p>
                         </div>
@@ -147,8 +147,8 @@
                     <td>{{ a.alumno.carrera }}</td>
                     <td>{{ a.alumno.jornada }}</td>
                     <td>
-                        {% if a.metodo_ingreso == 'QR' %}▢ QR
-                        {% elif a.metodo_ingreso == 'CODIGO' %}▥ Código
+                        {% if a.metodo_ingreso == 'QR' %}Código QR
+                        {% elif a.metodo_ingreso == 'CODIGO' %}Código de barras
                         {% else %}⌨ RUT{% endif %}
                     </td>
                     <td>{{ a.registrado_por.username|default:"N/A" }}</td>
@@ -158,7 +158,7 @@
                 <tr>
                     <td colspan="7" class="text-center text-muted" style="padding: 30px;">
                         <div class="empty-state" style="min-height: auto;">
-                            <span>◉</span>
+                            <span>{% icono "participantes" "icono--grande" %}</span>
                             <h3>Sin asistencias</h3>
                             <p>No hay asistencias registradas en esta actividad.</p>
                         </div>

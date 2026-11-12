@@ -1,3 +1,18 @@
+// Íconos que el JavaScript vuelve a poner en botones (los mismos trazos de templatetags/ui.py).
+// Texto fijo del código: seguro de usar con innerHTML.
+const ICONOS_JS = {
+    ver: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    ocultar: '<path d="M3 3l18 18"/><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.1 4' +
+        'M6.6 6.6C3.9 8.4 2 12 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+    enviar: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>'
+};
+
+function iconoJS(nombre) {
+    return '<svg class="icono" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" ' +
+        'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+        (ICONOS_JS[nombre] || '') + '</svg>';
+}
+
 // ============================================================
 // Punto Participa - Scripts personalizados (globales)
 // ============================================================
@@ -165,7 +180,7 @@ function mostrarAvisoSinConexion() {
     const toast = document.getElementById('toast-conexion');
     if (!toast) return;
 
-    toast.textContent = '⚠ Sin conexión a internet. Los cambios podrían no guardarse.';
+    toast.textContent = 'Sin conexión a internet. Los cambios podrían no guardarse.';
     toast.hidden = false;
 }
 
@@ -174,7 +189,7 @@ function ocultarAvisoSinConexion() {
     if (!toast || toast.hidden) return;
 
     toast.hidden = true;
-    mostrarMensaje('✓ Conexión restablecida.', 'success');
+    mostrarMensaje('Conexión restablecida.', 'success');
 }
 
 window.addEventListener('offline', mostrarAvisoSinConexion);
@@ -567,7 +582,7 @@ document.addEventListener('click', function (e) {
         const actividadId = modalInv.dataset.actividadId;
         const btnEnviar = document.getElementById('btnConfirmarEnvio');
         btnEnviar.disabled = true;
-        btnEnviar.innerHTML = '◌ Enviando...';
+        btnEnviar.innerHTML = 'Enviando…';
         enviarInvitaciones(actividadId);
     }
 
@@ -585,14 +600,14 @@ document.addEventListener('click', function (e) {
         if (!container.classList.contains('d-none')) {
             container.classList.add('d-none');
             iframe.srcdoc = '';
-            btn.innerHTML = '◎ Ver cómo se verá el correo';
+            btn.innerHTML = iconoJS('ver') + ' Ver cómo se verá el correo';
             return;
         }
 
         if (!actividadId) return;
 
         btn.disabled = true;
-        btn.innerHTML = '◌ Cargando...';
+        btn.innerHTML = 'Cargando…';
 
         fetch('/actividades/previsualizar-invitacion/' + actividadId + '/', {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -615,16 +630,16 @@ document.addEventListener('click', function (e) {
                         ejemplo.textContent = '(ejemplo con: ' + data.alumno_ejemplo + ')';
                     }
 
-                    btn.innerHTML = '◉ Ocultar previsualización';
+                    btn.innerHTML = iconoJS('ocultar') + ' Ocultar previsualización';
                 } else {
-                    btn.innerHTML = '◎ Ver cómo se verá el correo';
+                    btn.innerHTML = iconoJS('ver') + ' Ver cómo se verá el correo';
                     mostrarMensaje(data.message || 'No se pudo previsualizar.', 'danger');
                 }
             })
             .catch(function (error) {
                 console.error('Error al previsualizar:', error);
                 btn.disabled = false;
-                btn.innerHTML = '◎ Ver cómo se verá el correo';
+                btn.innerHTML = iconoJS('ver') + ' Ver cómo se verá el correo';
                 mostrarMensaje('Error al conectar con el servidor.', 'danger');
             });
     }
@@ -674,7 +689,7 @@ document.addEventListener('submit', function (e) {
                     document.getElementById('btnCancelarEnvio').classList.remove('d-none');
                     document.getElementById('btnConfirmarEnvio').classList.remove('d-none');
                     document.getElementById('btnConfirmarEnvio').disabled = false;
-                    document.getElementById('btnConfirmarEnvio').innerHTML = '➤ Enviar';
+                    document.getElementById('btnConfirmarEnvio').innerHTML = iconoJS('enviar') + ' Enviar';
                     document.getElementById('invitacion-message').className = 'alert alert-info';
 
                     const previewContainer = document.getElementById('invitacion-preview-container');
@@ -682,7 +697,7 @@ document.addEventListener('submit', function (e) {
                     const previewBtn = document.getElementById('btnVerPrevisualizacion');
                     if (previewContainer) previewContainer.classList.add('d-none');
                     if (previewIframe) previewIframe.srcdoc = '';
-                    if (previewBtn) previewBtn.innerHTML = '◎ Ver cómo se verá el correo';
+                    if (previewBtn) previewBtn.innerHTML = iconoJS('ver') + ' Ver cómo se verá el correo';
                     const infoDest = document.getElementById('invitacion-info-destinatarios');
                     if (infoDest) infoDest.classList.add('d-none');
 

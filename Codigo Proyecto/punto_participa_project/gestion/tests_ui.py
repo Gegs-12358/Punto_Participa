@@ -114,3 +114,41 @@ class PantallasUnificadasTests(BaseSistemaTestCase):
         resp = self.client.get(reverse('auditoria'), {'usuario': 'admin'})
         self.assertContains(resp, 'Usuario: admin')
         self.assertContains(resp, 'data-tooltip="Filtrar"')
+
+
+class SinSimbolosAntiguosTests(BaseSistemaTestCase):
+    """Los símbolos de texto (▦ ◎ ⌖ ...) se reemplazaron por los íconos SVG de la guía de estilo."""
+    SIMBOLOS = '⌂▦▥◎▤⚙▢☰⎋◈◉✓✉⌖◷▣ⓘ⚠●✔✗✕➤◌'
+
+    def _sin_simbolos(self, resp):
+        texto = resp.content.decode()
+        encontrados = sorted({c for c in texto if c in self.SIMBOLOS})
+        self.assertEqual(encontrados, [], resp.request['PATH_INFO'])
+
+    def test_pantallas_del_administrador(self):
+        self.login_as(self.admin)
+        for nombre, args in (('dashboard', []), ('lista_actividades', []), ('reportes', []),
+                             ('usuarios', []), ('lista_alumnos', []), ('catalogo_lugares', []),
+                             ('catalogo_escuelas', []), ('catalogo_carreras', []), ('escaneo', []),
+                             ('auditoria', []), ('actividad_detalle', [self.actividad.pk]),
+                             ('participantes_actividad', [self.actividad.pk]),
+                             ('notificaciones_actividad', [self.actividad.pk]), ('cambiar_contrasena', []),
+                             ('crear_actividad', [])):
+            with self.subTest(pantalla=nombre):
+                resp = self.client.get(reverse(nombre, args=args))
+                self.assertEqual(resp.status_code, 200)
+                self._sin_simbolos(resp)
+
+    def test_paginas_publicas(self):
+        for url in (reverse('login'), reverse('inscripcion_taller', args=[self.actividad.pk]),
+                    reverse('actividad_publica', args=[self.actividad_masiva.pk])):
+            with self.subTest(url=url):
+                resp = self.client.get(url)
+                self.assertEqual(resp.status_code, 200)
+                self._sin_simbolos(resp)
+
+    def test_menu_con_iconos_y_pagina_actual_marcada(self):
+        self.login_as(self.admin)
+        resp = self.client.get(reverse('reportes'))
+        self.assertContains(resp, 'aria-current="page"', count=2)   # menú de escritorio y de celular
+        self.assertContains(resp, '</svg> Reportes')

@@ -66,7 +66,7 @@ function alternarVisibilidadPassword(boton) {
         );
 
         if (icono) {
-            icono.textContent = '◎';
+            // el ícono lo cambia el CSS según aria-pressed
         }
 
         return;
@@ -85,7 +85,7 @@ function alternarVisibilidadPassword(boton) {
     );
 
     if (icono) {
-        icono.textContent = '◉';
+        // el ícono lo cambia el CSS según aria-pressed
     }
 }
 

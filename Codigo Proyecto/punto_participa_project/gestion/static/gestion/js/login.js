@@ -76,7 +76,7 @@ function actualizarEstadoToggle(
 
     if (passwordVisible) {
         if (icon) {
-            icon.textContent = '◉';
+            // el ícono lo cambia el CSS según aria-pressed
         }
 
         toggleButton.setAttribute(
@@ -90,7 +90,7 @@ function actualizarEstadoToggle(
         );
     } else {
         if (icon) {
-            icon.textContent = '◎';
+            // el ícono lo cambia el CSS según aria-pressed
         }
 
         toggleButton.setAttribute(

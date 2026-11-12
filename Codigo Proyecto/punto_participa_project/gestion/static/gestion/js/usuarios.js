@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const self = this;
             self.disabled = true;
             const iconOriginal = self.innerHTML;
-            self.innerHTML = '◌';
+            self.classList.add('cargando');   // mismo ícono, atenuado, mientras responde el servidor
 
             fetch('/usuarios/guardar/', {
                 method: 'POST',
@@ -105,6 +105,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         setTimeout(function () { window.location.reload(); }, 1000);
                     } else {
                         self.disabled = false;
+                        self.classList.remove('cargando');
                         self.innerHTML = iconOriginal;
                         mostrarMensaje(data.message || 'Error al cambiar el estado del usuario.', 'danger');
                     }
@@ -112,6 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .catch(function (error) {
                     console.error('Error al cambiar estado:', error);
                     self.disabled = false;
+                    self.classList.remove('cargando');
                     self.innerHTML = iconOriginal;
                     mostrarMensaje('Error al conectar con el servidor.', 'danger');
                 });

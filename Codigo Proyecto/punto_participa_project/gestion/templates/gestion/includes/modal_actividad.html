@@ -16,7 +16,7 @@
 
         <div id="modalBody" class="modal-body">
             <div class="empty-state">
-                <span>◌</span>
+                <span>{% icono "reloj" "icono--grande" %}</span>
                 <p>Cargando formulario...</p>
             </div>
         </div>
@@ -49,7 +49,7 @@
 
             <div id="invitacion-info-destinatarios" class="d-none" style="margin-bottom: 15px;">
                 <small class="text-muted">
-                    ◎ Destinatarios estimados: <strong id="invitacion-total">0</strong>
+                    {% icono "participantes" "icono--texto" %} Destinatarios estimados: <strong id="invitacion-total">0</strong>
                 </small>
             </div>
 
@@ -57,13 +57,13 @@
                 <button type="button"
                         class="btn secondary"
                         id="btnVerPrevisualizacion">
-                    ◎ Ver cómo se verá el correo
+                    {% icono "ver" %} Ver cómo se verá el correo
                 </button>
             </div>
 
             <div id="invitacion-preview-container" class="d-none">
                 <h3 style="border-top: 1px solid var(--line); padding-top: 15px; margin-top: 15px; margin-bottom: 10px; font-size: 15px; color: var(--navy);">
-                    ▣ Previsualización
+                    Previsualización
                     <small class="text-muted" id="invitacion-ejemplo"></small>
                 </h3>
                 <div style="border: 1px solid var(--line); border-radius: 8px; background: var(--surface); max-height: 400px; overflow-y: auto;">
@@ -86,12 +86,12 @@
             <button type="button"
                     class="btn secondary"
                     id="btnCancelarEnvio">
-                × Ahora no
+                Ahora no
             </button>
             <button type="button"
                     class="btn"
                     id="btnConfirmarEnvio">
-                ➤ Enviar
+                {% icono "enviar" %} Enviar
             </button>
         </footer>
 

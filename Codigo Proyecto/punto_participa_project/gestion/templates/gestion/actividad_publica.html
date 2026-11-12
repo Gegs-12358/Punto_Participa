@@ -1,4 +1,4 @@
-{% load static %}
+{% load static ui %}
 <!DOCTYPE html>
 <html lang="es-cl">
 
@@ -51,7 +51,7 @@
                         {% endif %}
                         <p>{{ actividad.descripcion }}</p>
                         <ul>
-                            <li><strong>▦ Fecha:</strong>
+                            <li><strong>{% icono "actividad" "icono--texto" %} Fecha:</strong>
                                 {% if actividad.cronograma %}
                                 {{ actividad.cronograma }}
                                 {% else %}
@@ -59,14 +59,14 @@
                                 {{ actividad.fecha_fin|date:"H:i" }}
                                 {% endif %}
                             </li>
-                            <li><strong>⌖ Lugar:</strong> {{ actividad.lugar_completo }}</li>
+                            <li><strong>{% icono "lugar" "icono--texto" %} Lugar:</strong> {{ actividad.lugar_completo }}</li>
                         </ul>
                     </div>
 
                     <div class="enroll-box">
                         {% if estado == 'vigente' %}
                         <div class="seat-note">
-                            <span>◎ ENTRADA LIBRE</span>
+                            <span>ENTRADA LIBRE</span>
                             <small>Esta actividad no requiere inscripción previa: solo tienes que asistir.</small>
                         </div>
                         {% elif estado == 'finalizada' %}

@@ -1,9 +1,10 @@
+{% load ui %}
 {# Pestañas de Catálogos. Cada vista pasa "pestana" = lugares | escuelas | carreras. #}
 <nav class="tabs" aria-label="Catálogos">
     <a href="{% url 'catalogo_lugares' %}" class="tab-button{% if pestana == 'lugares' %} active{% endif %}"
-        style="text-decoration: none;"{% if pestana == 'lugares' %} aria-current="page"{% endif %}>⌖ Lugares</a>
+        style="text-decoration: none;"{% if pestana == 'lugares' %} aria-current="page"{% endif %}>{% icono "lugar" %} Lugares</a>
     <a href="{% url 'catalogo_escuelas' %}" class="tab-button{% if pestana == 'escuelas' %} active{% endif %}"
-        style="text-decoration: none;"{% if pestana == 'escuelas' %} aria-current="page"{% endif %}>▣ Escuelas</a>
+        style="text-decoration: none;"{% if pestana == 'escuelas' %} aria-current="page"{% endif %}>{% icono "escuela" %} Escuelas</a>
     <a href="{% url 'catalogo_carreras' %}" class="tab-button{% if pestana == 'carreras' %} active{% endif %}"
-        style="text-decoration: none;"{% if pestana == 'carreras' %} aria-current="page"{% endif %}>◈ Carreras</a>
+        style="text-decoration: none;"{% if pestana == 'carreras' %} aria-current="page"{% endif %}>{% icono "alumnos" %} Carreras</a>
 </nav>

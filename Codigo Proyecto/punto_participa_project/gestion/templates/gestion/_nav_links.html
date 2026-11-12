@@ -1,48 +1,39 @@
+{% load ui %}
+{# Menú principal. Cada enlace: ícono + texto; el activo lleva aria-current. #}
+{% with ruta=request.path url=request.resolver_match.url_name %}
 {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
-<a href="{% url 'dashboard' %}"
-    class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-    ⌂ Inicio
+<a href="{% url 'dashboard' %}" class="{% if url == 'dashboard' %}active{% endif %}"{% if url == 'dashboard' %} aria-current="page"{% endif %}>
+    {% icono "inicio" %} Inicio
 </a>
-{% endif %}
-
-{% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
-<a href="{% url 'lista_actividades' %}" class="{% if 'actividades' in request.path %}active{% endif %}">
-    ▦ Actividades
+<a href="{% url 'lista_actividades' %}" class="{% if 'actividades' in ruta %}active{% endif %}"{% if 'actividades' in ruta %} aria-current="page"{% endif %}>
+    {% icono "actividad" %} Actividades
 </a>
-{% endif %}
-
-{% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' %}
-<a href="{% url 'reportes' %}" class="{% if 'reportes' in request.path %}active{% endif %}">
-    ▥ Reportes
+<a href="{% url 'reportes' %}" class="{% if 'reportes' in ruta %}active{% endif %}"{% if 'reportes' in ruta %} aria-current="page"{% endif %}>
+    {% icono "grafico" %} Reportes
 </a>
 {% endif %}
 
 {% if rol_usuario == 'Administrador' %}
-<a href="{% url 'usuarios' %}" class="{% if 'usuarios' in request.path %}active{% endif %}">
-    ◎ Usuarios
+<a href="{% url 'usuarios' %}" class="{% if 'usuarios' in ruta %}active{% endif %}"{% if 'usuarios' in ruta %} aria-current="page"{% endif %}>
+    {% icono "usuario" %} Usuarios
 </a>
-{% endif %}
-
-{% if rol_usuario == 'Administrador' %}
-<a href="{% url 'lista_alumnos' %}" class="{% if '/alumnos/' in request.path %}active{% endif %}">
-    ▤ Alumnos
+<a href="{% url 'lista_alumnos' %}" class="{% if '/alumnos/' in ruta %}active{% endif %}"{% if '/alumnos/' in ruta %} aria-current="page"{% endif %}>
+    {% icono "alumnos" %} Alumnos
 </a>
-{% endif %}
-
-{% if rol_usuario == 'Administrador' %}
-<a href="{% url 'catalogo_lugares' %}" class="{% if 'catalogos' in request.path %}active{% endif %}">
-    ⚙ Catálogos
+<a href="{% url 'catalogo_lugares' %}" class="{% if 'catalogos' in ruta %}active{% endif %}"{% if 'catalogos' in ruta %} aria-current="page"{% endif %}>
+    {% icono "ajustes" %} Catálogos
 </a>
 {% endif %}
 
 {% if rol_usuario == 'Administrador' or rol_usuario == 'Creador de Evento' or rol_usuario == 'Encargado de Registrar' %}
-<a href="{% url 'escaneo' %}" class="{% if 'escaneo' in request.path %}active{% endif %}">
-    ▢ Escáner
+<a href="{% url 'escaneo' %}" class="{% if 'escaneo' in ruta %}active{% endif %}"{% if 'escaneo' in ruta %} aria-current="page"{% endif %}>
+    {% icono "escanear" %} Escáner
 </a>
 {% endif %}
 
 {% if rol_usuario == 'Administrador' %}
-<a href="{% url 'auditoria' %}" class="{% if 'auditoria' in request.path %}active{% endif %}">
-    ☰ Auditoría
+<a href="{% url 'auditoria' %}" class="{% if 'auditoria' in ruta %}active{% endif %}"{% if 'auditoria' in ruta %} aria-current="page"{% endif %}>
+    {% icono "auditoria" %} Auditoría
 </a>
 {% endif %}
+{% endwith %}

@@ -1,4 +1,4 @@
-{% load static %}
+{% load static ui %}
 <!DOCTYPE html>
 <html lang="es-cl">
 
@@ -52,7 +52,7 @@
 
                     <form method="post" action="{% url 'logout' %}" class="mobile-logout-form">
                         {% csrf_token %}
-                        <button type="submit" class="text-button">⎋ Cerrar sesión</button>
+                        <button type="submit" class="text-button">{% icono "salir" %} Cerrar sesión</button>
                     </form>
 
                     <img class="duoc-logo-mobile" src="{% static 'gestion/img/logo_duoc.png' %}" alt="Duoc UC">
@@ -89,9 +89,7 @@
             <div class="nav-mobile-wrapper">
                 <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox">
                 <label for="nav-toggle" class="nav-toggle-button" aria-label="Abrir menú de navegación">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                    {% icono "menu" "nav-toggle__abrir" %}{% icono "limpiar" "nav-toggle__cerrar" %}
                     <span class="nav-toggle-text">Menú</span>
                 </label>
 

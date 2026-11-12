@@ -11,7 +11,7 @@
     <div>
         <span class="eyebrow">PANEL DE CONTROL</span>
         <h1>Resumen general</h1>
-        <p><span class="badge">▦</span> Actualizado: {% now "d/m/Y H:i" %}</p>
+        <p>Actualizado: {% now "d/m/Y H:i" %}</p>
     </div>
     <button class="btn" id="btnNuevaActividad" data-action="activity-new">
         {% icono "agregar" %} Nueva actividad
@@ -65,35 +65,35 @@
 <!-- ============================================================ -->
 <div class="stats stats-5">
     <div class="stat">
-        <div class="stat-icon stat-icon-blue">▦</div>
+        <div class="stat-icon stat-icon-blue">{% icono "actividad" %}</div>
         <strong>{{ actividades_activas }}</strong>
         <span>ACTIVIDADES ACTIVAS EN CURSO</span>
         <a href="{% url 'lista_actividades' %}" class="stat-link">Ver →</a>
     </div>
 
     <div class="stat">
-        <div class="stat-icon stat-icon-green">◈</div>
+        <div class="stat-icon stat-icon-green">{% icono "participantes" %}</div>
         <strong>{{ talleres_proximos }}</strong>
         <span>TALLERES PRÓXIMOS CON CUPOS</span>
         <a href="{% url 'lista_actividades' %}?tipo=TALLER" class="stat-link">Ver →</a>
     </div>
 
     <div class="stat">
-        <div class="stat-icon stat-icon-purple">◉</div>
+        <div class="stat-icon stat-icon-purple">{% icono "alumnos" %}</div>
         <strong>{{ total_inscritos }}</strong>
         <span>ALUMNOS INSCRITOS EN EL PERÍODO</span>
         <a href="{% url 'reportes' %}" class="stat-link">Ver →</a>
     </div>
 
     <div class="stat">
-        <div class="stat-icon stat-icon-orange">✓</div>
+        <div class="stat-icon stat-icon-orange">{% icono "escanear" %}</div>
         <strong>{{ asistencias_hoy }}</strong>
         <span>ASISTENCIAS REGISTRADAS HOY</span>
         <a href="{% url 'escaneo' %}" class="stat-link">Ver →</a>
     </div>
 
     <div class="stat">
-        <div class="stat-icon stat-icon-teal">✉</div>
+        <div class="stat-icon stat-icon-teal">{% icono "correo" %}</div>
         <strong>{{ invitaciones_enviadas }}</strong>
         <span>INVITACIONES ENVIADAS CON ÉXITO</span>
         <a href="{% url 'lista_actividades' %}" class="stat-link">Ver →</a>
@@ -246,21 +246,21 @@
         </div>
     </div>
     <div class="alert-card alert-blue">
-        <div class="alert-icon">◷</div>
+        <div class="alert-icon">{% icono "reloj" %}</div>
         <div class="alert-body">
             <h4>Comienzan hoy</h4>
             <p>{{ alertas.comienzan_hoy }} actividad{{ alertas.comienzan_hoy|pluralize:"es" }}</p>
         </div>
     </div>
     <div class="alert-card alert-orange">
-        <div class="alert-icon">◉</div>
+        <div class="alert-icon">{% icono "participantes" %}</div>
         <div class="alert-body">
             <h4>Sin inscritos</h4>
             <p>{{ alertas.sin_inscritos }} actividad{{ alertas.sin_inscritos|pluralize:"es" }}</p>
         </div>
     </div>
     <div class="alert-card alert-red">
-        <div class="alert-icon">✉</div>
+        <div class="alert-icon">{% icono "correo" %}</div>
         <div class="alert-body">
             <h4>Correos fallidos</h4>
             <p>{{ alertas.correos_fallidos }} envío{{ alertas.correos_fallidos|pluralize:"s" }}</p>
@@ -289,8 +289,8 @@
                 </div>
                 <div class="upcoming-body">
                     <h4>{{ act.titulo }}</h4>
-                    <p><span>◷</span> {{ act.fecha_inicio|date:"H:i" }}</p>
-                    <p><span>◉</span> {{ act.lugar_completo }}</p>
+                    <p>{% icono "reloj" "icono--texto" %} {{ act.fecha_inicio|date:"H:i" }}</p>
+                    <p>{% icono "lugar" "icono--texto" %} {{ act.lugar_completo }}</p>
                 </div>
                 <div class="upcoming-badge">
                     {% if act.tipo == 'TALLER' %}<span class="badge">Taller</span>{% else %}<span class="badge draft">Masiva</span>{% endif %}
@@ -387,7 +387,7 @@
                         {% if actividad.imagen %}
                         <img src="{{ actividad.imagen.url }}" alt="{{ actividad.titulo }}" class="img-miniatura">
                         {% else %}
-                        <div class="img-miniatura-placeholder">▣</div>
+                        <div class="img-miniatura-placeholder">{% icono "imagen" %}</div>
                         {% endif %}
                     </td>
                     <td>

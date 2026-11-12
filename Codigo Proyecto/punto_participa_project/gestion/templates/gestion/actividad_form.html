@@ -31,7 +31,7 @@
     {% if form.non_field_errors %}
         <div class="alert alert-danger" role="alert">
             {% for error in form.non_field_errors %}
-                <div>⚠ {{ error }}</div>
+                <div>{% icono "alerta" "icono--texto" %} {{ error }}</div>
             {% endfor %}
         </div>
     {% endif %}
@@ -172,7 +172,7 @@
                 <div class="form-field">
                     <label>Imagen / Banner</label>
                     <div id="drop-area" class="zona-drop">
-                        <div class="drop-icon">▣</div>
+                        <div class="drop-icon">{% icono "imagen" %}</div>
                         <p>Arrastra una imagen aquí o haz clic para seleccionar</p>
                         <small>Formato recomendado: 200x150px</small>
                         <input type="file"

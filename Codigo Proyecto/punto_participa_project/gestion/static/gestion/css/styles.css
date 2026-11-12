@@ -4567,3 +4567,103 @@ a.mini-stat:focus-visible {
     color: var(--muted);
     text-align: center;
 }
+
+/* Íconos del menú principal */
+.main-nav a .icono {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+}
+
+.mobile-logout-form .text-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ============================================================
+   Íconos en lugar de los símbolos de texto antiguos
+   ============================================================ */
+.icono--grande {
+    width: 36px;
+    height: 36px;
+    stroke-width: 1.6;
+}
+
+.icono--texto {
+    width: 15px;
+    height: 15px;
+    vertical-align: -2px;
+}
+
+.stat-icon .icono,
+.alert-icon .icono {
+    width: 24px;
+    height: 24px;
+}
+
+.drop-icon .icono,
+.state-icon .icono,
+.activity-thumb-placeholder .icono,
+.img-miniatura-placeholder .icono {
+    width: 28px;
+    height: 28px;
+}
+
+/* Mostrar contraseña: un ojo u otro según aria-pressed */
+.toggle-password .ojo {
+    display: inline-flex;
+}
+
+.toggle-password .ojo__cerrado,
+.toggle-password[aria-pressed="true"] .ojo__abierto {
+    display: none;
+}
+
+.toggle-password[aria-pressed="true"] .ojo__cerrado {
+    display: inline;
+}
+
+.btn-icon.cargando {
+    opacity: 0.5;
+    cursor: progress;
+}
+
+/* ============================================================
+   Menú de navegación en celular
+   - La barra tenía overflow-x: auto, que recortaba el desplegable (quedaba "detrás").
+   - Las rayitas del botón estaban en fila y se deformaban: ahora son íconos ☰ / ×.
+   (700px: mismo corte en que aparece el botón Menú)
+   ============================================================ */
+@media (max-width: 700px) {
+    .main-nav {
+        overflow: visible;
+        position: relative;
+        z-index: 150;
+    }
+
+    .nav-mobile-wrapper {
+        position: relative;
+    }
+
+    .nav-toggle-button .icono {
+        width: 20px;
+        height: 20px;
+        color: var(--navy);
+    }
+
+    .nav-toggle__cerrar,
+    .nav-toggle-checkbox:checked + .nav-toggle-button .nav-toggle__abrir {
+        display: none;
+    }
+
+    .nav-toggle-checkbox:checked + .nav-toggle-button .nav-toggle__cerrar {
+        display: inline;
+    }
+
+    /* Las reglas antiguas de las rayitas (span:nth-child) no deben mover el texto */
+    .nav-toggle-checkbox:checked + .nav-toggle-button span.nav-toggle-text {
+        transform: none;
+        opacity: 1;
+    }
+}
