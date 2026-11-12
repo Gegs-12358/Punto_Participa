@@ -128,18 +128,18 @@
             <span class="live">En vivo</span>
             <h3 style="margin: 12px 0 6px;">Últimos registros</h3>
             <p style="color: #adc8db; font-size: 12px; margin-bottom: 14px;">
-                Los últimos 10 estudiantes registrados en esta actividad.
+                Las últimas 10 personas registradas en esta actividad.
             </p>
 
             <div class="lista-ultimos-registros">
-                {% for asistencia in ultimas_asistencias %}
+                {% for r in contador.ultimos %}
                 <div class="person">
-                    <span class="avatar">{{ asistencia.alumno.nombres|slice:":1" }}{{ asistencia.alumno.apellidos|slice:":1" }}</span>
+                    <span class="avatar">{{ r.iniciales }}</span>
                     <p>
-                        <strong>{{ asistencia.alumno.nombres }} {{ asistencia.alumno.apellidos }}</strong>
-                        <small>{{ asistencia.get_metodo_ingreso_display }}{% if asistencia.registrado_por %}, {{ asistencia.registrado_por.first_name|default:asistencia.registrado_por.username }}{% endif %}</small>
+                        <strong>{{ r.nombre }}</strong>
+                        <small>{{ r.metodo }}{% if r.operador %}, {{ r.operador }}{% endif %}</small>
                     </p>
-                    <time>{{ asistencia.fecha_ingreso|date:"H:i" }}</time>
+                    <time>{{ r.hora }}</time>
                 </div>
                 {% empty %}
                 <p class="session__vacio">Sin registros aún</p>
@@ -224,6 +224,35 @@
         <footer class="modal-footer">
             <button type="button" class="btn secondary" data-modal-close id="btnCancelarConfirmacion">Cancelar</button>
             <button type="button" class="btn" id="btnAceptarConfirmacion">{% icono "guardar" %} Aceptar</button>
+        </footer>
+    </section>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL AGREGAR EN LA ENTRADA (solo actividades con invitación) -->
+<!-- ============================================================ -->
+<div class="modal-backdrop" id="modalAgregar" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalAgregarLabel">
+        <header class="modal-header">
+            <h2 id="modalAgregarLabel">No está en la lista</h2>
+            <button type="button" class="close-button" data-modal-close aria-label="Cerrar">×</button>
+        </header>
+        <div class="modal-body">
+            <p id="agregarMensaje" aria-live="polite"></p>
+            <div id="agregarAcompanante" hidden>
+                <fieldset class="agregar-acompanante__invitados">
+                    <legend>Acompaña a</legend>
+                    <div id="agregarInvitados" class="agregar-acompanante__lista"></div>
+                </fieldset>
+                <div class="form-field">
+                    <label for="agregarNombre">Nombre completo del acompañante</label>
+                    <input type="text" id="agregarNombre" maxlength="200" autocomplete="off">
+                </div>
+            </div>
+        </div>
+        <footer class="modal-footer">
+            <button type="button" class="btn secondary" data-modal-close id="btnCancelarAgregar">Cancelar</button>
+            <button type="button" class="btn" id="btnConfirmarAgregar">{% icono "agregar" %} Agregar y registrar ingreso</button>
         </footer>
     </section>
 </div>

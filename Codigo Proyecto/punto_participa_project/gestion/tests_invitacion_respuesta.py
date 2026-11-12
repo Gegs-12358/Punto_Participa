@@ -169,7 +169,8 @@ class EnvioTests(BaseRespuestaTests):
         self.assertEqual(len(mail.outbox), 2)
 
     def test_fallo_de_correo_queda_registrado(self):
-        with mock.patch('gestion.views_invitados.send_mail', side_effect=OSError('SMTP caído')):
+        with mock.patch('gestion.views_invitados.send_mail', side_effect=OSError('SMTP caído')), \
+                self.assertLogs('gestion.views_invitados', level='ERROR'):
             resp = self.client.post(self.url_envio, {'modo': 'pendientes'}, follow=True)
         self.assertContains(resp, '2 con error')
         self.assertEqual(NotificacionCorreo.objects.filter(actividad=self.act, estado_envio='FALLO').count(), 2)

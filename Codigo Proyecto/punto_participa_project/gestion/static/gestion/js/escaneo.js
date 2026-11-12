@@ -314,11 +314,19 @@ document.addEventListener('DOMContentLoaded', function () {
                         infoAlumno.appendChild(document.createElement('br'));
                         infoAlumno.appendChild(document.createTextNode('RUT: ' + data.alumno.rut));
                         infoAlumno.appendChild(document.createElement('br'));
+                        // En actividades con invitación llega "detalle" (invitado o acompañante de…)
                         infoAlumno.appendChild(document.createTextNode(
-                            'Carrera: ' + data.alumno.carrera + ', ' + data.alumno.jornada
+                            data.alumno.detalle
+                                ? data.alumno.detalle
+                                : 'Carrera: ' + data.alumno.carrera + ', ' + data.alumno.jornada
                         ));
                     }
                     openModal(modalConfirmar);
+                } else if (data.agregar) {
+                    // Actividad con invitación: no está en la lista, se ofrece agregarlo
+                    rutPendiente = inputRut.value;
+                    inputRut.value = '';
+                    abrirAgregar(data);
                 } else if (!data.success) {
                     inputRut.value = '';
                     mostrarAviso(data.message);
@@ -340,6 +348,87 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Error al registrar asistencia:', error);
                 mostrarAviso('Error al conectar con el servidor.');
             });
+    }
+
+    // ============================================================
+    // AGREGAR EN LA ENTRADA (actividades con invitación)
+    // ============================================================
+    const modalAgregar = document.getElementById('modalAgregar');
+    const btnConfirmarAgregar = document.getElementById('btnConfirmarAgregar');
+    let modoAgregar = '';
+
+    function abrirAgregar(data) {
+        if (!modalAgregar) return;
+        modoAgregar = data.agregar;
+        document.getElementById('agregarMensaje').textContent = data.message;
+        const bloque = document.getElementById('agregarAcompanante');
+        const lista = document.getElementById('agregarInvitados');
+        const nombre = document.getElementById('agregarNombre');
+        lista.textContent = '';
+        nombre.value = '';
+        bloque.hidden = modoAgregar !== 'acompanante';
+        if (modoAgregar === 'acompanante') {
+            (data.invitados || []).forEach(function (inv, i) {
+                const etiqueta = document.createElement('label');
+                etiqueta.className = 'agregar-acompanante__opcion';
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'agregar_invitado';
+                radio.value = inv.id;
+                if (i === 0 && (data.invitados.length === 1)) radio.checked = true;
+                const texto = document.createElement('span');
+                texto.textContent = inv.nombre + (inv.entro ? ' (ya entró)' : '') +
+                    ', le queda' + (inv.quedan === 1 ? ' 1 cupo' : 'n ' + inv.quedan + ' cupos');
+                etiqueta.appendChild(radio);
+                etiqueta.appendChild(texto);
+                lista.appendChild(etiqueta);
+            });
+        }
+        openModal(modalAgregar);
+        if (modoAgregar === 'acompanante') nombre.focus();
+    }
+
+    if (btnConfirmarAgregar) {
+        btnConfirmarAgregar.addEventListener('click', function () {
+            if (!rutPendiente) return;
+            const formData = new FormData(formEscaneo);
+            formData.append('rut', rutPendiente);
+            formData.append('confirmar', 'true');
+            formData.append('agregar', modoAgregar);
+            if (modoAgregar === 'acompanante') {
+                const elegido = document.querySelector('input[name="agregar_invitado"]:checked');
+                const nombre = document.getElementById('agregarNombre').value.trim();
+                if (!elegido) { mostrarMensaje('Elige a qué invitado acompaña.', 'warning'); return; }
+                if (!nombre) { mostrarMensaje('Escribe el nombre del acompañante.', 'warning'); return; }
+                formData.append('invitado_id', elegido.value);
+                formData.append('nombre', nombre);
+            }
+            btnConfirmarAgregar.disabled = true;
+            fetch('/escaneo/', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCookie('csrftoken') },
+                credentials: 'same-origin'
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    btnConfirmarAgregar.disabled = false;
+                    closeModal(modalAgregar);
+                    if (data.success) {
+                        mostrarMensaje(data.message, 'success');
+                        actualizarContador(data.contador);
+                        enfocarInput();
+                    } else {
+                        mostrarAviso(data.message);
+                    }
+                })
+                .catch(function () {
+                    btnConfirmarAgregar.disabled = false;
+                    mostrarAviso('Error al conectar con el servidor.');
+                });
+        });
+        const btnCancelarAgregar = document.getElementById('btnCancelarAgregar');
+        if (btnCancelarAgregar) btnCancelarAgregar.addEventListener('click', enfocarInput);
     }
 
     // ============================================================

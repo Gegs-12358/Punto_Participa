@@ -1643,8 +1643,10 @@ def _contador_escaneo(request, actividad):
     Contador en vivo del escáner: lo que registró este operador en su turno, el total
     de la actividad (todos los operadores) y cuántas lleva cada operador.
     """
-    asis = Asistencia.objects.filter(actividad=actividad)
     inicio = _turno_inicio(request)
+    if actividad.tipo == 'INVITACION':
+        return _contador_invitacion(request, actividad, inicio)
+    asis = Asistencia.objects.filter(actividad=actividad)
     if actividad.tipo == 'TALLER':
         meta = Inscripcion.objects.filter(actividad=actividad, estado='CONFIRMADA').count()
         meta_texto = 'inscritos'
@@ -1662,6 +1664,7 @@ def _contador_escaneo(request, actividad):
         key=lambda o: (-o['total'], o['nombre'].lower()))
     ultimos = [{
         'nombre': f'{a.alumno.nombres} {a.alumno.apellidos}',
+        'iniciales': _iniciales(f'{a.alumno.nombres} {a.alumno.apellidos}'),
         'metodo': a.get_metodo_ingreso_display(),
         'operador': ('tú' if a.registrado_por_id == request.user.id
                      else (a.registrado_por.first_name or a.registrado_por.username) if a.registrado_por else ''),
@@ -1674,6 +1677,42 @@ def _contador_escaneo(request, actividad):
         'en_turno': len(en_turno),
         'ultimos': ultimos,
         'mi_turno': asis.filter(registrado_por=request.user, fecha_ingreso__gte=inicio).count() if inicio else 0,
+        'turno_desde': timezone.localtime(inicio).strftime('%H:%M') if inicio else None,
+        'operadores': operadores,
+    }
+
+
+def _iniciales(nombre):
+    return ''.join(p[0] for p in nombre.split()[:2]).upper()
+
+
+def _contador_invitacion(request, actividad, inicio):
+    """Contador del escáner en una actividad con invitación: cuenta invitados y acompañantes."""
+    from .escaner_invitacion import registros
+    filas = registros(actividad)
+    en_turno = set(TurnoEscaneo.abiertos(actividad).values_list('usuario_id', flat=True))
+    totales = defaultdict(int)
+    for f in filas:
+        totales[f['registrado_por_id']] += 1
+    nombres = {u.id: (u.first_name or u.username) for u in User.objects.filter(pk__in=set(totales) | en_turno)}
+    operadores = sorted(
+        ({'nombre': nombres.get(uid, 'Sin operador'), 'total': t, 'yo': uid == request.user.id,
+          'en_turno': uid in en_turno}
+         for uid, t in ({**{u: 0 for u in en_turno}, **totales}).items()),
+        key=lambda o: (-o['total'], o['nombre'].lower()))
+    esperados = (actividad.invitados.exclude(estado='RECHAZADO').count()
+                 + actividad.acompanantes.count())
+    filas.sort(key=lambda f: f['fecha'], reverse=True)
+    return {
+        'total': len(filas),
+        'meta': esperados,
+        'meta_texto': 'esperados (invitados y acompañantes)',
+        'en_turno': len(en_turno),
+        'ultimos': [{'nombre': f['nombre'], 'iniciales': _iniciales(f['nombre']), 'metodo': f['metodo'],
+                     'operador': 'tú' if f['registrado_por_id'] == request.user.id else f['operador_nombre'],
+                     'hora': timezone.localtime(f['fecha']).strftime('%H:%M')} for f in filas[:10]],
+        'mi_turno': sum(1 for f in filas if f['registrado_por_id'] == request.user.id
+                        and inicio and f['fecha'] >= inicio),
         'turno_desde': timezone.localtime(inicio).strftime('%H:%M') if inicio else None,
         'operadores': operadores,
     }
@@ -1709,6 +1748,12 @@ def _procesar_escaneo(request):
     if not actividad_id:
         return _error_json('Primero selecciona una actividad.')
 
+    # Con invitación: entran invitados y acompañantes de la lista (pueden no estar en la nómina)
+    con_invitacion = Actividad.objects.filter(pk=actividad_id, estado='ACTIVA', tipo='INVITACION').first()
+    if con_invitacion:
+        from . import escaner_invitacion
+        return escaner_invitacion.procesar(request, con_invitacion, metodo, rut_procesado, confirmar)
+
     # ============================================================
     # BUSCAR ALUMNO — [REFACTOR] Usando helper global
     # ============================================================
@@ -1737,13 +1782,6 @@ def _procesar_escaneo(request):
         registrar_log(request, 'Escáner', 'Intento de asistencia sin inscripción',
                       f'{alumno.nombres} {alumno.apellidos} en "{actividad.titulo}"',
                       'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
-
-    # Con invitación: solo entran los de la lista
-    if actividad.tipo == 'INVITACION' and not actividad.invitados.filter(rut=alumno.rut).exists():
-        registrar_log(request, 'Escáner', 'Intento de ingreso sin invitación',
-                      f'{alumno.nombres} {alumno.apellidos} en "{actividad.titulo}"',
-                      'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
-        return _error_json(f'{alumno.nombres} {alumno.apellidos} no está en la lista de invitados.', 403)
 
     # ============================================================
     # PRIMERA ETAPA: PEDIR CONFIRMACIÓN
@@ -1892,11 +1930,6 @@ def escaneo(request):
         'actividad_seleccionada': actividad,
         'contador': _contador_escaneo(request, actividad) if actividad else None,
         'actividades_disponibles': _actividades_para_escanear(),
-        'ultimas_asistencias': (
-            Asistencia.objects.filter(actividad=actividad)
-            .select_related('alumno', 'registrado_por').order_by('-fecha_ingreso')[:10]
-            if actividad else []
-        ),
     })
 
 

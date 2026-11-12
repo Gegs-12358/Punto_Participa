@@ -4870,3 +4870,48 @@ a.mini-stat:focus-visible {
         grid-template-columns: 1fr;
     }
 }
+
+/* Escáner: agregar acompañante en la entrada */
+.agregar-acompanante__invitados {
+    margin: 0 0 10px;
+    padding: 0;
+    border: 0;
+}
+
+.agregar-acompanante__invitados legend {
+    margin-bottom: 6px;
+    font-weight: 800;
+    color: var(--navy);
+}
+
+.agregar-acompanante__lista {
+    display: grid;
+    gap: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.agregar-acompanante__opcion {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.agregar-acompanante__opcion input {
+    width: 16px;
+    height: 16px;
+    min-height: 0;
+    margin: 0;
+    flex: 0 0 auto;
+    accent-color: var(--navy);
+}
+
+.agregar-acompanante__opcion:has(input:checked) {
+    border-color: var(--navy);
+    background: var(--surface);
+}

@@ -293,12 +293,14 @@ class SeguridadTests(BaseInvitadosTests):
         self.assertEqual(self.client.get(reverse('actividad_publica', args=[self.act.pk])).status_code, 404)
         self.assertEqual(self.client.get(reverse('inscripcion_taller', args=[self.act.pk])).status_code, 404)
 
-    def test_escaner_solo_deja_entrar_a_la_lista(self):
+    def test_escaner_no_deja_entrar_directo_a_quien_no_esta_en_la_lista(self):
         self.seleccionar_actividad(self.act)
-        resp = self.client.post(reverse('escaneo'), {'rut': '200015509'})
-        self.assertEqual(resp.status_code, 403)
-        self.assertIn('no está en la lista de invitados', resp.json()['message'])
-        self.assertTrue(LogAuditoria.objects.filter(accion='Intento de ingreso sin invitación').exists())
+        resp = self.client.post(reverse('escaneo'), {'rut': '200015509', 'confirmar': 'true'})
+        datos = resp.json()
+        self.assertFalse(datos['success'])
+        self.assertEqual(datos['agregar'], 'alumno')          # se ofrece agregarlo, no entra solo
+        self.assertIn('no está en la lista de invitados', datos['message'])
+        self.assertFalse(Asistencia.objects.filter(actividad=self.act).exists())
         Invitado.objects.create(actividad=self.act, rut='200015509', nombre='Juan', correo='j@x.cl')
         resp = self.client.post(reverse('escaneo'), {'rut': '200015509'})
         self.assertEqual(resp.status_code, 200)
