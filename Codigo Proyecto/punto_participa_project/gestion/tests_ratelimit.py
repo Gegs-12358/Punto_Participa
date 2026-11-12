@@ -1,3 +1,5 @@
+from unittest import mock
+
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import Client, TestCase
@@ -6,9 +8,23 @@ from django.urls import reverse
 from gestion.models import Rol, UsuarioSistema
 
 
+def congelar_reloj_del_limite(prueba):
+       """Congela el reloj que usa django-ratelimit durante la prueba.
+
+       El límite cuenta en ventanas fijas (15 min el login, 1 min el escáner). Si la prueba
+       cruzaba el borde de una ventana, el contador volvía a cero y fallaba al azar
+       (pasó en corridas con --parallel). Solo se congela el reloj de la librería.
+       """
+       parche = mock.patch('django_ratelimit.core.time')
+       reloj = parche.start()
+       reloj.time.return_value = 1_800_000_000
+       prueba.addCleanup(parche.stop)
+
+
 class LimiteIntentosLoginTests(TestCase):
        def setUp(self):
            cache.clear()
+           congelar_reloj_del_limite(self)
            self.url = reverse('login')
 
        def tearDown(self):
@@ -42,6 +58,7 @@ class LimiteEscaneoTests(TestCase):
 
        def setUp(self):
            cache.clear()
+           congelar_reloj_del_limite(self)
            self.url = reverse('escaneo')
 
        def tearDown(self):
