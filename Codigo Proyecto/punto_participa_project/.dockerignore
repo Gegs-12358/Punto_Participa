@@ -25,6 +25,7 @@ staticfiles/
 htmlcov/
 docs/htmlcov/
 media_backup/
+respaldos/
 resultados/
 cookies*.txt
 dash_*.html

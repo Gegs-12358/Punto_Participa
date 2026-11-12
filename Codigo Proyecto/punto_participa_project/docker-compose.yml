@@ -38,6 +38,30 @@ services:
     ports:
       - "8000:8000"
 
+  # Respaldo automático (historia 008). Usa la misma imagen de PostgreSQL que la base,
+  # así pg_dump es de la misma versión. Ver respaldo/LEEME.md
+  respaldo:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    # Los archivos quedan a nombre de tu usuario del computador (no de root)
+    user: "${RESPALDO_UID:-1000}:${RESPALDO_GID:-1000}"
+    environment:
+      PGHOST: db
+      PGUSER: ${DB_USER}
+      PGPASSWORD: ${DB_PASSWORD}
+      PGDATABASE: ${DB_NAME}
+      RESPALDO_CADA_HORAS: ${RESPALDO_CADA_HORAS:-24}
+      RESPALDO_DIAS: ${RESPALDO_DIAS:-30}
+      TZ: America/Santiago
+    volumes:
+      - ./respaldo:/scripts:ro
+      - media_volume:/media:ro
+      - ${RESPALDO_DIR:-./respaldos}:/respaldos
+    entrypoint: ["sh", "/scripts/programar.sh"]
+
 volumes:
   pgdata:
   static_volume:

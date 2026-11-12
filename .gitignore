@@ -16,3 +16,6 @@ docs/*.zip
 venv/
 staticfiles/
 *.bak
+
+# Respaldos de la base (datos personales)
+respaldos/
