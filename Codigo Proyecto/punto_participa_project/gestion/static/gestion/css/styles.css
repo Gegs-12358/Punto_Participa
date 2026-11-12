@@ -3986,3 +3986,93 @@ a.btn-icon {
         display: none;
     }
 }
+
+/* ============================================================
+   P-UI: pestañas de vista (Reportes). Tarjetas con título y
+   descripción; la activa en azul institucional con borde dorado.
+   ============================================================ */
+.tabs--vistas {
+    border-bottom: 0;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.tab-vista {
+    flex: 1 1 0;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    margin-bottom: 0;
+    text-align: left;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-bottom: 3px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.tab-vista:hover {
+    border-color: var(--blue);
+    color: var(--navy);
+}
+
+.tab-vista.active {
+    background: var(--navy);
+    border-color: var(--navy);
+    border-bottom-color: var(--gold);
+    color: var(--white);
+    box-shadow: var(--shadow-md);
+}
+
+.tab-vista:focus-visible {
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
+}
+
+.tab-vista__icono {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
+    color: var(--blue);
+}
+
+.tab-vista.active .tab-vista__icono {
+    color: var(--gold);
+}
+
+.tab-vista__texto {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tab-vista__titulo {
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.tab-vista__desc {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    line-height: 1.35;
+}
+
+.tab-vista.active .tab-vista__desc {
+    color: #d6e2ee;
+}
+
+@media (max-width: 640px) {
+    .tabs--vistas {
+        flex-direction: column;
+        overflow-x: visible;
+    }
+}
+
+@media print {
+    .tabs--vistas {
+        display: none;
+    }
+}

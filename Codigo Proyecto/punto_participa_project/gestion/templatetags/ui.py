@@ -39,6 +39,8 @@ _TRAZOS = {
     'imprimir': '<path d="M7 9V3h10v6M7 17H4v-7h16v7h-3"/><rect x="7" y="14" width="10" height="7"/>',
     'cambiar': '<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
     'finalizar': '<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
+    'actividad': '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    'escuela': '<path d="M3 21h18M5 21V10M19 21V10M9 21v-6h6v6M2 10l10-6 10 6"/>',
 }
 
 

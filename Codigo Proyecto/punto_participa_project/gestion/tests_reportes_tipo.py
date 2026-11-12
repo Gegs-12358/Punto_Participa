@@ -43,3 +43,27 @@ class FiltroTipoReportesTests(BaseSistemaTestCase):
         self.assertContains(resp, 'Actividad: Taller integral')
         self.assertContains(resp, 'data-tooltip="Filtrar"')
         self.assertContains(resp, 'img/encabezado/reportes.webp')
+
+
+class PestanasReportesTests(BaseSistemaTestCase):
+    """Las dos vistas del reporte se nombran por lo que muestran y se describen."""
+
+    def setUp(self):
+        self.login_as(self.admin)
+
+    def test_pestanas_con_nombre_y_descripcion(self):
+        resp = self.client.get(reverse('reportes'))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn('Por actividad', html)
+        self.assertIn('Por escuela y carrera', html)
+        self.assertIn('Una fila por actividad con sus inscritos y asistentes', html)
+        self.assertIn('separados por escuela, carrera y jornada', html)
+        self.assertNotIn('Reporte General', html)
+        self.assertNotIn('Reporte Detallado', html)
+
+    def test_pestanas_accesibles(self):
+        html = self.client.get(reverse('reportes')).content.decode()
+        self.assertIn('role="tablist"', html)
+        self.assertIn('aria-controls="detallado-tab"', html)
+        self.assertIn('aria-labelledby="tab-detallado"', html)

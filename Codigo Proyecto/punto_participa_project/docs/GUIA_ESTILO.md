@@ -90,6 +90,15 @@ al hacer clic afuera (`js/ui.js`).
 </details>
 ```
 
+## Pestañas de vista (dos formas de ver los mismos datos)
+
+Cuando una pantalla muestra los mismos datos de dos maneras (Reportes: por actividad
+o por escuela y carrera), cada pestaña es una tarjeta con ícono, **título que dice qué
+agrupa** y una línea que explica qué trae. La activa va en azul institucional con borde
+dorado. Clases: `tabs tabs--vistas` y `tab-button tab-vista`, con `role="tab"`.
+La pestaña elegida queda en la URL (`?vista=detalle`), así se mantiene al recargar,
+filtrar o paginar. Las pestañas de navegación simple (Catálogos) siguen con `tab-button`.
+
 ## Acciones de cada fila
 
 ```html

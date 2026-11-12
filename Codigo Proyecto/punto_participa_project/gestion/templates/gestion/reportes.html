@@ -186,15 +186,29 @@
 <!-- ============================================================ -->
 <!-- TABS -->
 <!-- ============================================================ -->
-<div class="tabs">
-    <button type="button" class="tab-button active" data-tab="general-tab" aria-selected="true">▥ Reporte General</button>
-    <button type="button" class="tab-button" data-tab="detallado-tab" aria-selected="false">▤ Reporte Detallado</button>
+<div class="tabs tabs--vistas" role="tablist" aria-label="Vista del reporte">
+    <button type="button" class="tab-button tab-vista active" data-tab="general-tab" role="tab"
+        id="tab-general" aria-controls="general-tab" aria-selected="true">
+        {% icono "actividad" "tab-vista__icono" %}
+        <span class="tab-vista__texto">
+            <span class="tab-vista__titulo">Por actividad</span>
+            <span class="tab-vista__desc">Una fila por actividad con sus inscritos y asistentes</span>
+        </span>
+    </button>
+    <button type="button" class="tab-button tab-vista" data-tab="detallado-tab" role="tab"
+        id="tab-detallado" aria-controls="detallado-tab" aria-selected="false">
+        {% icono "escuela" "tab-vista__icono" %}
+        <span class="tab-vista__texto">
+            <span class="tab-vista__titulo">Por escuela y carrera</span>
+            <span class="tab-vista__desc">Asistentes de cada actividad separados por escuela, carrera y jornada</span>
+        </span>
+    </button>
 </div>
 
 <!-- ============================================================ -->
 <!-- PESTAÑA 1: REPORTE GENERAL -->
 <!-- ============================================================ -->
-<div class="tab-content active" id="general-tab">
+<div class="tab-content active" id="general-tab" role="tabpanel" aria-labelledby="tab-general">
 
     <div class="charts-grid-3">
         <div class="panel">
@@ -243,7 +257,7 @@
     <div class="panel">
         <div class="panel-head">
             <div>
-                <span class="eyebrow">DETALLE GENERAL</span>
+                <span class="eyebrow">POR ACTIVIDAD</span>
                 <h2>Actividades</h2>
                 <p class="panel-subtitle">Mostrando {{ actividades|length }} de {{ actividades.paginator.count }} actividad{{ actividades.paginator.count|pluralize:"es" }}</p>
             </div>
@@ -310,7 +324,7 @@
 <!-- ============================================================ -->
 <!-- PESTAÑA 2: REPORTE DETALLADO -->
 <!-- ============================================================ -->
-<div class="tab-content" id="detallado-tab" hidden>
+<div class="tab-content" id="detallado-tab" role="tabpanel" aria-labelledby="tab-detallado" hidden>
 
     <div class="charts-grid-3">
         <div class="panel">
@@ -359,7 +373,7 @@
     <div class="panel">
         <div class="panel-head">
             <div>
-                <span class="eyebrow">DETALLE POR ESCUELA</span>
+                <span class="eyebrow">POR ESCUELA Y CARRERA</span>
                 <h2>Participación</h2>
                 <p class="panel-subtitle">Mostrando {{ detalle_data|length }} de {{ detalle_data.paginator.count }} filas</p>
             </div>

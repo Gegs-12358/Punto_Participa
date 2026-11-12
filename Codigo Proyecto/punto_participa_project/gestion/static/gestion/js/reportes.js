@@ -195,8 +195,7 @@
         // ------------------------------------------------------------
         // TABS
         // ------------------------------------------------------------
-        document.querySelectorAll('.tab-button').forEach(function (btn) {
-            btn.addEventListener('click', function () {
+        function activarPestana(btn) {
                 const targetId = btn.getAttribute('data-tab');
 
                 document.querySelectorAll('.tab-button').forEach(b => {
@@ -216,8 +215,44 @@
                     target.classList.add('active');
                     target.removeAttribute('hidden');
                 }
+        }
+
+        const pestanas = document.querySelectorAll('.tab-button[data-tab]');
+        pestanas.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                activarPestana(btn);
+                // Recordar la vista en la URL (sin recargar) para que un F5 vuelva a ella.
+                const url = new URL(window.location.href);
+                if (btn.getAttribute('data-tab') === 'detallado-tab') {
+                    url.searchParams.set('vista', 'detalle');
+                } else {
+                    url.searchParams.delete('vista');
+                }
+                window.history.replaceState(null, '', url);
             });
         });
+
+        // Al filtrar, mantener la pestaña que se estaba mirando.
+        const formFiltros = document.querySelector('form.filters-bar');
+        if (formFiltros) {
+            formFiltros.addEventListener('submit', function () {
+                const activa = document.querySelector('.tab-button.active[data-tab="detallado-tab"]');
+                if (activa && !formFiltros.querySelector('input[name="vista"]')) {
+                    const oculto = document.createElement('input');
+                    oculto.type = 'hidden';
+                    oculto.name = 'vista';
+                    oculto.value = 'detalle';
+                    formFiltros.appendChild(oculto);
+                }
+            });
+        }
+
+        // Al paginar la tabla detallada (page_det) o volver con ?vista=detalle, abrir esa pestaña.
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('vista') === 'detalle' || params.has('page_det')) {
+            const btnDet = document.querySelector('.tab-button[data-tab="detallado-tab"]');
+            if (btnDet) activarPestana(btnDet);
+        }
     });
 
 })();
