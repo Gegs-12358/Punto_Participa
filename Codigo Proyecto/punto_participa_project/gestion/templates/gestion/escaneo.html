@@ -5,48 +5,72 @@
 {% block content %}
 
 <!-- ============================================================ -->
-<!-- TÍTULO + ACTIVIDAD ACTUAL -->
+<!-- TÍTULO -->
 <!-- ============================================================ -->
-<div class="scanner-header">
-    <div class="scanner-title">
+<div class="page-title">
+    <div>
         <span class="eyebrow">REGISTRO DE ASISTENCIA</span>
         <h1>Escáner</h1>
-        <p>Registra la asistencia de los estudiantes con la pistola o manualmente.</p>
+        <p>Registra la asistencia con la pistola o escribiendo el documento.</p>
     </div>
-
-    <div class="scanner-activity">
-        <span class="eyebrow">ACTIVIDAD ACTUAL</span>
-
-        {% if actividad_seleccionada %}
-        <div class="scanner-activity-info">
-            <h2>{{ actividad_seleccionada.titulo }}</h2>
-            <p>
-                ▦ {{ actividad_seleccionada.fecha_inicio|date:"d/m/Y H:i" }} — {{ actividad_seleccionada.fecha_fin|date:"d/m/Y H:i" }}
-            </p>
-            <p>
-                ◎ Cupos disponibles:
-                {% if actividad_seleccionada.cupos_disponibles is not None %}
-                <strong>{{ actividad_seleccionada.cupos_disponibles }}</strong>
-                {% else %}
-                <span class="text-muted">Sin límite</span>
-                {% endif %}
-            </p>
-        </div>
-        <div class="scanner-activity-actions">
-            <button type="button" class="btn secondary" id="btnCambiarActividad">{% icono "cambiar" %} Cambiar</button>
-            <form method="post" action="{% url 'escaneo' %}" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" name="finalizar_turno" value="1" class="btn danger">{% icono "finalizar" %} Finalizar turno</button>
-            </form>
-        </div>
-        {% else %}
-        <div class="scanner-activity-empty">
-            <p>⚠ No hay actividad seleccionada.</p>
-            <button type="button" class="btn" id="btnCambiarActividad">{% icono "cambiar" %} Seleccionar actividad</button>
-        </div>
-        {% endif %}
+    <div class="page-title__acciones">
+        <img class="page-title__ilustracion" src="{% static 'gestion/img/encabezado/registro.webp' %}" alt="" width="92" height="92">
+        <p class="globo-mascota">{% if actividad_seleccionada %}¡Escanea y yo voy contando!{% else %}¡Elige una actividad para empezar tu turno!{% endif %}</p>
     </div>
 </div>
+
+<!-- ============================================================ -->
+<!-- TURNO: ACTIVIDAD Y CONTADOR -->
+<!-- ============================================================ -->
+{% if actividad_seleccionada %}
+<section class="turno" aria-label="Turno de escaneo">
+    <div class="turno__actividad">
+        <span class="eyebrow">TU TURNO{% if contador.turno_desde %} DESDE LAS {{ contador.turno_desde }}{% endif %}</span>
+        <h2>{{ actividad_seleccionada.titulo }}</h2>
+        <p>
+            {{ actividad_seleccionada.get_tipo_display }},
+            {{ actividad_seleccionada.fecha_inicio|date:"d/m/Y H:i" }} a {{ actividad_seleccionada.fecha_fin|date:"H:i" }},
+            {{ actividad_seleccionada.lugar_completo }}
+        </p>
+    </div>
+    <div class="turno__acciones">
+        <button type="button" class="btn secondary" id="btnCambiarActividad">{% icono "cambiar" %} Cambiar actividad</button>
+        <form method="post" action="{% url 'escaneo' %}">
+            {% csrf_token %}
+            <button type="submit" name="finalizar_turno" value="1" class="btn danger">{% icono "finalizar" %} Finalizar turno</button>
+        </form>
+    </div>
+</section>
+
+<div class="mini-stats mini-stats--3 contador-escaneo" id="contadorEscaneo"
+    data-url="{% url 'escaneo_contador' %}" aria-live="polite">
+    <div class="mini-stat mini-stat--destacado">
+        <span>REGISTRADOS EN TU TURNO</span>
+        <strong data-contador="mi_turno">{{ contador.mi_turno }}</strong>
+    </div>
+    <div class="mini-stat">
+        <span>TOTAL EN LA ACTIVIDAD</span>
+        <strong data-contador="total">{{ contador.total }}</strong>
+        <small class="mini-stat__nota" data-contador="meta">{% if contador.meta %}de {{ contador.meta }} {{ contador.meta_texto }}{% else %}todos los operadores{% endif %}</small>
+    </div>
+    <div class="mini-stat">
+        <span>OPERADORES EN TURNO</span>
+        <strong data-contador="en_turno">{{ contador.en_turno }}</strong>
+        <small class="mini-stat__nota">en esta actividad, ahora</small>
+    </div>
+</div>
+{% else %}
+<section class="turno turno--vacio">
+    <div class="turno__actividad">
+        <span class="eyebrow">SIN TURNO</span>
+        <h2>No hay actividad seleccionada</h2>
+        <p>Elige la actividad en la que vas a registrar asistencia. Tu turno empieza al elegirla.</p>
+    </div>
+    <div class="turno__acciones">
+        <button type="button" class="btn" id="btnCambiarActividad">{% icono "cambiar" %} Elegir actividad</button>
+    </div>
+</section>
+{% endif %}
 
 <!-- ============================================================ -->
 <!-- GRID PRINCIPAL: FORMULARIO + ÚLTIMOS REGISTROS -->
@@ -57,13 +81,11 @@
     <div>
         {% if actividad_seleccionada %}
         <div class="scan-card panel">
-            <div class="scan-symbol">▢</div>
             <h2>Registrar asistencia</h2>
-            <p class="text-muted">Escanea el código QR de la cédula o escribe el RUT/Pasaporte manualmente.</p>
+            <p class="text-muted">Escanea el código QR de la cédula o escribe el RUT o pasaporte y presiona Enter.</p>
 
             <div class="scanner-status">
-                <span class="badge">◉ Listo para escanear</span>
-                <small class="text-muted">Pistola o ingreso manual</small>
+                <span class="badge">Listo para escanear</span>
             </div>
 
             <form id="formEscaneo" autocomplete="off">
@@ -80,8 +102,6 @@
                     </label>
                 </div>
                 <small class="input-help" id="rut-help">
-                    ⓘ Presiona el gatillo de la pistola sobre el código QR o escribe el RUT/Pasaporte manualmente y presiona Enter.
-                    <br>
                     Acepta RUT chileno, pasaporte, RUN provisorio y cédula de extranjero.
                 </small>
 
@@ -95,18 +115,17 @@
         {% else %}
         <div class="panel">
             <div class="empty-state">
-                <span>▢</span>
                 <h3>Sin actividad seleccionada</h3>
-                <p>Selecciona una actividad para comenzar a registrar asistencia.</p>
+                <p>Elige una actividad para comenzar a registrar asistencia.</p>
             </div>
         </div>
         {% endif %}
     </div>
 
-    <!-- COLUMNA DERECHA: ÚLTIMOS REGISTROS -->
+    <!-- COLUMNA DERECHA: ÚLTIMOS REGISTROS Y OPERADORES -->
     <div>
         <div class="session">
-            <span class="live">● EN VIVO</span>
+            <span class="live">En vivo</span>
             <h3 style="margin: 12px 0 6px;">Últimos registros</h3>
             <p style="color: #adc8db; font-size: 12px; margin-bottom: 14px;">
                 Los últimos 10 estudiantes registrados en esta actividad.
@@ -118,20 +137,26 @@
                     <span class="avatar">{{ asistencia.alumno.nombres|slice:":1" }}{{ asistencia.alumno.apellidos|slice:":1" }}</span>
                     <p>
                         <strong>{{ asistencia.alumno.nombres }} {{ asistencia.alumno.apellidos }}</strong>
-                        <small>
-                            {% if asistencia.metodo_ingreso == 'QR' %}▢ QR
-                            {% elif asistencia.metodo_ingreso == 'CODIGO' %}▥ Código
-                            {% else %}⌨ RUT{% endif %}
-                        </small>
+                        <small>{{ asistencia.get_metodo_ingreso_display }}{% if asistencia.registrado_por %}, {{ asistencia.registrado_por.first_name|default:asistencia.registrado_por.username }}{% endif %}</small>
                     </p>
                     <time>{{ asistencia.fecha_ingreso|date:"H:i" }}</time>
                 </div>
                 {% empty %}
-                <p style="color: #adc8db; text-align: center; padding: 20px 0;">
-                    Sin registros aún
-                </p>
+                <p class="session__vacio">Sin registros aún</p>
                 {% endfor %}
             </div>
+
+            {% if actividad_seleccionada %}
+            <hr>
+            <h3 class="session__titulo">Por operador</h3>
+            <ul class="operadores" data-contador="operadores">
+                {% for op in contador.operadores %}
+                <li{% if op.yo %} class="operadores__yo"{% endif %}><span>{{ op.nombre }}{% if op.yo %} (tú){% endif %}{% if op.en_turno %} <small class="operadores__estado">en turno</small>{% endif %}</span><strong>{{ op.total }}</strong></li>
+                {% empty %}
+                <li class="operadores__vacio">Nadie está en turno ni ha registrado todavía.</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -142,7 +167,7 @@
 <div class="modal-backdrop" id="cambiarActividadModal" hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="cambiarActividadLabel">
         <header class="modal-header">
-            <h2 id="cambiarActividadLabel">Cambiar Actividad</h2>
+            <h2 id="cambiarActividadLabel">Elegir actividad</h2>
             <button type="button" class="close-button" data-modal-close aria-label="Cerrar">×</button>
         </header>
 
@@ -156,11 +181,11 @@
                         {% for actividad in actividades_disponibles %}
                         <option value="{{ actividad.id }}"
                                 {% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %}selected{% endif %}>
-                            {{ actividad.titulo }} — {{ actividad.fecha_inicio|date:"d/m/Y H:i" }} ({{ actividad.get_tipo_display }})
+                            {{ actividad.titulo }}, {{ actividad.fecha_inicio|date:"d/m/Y H:i" }} ({{ actividad.get_tipo_display }})
                         </option>
                         {% endfor %}
                     </select>
-                    <small class="input-help">Solo se listan actividades en estado ACTIVA.</small>
+                    <small class="input-help">Solo aparecen las actividades activas. Al elegir otra, termina tu turno actual y empieza uno nuevo.</small>
                 </div>
             </div>
             <footer class="modal-footer">
@@ -177,7 +202,7 @@
 <div class="modal-backdrop" id="modalConfirmarAsistencia" hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmarAsistenciaLabel">
         <header class="modal-header">
-            <h2 id="confirmarAsistenciaLabel">Confirmar Registro</h2>
+            <h2 id="confirmarAsistenciaLabel">Confirmar registro</h2>
             <button type="button" class="close-button" data-modal-close aria-label="Cerrar" id="btnCerrarModalAsistencia">×</button>
         </header>
 
@@ -187,7 +212,7 @@
         </div>
 
         <footer class="modal-footer">
-            <button type="button" class="btn secondary" data-modal-close id="btnCancelarConfirmacion">× Cancelar</button>
+            <button type="button" class="btn secondary" data-modal-close id="btnCancelarConfirmacion">Cancelar</button>
             <button type="button" class="btn" id="btnAceptarConfirmacion">{% icono "guardar" %} Aceptar</button>
         </footer>
     </section>

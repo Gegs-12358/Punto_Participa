@@ -417,6 +417,38 @@ class NotificacionCorreo(models.Model):
         return f'{self.actividad} - {self.estado_envio}'
 
 
+class TurnoEscaneo(models.Model):
+    """
+    Turno de un operador en el escáner (P2): empieza al elegir la actividad y termina con
+    "Finalizar turno" o al cambiar de actividad. Sirve para mostrar quién está registrando
+    ahora en una actividad, aunque todavía no haya registrado a nadie.
+    Un turno que nadie cerró (se cerró el navegador) deja de contar como abierto después de
+    HORAS_MAXIMAS.
+    """
+    HORAS_MAXIMAS = 12
+
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='turnos_escaneo')
+    actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, related_name='turnos_escaneo')
+    inicio = models.DateTimeField(auto_now_add=True, db_index=True)
+    fin = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Turno de escaneo'
+        verbose_name_plural = 'Turnos de escaneo'
+        ordering = ['-inicio']
+        indexes = [models.Index(fields=['actividad', 'fin'])]
+
+    def __str__(self):
+        return f'{self.usuario} en {self.actividad} ({self.inicio:%d/%m/%Y %H:%M})'
+
+    @classmethod
+    def abiertos(cls, actividad):
+        from datetime import timedelta
+        from django.utils import timezone
+        limite = timezone.now() - timedelta(hours=cls.HORAS_MAXIMAS)
+        return cls.objects.filter(actividad=actividad, fin__isnull=True, inicio__gte=limite)
+
+
 class LogAuditoria(models.Model):
     usuario_sistema = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='logs_auditoria')
     accion = models.CharField(max_length=200)

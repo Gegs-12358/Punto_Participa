@@ -62,6 +62,7 @@ urlpatterns = [
     # ESCÁNER
     # ============================================================
     path('escaneo/', views.escaneo, name='escaneo'),
+    path('escaneo/contador/', views.escaneo_contador, name='escaneo_contador'),
 
     # ============================================================
     # AUDITORÍA

@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.core.exceptions import ValidationError
 from .models import (
     Rol, UsuarioSistema, Alumno, Actividad, Carrera, Escuela, Jornada, Lugar,
-    Inscripcion, Asistencia, NotificacionCorreo, LogAuditoria
+    Inscripcion, Asistencia, NotificacionCorreo, LogAuditoria, TurnoEscaneo
 )
 from .utils import normalizar_rut, normalizar_documento
 
@@ -276,3 +276,15 @@ class LogAuditoriaAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """No se puede eliminar."""
         return False
+
+# ============================================================
+# ADMIN: TURNOS DE ESCANEO
+# ============================================================
+
+@admin.register(TurnoEscaneo)
+class TurnoEscaneoAdmin(admin.ModelAdmin):
+    list_display = ('usuario', 'actividad', 'inicio', 'fin')
+    list_filter = ('inicio',)
+    search_fields = ('usuario__username', 'actividad__titulo')
+    list_select_related = ('usuario', 'actividad')
+    readonly_fields = ('usuario', 'actividad', 'inicio', 'fin')

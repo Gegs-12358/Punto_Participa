@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 import re
 
 from collections import defaultdict
-from datetime import timedelta
+from datetime import datetime, timedelta
 from openpyxl import Workbook
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -38,12 +38,13 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 from django_ratelimit.decorators import ratelimit
 from django.views.decorators.debug import sensitive_post_parameters
+from django.views.decorators.http import require_GET
  
 from .decorators import role_required
 from .forms import ActividadForm
 from .models import (
     Actividad, Alumno, Asistencia, Carrera, Escuela, Inscripcion, Jornada, Lugar,
-    LogAuditoria, NotificacionCorreo, Rol, UsuarioSistema,
+    LogAuditoria, NotificacionCorreo, Rol, TurnoEscaneo, UsuarioSistema,
 )
 # [REFACTOR Opción B] Permisos centralizados
 from .permissions import ( ROLES_VALIDOS, get_perfil, puede_gestionar_actividad,tiene_rol,)
@@ -1565,6 +1566,97 @@ def _mensaje_no_encontrado(metodo, documento):
         return f'Estudiante no encontrado con el documento: {documento}'
     return 'Estudiante no encontrado.'
 
+# ------------------------------------------------------------
+# Turno del escáner (P2)
+# ------------------------------------------------------------
+# El turno empieza al elegir la actividad y termina con "Finalizar turno" (o al cambiar de
+# actividad). Se guarda en TurnoEscaneo para que todos vean quién está en turno, y en la
+# sesión (id y hora de inicio) para contar lo que registró este operador.
+
+def _turno_inicio(request):
+    """Hora de inicio del turno (con zona horaria) o None."""
+    valor = request.session.get('turno_inicio')
+    try:
+        inicio = datetime.fromisoformat(valor) if valor else None
+    except (TypeError, ValueError):
+        return None
+    return inicio if inicio and timezone.is_aware(inicio) else None
+
+
+def _iniciar_turno(request, actividad):
+    turno = TurnoEscaneo.objects.create(usuario=request.user, actividad=actividad)
+    request.session['actividad_escaneo_id'] = actividad.id
+    request.session['turno_id'] = turno.id
+    request.session['turno_inicio'] = turno.inicio.isoformat()
+    registrar_log(request, 'Escáner', 'Iniciar turno', f'Turno de escaneo en "{actividad.titulo}".',
+                  'Actividad', actividad.id, actividad.titulo)
+
+
+def _terminar_turno(request):
+    """Cierra el turno en curso, lo deja en la auditoría y devuelve un resumen (o None)."""
+    act_id = request.session.pop('actividad_escaneo_id', None)
+    inicio = _turno_inicio(request)
+    request.session.pop('turno_inicio', None)
+    turno_id = request.session.pop('turno_id', None)
+    if turno_id:
+        TurnoEscaneo.objects.filter(pk=turno_id, usuario=request.user, fin__isnull=True).update(
+            fin=timezone.now())
+    actividad = Actividad.objects.filter(pk=act_id).first() if act_id else None
+    if actividad is None:
+        return None
+    registradas = (Asistencia.objects.filter(actividad=actividad, registrado_por=request.user,
+                                             fecha_ingreso__gte=inicio).count() if inicio else 0)
+    minutos = int((timezone.now() - inicio).total_seconds() // 60) if inicio else None
+    duracion = f' en {minutos} min' if minutos is not None else ''
+    registrar_log(request, 'Escáner', 'Finalizar turno',
+                  f'Turno en "{actividad.titulo}": {registradas} asistencia{"s" if registradas != 1 else ""}'
+                  f' registrada{"s" if registradas != 1 else ""}{duracion}.',
+                  'Actividad', actividad.id, actividad.titulo,
+                  cambios_json={'registradas': registradas, 'minutos': minutos})
+    return {'actividad': actividad, 'registradas': registradas, 'minutos': minutos}
+
+
+def _contador_escaneo(request, actividad):
+    """
+    Contador en vivo del escáner: lo que registró este operador en su turno, el total
+    de la actividad (todos los operadores) y cuántas lleva cada operador.
+    """
+    asis = Asistencia.objects.filter(actividad=actividad)
+    inicio = _turno_inicio(request)
+    if actividad.tipo == 'TALLER':
+        meta = Inscripcion.objects.filter(actividad=actividad, estado='CONFIRMADA').count()
+        meta_texto = 'inscritos'
+    else:
+        meta, meta_texto = actividad.cupos_totales, 'cupos'
+    # Operadores: quienes ya registraron en la actividad y quienes están en turno ahora (aunque lleven 0)
+    en_turno = set(TurnoEscaneo.abiertos(actividad).values_list('usuario_id', flat=True))
+    totales = {i['registrado_por_id']: i['t'] for i in
+               asis.order_by().values('registrado_por_id').annotate(t=Count('id'))}
+    nombres = {u.id: (u.first_name or u.username) for u in User.objects.filter(pk__in=set(totales) | en_turno)}
+    operadores = sorted(
+        ({'nombre': nombres.get(uid, 'Sin operador'), 'total': t, 'yo': uid == request.user.id,
+          'en_turno': uid in en_turno}
+         for uid, t in ({**{u: 0 for u in en_turno}, **totales}).items()),
+        key=lambda o: (-o['total'], o['nombre'].lower()))
+    ultimos = [{
+        'nombre': f'{a.alumno.nombres} {a.alumno.apellidos}',
+        'metodo': a.get_metodo_ingreso_display(),
+        'operador': ('tú' if a.registrado_por_id == request.user.id
+                     else (a.registrado_por.first_name or a.registrado_por.username) if a.registrado_por else ''),
+        'hora': timezone.localtime(a.fecha_ingreso).strftime('%H:%M'),
+    } for a in asis.select_related('alumno', 'registrado_por').order_by('-fecha_ingreso')[:10]]
+    return {
+        'total': asis.count(),
+        'meta': meta,
+        'meta_texto': meta_texto,
+        'en_turno': len(en_turno),
+        'ultimos': ultimos,
+        'mi_turno': asis.filter(registrado_por=request.user, fecha_ingreso__gte=inicio).count() if inicio else 0,
+        'turno_desde': timezone.localtime(inicio).strftime('%H:%M') if inicio else None,
+        'operadores': operadores,
+    }
+
+
 def _procesar_escaneo(request):
     """
     Procesa la solicitud POST del escáner.
@@ -1696,12 +1788,14 @@ def _procesar_escaneo(request):
         'success': True,
         'confirmar': False,
         'message': f'Asistencia registrada para {alumno.nombres} {alumno.apellidos}.',
+        'metodo': metodo,
         'alumno': {
             'nombre': f'{alumno.nombres} {alumno.apellidos}',
             'rut': formatear_rut(alumno.rut),
             'carrera': alumno.carrera,
             'jornada': alumno.jornada,
-        }
+        },
+        'contador': _contador_escaneo(request, actividad),
     })
 
 
@@ -1719,8 +1813,12 @@ def escaneo(request):
                 return redirect('escaneo')
             try:
                 actividad = Actividad.objects.get(pk=actividad_id, estado='ACTIVA')
-                request.session['actividad_escaneo_id'] = actividad.id
-                messages.success(request, f'Actividad seleccionada: {actividad.titulo}')
+                # Sin aviso emergente: taparía el campo y la pistola escribiría en ninguna parte.
+                # La pantalla ya muestra la actividad y la hora de inicio del turno.
+                if (request.session.get('actividad_escaneo_id') != actividad.id
+                        or not request.session.get('turno_id')):
+                    _terminar_turno(request)
+                    _iniciar_turno(request, actividad)
                 if _es_ajax(request):
                     return JsonResponse({'success': True, 'redirect_url': '/escaneo/'})
                 return redirect('escaneo')
@@ -1731,8 +1829,14 @@ def escaneo(request):
                 return redirect('escaneo')
 
         if 'finalizar_turno' in request.POST:
-            request.session.pop('actividad_escaneo_id', None)
-            messages.info(request, 'Turno finalizado. Selecciona una nueva actividad.')
+            resumen = _terminar_turno(request)
+            if resumen:
+                n, minutos = resumen['registradas'], resumen['minutos']
+                messages.info(request, f'Turno finalizado en "{resumen["actividad"].titulo}": registraste {n} '
+                                       f'asistencia{"s" if n != 1 else ""}'
+                                       + (f' en {minutos} min.' if minutos is not None else '.'))
+            else:
+                messages.info(request, 'Turno finalizado.')
             return redirect('escaneo')
 
         if 'rut' in request.POST:
@@ -1750,9 +1854,14 @@ def escaneo(request):
             actividad = Actividad.objects.get(pk=act_id, estado='ACTIVA')
         except Actividad.DoesNotExist:
             request.session.pop('actividad_escaneo_id', None)
+            request.session.pop('turno_inicio', None)
+    if actividad and not request.session.get('turno_id'):
+        # Sesiones anteriores a los turnos guardados: el turno empieza ahora
+        _iniciar_turno(request, actividad)
 
     return render(request, 'gestion/escaneo.html', {
         'actividad_seleccionada': actividad,
+        'contador': _contador_escaneo(request, actividad) if actividad else None,
         'actividades_disponibles': Actividad.objects.filter(estado='ACTIVA').order_by('-fecha_inicio'),
         'ultimas_asistencias': (
             Asistencia.objects.filter(actividad=actividad)
@@ -1760,6 +1869,18 @@ def escaneo(request):
             if actividad else []
         ),
     })
+
+
+@login_required
+@role_required('Administrador', 'Creador de Evento', 'Encargado de Registrar', json_response=True)
+@require_GET
+def escaneo_contador(request):
+    """Contador en vivo del escáner (la pantalla lo consulta cada pocos segundos)."""
+    act_id = request.session.get('actividad_escaneo_id')
+    actividad = Actividad.objects.filter(pk=act_id, estado='ACTIVA').first() if act_id else None
+    if actividad is None:
+        return _error_json('No hay una actividad seleccionada.', 404)
+    return JsonResponse({'success': True, **_contador_escaneo(request, actividad)})
 
 
 # ============================================================

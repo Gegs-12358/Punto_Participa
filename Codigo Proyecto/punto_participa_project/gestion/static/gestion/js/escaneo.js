@@ -26,6 +26,108 @@ document.addEventListener('DOMContentLoaded', function () {
     let ultimoMetodo = 'RUT';
 
     // ============================================================
+    // CONTADOR EN VIVO (turno, total de la actividad y por operador)
+    // ============================================================
+    const contador = document.getElementById('contadorEscaneo');
+    const listaOperadores = document.querySelector('[data-contador="operadores"]');
+
+    function ponerNumero(clave, valor) {
+        const el = contador && contador.querySelector('[data-contador="' + clave + '"]');
+        if (!el || el.textContent === String(valor)) return;
+        el.textContent = valor;
+        el.classList.remove('actualizado');
+        void el.offsetWidth;            // reinicia la animación
+        el.classList.add('actualizado');
+    }
+
+    // Reconstruye "Últimos registros" con lo que manda el servidor (incluye a los demás operadores)
+    function pintarUltimos(ultimos) {
+        const lista = document.querySelector('.lista-ultimos-registros');
+        if (!lista || !Array.isArray(ultimos)) return;
+        lista.textContent = '';
+        if (!ultimos.length) {
+            const vacio = document.createElement('p');
+            vacio.className = 'session__vacio';
+            vacio.textContent = 'Sin registros aún';
+            lista.appendChild(vacio);
+            return;
+        }
+        ultimos.forEach(function (u) {
+            const partes = u.nombre.split(' ');
+            const item = document.createElement('div');
+            item.className = 'person';
+            const avatar = document.createElement('span');
+            avatar.className = 'avatar';
+            avatar.textContent = ((partes[0] || ' ')[0] + (partes[1] || ' ')[0]).trim().toUpperCase();
+            const info = document.createElement('p');
+            const nombre = document.createElement('strong');
+            nombre.textContent = u.nombre;
+            const detalle = document.createElement('small');
+            detalle.textContent = u.metodo + (u.operador ? ', ' + u.operador : '');
+            info.appendChild(nombre);
+            info.appendChild(detalle);
+            const hora = document.createElement('time');
+            hora.textContent = u.hora;
+            item.appendChild(avatar);
+            item.appendChild(info);
+            item.appendChild(hora);
+            lista.appendChild(item);
+        });
+    }
+
+    function actualizarContador(c) {
+        if (!c || !contador) return;
+        pintarUltimos(c.ultimos);
+        ponerNumero('mi_turno', c.mi_turno);
+        ponerNumero('total', c.total);
+        ponerNumero('en_turno', c.en_turno);
+        const meta = contador.querySelector('[data-contador="meta"]');
+        if (meta) {
+            meta.textContent = c.meta ? 'de ' + c.meta + ' ' + c.meta_texto : 'todos los operadores';
+        }
+        if (listaOperadores) {
+            listaOperadores.textContent = '';
+            if (!c.operadores.length) {
+                const li = document.createElement('li');
+                li.className = 'operadores__vacio';
+                li.textContent = 'Nadie está en turno ni ha registrado todavía.';
+                listaOperadores.appendChild(li);
+            }
+            c.operadores.forEach(function (op) {
+                const li = document.createElement('li');
+                if (op.yo) li.className = 'operadores__yo';
+                const nombre = document.createElement('span');
+                nombre.textContent = op.nombre + (op.yo ? ' (tú)' : '');
+                if (op.en_turno) {
+                    const estado = document.createElement('small');
+                    estado.className = 'operadores__estado';
+                    estado.textContent = ' en turno';
+                    nombre.appendChild(estado);
+                }
+                const total = document.createElement('strong');
+                total.textContent = op.total;
+                li.appendChild(nombre);
+                li.appendChild(total);
+                listaOperadores.appendChild(li);
+            });
+        }
+    }
+
+    // Otros operadores registran en paralelo: se consulta cada 15 s mientras la pestaña está visible.
+    if (contador && contador.dataset.url) {
+        setInterval(function () {
+            if (document.hidden) return;
+            fetch(contador.dataset.url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (data) { if (data && data.success) actualizarContador(data); })
+                .catch(function () { /* sin conexión: se reintenta en la próxima vuelta */ });
+        }, 15000);
+    }
+
+    // ============================================================
     // LISTENERS DE MODALES (siempre, aunque no haya formulario)
     // ============================================================
     if (btnCambiarActividad) {
@@ -90,8 +192,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function agregarRegistroALaLista(alumno, metodo, hora) {
         if (!listaRegistros) return;
 
-        // Quitar el mensaje "Sin registros aún" si existe
-        const vacio = listaRegistros.querySelector('p');
+        // Quitar el mensaje "Sin registros aún" si existe (solo ese: los registros también tienen <p>)
+        const vacio = listaRegistros.querySelector('.session__vacio');
         if (vacio) vacio.remove();
 
         // Iniciales del nombre
@@ -101,10 +203,10 @@ document.addEventListener('DOMContentLoaded', function () {
             (partes[1] ? partes[1][0] : '')
         ).toUpperCase();
 
-        // Ícono del método
-        let metodoTexto = '⌨ RUT';
-        if (metodo === 'QR') metodoTexto = '▢ QR';
-        else if (metodo === 'CODIGO') metodoTexto = '▥ Código';
+        let metodoTexto = 'RUT';
+        if (metodo === 'QR') metodoTexto = 'Código QR';
+        else if (metodo === 'CODIGO') metodoTexto = 'Código de barras';
+        metodoTexto += ', tú';
 
         const item = document.createElement('div');
         item.className = 'person';
@@ -187,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         infoAlumno.appendChild(document.createTextNode('RUT: ' + data.alumno.rut));
                         infoAlumno.appendChild(document.createElement('br'));
                         infoAlumno.appendChild(document.createTextNode(
-                            'Carrera: ' + data.alumno.carrera + ' — ' + data.alumno.jornada
+                            'Carrera: ' + data.alumno.carrera + ', ' + data.alumno.jornada
                         ));
                     }
                     openModal(modalConfirmar);
@@ -200,7 +302,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (data.alumno) {
                         ultimoAlumno = data.alumno;
                     }
-                    if (ultimoAlumno) {
+                    if (data.metodo) ultimoMetodo = data.metodo;
+                    actualizarContador(data.contador);
+                    if (ultimoAlumno && !data.contador) {   // con contador, la lista ya llega del servidor
                         agregarRegistroALaLista(ultimoAlumno, ultimoMetodo, horaActual());
                     }
                     enfocarInput();
@@ -260,7 +364,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (data.alumno) {
                             ultimoAlumno = data.alumno;
                         }
-                        if (ultimoAlumno) {
+                        if (data.metodo) ultimoMetodo = data.metodo;
+                        actualizarContador(data.contador);
+                        if (ultimoAlumno && !data.contador) {   // con contador, la lista ya llega del servidor
                             agregarRegistroALaLista(ultimoAlumno, ultimoMetodo, horaActual());
                         }
                         enfocarInput();
