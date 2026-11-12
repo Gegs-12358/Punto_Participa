@@ -19,6 +19,12 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 
 **Estado actual: listo para piloto interno. No está listo para producción abierta** (ver sección 11).
 
+> **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
+> de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
+> exportaciones nuevas, la pantalla Alumnos y el escáner con turnos y contador en vivo. La suite tiene
+> 598 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> fecha de cada sección.
+
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
 
 **Roles**
@@ -428,11 +434,11 @@ No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de
 
 **Seguridad de Django**
 - [ ] `DEBUG=False` y `ALLOWED_HOSTS` reales (el valor por defecto es `midominio.com`).
-- [ ] Activar HTTPS: `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, HSTS y `CSRF_TRUSTED_ORIGINS`. Hoy están dentro del bloque de texto muerto de `settings.py`.
-- [ ] Reactivar el rate limiting (`RATELIMIT_ENABLE = False` hoy, con sus checks silenciados). Detrás de un proxy, la clave `ip` debe usar la IP real del cliente. Verificar `createcachetable`.
+- [ ] Activar HTTPS: `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, HSTS y `CSRF_TRUSTED_ORIGINS`. Desde `15e58c6` se configuran en `.env` (comentadas en `env.example`); falta activarlas al desplegar.
+- [x] Reactivar el rate limiting: `RATELIMIT_ENABLE = True`, con `DatabaseCache` (compartido entre los procesos de Gunicorn) y `createcachetable` en `entrypoint.sh`. **Sigue pendiente:** detrás de un proxy, la clave `ip` debe usar la IP real del cliente.
 - [ ] Límite de intentos en la inscripción pública (`08a45f1`): cuenta por `REMOTE_ADDR` sobre el caché de Django y funciona aunque `RATELIMIT_ENABLE` esté en `False`. Antes de publicar: (a) configurar la IP real del cliente (`X-Forwarded-For`), porque con una IP compartida 15 errores de cualquier estudiante bloquearían la inscripción para todos durante 15 minutos; (b) usar un caché compartido entre procesos de Gunicorn (por ejemplo Redis), o el tope efectivo es mayor; (c) revisar `CACHES` en `settings.py`.
-- [ ] Limpiar el bloque `"""..."""` sobrante al final de `settings.py`.
-- [ ] Confirmar `EMAIL_BACKEND`: en el `settings.py` revisado estaba en modo consola (no envía correos).
+- [x] Limpiar el bloque `"""..."""` sobrante al final de `settings.py` (`15e58c6`).
+- [x] `EMAIL_BACKEND` y `DEFAULT_FROM_EMAIL` configurables en `.env` (`15e58c6`). Por defecto, consola; para enviar de verdad se activa el SMTP.
 - [ ] Cuenta de correo institucional.
 
 **Docker y despliegue**
@@ -444,7 +450,7 @@ No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de
 - [ ] Repetir la prueba de carga contra Gunicorn (sección 3.4).
 
 **Datos**
-- [ ] Respaldos programados de la base **y** del volumen `media_volume`. `docker compose down -v` borra ambos.
+- [x] Respaldos programados de la base **y** del volumen `media_volume` (`4be839b`, servicio `respaldo`, ver `respaldo/LEEME.md`). Falta definir la carpeta definitiva en el servidor. `docker compose down -v` sigue borrando ambos volúmenes.
 - [ ] Excluir de ZIPs, imagen y repositorio: `*.sql`, `*.dump`, `cookies*.txt`, `dash_*.html`, `*.bak`, `.coverage`, `docs/htmlcov/` (los dumps contienen RUT, nombres y correos reales).
 - [ ] Política de Privacidad y consentimiento en la inscripción pública: implementados (`6995dbb`, `ea3eb2a`). Falta la revisión y aprobación de Duoc UC (ver 10.4).
 - [ ] Definir el borrado o anonimización de datos.
@@ -455,7 +461,7 @@ No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de
 - [ ] Confirmar con Duoc UC la autorización de la carga y el formato real del archivo.
 
 **Calidad**
-- [x] Suite completa de tests en verde (389 pruebas). El 92 % de cobertura se midió con 323 y está pendiente de recalcular.
+- [x] Suite completa de tests en verde (598 pruebas al 12/11/2026). El 92 % de cobertura se midió con 323 y está pendiente de recalcular.
 - [ ] Usar Git (los ZIPs numerados, los `.bak` y las copias duplicadas indican que hoy el versionado es manual).
 
 ---
@@ -625,3 +631,80 @@ Observaciones sin verificar, siguen abiertas
 
 El KPI "Inscritos" en Reportes podría estar subcontando (solo cuenta inscripciones de alumnos que también asistieron)
 El desglose por tipo (masivas/talleres) no aplica el filtro de Escuela
+
+
+---
+
+## 18. Sesión del 11–12/11/2026: sugerencias del Punto Estudiantil `[CONFIRMADO]`
+
+En la reunión con el Punto Estudiantil surgieron ocho sugerencias. Se ordenaron junto con lo que
+quedaba del plan original en bloques: P0 (técnicos), P-UI (unificación visual), P1 (participación y
+reportes), P2 (escáner), P3 (correo), P4 (datos y privacidad) y P6 (participantes externos). Todo lo
+de esta sección está aplicado, probado y subido a GitHub.
+
+### 18.1 Catálogos de lugares, escuelas y carreras
+
+| Commit | Cambio |
+|---|---|
+| `b426725` | Modelo `Lugar` (migración `0026`). El lugar de una actividad se elige de un desplegable; la migración unifica las variantes que solo diferían en mayúsculas o espacios. Filtro por lugar en Actividades y Reportes. |
+| `05cbfe7` | Pantalla **Catálogos** para lugares: agregar, renombrar (actualiza las actividades), bloquear y eliminar si nada lo usa. |
+| `7adce20` | Lugares que piden número (migración `0027`): se elige "Sala" y se escribe el número (1203, 2203), en vez de una opción por sala. Se muestra como `Actividad.lugar_completo`. |
+| `f4c553c` | Escuelas (modelo `Escuela`, migración `0028`) y carreras en Catálogos. Renombrar una carrera es **corregir**: si tiene alumnos, pide confirmación. Si es otra carrera, se crea la nueva y se bloquea la antigua sin tocar el historial. |
+| `e337416` | Pruebas del límite de intentos con el reloj congelado: fallaban de vez en cuando al cruzar el borde de una ventana de tiempo. |
+
+### 18.2 Respaldo automático (historia 008)
+
+`4be839b`: servicio `respaldo` en `docker-compose.yml` con `pg_dump -Fc` de la base y `tar` de
+`media_volume`, cada `RESPALDO_CADA_HORAS`. Guarda los diarios durante `RESPALDO_DIAS` días y el
+primero de cada mes de forma permanente (`mensuales/`), que forma el histórico completo. Incluye una
+prueba de recuperación (`verificar.sh`), que restaura en una base temporal y compara los conteos de cada
+tabla, y una restauración (`restaurar.sh`) que exige `--confirmo` y respalda antes de reemplazar. La
+carpeta es configurable porque la ubicación definitiva todavía no está decidida. Guía: `respaldo/LEEME.md`.
+
+### 18.3 P0: técnicos (`15e58c6`)
+
+- `settings.py`: se eliminó el bloque de texto muerto; `DEBUG`, `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`,
+  HTTPS, HSTS, proxy y correo se leen del `.env`.
+- `requirements.txt` pasado a UTF-8.
+- Color de cada escuela en el catálogo (migración `0029`), con los colores oficiales de las escuelas que
+  ya existían; los gráficos lo leen en una sola consulta.
+
+### 18.4 P-UI: unificación visual
+
+| Commit | Cambio |
+|---|---|
+| `8aca1d7` | Etiquetas de plantilla `ui` (`icono`, `acciones_filtro`, `chips_filtros`): botones de fila y de filtro como íconos con aviso al pasar el mouse; chips de filtros activos automáticos; mascota y globo en el encabezado; buscador en Actividades (sin quitar filtros ni el aviso "Tip"). |
+| `51996a9` | El resto de las pantallas. Menú **Exportar** con la descripción de cada archivo, filtro por **tipo** en Reportes (historia 005) y buscador en Usuarios. Guía de estilo en `docs/GUIA_ESTILO.md`. |
+| `25bae13` | Pestañas de Reportes con nombre claro ("Por actividad" y "Por escuela y carrera"), descripción y color para la activa. La pestaña elegida se mantiene al recargar, filtrar y paginar (`?vista=detalle`). |
+| `ff1fd2c` | Íconos SVG en el menú y en todas las pantallas, en lugar de los símbolos de texto (▦ ◎ ⌖ …). Una prueba revisa que no reaparezcan. Arreglado el menú en celular, que se abría detrás del contenido. Los modales enfocan el primer campo real (antes, el token oculto). |
+
+### 18.5 P1: participación y reportes
+
+| Commit | Cambio |
+|---|---|
+| `5d5ceed` | **Foto académica** (migración `0030`): cada inscripción y asistencia guarda la carrera, la escuela y la jornada del alumno en ese momento. La migración llena los registros existentes con los datos actuales. Corregir el nombre en Catálogos corrige también la foto. |
+| `cc84663` | Reportes e Inicio filtran y agrupan con la foto. Exportaciones nuevas en `gestion/exportaciones.py`: resumen por actividad, participación por escuela, carrera y jornada, listado de participantes y libro completo. Excel con fechas reales, encabezado fijo, autofiltro y hoja Información; CSV con `;` y coma decimal. Solo Administrador y creador de lo suyo; cada descarga queda en la auditoría. Las direcciones anteriores siguen funcionando. |
+| `36369e8` | Panel **De la invitación a la asistencia** en el detalle de actividad: invitados, inscritos, asistieron y no asistieron, con la lista de quienes no fueron. Antes de que empiece la actividad no muestra "no asistieron" ni el porcentaje. |
+| `fa3e595` | Pantalla **Alumnos** (`/alumnos/`): directorio con buscador, ficha con historial y bloqueo manual con motivo (migración `0031`). **La nómina respeta el bloqueo manual**: antes, la siguiente importación reactivaba a todos los que venían en el archivo. "Importar" pasa a estar dentro de Alumnos. |
+
+### 18.6 P2: escáner
+
+| Commit | Cambio |
+|---|---|
+| `57d0797` | Turnos guardados (modelo `TurnoEscaneo`, migración `0032`): empiezan al elegir la actividad y terminan con "Finalizar turno", que muestra el resumen; ambos quedan en la auditoría. Contador en vivo: lo registrado en el turno, el total de la actividad, los operadores en turno (aunque lleven 0) y cuántos lleva cada uno. Se actualiza con cada registro y cada 15 s (`/escaneo/contador/`). |
+| `5e39ae6` | La actividad se elige de una lista con buscador, con las que están en curso primero. El `<select>` se cerraba solo dentro del modal en Linux. |
+
+Errores corregidos en el camino: al elegir la actividad aparecía un aviso que había que cerrar, y mientras
+estaba abierto la pistola no escribía en el campo; al agregar un registro a la lista se borraba el nombre
+del registro anterior; y el método aparecía siempre como "RUT".
+
+### 18.7 Pendiente
+
+- **Plan original:** prueba de usabilidad del escáner con operadores (H001); corregir en el backlog el
+  criterio "límite por IP" (lo implementado es por usuario, porque los operadores comparten red);
+  ubicación definitiva de los respaldos.
+- **P3, correo:** carga masiva de usuarios con contraseña inicial por correo; cancelación de inscripción
+  con aviso a la lista de espera; cuenta institucional. Depende de que el Punto entregue la cuenta.
+- **P4, datos:** retención de dos años en la base principal (verificando antes que los datos estén en un
+  respaldo mensual), decisión sobre la IP y el navegador de la auditoría y anonimización.
+- **P6, participantes externos:** se decide el 24/11.
