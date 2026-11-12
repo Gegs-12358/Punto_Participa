@@ -12,7 +12,8 @@ Reglas:
 - No existe -> se crea.
 - Está en la BBDD (activo) y NO viene en el archivo -> se BLOQUEA (activo=False).
   Nunca se borra: inscripciones y asistencias quedan intactas.
-- Si un bloqueado vuelve a venir en el archivo, se reactiva.
+- Si un bloqueado vuelve a venir en el archivo, se reactiva. EXCEPTO si lo bloqueó el
+  Administrador a mano (bloqueo_manual): ese sigue bloqueado y se avisa en la revisión.
 - Una fila con error NO bloquea al alumno: su documento sí viene en el archivo.
 - Los errores son por fila y no tumban el archivo.
 - Altas y cambios usan save() (respeta Alumno.save()). El bloqueo usa update()
@@ -243,9 +244,13 @@ def analizar(filas):
         if aviso:
             res.avisos.append((n, aviso))
 
-        datos = dict(rut=doc, tipo_documento=tipo, nombres=nombres, apellidos=apellidos,
-                     correo=correo, carrera=carrera, jornada=jornada, activo=True)
         actual = existentes.get(doc)
+        bloqueado_a_mano = actual is not None and actual.bloqueo_manual
+        datos = dict(rut=doc, tipo_documento=tipo, nombres=nombres, apellidos=apellidos,
+                     correo=correo, carrera=carrera, jornada=jornada, activo=not bloqueado_a_mano)
+        if bloqueado_a_mano:
+            res.avisos.append((n, f'{nombres} {apellidos} está bloqueado a mano: se actualizan sus '
+                                  f'datos, pero sigue bloqueado.'))
         if actual is None:
             res.nuevos.append((n, datos))
         else:

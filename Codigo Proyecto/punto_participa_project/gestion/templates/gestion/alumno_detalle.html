@@ -1,0 +1,172 @@
+{% extends 'gestion/base.html' %}
+{% load static ui %}
+{% load formato %}
+{% block title %}{{ alumno.nombres }} {{ alumno.apellidos }}{% endblock %}
+
+{% block content %}
+
+<!-- ============================================================ -->
+<!-- ENCABEZADO -->
+<!-- ============================================================ -->
+<div class="page-title detail-header">
+    <div>
+        <nav class="breadcrumbs" aria-label="Navegación">
+            <a href="{% url 'dashboard' %}">Inicio</a>
+            <span class="sep">›</span>
+            <a href="{% url 'lista_alumnos' %}">Alumnos</a>
+            <span class="sep">›</span>
+            <span class="current">{{ alumno.nombres }} {{ alumno.apellidos }}</span>
+        </nav>
+        <h1>{{ alumno.nombres }} {{ alumno.apellidos }}</h1>
+        <p>{% include 'gestion/includes/estado_alumno.html' %}</p>
+    </div>
+</div>
+
+<div class="mini-stats">
+    <div class="mini-stat"><span>ACTIVIDADES</span><strong>{{ resumen.actividades }}</strong></div>
+    <div class="mini-stat"><span>INSCRIPCIONES</span><strong>{{ resumen.inscripciones }}</strong></div>
+    <div class="mini-stat"><span>ASISTENCIAS</span><strong>{{ resumen.asistencias }}</strong></div>
+    <div class="mini-stat"><span>SE INSCRIBIÓ Y NO FUE</span><strong>{{ resumen.faltas }}</strong></div>
+</div>
+
+<div class="detail-layout detail-layout--ficha">
+
+    <!-- ======================================================== -->
+    <!-- DATOS Y BLOQUEO -->
+    <!-- ======================================================== -->
+    <section class="detail-col">
+        <div class="panel">
+            <div class="panel-head">
+                <div>
+                    <span class="eyebrow">DATOS</span>
+                    <h2>Según la última nómina</h2>
+                </div>
+            </div>
+            <dl class="ficha-datos">
+                <dt>Documento</dt>
+                <dd><code>{% if alumno.tipo_documento == 'RUT' %}{{ alumno.rut|rut_fmt }}{% else %}{{ alumno.rut }}{% endif %}</code>
+                    <small class="text-muted">{{ alumno.get_tipo_documento_display }}</small></dd>
+                <dt>Correo</dt>
+                <dd><a href="mailto:{{ alumno.correo }}">{{ alumno.correo }}</a></dd>
+                <dt>Carrera</dt>
+                <dd>{{ alumno.carrera }}</dd>
+                <dt>Jornada</dt>
+                <dd>{{ alumno.jornada }}</dd>
+            </dl>
+            <p class="text-muted ficha-nota">Estos datos se actualizan al importar la nómina; no se editan a mano.</p>
+        </div>
+
+        <div class="panel" id="bloquear">
+            <div class="panel-head">
+                <div>
+                    <span class="eyebrow">ACCESO</span>
+                    <h2>{% if alumno.activo %}Bloquear{% else %}Bloqueado{% endif %}</h2>
+                </div>
+            </div>
+
+            {% if alumno.activo %}
+            <p class="ficha-nota">Un alumno bloqueado no puede inscribirse, registrar asistencia ni recibir invitaciones.
+                Su historial se conserva. La nómina no lo desbloquea.</p>
+            <form method="post" action="{% url 'alumno_bloqueo' alumno.pk %}" class="ficha-bloqueo"
+                data-confirmar="¿Bloquear a {{ alumno.nombres }} {{ alumno.apellidos }}?">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="bloquear">
+                <input type="hidden" name="volver" value="detalle">
+                <label for="motivo">Motivo <span class="text-muted">(queda en la ficha y en la auditoría)</span></label>
+                <input type="text" id="motivo" name="motivo" maxlength="{{ max_motivo }}" required autocomplete="off"
+                    placeholder="Ej.: solicitud del alumno, retiro de la institución">
+                <button type="submit" class="btn danger">{% icono "bloquear" %} Bloquear alumno</button>
+            </form>
+            {% else %}
+            {% if alumno.bloqueo_manual %}
+            <p class="ficha-nota"><strong>Bloqueado a mano.</strong> Motivo: {{ alumno.motivo_bloqueo|default:"sin motivo registrado" }}.
+                Seguirá bloqueado aunque venga en la nómina.</p>
+            {% else %}
+            <p class="ficha-nota"><strong>Bloqueado porque no vino en la última nómina.</strong>
+                Si viene en la próxima, se activa solo. Si lo desbloqueas ahora y tampoco viene en la próxima, se volverá a bloquear.</p>
+            {% endif %}
+            <form method="post" action="{% url 'alumno_bloqueo' alumno.pk %}"
+                data-confirmar="¿Desbloquear a {{ alumno.nombres }} {{ alumno.apellidos }}? Podrá volver a inscribirse y registrar asistencia.">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="desbloquear">
+                <input type="hidden" name="volver" value="detalle">
+                <button type="submit" class="btn secondary">{% icono "desbloquear" %} Desbloquear</button>
+            </form>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- HISTORIAL -->
+    <!-- ======================================================== -->
+    <section class="detail-col">
+        <div class="panel">
+            <div class="panel-head">
+                <div>
+                    <span class="eyebrow">HISTORIAL</span>
+                    <h2>Participación</h2>
+                    <p class="panel-subtitle">Carrera y jornada son las que tenía en cada actividad.</p>
+                </div>
+            </div>
+
+            {% if historial %}
+            <div class="table-wrap">
+                <table>
+                    <caption class="visually-hidden">Actividades en que participó el alumno</caption>
+                    <thead>
+                        <tr>
+                            <th>Actividad</th>
+                            <th>Fecha</th>
+                            <th>Inscripción</th>
+                            <th>Asistencia</th>
+                            <th>Carrera y jornada</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in historial %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'actividad_detalle' f.actividad.pk %}"><strong>{{ f.actividad.titulo }}</strong></a>
+                                <small class="text-muted celda-sub">{{ f.actividad.get_tipo_display }}</small>
+                            </td>
+                            <td>{{ f.actividad.fecha_inicio|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                {% if f.inscripcion %}
+                                {{ f.inscripcion.get_estado_display }}
+                                <small class="text-muted celda-sub">{{ f.inscripcion.fecha_inscripcion|date:"d/m/Y" }}</small>
+                                {% elif f.actividad.tipo == 'TALLER' %}
+                                <span class="text-muted">Sin inscripción</span>
+                                {% else %}
+                                <span class="text-muted">No aplica</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if f.asistencia %}
+                                <span class="badge">Asistió</span>
+                                <small class="text-muted celda-sub">{{ f.asistencia.fecha_ingreso|date:"d/m/Y H:i" }}, {{ f.asistencia.get_metodo_ingreso_display }}</small>
+                                {% elif f.pendiente %}
+                                <span class="badge draft">Pendiente</span>
+                                {% elif f.falto %}
+                                <span class="badge inactive">No asistió</span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ f.carrera }}<small class="text-muted celda-sub">{{ f.jornada }}</small></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <h3>Sin participación</h3>
+                <p>Este alumno todavía no se ha inscrito ni ha asistido a ninguna actividad.</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+
+<script src="{% static 'gestion/js/catalogos.js' %}"></script>
+{% endblock %}

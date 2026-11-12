@@ -1,0 +1,156 @@
+{% extends 'gestion/base.html' %}
+{% load static ui %}
+{% load formato %}
+{% block title %}Alumnos{% endblock %}
+
+{% block content %}
+
+<!-- ============================================================ -->
+<!-- TÍTULO -->
+<!-- ============================================================ -->
+<div class="page-title">
+    <div>
+        <span class="eyebrow">ADMINISTRACIÓN</span>
+        <h1>Alumnos</h1>
+        <p>Busca alumnos, revisa su participación y bloquéalos si es necesario. Se agregan con la nómina.</p>
+    </div>
+    <div class="page-title__acciones">
+        <img class="page-title__ilustracion" src="{% static 'gestion/img/encabezado/alumnos.webp' %}" alt="" width="92" height="92">
+        <p class="globo-mascota">¡Busca a cualquier alumno y revisa su historial!</p>
+        <a href="{% url 'importar_alumnos' %}" class="btn">{% icono "subir" %} Importar nómina</a>
+    </div>
+</div>
+
+<div class="mini-stats mini-stats--3">
+    <a class="mini-stat" href="?estado=activo">
+        <span>ACTIVOS</span>
+        <strong>{{ totales.activos }}</strong>
+    </a>
+    <a class="mini-stat" href="?estado=nomina">
+        <span>BLOQUEADOS POR NÓMINA</span>
+        <strong>{{ totales.nomina }}</strong>
+    </a>
+    <a class="mini-stat" href="?estado=manual">
+        <span>BLOQUEADOS A MANO</span>
+        <strong>{{ totales.manual }}</strong>
+    </a>
+</div>
+
+<!-- ============================================================ -->
+<!-- FILTROS -->
+<!-- ============================================================ -->
+<form method="get" class="filters-bar" role="search">
+    <div class="filter-group filter-group--buscar">
+        <label for="filtro-buscar">Buscar</label>
+        <input type="search" id="filtro-buscar" name="q" value="{{ request.GET.q }}" maxlength="100"
+            placeholder="RUT, nombre, apellido o correo">
+    </div>
+    <div class="filter-group">
+        <label for="filtro-carrera">Carrera</label>
+        <select name="carrera" id="filtro-carrera">
+            <option value="">Todas</option>
+            {% for c in carreras_opciones %}
+            <option value="{{ c }}" {% if request.GET.carrera == c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label for="filtro-jornada">Jornada</label>
+        <select name="jornada" id="filtro-jornada">
+            <option value="">Todas</option>
+            {% for j in jornadas_opciones %}
+            <option value="{{ j }}" {% if request.GET.jornada == j %}selected{% endif %}>{{ j }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label for="filtro-estado">Estado</label>
+        <select name="estado" id="filtro-estado">
+            <option value="">Todos</option>
+            {% for valor, texto in estados_opciones %}
+            <option value="{{ valor }}" {% if request.GET.estado == valor %}selected{% endif %}>{{ texto }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% url 'lista_alumnos' as url_limpiar %}{% acciones_filtro url_limpiar %}
+</form>
+{% chips_filtros "q=Búsqueda,carrera=Carrera,jornada=Jornada,estado=Estado" url_limpiar %}
+
+<!-- ============================================================ -->
+<!-- TABLA -->
+<!-- ============================================================ -->
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">DIRECTORIO</span>
+            <h2>Alumnos registrados</h2>
+            <p class="panel-subtitle">Mostrando {{ alumnos|length }} de {{ alumnos.paginator.count }} alumno{{ alumnos.paginator.count|pluralize }}</p>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Listado de alumnos</caption>
+            <thead>
+                <tr>
+                    <th>Alumno</th>
+                    <th>Documento</th>
+                    <th>Carrera</th>
+                    <th>Jornada</th>
+                    <th title="Inscripciones a talleres">Inscripciones</th>
+                    <th>Asistencias</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in alumnos %}
+                <tr>
+                    <td>
+                        <a href="{% url 'alumno_detalle' a.pk %}" class="enlace-fila"><strong>{{ a.apellidos }}, {{ a.nombres }}</strong></a>
+                        <small class="text-muted celda-sub">{{ a.correo }}</small>
+                    </td>
+                    <td><code>{% if a.tipo_documento == 'RUT' %}{{ a.rut|rut_fmt }}{% else %}{{ a.rut }}{% endif %}</code></td>
+                    <td>{{ a.carrera }}</td>
+                    <td>{{ a.jornada }}</td>
+                    <td>{{ a.total_inscripciones }}</td>
+                    <td>{{ a.total_asistencias }}</td>
+                    <td>{% include 'gestion/includes/estado_alumno.html' with alumno=a %}</td>
+                    <td>
+                        <div class="acciones-fila">
+                            <a href="{% url 'alumno_detalle' a.pk %}" class="btn-icon btn-icon--sm" data-tooltip="Ver ficha"
+                                aria-label="Ver ficha de {{ a.nombres }} {{ a.apellidos }}">{% icono "ver" %}</a>
+                            {% if a.activo %}
+                            <a href="{% url 'alumno_detalle' a.pk %}#bloquear" class="btn-icon btn-icon--sm btn-icon--danger"
+                                data-tooltip="Bloquear" aria-label="Bloquear a {{ a.nombres }} {{ a.apellidos }}">{% icono "bloquear" %}</a>
+                            {% else %}
+                            <form method="post" action="{% url 'alumno_bloqueo' a.pk %}"
+                                data-confirmar="¿Desbloquear a {{ a.nombres }} {{ a.apellidos }}? Podrá volver a inscribirse y registrar asistencia.">
+                                {% csrf_token %}
+                                <input type="hidden" name="accion" value="desbloquear">
+                                <button type="submit" class="btn-icon btn-icon--sm" data-tooltip="Desbloquear"
+                                    aria-label="Desbloquear a {{ a.nombres }} {{ a.apellidos }}">{% icono "desbloquear" %}</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <h3>No hay alumnos que coincidan</h3>
+                            <p>{% if request.GET %}Prueba con otra búsqueda o limpia los filtros.{% else %}Todavía no se ha importado la nómina.{% endif %}</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include 'gestion/includes/paginacion.html' with pagina=alumnos param='page' %}
+</div>
+
+<script src="{% static 'gestion/js/catalogos.js' %}"></script>
+{% endblock %}

@@ -77,8 +77,9 @@ class UsuarioSistemaAdmin(admin.ModelAdmin):
 # ============================================================
 @admin.register(Alumno)
 class AlumnoAdmin(admin.ModelAdmin):
-    list_display = ('rut', 'tipo_documento', 'nombres', 'apellidos', 'carrera', 'jornada', 'activo')
-    list_filter = ('activo', 'tipo_documento', 'carrera', 'jornada')
+    list_display = ('rut', 'tipo_documento', 'nombres', 'apellidos', 'carrera', 'jornada', 'activo',
+                    'bloqueo_manual')
+    list_filter = ('activo', 'bloqueo_manual', 'tipo_documento', 'carrera', 'jornada')
     search_fields = ('rut', 'nombres', 'apellidos', 'correo')
     ordering = ('apellidos', 'nombres')
 

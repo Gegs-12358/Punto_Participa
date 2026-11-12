@@ -41,6 +41,7 @@ _TRAZOS = {
     'finalizar': '<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>',
     'actividad': '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
     'escuela': '<path d="M3 21h18M5 21V10M19 21V10M9 21v-6h6v6M2 10l10-6 10 6"/>',
+    'subir': '<path d="M12 21V9M7 14l5-5 5 5M5 3h14"/>',
 }
 
 
@@ -66,7 +67,8 @@ def acciones_filtro(url_limpiar):
 _LEGIBLES = {
     'tipo': dict(Actividad.TIPO_CHOICES),
     'estado': {**dict(Actividad.ESTADO_CHOICES), **dict(Inscripcion.ESTADO_CHOICES),
-               **dict(NotificacionCorreo.ESTADO_CHOICES), 'activo': 'Activo', 'bloqueado': 'Bloqueado'},
+               **dict(NotificacionCorreo.ESTADO_CHOICES), 'activo': 'Activo', 'bloqueado': 'Bloqueado',
+               'nomina': 'Bloqueado por nómina', 'manual': 'Bloqueado a mano'},
 }
 _PAGINACION = {'page', 'page_act', 'page_det', 'orden'}
 

@@ -69,6 +69,12 @@ class Alumno(models.Model):
     carrera = models.CharField(max_length=100)
     jornada = models.CharField(max_length=20)
     activo = models.BooleanField(default=True, db_index=True, verbose_name='Activo')
+    # Bloqueo hecho a mano por el Administrador (pantalla Alumnos). La nómina lo respeta:
+    # aunque el alumno venga en el archivo, sigue bloqueado hasta que se desbloquee a mano.
+    # Un alumno con activo=False y bloqueo_manual=False fue bloqueado por no venir en la nómina.
+    bloqueo_manual = models.BooleanField(default=False, verbose_name='Bloqueado a mano')
+    motivo_bloqueo = models.CharField(max_length=200, blank=True, default='',
+                                      verbose_name='Motivo del bloqueo')
 
     class Meta:
         verbose_name = 'Alumno'
@@ -77,6 +83,13 @@ class Alumno(models.Model):
 
     def __str__(self):
         return f"{self.nombres} {self.apellidos}"
+
+    @property
+    def estado(self):
+        """'activo', 'manual' (bloqueado a mano) o 'nomina' (no vino en la última nómina)."""
+        if self.activo:
+            return 'activo'
+        return 'manual' if self.bloqueo_manual else 'nomina'
 
     def save(self, *args, **kwargs):
         # Red de seguridad: cubre admin, importador y objects.create().

@@ -1,0 +1,1 @@
+{% if alumno.activo %}<span class="badge">Activo</span>{% elif alumno.bloqueo_manual %}<span class="badge inactive" title="{{ alumno.motivo_bloqueo }}">Bloqueado a mano</span>{% else %}<span class="badge draft" title="No vino en la última nómina">Bloqueado por nómina</span>{% endif %}

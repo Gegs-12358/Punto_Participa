@@ -6,7 +6,11 @@
 
 <div class="page-title">
     <div>
-        <span class="eyebrow">ADMINISTRACIÓN</span>
+        <nav class="breadcrumbs" aria-label="Navegación">
+            <a href="{% url 'lista_alumnos' %}">Alumnos</a>
+            <span class="sep">›</span>
+            <span class="current">Importar nómina</span>
+        </nav>
         <h1>Importar alumnos</h1>
         <p>Sincroniza la nómina de estudiantes desde un archivo .xlsx o .csv.</p>
     </div>

@@ -180,12 +180,15 @@ class EnlaceDelMenuTests(TestCase):
             user=user, rol=rol, activo=True, must_change_password=False, rut='11111111K')
         self.assertTrue(self.client.login(username=username, password='clave123'))
 
+    # El menú lleva a Alumnos; desde ahí se entra a "Importar nómina".
     def test_el_administrador_ve_el_enlace_en_el_menu(self):
         self._entrar('Administrador', 'admin_menu')
         r = self.client.get(reverse('dashboard'))
-        self.assertContains(r, reverse('importar_alumnos'))
+        self.assertContains(r, f'href="{reverse("lista_alumnos")}"')
+        self.assertContains(self.client.get(reverse('lista_alumnos')), reverse('importar_alumnos'))
 
     def test_un_creador_de_evento_no_ve_el_enlace(self):
         self._entrar('Creador de Evento', 'creador_menu')
         r = self.client.get(reverse('dashboard'))
+        self.assertNotContains(r, f'href="{reverse("lista_alumnos")}"')
         self.assertNotContains(r, reverse('importar_alumnos'))

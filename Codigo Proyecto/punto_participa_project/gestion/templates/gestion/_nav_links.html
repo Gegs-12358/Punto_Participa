@@ -24,8 +24,8 @@
 {% endif %}
 
 {% if rol_usuario == 'Administrador' %}
-<a href="{% url 'importar_alumnos' %}" class="{% if 'alumnos/importar' in request.path %}active{% endif %}">
-    ▤ Importar
+<a href="{% url 'lista_alumnos' %}" class="{% if '/alumnos/' in request.path %}active{% endif %}">
+    ▤ Alumnos
 </a>
 {% endif %}
 
