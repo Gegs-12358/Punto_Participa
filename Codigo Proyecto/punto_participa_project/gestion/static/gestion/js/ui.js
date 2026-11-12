@@ -24,3 +24,25 @@
         }
     });
 })();
+
+// Botones con data-copiar="texto": copian el texto al portapapeles y avisan.
+(function () {
+    function avisar(texto, tipo) {
+        if (typeof mostrarMensaje === 'function') mostrarMensaje(texto, tipo);
+    }
+    document.addEventListener('click', function (evento) {
+        var boton = evento.target.closest('[data-copiar]');
+        if (!boton) return;
+        var texto = boton.getAttribute('data-copiar');
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(texto).then(function () {
+                avisar('Enlace copiado.', 'success');
+            }, function () {
+                window.prompt('Copia el enlace:', texto);
+            });
+        } else {
+            // Sin HTTPS el navegador no deja escribir en el portapapeles: se muestra para copiarlo a mano
+            window.prompt('Copia el enlace:', texto);
+        }
+    });
+})();

@@ -69,7 +69,7 @@ def leer(archivo, nombre_archivo):
 _PARECE_RUT = re.compile(r'^\d{7,9}[\dK]$')
 
 
-def _documento_valido(doc):
+def documento_valido(doc):
     """Más estricto que la nómina: lo que tiene forma de RUT debe tener el dígito verificador
     correcto (salvo los RUN provisorios, que parten en 100.000.000). Lo demás, como pasaporte."""
     if _PARECE_RUT.match(doc) and int(doc[:-1]) < 100_000_000:
@@ -108,7 +108,7 @@ def analizar(filas, actividad):
         vistos[doc] = n
 
         errores = []
-        if not _documento_valido(doc):
+        if not documento_valido(doc):
             errores.append('RUT o documento no válido.')
         nombre = ' '.join(p for p in (_texto(d, 'nombres'), _texto(d, 'apellidos')) if p)
         if not nombre:

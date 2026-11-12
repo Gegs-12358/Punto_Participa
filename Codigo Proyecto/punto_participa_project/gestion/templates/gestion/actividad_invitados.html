@@ -98,6 +98,36 @@
 </div>
 
 <!-- ============================================================ -->
+<!-- INVITACIONES POR CORREO -->
+<!-- ============================================================ -->
+<section class="panel" aria-labelledby="titulo-envio">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">INVITACIONES</span>
+            <h2 id="titulo-envio">Enviar por correo</h2>
+            <p class="panel-subtitle">
+                Cada correo lleva el enlace personal del invitado para confirmar y registrar acompañantes.
+                {% if totales.sin_invitacion %}<strong>{{ totales.sin_invitacion }}</strong> todavía no la ha{{ totales.sin_invitacion|pluralize:"n" }} recibido.{% else %}Todos la recibieron.{% endif %}
+                {% if max_por_envio %}Se envían hasta {{ max_por_envio }} por vez.{% endif %}
+            </p>
+        </div>
+    </div>
+    <div class="action-group" style="flex-wrap: wrap; gap: 10px;">
+        <form method="post" action="{% url 'enviar_invitaciones_lista' actividad.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="modo" value="pendientes">
+            <button type="submit" class="btn"{% if not totales.sin_invitacion %} disabled{% endif %}>{% icono "enviar" %} Enviar a quienes no la han recibido</button>
+        </form>
+        <form method="post" action="{% url 'enviar_invitaciones_lista' actividad.pk %}"
+            data-confirmar="¿Reenviar la invitación a los {{ totales.pendientes }} invitados que no han respondido?">
+            {% csrf_token %}
+            <input type="hidden" name="modo" value="sin_responder">
+            <button type="submit" class="btn secondary"{% if not totales.pendientes %} disabled{% endif %}>{% icono "correo" %} Reenviar a quienes no han respondido</button>
+        </form>
+    </div>
+</section>
+
+<!-- ============================================================ -->
 <!-- CARGAR MÁS -->
 <!-- ============================================================ -->
 <section class="panel" aria-labelledby="titulo-subir">
@@ -158,6 +188,7 @@
                     <th>Documento</th>
                     <th>Carrera</th>
                     <th>Nómina</th>
+                    <th>Invitación</th>
                     <th>Respuesta</th>
                     <th>Acompañantes</th>
                     <th>Acciones</th>
@@ -174,6 +205,7 @@
                     <td>{{ inv.carrera }}{% if inv.jornada %}<small class="text-muted celda-sub">{{ inv.jornada }}</small>{% endif %}</td>
                     <td>{% if inv.alumno %}<span class="badge">En la nómina</span>{% else %}<span class="badge draft" title="Se cargó con los datos de la lista">Fuera de la nómina</span>{% endif %}
                         {% if inv.agregado_en_entrada %}<small class="text-muted celda-sub">Agregado en la entrada</small>{% endif %}</td>
+                    <td>{% if inv.invitacion_enviada %}<span class="text-muted">Enviada el {{ inv.invitacion_enviada|date:"d/m H:i" }}</span>{% else %}<span class="badge draft">No enviada</span>{% endif %}</td>
                     <td>
                         {% if inv.estado == 'CONFIRMADO' %}<span class="badge">Confirmó</span>
                         {% elif inv.estado == 'RECHAZADO' %}<span class="badge inactive">No asistirá</span>
@@ -182,6 +214,8 @@
                     <td>{{ inv.total_acompanantes }} de {{ actividad.acompanantes_por_invitado }}</td>
                     <td>
                         <div class="acciones-fila">
+                            <button type="button" class="btn-icon btn-icon--sm" data-copiar="{{ inv.enlace }}"
+                                data-tooltip="Copiar enlace personal" aria-label="Copiar el enlace personal de {{ inv.nombre }}">{% icono "enlace" %}</button>
                             {% if not inv.ingreso %}
                             <form method="post" action="{% url 'quitar_invitado' actividad.pk inv.pk %}"
                                 data-confirmar="¿Quitar a {{ inv.nombre }} de la lista?{% if inv.total_acompanantes %} También se quitan sus acompañantes.{% endif %}">
@@ -195,7 +229,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7">
+                    <td colspan="8">
                         <div class="empty-state">
                             <span>{% icono "participantes" "icono--grande" %}</span>
                             <h3>{% if request.GET %}Ningún invitado coincide{% else %}Todavía no hay invitados{% endif %}</h3>

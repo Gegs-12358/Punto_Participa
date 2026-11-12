@@ -1222,7 +1222,7 @@ def notificaciones_actividad(request, pk):
 
     filtro = request.GET.get('estado', '')
     notif = NotificacionCorreo.objects.filter(actividad=actividad) \
-                                     .select_related('alumno').order_by('-fecha_envio')
+                                     .select_related('alumno', 'invitado').order_by('-fecha_envio')
     if filtro in ['EXITO', 'FALLO']:
         notif = notif.filter(estado_envio=filtro)
 

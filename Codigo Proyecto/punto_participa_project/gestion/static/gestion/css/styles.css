@@ -4591,6 +4591,7 @@ a.mini-stat:focus-visible {
 }
 
 .icono--texto {
+    display: inline-block;      /* .icono es block: dentro de un texto lo partía en dos líneas */
     width: 15px;
     height: 15px;
     vertical-align: -2px;
@@ -4712,5 +4713,160 @@ a.mini-stat:focus-visible {
 @media (max-width: 900px) {
     .mini-stats--5 {
         grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Página pública de respuesta a la invitación */
+.form-invitacion {
+    display: grid;
+    gap: 14px;
+}
+
+.form-invitacion fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.form-invitacion legend {
+    margin-bottom: 6px;
+    color: var(--navy);
+    font-weight: 800;
+}
+
+.form-invitacion__opciones label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.form-invitacion__fila {
+    display: grid;
+    grid-template-columns: 24px 1fr 1.4fr;
+    gap: 8px;
+    align-items: center;
+}
+
+.form-invitacion__fila input {
+    width: 100%;
+}
+
+.form-invitacion__fila .field-error {
+    grid-column: 2 / -1;
+}
+
+.form-invitacion__fila.con-error input {
+    border-color: var(--red);
+}
+
+.form-invitacion__numero {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--navy);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.form-invitacion__politica {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    font-size: 14px;
+}
+
+.respuesta-actual {
+    margin: 0 0 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--surface);
+    font-size: 14px;
+}
+
+.acompanantes-registrados {
+    margin-top: 14px;
+    font-size: 14px;
+}
+
+.acompanantes-registrados ul {
+    margin: 4px 0 0;
+    padding-left: 18px;
+}
+
+@media (max-width: 520px) {
+    .form-invitacion__fila {
+        grid-template-columns: 24px 1fr;
+    }
+
+    .form-invitacion__fila > div:last-of-type {
+        grid-column: 2;
+    }
+}
+
+/* Invitación: la información arriba y el formulario a todo el ancho, debajo */
+.event-card--invitacion .event-body {
+    grid-template-columns: 60px 1fr;
+}
+
+.event-card--invitacion .enroll-box {
+    grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: 16px 0 0;
+}
+
+.event-copy ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 4px;
+}
+
+/* Botones de opción y casillas: no heredan el tamaño de los campos de texto */
+.form-invitacion input[type="radio"],
+.form-invitacion input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    flex: 0 0 auto;
+    accent-color: var(--navy);
+}
+
+.form-invitacion__opciones {
+    grid-template-columns: repeat(auto-fit, minmax(160px, max-content));
+}
+
+.form-invitacion__opciones legend {
+    grid-column: 1 / -1;
+}
+
+.form-invitacion__opciones label {
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.form-invitacion__opciones label:has(input:checked) {
+    border-color: var(--navy);
+    background: var(--surface);
+    font-weight: 700;
+}
+
+.form-invitacion__politica input[type="checkbox"] {
+    margin-top: 2px;
+}
+
+@media (max-width: 520px) {
+    .event-card--invitacion .event-body {
+        grid-template-columns: 1fr;
     }
 }

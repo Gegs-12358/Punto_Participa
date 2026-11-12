@@ -1,6 +1,6 @@
 from django.urls import path
 from . import (exportaciones, views, views_actividad_publica, views_alumnos, views_catalogos,
-               views_importar, views_invitados)
+               views_importar, views_invitacion_publica, views_invitados)
 
 # Sin app_name para mantener compatibilidad con los templates existentes
 
@@ -62,6 +62,8 @@ urlpatterns = [
     path('actividades/<int:pk>/invitados/<int:invitado_id>/quitar/', views_invitados.quitar_invitado,
          name='quitar_invitado'),
     path('actividades/invitados/plantilla.csv', views_invitados.plantilla_invitados, name='plantilla_invitados'),
+    path('actividades/<int:pk>/invitados/enviar/', views_invitados.enviar_invitaciones_lista,
+         name='enviar_invitaciones_lista'),
     # ============================================================
     # ESCÁNER
     # ============================================================
@@ -80,5 +82,6 @@ urlpatterns = [
     path('taller/<int:actividad_id>/', views.inscripcion_taller, name='inscripcion_taller'),
     path('actividad/<int:actividad_id>/', views_actividad_publica.actividad_publica, name='actividad_publica'),
     path('privacidad/', views.politica_privacidad, name='privacidad'),
+    path('invitacion/<str:token>/', views_invitacion_publica.responder_invitacion, name='responder_invitacion'),
 
 ]

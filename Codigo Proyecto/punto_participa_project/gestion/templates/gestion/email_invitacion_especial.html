@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Invitación</title>
+</head>
+
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0;">
+        <div style="background-color: #003366; padding: 20px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Punto Participa</h1>
+        </div>
+
+        <div style="padding: 30px; color: #333333;">
+            <h2 style="color: #003366; margin-top: 0;">Estás invitado a {{ actividad.titulo }}</h2>
+
+            <p style="font-size: 16px; line-height: 1.6;">Hola {{ invitado.nombre }},</p>
+            <p style="font-size: 16px; line-height: 1.6;">{{ actividad.descripcion }}</p>
+
+            <div style="background-color: #f9f9f9; border-left: 4px solid #FFC107; padding: 15px; margin-bottom: 20px;">
+                <p style="margin: 5px 0;"><strong>Fecha:</strong> {{ actividad.fecha_inicio|date:"d/m/Y" }}</p>
+                <p style="margin: 5px 0;"><strong>Horario:</strong> {{ actividad.fecha_inicio|date:"H:i" }} a {{ actividad.fecha_fin|date:"H:i" }} horas</p>
+                <p style="margin: 5px 0;"><strong>Lugar:</strong> {{ actividad.lugar_completo }}</p>
+                {% if actividad.acompanantes_por_invitado %}
+                <p style="margin: 5px 0;"><strong>Acompañantes:</strong> puedes venir con hasta {{ actividad.acompanantes_por_invitado }}.</p>
+                {% endif %}
+            </div>
+
+            <p style="font-size: 16px; line-height: 1.6;">
+                Confirma si asistirás{% if actividad.acompanantes_por_invitado %} y registra a tus acompañantes{% endif %}
+                en el siguiente enlace. Es personal: no lo compartas.
+            </p>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <a href="{{ enlace }}"
+                    style="background-color: #FFC107; color: #003366; padding: 15px 30px; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 16px;">
+                    Responder invitación
+                </a>
+            </div>
+
+            <p style="font-size: 14px; line-height: 1.6;">El día de la actividad, muestra tu cédula o la app Vivo Duoc en la entrada.
+                {% if actividad.acompanantes_por_invitado %}Cada acompañante entra con su propio documento.{% endif %}</p>
+
+            <p style="font-size: 12px; color: #888888;">
+                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>{{ enlace }}
+            </p>
+        </div>
+
+        <div style="background-color: #f4f4f4; padding: 15px; text-align: center; font-size: 12px; color: #888888;">
+            Punto Participa - Duoc UC Sede Alameda
+        </div>
+    </div>
+</body>
+
+</html>

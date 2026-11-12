@@ -83,13 +83,15 @@
                 {% for n in notificaciones %}
                 <tr>
                     <td>
-                        {% if n.alumno %}
+                        {% if n.invitado %}
+                        <strong>{{ n.invitado.nombre }}</strong>
+                        {% elif n.alumno %}
                         <strong>{{ n.alumno.nombres }} {{ n.alumno.apellidos }}</strong>
                         {% else %}
                         <span class="text-muted">—</span>
                         {% endif %}
                     </td>
-                    <td>{{ n.alumno.correo|default:"—" }}</td>
+                    <td>{% if n.invitado %}{{ n.invitado.correo }}{% else %}{{ n.alumno.correo|default:"—" }}{% endif %}</td>
                     <td>
                         {% if n.estado_envio == 'EXITO' %}
                         <span class="badge">Éxito</span>

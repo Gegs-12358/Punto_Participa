@@ -407,6 +407,15 @@ class NotificacionCorreo(models.Model):
         related_name='notificaciones'
     )
 
+    # Solo en actividades con invitación: a qué invitado de la lista se le escribió
+    invitado = models.ForeignKey(
+        'Invitado',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='notificaciones'
+    )
+
     filtro_aplicado = models.CharField(
         max_length=2000,
         blank=True
@@ -462,6 +471,8 @@ class Invitado(models.Model):
     fecha_respuesta = models.DateTimeField(null=True, blank=True)
     agregado_en_entrada = models.BooleanField(default=False)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    # Último envío exitoso de la invitación por correo (vacío: nunca se le envió)
+    invitacion_enviada = models.DateTimeField(null=True, blank=True)
     ingreso = models.DateTimeField(null=True, blank=True)
     metodo_ingreso = models.CharField(max_length=10, blank=True, default='')
     registrado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
