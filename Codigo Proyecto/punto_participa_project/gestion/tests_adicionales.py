@@ -107,8 +107,17 @@ class EstadosYCuposTests(BaseSistemaTestCase):
             {"rut": self.alumno.rut, "acepta_politica": "on"},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "finalizado")
+        self.assertContains(response, "Evento ya realizado")
         self.assertFalse(Inscripcion.objects.filter(actividad=self.actividad).exists())
+
+    def test_taller_con_fecha_pasada_dice_evento_ya_realizado(self):
+        """H002: aunque siga ACTIVA, si ya terminó muestra "Evento ya realizado"."""
+        self.actividad.fecha_inicio = timezone.now() - timedelta(days=2)
+        self.actividad.fecha_fin = timezone.now() - timedelta(days=1)
+        self.actividad.save(update_fields=["fecha_inicio", "fecha_fin"])
+        response = self.client.get(reverse("inscripcion_taller", args=[self.actividad.pk]))
+        self.assertContains(response, "Evento ya realizado")
+        self.assertNotContains(response, "Inscribirme")
 
     def test_no_se_puede_inscribir_en_actividad_cancelada(self):
         self.actividad.estado = "CANCELADA"
@@ -117,7 +126,8 @@ class EstadosYCuposTests(BaseSistemaTestCase):
             reverse("inscripcion_taller", args=[self.actividad.pk])
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "finalizado")
+        self.assertContains(response, "Taller cancelado")
+        self.assertNotContains(response, "Evento ya realizado")
 
     def test_no_se_puede_inscribir_sin_cupos(self):
         self.actividad.cupos_disponibles = 0
@@ -126,7 +136,7 @@ class EstadosYCuposTests(BaseSistemaTestCase):
             reverse("inscripcion_taller", args=[self.actividad.pk])
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Sin cupos")
+        self.assertContains(response, "Sin cupos disponibles")
 
     def test_no_se_registra_asistencia_en_actividad_inactiva(self):
         self.actividad_masiva.estado = "FINALIZADA"

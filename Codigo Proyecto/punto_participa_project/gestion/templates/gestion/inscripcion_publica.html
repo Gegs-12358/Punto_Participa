@@ -134,16 +134,24 @@
 
                         <div class="state-box error" role="alert">
                             <div class="state-icon">{% icono "alerta" %}</div>
-                            <h3>Sin cupos</h3>
+                            <h3>Sin cupos disponibles</h3>
                             <p>No quedan cupos disponibles para este taller.</p>
                         </div>
 
                         {% elif estado == 'finalizado' %}
 
                         <div class="state-box neutral" role="alert">
-                            <div class="state-icon">⏳</div>
-                            <h3>Evento finalizado</h3>
-                            <p>Este evento ya fue realizado.</p>
+                            <div class="state-icon">{% icono "reloj" %}</div>
+                            <h3>Evento ya realizado</h3>
+                            <p>La fecha de este taller ya pasó y no recibe inscripciones.</p>
+                        </div>
+
+                        {% elif estado == 'cancelado' %}
+
+                        <div class="state-box neutral" role="alert">
+                            <div class="state-icon">{% icono "alerta" %}</div>
+                            <h3>Taller cancelado</h3>
+                            <p>Este taller fue cancelado y no recibe inscripciones.</p>
                         </div>
 
                         {% endif %}

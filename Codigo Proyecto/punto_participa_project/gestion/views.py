@@ -2085,6 +2085,11 @@ def _render_inscripcion(request, actividad, estado='con_cupos', error=None, exit
     return render(request, 'gestion/inscripcion_publica.html', ctx)
 
 
+def _estado_cerrado(actividad):
+    """Estado de la página cuando el taller ya no recibe inscripciones."""
+    return 'cancelado' if actividad.estado == 'CANCELADA' else 'finalizado'
+
+
 def inscripcion_taller(request, actividad_id):
     """
     Vista pública de inscripción a talleres.
@@ -2095,7 +2100,7 @@ def inscripcion_taller(request, actividad_id):
     ahora = timezone.now()
 
     if actividad.estado != 'ACTIVA' or actividad.fecha_fin <= ahora:
-        return _render_inscripcion(request, actividad, 'finalizado')
+        return _render_inscripcion(request, actividad, _estado_cerrado(actividad))
     if (actividad.cupos_disponibles or 0) <= 0:
         return _render_inscripcion(request, actividad, 'sin_cupos')
     if request.method != 'POST':
@@ -2134,7 +2139,7 @@ def inscripcion_taller(request, actividad_id):
                 return _render_inscripcion(request, act_lock, 'finalizado',
                                            'Esta actividad no corresponde a un taller.')
             if act_lock.estado != 'ACTIVA' or act_lock.fecha_fin <= timezone.now():
-                return _render_inscripcion(request, act_lock, 'finalizado')
+                return _render_inscripcion(request, act_lock, _estado_cerrado(act_lock))
             if Inscripcion.objects.filter(actividad=act_lock, alumno=alumno).exists():
                 return _render_inscripcion(request, act_lock, 'con_cupos',
                                            'Ya estás inscrito en este taller.')
