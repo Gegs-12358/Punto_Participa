@@ -330,6 +330,8 @@ class Inscripcion(FotoAcademica):
     alumno = models.ForeignKey('Alumno', on_delete=models.CASCADE, related_name='inscripciones')
     fecha_inscripcion = models.DateTimeField(auto_now_add=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='CONFIRMADA')
+    # Enlace personal para cancelar (/inscripcion/cancelar/<token>/), llega en el correo de confirmación
+    token = models.CharField(max_length=40, unique=True, null=True, blank=True, editable=False)
 
     class Meta:
         verbose_name = 'Inscripción'
@@ -337,8 +339,36 @@ class Inscripcion(FotoAcademica):
         unique_together = ('actividad', 'alumno')
         ordering = ['-fecha_inscripcion']
 
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = _token_invitacion()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.alumno} - {self.actividad}"
+
+
+class InscripcionCancelada(FotoAcademica):
+    """
+    Historial de inscripciones canceladas. Al cancelar, la fila sale de Inscripcion y queda aquí,
+    así los conteos de inscritos, el escáner y los reportes no cambian, y el alumno puede volver a
+    inscribirse si hay cupo. cancelada_por vacío = la canceló el alumno con su enlace.
+    """
+    actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, related_name='cancelaciones')
+    alumno = models.ForeignKey('Alumno', on_delete=models.CASCADE, related_name='cancelaciones')
+    token = models.CharField(max_length=40, blank=True, db_index=True)
+    fecha_inscripcion = models.DateTimeField(null=True, blank=True)
+    fecha_cancelacion = models.DateTimeField(auto_now_add=True)
+    cancelada_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                      related_name='cancelaciones_registradas')
+
+    class Meta:
+        verbose_name = 'Inscripción cancelada'
+        verbose_name_plural = 'Inscripciones canceladas'
+        ordering = ['-fecha_cancelacion']
+
+    def __str__(self):
+        return f"{self.alumno} - {self.actividad} (cancelada)"
 
 
 class Asistencia(FotoAcademica):

@@ -1,0 +1,133 @@
+{% load static ui %}
+<!DOCTYPE html>
+<html lang="es-cl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Cancelar inscripción a {{ actividad.titulo }} - Punto Participa</title>
+    <link rel="icon" href="{% static 'gestion/img/logo_duoc.png' %}" type="image/png">
+    <link rel="stylesheet" href="{% static 'gestion/css/styles.css' %}">
+</head>
+
+<body>
+    <header class="app-header">
+        <img class="project-logo" src="{% static 'gestion/img/duoc.png' %}" alt="Punto Participa Duoc UC">
+        <img class="duoc-logo" src="{% static 'gestion/img/logo_duoc.png' %}" alt="Duoc UC">
+    </header>
+
+    <main id="main-content" tabindex="-1">
+        <div class="enrollment-wrap">
+            <div class="event-card card">
+
+                <div class="event-banner">
+                    <div>
+                        <span>TALLER</span>
+                        <h2>{{ actividad.titulo }}</h2>
+                    </div>
+                </div>
+
+                <div class="event-body">
+                    <div class="date-tile">
+                        <strong>{{ actividad.fecha_inicio|date:"d" }}</strong>
+                        <span>{{ actividad.fecha_inicio|date:"M"|upper }}</span>
+                    </div>
+
+                    <div class="event-copy">
+                        <h1>Hola, {{ alumno.nombres }}</h1>
+                        <ul>
+                            <li><strong>{% icono "actividad" "icono--texto" %} Fecha:</strong>
+                                {{ actividad.fecha_inicio|date:"d \d\e F \d\e Y, H:i" }} a {{ actividad.fecha_fin|date:"H:i" }}</li>
+                            <li><strong>{% icono "lugar" "icono--texto" %} Lugar:</strong> {{ actividad.lugar_completo }}</li>
+                        </ul>
+                    </div>
+
+                    <div class="enroll-box">
+
+                        <div aria-live="polite">
+                            {% if error %}
+                            <div class="alert alert-danger" role="alert">
+                                <div><strong>{% icono "alerta" "icono--texto" %} No se canceló</strong><span>{{ error }}</span></div>
+                            </div>
+                            {% endif %}
+                            {% if exito %}
+                            <div class="alert alert-success" role="status">
+                                <div><strong>{% icono "guardar" "icono--texto" %} Inscripción cancelada</strong><span>{{ exito }}</span></div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        {% if estado_pagina == 'abierta' %}
+
+                        <p>Estás inscrito en este taller. Si no vas a poder asistir, cancela para que otro
+                            estudiante use tu cupo. Puedes hacerlo hasta el {{ limite|date:"d/m/Y" }} a las
+                            {{ limite|date:"H:i" }} horas.</p>
+
+                        <form method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-block btn-danger">{% icono "eliminar" %} Cancelar mi inscripción</button>
+                        </form>
+
+                        {% elif estado_pagina == 'ya_cancelada' %}
+
+                        {% if not exito %}
+                        <div class="state-box neutral" role="status">
+                            <div class="state-icon">{% icono "alerta" %}</div>
+                            <h3>Inscripción cancelada</h3>
+                            <p>Esta inscripción ya fue cancelada el {{ cancelacion.fecha_cancelacion|date:"d/m/Y \a \l\a\s H:i" }}.</p>
+                        </div>
+                        {% endif %}
+                        {% if puede_volver %}
+                        <p class="input-help">Si cambias de opinión y quedan cupos, puedes volver a inscribirte en
+                            <a href="{% url 'inscripcion_taller' actividad.pk %}">la página del taller</a>.</p>
+                        {% endif %}
+
+                        {% elif estado_pagina == 'fuera_de_plazo' %}
+
+                        <div class="state-box neutral" role="status">
+                            <div class="state-icon">{% icono "reloj" %}</div>
+                            <h3>Ya no se puede cancelar desde aquí</h3>
+                            <p>Faltan menos de 24 horas para el taller. Si no puedes asistir, avisa al Punto
+                                Estudiantil para que liberen tu cupo.</p>
+                        </div>
+
+                        {% elif estado_pagina == 'taller_cancelado' %}
+
+                        <div class="state-box neutral" role="status">
+                            <div class="state-icon">{% icono "alerta" %}</div>
+                            <h3>Taller cancelado</h3>
+                            <p>Este taller fue cancelado. Si tienes dudas, escribe al Punto Estudiantil.</p>
+                        </div>
+
+                        {% else %}
+
+                        <div class="state-box neutral" role="status">
+                            <div class="state-icon">{% icono "reloj" %}</div>
+                            <h3>El taller ya comenzó</h3>
+                            <p>Ya no se pueden hacer cambios en la inscripción.</p>
+                        </div>
+
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="event-footer">
+                    <div>Contacta Punto Estudiantil: <a href="mailto:puntoestu@duoc.cl">puntoestu@duoc.cl</a></div>
+                    <div>
+                        <a href="https://www.duoc.cl" target="_blank" rel="noopener">www.duoc.cl</a>
+                        <span> | </span>
+                        <a href="{% url 'privacidad' %}">Política de Privacidad</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <div>Punto Estudiantil - Sede Alameda Duoc UC</div>
+        <div class="footer-links"><span>2026</span><a href="https://www.duoc.cl" target="_blank" rel="noopener">www.duoc.cl</a></div>
+    </footer>
+</body>
+
+</html>

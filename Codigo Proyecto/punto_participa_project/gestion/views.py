@@ -1325,6 +1325,10 @@ def participantes_actividad(request, pk):
         'filtro_estado': filtro,
         'total_inscritos': Inscripcion.objects.filter(actividad=actividad).count(),
         'total_asistentes': Asistencia.objects.filter(actividad=actividad).count(),
+        'cancelaciones': actividad.cancelaciones.select_related('alumno', 'cancelada_por')[:100],
+        'total_cancelaciones': actividad.cancelaciones.count(),
+        'puede_cancelar': actividad.tipo == 'TALLER' and actividad.estado == 'ACTIVA'
+                          and timezone.now() < actividad.fecha_inicio,
     })
 
 
@@ -2151,7 +2155,7 @@ def inscripcion_taller(request, actividad_id):
             act_lock.cupos_disponibles = cupos - 1
             act_lock.save(update_fields=['cupos_disponibles'])
 
-            Inscripcion.objects.create(actividad=act_lock, alumno=alumno, estado='CONFIRMADA')
+            inscripcion = Inscripcion.objects.create(actividad=act_lock, alumno=alumno, estado='CONFIRMADA')
             cupos_restantes = act_lock.cupos_disponibles
     except IntegrityError:
         return _render_inscripcion(request, actividad, 'con_cupos', 'Ya estás inscrito en este taller.')
@@ -2166,8 +2170,14 @@ def inscripcion_taller(request, actividad_id):
         )
 
     actividad.cupos_disponibles = cupos_restantes
+    from .cancelaciones import enviar_confirmacion, ocultar_correo
+    if enviar_confirmacion(inscripcion):
+        aviso = (f' Te enviamos la confirmación a {ocultar_correo(alumno.correo)}, '
+                 'con el enlace para cancelar si no puedes asistir.')
+    else:
+        aviso = ' No pudimos enviarte el correo de confirmación; tu inscripción igual quedó registrada.'
     return _render_inscripcion(request, actividad, 'con_cupos', exito=
-                               f'¡Inscripción exitosa! Cupos disponibles: {cupos_restantes}')
+                               f'¡Inscripción exitosa! Cupos disponibles: {cupos_restantes}.{aviso}')
 
 LIMITE_FALLOS_INSCRIPCION = 15
 VENTANA_FALLOS_INSCRIPCION = 15 * 60  # segundos

@@ -493,7 +493,8 @@ class AutenticacionYCorreoIntegralTests(BaseSistemaTestCase):
         self.assertTrue(response.json()["success"])
         self.assertIn("html", response.json())
 
-    def test_inscripcion_exitosa_no_envia_correo(self):
+    def test_inscripcion_exitosa_envia_solo_la_confirmacion(self):
+        """Desde la cancelación de inscripciones, se envía un correo: la confirmación al alumno."""
         response = self.client.post(
             reverse("inscripcion_taller", args=[self.actividad.pk]),
             {"rut": "AB123456", "acepta_politica": "on"},
@@ -505,4 +506,6 @@ class AutenticacionYCorreoIntegralTests(BaseSistemaTestCase):
             ).count(),
             1,
         )
-        self.assertEqual(len(mail.outbox), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.alumno_pasaporte.correo])
+        self.assertIn("Inscripción confirmada", mail.outbox[0].subject)

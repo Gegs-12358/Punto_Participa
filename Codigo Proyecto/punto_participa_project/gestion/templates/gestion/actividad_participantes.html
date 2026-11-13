@@ -74,6 +74,7 @@
                     <th>Correo</th>
                     <th>Estado</th>
                     <th>Fecha de inscripción</th>
+                    {% if puede_cancelar %}<th class="text-center">Acciones</th>{% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -81,7 +82,7 @@
                 <tr>
                     <td><strong>{{ i.alumno.nombres }} {{ i.alumno.apellidos }}</strong></td>
                     <td>{{ i.alumno.rut|rut_fmt }}</td>
-                    <td>{{ i.alumno.carrera }}</td>
+                    <td class="celda-texto">{{ i.alumno.carrera }}</td>
                     <td>{{ i.alumno.jornada }}</td>
                     <td>{{ i.alumno.correo }}</td>
                     <td>
@@ -94,10 +95,22 @@
                         {% endif %}
                     </td>
                     <td>{{ i.fecha_inscripcion|date:"d/m/Y H:i" }}</td>
+                    {% if puede_cancelar %}
+                    <td class="text-center">
+                        {% if i.estado == 'CONFIRMADA' %}
+                        <form method="post" action="{% url 'cancelar_inscripcion_gestor' actividad.pk i.pk %}"
+                            data-confirmar="¿Cancelar la inscripción de {{ i.alumno.nombres }} {{ i.alumno.apellidos }}? Su cupo queda libre.">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-icon btn-icon--sm btn-icon--danger" data-tooltip="Cancelar inscripción"
+                                aria-label="Cancelar la inscripción de {{ i.alumno.nombres }} {{ i.alumno.apellidos }}">{% icono "eliminar" %}</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                    {% endif %}
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="text-center text-muted" style="padding: 30px;">
+                    <td colspan="{% if puede_cancelar %}8{% else %}7{% endif %}" class="text-center text-muted" style="padding: 30px;">
                         <div class="empty-state" style="min-height: auto;">
                             <span>{% icono "participantes" "icono--grande" %}</span>
                             <h3>Sin inscritos</h3>
@@ -112,6 +125,49 @@
 
     {% include 'gestion/includes/paginacion.html' with pagina=inscripciones param='page_insc' %}
 </div>
+
+{% if total_cancelaciones %}
+<!-- ============================================================ -->
+<!-- CANCELACIONES -->
+<!-- ============================================================ -->
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">CANCELACIONES</span>
+            <h2>Inscripciones canceladas</h2>
+            <p class="panel-subtitle">{{ total_cancelaciones }} cancelacion{{ total_cancelaciones|pluralize:"es" }}{% if total_cancelaciones > 100 %}; se muestran las 100 más recientes{% endif %}</p>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Inscripciones canceladas</caption>
+            <thead>
+                <tr>
+                    <th>Alumno</th>
+                    <th>RUT</th>
+                    <th>Carrera</th>
+                    <th>Fecha de inscripción</th>
+                    <th>Fecha de cancelación</th>
+                    <th>Cancelada por</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in cancelaciones %}
+                <tr>
+                    <td><strong>{{ c.alumno.nombres }} {{ c.alumno.apellidos }}</strong></td>
+                    <td>{{ c.alumno.rut|rut_fmt }}</td>
+                    <td>{{ c.carrera }}</td>
+                    <td>{{ c.fecha_inscripcion|date:"d/m/Y H:i" }}</td>
+                    <td>{{ c.fecha_cancelacion|date:"d/m/Y H:i" }}</td>
+                    <td>{% if c.cancelada_por %}{{ c.cancelada_por.username }}{% else %}El alumno, con su enlace{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
 
 <!-- ============================================================ -->
 <!-- ASISTENTES -->
@@ -172,4 +228,8 @@
     {% include 'gestion/includes/paginacion.html' with pagina=asistencias param='page_asis' %}
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'gestion/js/catalogos.js' %}"></script>
 {% endblock %}

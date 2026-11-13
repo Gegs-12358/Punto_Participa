@@ -1,6 +1,6 @@
 from django.urls import path
 from . import (exportaciones, views, views_actividad_publica, views_alumnos, views_catalogos,
-               views_importar, views_invitacion_publica, views_invitados)
+               views_cancelacion, views_importar, views_invitacion_publica, views_invitados)
 
 # Sin app_name para mantener compatibilidad con los templates existentes
 
@@ -59,6 +59,8 @@ urlpatterns = [
     path( 'actividades/<int:pk>/notificaciones/', views.notificaciones_actividad, name='notificaciones_actividad'),
     path( 'actividades/<int:pk>/participantes/', views.participantes_actividad, name='participantes_actividad'),
     path('actividades/<int:pk>/invitados/', views_invitados.invitados_actividad, name='invitados_actividad'),
+    path('actividades/<int:pk>/inscripciones/<int:inscripcion_id>/cancelar/',
+         views_cancelacion.cancelar_inscripcion_gestor, name='cancelar_inscripcion_gestor'),
     path('actividades/<int:pk>/invitados/<int:invitado_id>/quitar/', views_invitados.quitar_invitado,
          name='quitar_invitado'),
     path('actividades/invitados/plantilla.csv', views_invitados.plantilla_invitados, name='plantilla_invitados'),
@@ -83,5 +85,6 @@ urlpatterns = [
     path('actividad/<int:actividad_id>/', views_actividad_publica.actividad_publica, name='actividad_publica'),
     path('privacidad/', views.politica_privacidad, name='privacidad'),
     path('invitacion/<str:token>/', views_invitacion_publica.responder_invitacion, name='responder_invitacion'),
+    path('inscripcion/cancelar/<str:token>/', views_cancelacion.cancelar_inscripcion, name='cancelar_inscripcion'),
 
 ]
