@@ -22,7 +22,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
 > exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
-> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización. La suite tiene 734 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 741 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -767,7 +767,27 @@ olvido del backlog.
 - La Política de Privacidad explica el plazo de dos años y la supresión. Migración `0037_retencion`. Pruebas en
   `tests_retencion`.
 
-### 18.12 Pendiente
+### 18.12 Gráficos del Inicio y de Reportes (`ff893a4`)
+
+A pedido del equipo, sin cambiar la forma de ningún gráfico (líneas, barras verticales y donas):
+
+- **Actividades programadas, en curso y finalizadas** (Inicio) no se entendía: "Programadas" contaba todas las
+  actividades e incluía a las otras dos líneas, "En curso" contaba las de estado Activa (publicadas, no las que
+  están ocurriendo) y "Finalizadas" casi siempre daba 0 porque ese estado no cambia solo. Además los meses salían
+  en inglés, se avanzaba de a 30 días y las curvas suavizadas inventaban valores entre meses. Ahora se llama
+  "Actividades terminadas, en curso y próximas": cada actividad cuenta una vez en el mes en que empieza, el estado
+  sale de las fechas, no se cuentan las canceladas, los meses van en español con el actual marcado y se ve el mes
+  siguiente.
+- **Inscritos y asistentes** (Inicio): solo talleres que ya empezaron (antes los futuros aparecían con 0
+  asistentes y parecía inasistencia), los 8 más recientes, con una lista numerada y el porcentaje de asistencia.
+- **Barras de actividades** (Inicio y Reportes): número bajo cada barra y lista con el nombre completo, de mayor a
+  menor. En Reportes, las 10 con más asistentes.
+- **Donas de carreras**: tonos del color de la escuela para que dos carreras de la misma escuela no queden iguales,
+  y leyenda con cantidad y porcentaje. En la pestaña Detalle las carreras van agrupadas por escuela.
+- Escuelas y jornadas con cantidad y porcentaje en la leyenda. Cada gráfico tiene una línea de ayuda. Pruebas en
+  `tests_graficos_inicio`.
+
+### 18.13 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

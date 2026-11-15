@@ -46,7 +46,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**. La entrega está fijada para el 1 de diciembre de 2026.
 
-* Suite de pruebas automatizadas: 734 tests (detalle en la sección 9).
+* Suite de pruebas automatizadas: 741 tests (detalle en la sección 9).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 * El historial detallado de cambios está en [`docs/CAMBIOS.md`](Codigo%20Proyecto/punto_participa_project/docs/CAMBIOS.md) y la guía de estilo de las pantallas en [`docs/GUIA_ESTILO.md`](Codigo%20Proyecto/punto_participa_project/docs/GUIA_ESTILO.md).
 
@@ -56,7 +56,7 @@ El proyecto está en desarrollo y funciona de punta a punta en un entorno local 
 
 | Pantalla | Para qué sirve | Roles |
 | --- | --- | --- |
-| **Inicio** | Resumen del período: actividades en curso, talleres con cupos, inscritos, asistencias del día, invitaciones enviadas, alertas y gráficos. | Administrador, Creador |
+| **Inicio** | Resumen del período: actividades en curso, talleres con cupos, inscritos, asistencias del día, invitaciones enviadas, alertas y gráficos. Cada gráfico explica en una línea qué muestra (sección 3.5). | Administrador, Creador |
 | **Actividades** | Crear, editar y eliminar actividades y talleres, con buscador y filtros. El lugar se elige de una lista; si es una sala, se pide su número (por ejemplo, 1203). Desde aquí se envían las invitaciones por correo. Tipos: masiva, taller y con invitación (sección 3.2). | Administrador, Creador |
 | **Detalle de actividad** | Datos de la actividad y el recorrido de la participación: invitados, inscritos, asistieron y no asistieron, con la lista de quienes se inscribieron y no fueron. En las actividades con invitación: invitados, confirmados, rechazados, sin responder, entraron y acompañantes. | Administrador, Creador |
 | **Invitados** | Lista de una actividad con invitación: carga del Excel o CSV con vista previa, estado de cada invitado y sus acompañantes, enlace personal para copiar, envío de las invitaciones y quitar a quien aún no entra. | Administrador, Creador |
@@ -112,6 +112,14 @@ Si llega alguien que no está en la lista, el escáner ofrece agregarlo: un alum
 * El borrado lo ejecuta un Administrador desde el Inicio, marcando que verificó los respaldos y presionando **"Ya verifiqué los respaldos: borrar ahora"**. Queda en la auditoría con su nombre y todos los Administradores reciben un correo que dice quién lo hizo.
 * Desde la ficha de un alumno, el Administrador puede **anonimizarlo**: se reemplazan el nombre, el RUT y el correo (también en sus invitaciones, acompañantes y registros de auditoría) y se conservan la carrera, la escuela, la jornada y su participación, para que los reportes no cambien. Hay que escribir ANONIMIZAR para confirmar y no se puede deshacer.
 
+
+### 3.5 Gráficos
+
+* Cada gráfico del Inicio y de Reportes tiene, bajo el título, una línea que explica qué cuenta y cómo leerlo. Al pasar el mouse aparece el detalle (total del mes, porcentaje de asistencia, escuela de la carrera).
+* **Actividades terminadas, en curso y próximas** (Inicio): cuántas actividades empiezan cada mes, desde cinco meses atrás hasta el mes siguiente. Cada actividad se cuenta una vez y su estado sale de las fechas; las canceladas no se cuentan.
+* **Talleres realizados** (Inicio): inscritos y asistentes de los 8 talleres más recientes que ya empezaron. Las actividades masivas no aparecen porque no tienen inscripción.
+* En los gráficos de barras con muchas actividades, cada barra lleva un número y debajo hay una lista con el nombre completo y la cifra. En Reportes se muestran las 10 actividades con más asistentes; el resto está en la tabla.
+* En las donas de carreras, las carreras de una misma escuela usan tonos del color de esa escuela (definido en Catálogos), y la leyenda muestra la cantidad y el porcentaje.
 ---
 
 ## 4. Tecnologías
@@ -341,7 +349,7 @@ Codigo Proyecto/
 
 ## 9. Pruebas automatizadas
 
-La suite tiene **734 tests** y se ejecuta con:
+La suite tiene **741 tests** y se ejecuta con:
 
 ```bash
 docker compose exec web python manage.py test --parallel --noinput
@@ -376,6 +384,7 @@ Qué se verifica, por tema:
 | Actividades con invitación | Lectura y validación de la lista (columnas, dígito verificador, repetidos, nómina y bloqueados), permisos de la pantalla Invitados, envío con enlace personal, respuesta con acompañantes y su validación, cambios hasta que empieza la actividad, escáner con invitados, acompañantes y agregados en la entrada, y reportes y exportaciones con invitados. | `tests_invitados`, `tests_invitacion_respuesta`, `tests_escaner_invitacion`, `tests_reportes_invitacion` |
 | Cancelación y lista de espera | Correo de confirmación con enlace, cancelación por el alumno hasta 24 horas antes y por el gestor hasta el inicio, historial y devolución del cupo, permisos, anotación en la lista de espera y aviso a todos al liberarse un cupo. | `tests_cancelacion`, `tests_lista_espera` |
 | Invitaciones por correo | Envío y registro de la notificación, fallo de SMTP registrado como fallido, límite por envío, previsualización y enlace correcto según el tipo de actividad. | `tests_adicionales`, `tests_extremos`, `tests_integrales`, `tests_correo_invitacion` |
+| Gráficos | Actividades por mes según sus fechas (terminadas, en curso y próximas, sin las canceladas), talleres ya realizados, orden de mayor a menor, máximo de 10 actividades en Reportes y carreras agrupadas por escuela. | `tests_graficos_inicio` |
 | Reportes y auditoría | Inscritos y asistentes con filtros, filtro por tipo y lugar, pestañas, cada creador ve solo lo suyo, la auditoría guarda los datos de la petición y su exportación es solo para el Administrador. | `tests_kpi_inscritos`, `tests_reportes_tipo`, `tests_auditoria_limites`, `tests_integrales`, `tests_roles_completo` |
 | Interfaz | Botones con ícono y aviso, filtros activos, menú Exportar, pantallas sin símbolos de texto antiguos y menú con la página actual marcada. | `tests_ui` |
 | Retención y anonimización | Fecha de corte, avisos a todos los Administradores a los 10, 7 y 3 días, aviso diario cuando vence el plazo sin borrar nada, borrado solo con el botón del Administrador y con la casilla marcada, correo a todos con el nombre de quien borró, aviso cuando otro ya lo hizo, y anonimización que conserva la participación. | `tests_retencion` |
