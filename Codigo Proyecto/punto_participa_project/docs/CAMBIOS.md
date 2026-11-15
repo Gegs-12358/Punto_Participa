@@ -22,7 +22,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
 > exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
-> actividades con invitación, la cancelación de inscripciones y la lista de espera. La suite tiene 706 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> actividades con invitación, la cancelación de inscripciones, la lista de espera y la carga masiva de usuarios. La suite tiene 718 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -461,7 +461,7 @@ No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de
 - [ ] Confirmar con Duoc UC la autorización de la carga y el formato real del archivo.
 
 **Calidad**
-- [x] Suite completa de tests en verde (706 pruebas al 15/11/2026). El 92 % de cobertura se midió con 323 y está pendiente de recalcular.
+- [x] Suite completa de tests en verde (718 pruebas al 15/11/2026). El 92 % de cobertura se midió con 323 y está pendiente de recalcular.
 - [ ] Usar Git (los ZIPs numerados, los `.bak` y las copias duplicadas indican que hoy el versionado es manual).
 
 ---
@@ -734,11 +734,22 @@ oficiales (`23dbacd`): casos de uso en UML 2.5, diagramas al día, propuesta de 
 mejoras de la contraparte como adicionales en el backlog, sin cambiar pesos ni prioridades. Se ordenaron las
 actas, se agregó la licencia GNU GPL v3 y se ocultaron datos personales en la evidencia de pantallazos.
 
-### 18.10 Pendiente
+### 18.10 P3: carga masiva de usuarios (`df687c1`)
+
+Pantalla **Importar usuarios** (`/usuarios/importar/`, solo Administrador; `gestion/usuarios_masivos.py` y
+`views_usuarios_masivos.py`). Lee un Excel o CSV con nombre, correo, rut y rol; la columna usuario es opcional y,
+si no viene, se toma lo que está antes de la @ del correo. Mismo flujo que la importación de la nómina: vista
+previa en la sesión y confirmación, que vuelve a validar contra la base. Las reglas son las de la creación
+individual. Las filas cuyo usuario, RUT o correo ya existen se omiten con el motivo: la carga nunca modifica
+cuentas. Cada cuenta nueva queda activa y sin contraseña utilizable, y la persona recibe un correo con un enlace
+que vence para crear su contraseña (el mismo mecanismo de recuperar contraseña); así ninguna clave viaja por
+correo. Sin migraciones. Pruebas en `tests_usuarios_masivos`.
+
+### 18.11 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".
-- **P3, correo:** carga masiva de usuarios con contraseña inicial por correo; cuenta institucional. Depende de
-  que el Punto entregue la cuenta.
+- **P3, correo:** cuenta de correo institucional, que debe entregar el Punto. Mientras tanto los correos salen
+  por consola.
 - **P4, datos:** retención de dos años en la base principal (verificando antes que los datos estén en un
   respaldo mensual), decisión sobre la IP y el navegador de la auditoría y anonimización.

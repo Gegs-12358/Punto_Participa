@@ -46,7 +46,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**. La entrega está fijada para el 1 de diciembre de 2026.
 
-* Suite de pruebas automatizadas: 706 tests (detalle en la sección 9).
+* Suite de pruebas automatizadas: 718 tests (detalle en la sección 9).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 * El historial detallado de cambios está en [`docs/CAMBIOS.md`](Codigo%20Proyecto/punto_participa_project/docs/CAMBIOS.md) y la guía de estilo de las pantallas en [`docs/GUIA_ESTILO.md`](Codigo%20Proyecto/punto_participa_project/docs/GUIA_ESTILO.md).
 
@@ -61,7 +61,7 @@ El proyecto está en desarrollo y funciona de punta a punta en un entorno local 
 | **Detalle de actividad** | Datos de la actividad y el recorrido de la participación: invitados, inscritos, asistieron y no asistieron, con la lista de quienes se inscribieron y no fueron. En las actividades con invitación: invitados, confirmados, rechazados, sin responder, entraron y acompañantes. | Administrador, Creador |
 | **Invitados** | Lista de una actividad con invitación: carga del Excel o CSV con vista previa, estado de cada invitado y sus acompañantes, enlace personal para copiar, envío de las invitaciones y quitar a quien aún no entra. | Administrador, Creador |
 | **Reportes** | Gráficos y tablas por actividad o por escuela y carrera, con filtros por actividad, tipo, lugar, escuela, carrera, jornada y fechas. Menú **Exportar** con tres reportes en Excel o CSV (sección 3.1). | Administrador, Creador |
-| **Usuarios** | Crear y editar cuentas, asignar el rol y bloquear el acceso, con buscador. | Administrador |
+| **Usuarios** | Crear y editar cuentas, asignar el rol y bloquear el acceso, con buscador. **Importar usuarios** crea varias cuentas desde Excel o CSV (nombre, correo, rut, rol y usuario opcional), con vista previa; cada persona recibe un correo con un enlace para crear su contraseña. | Administrador |
 | **Alumnos** | Directorio de la nómina con buscador; ficha de cada alumno con su historial de participación; bloqueo manual con motivo. Desde aquí se importa la nómina en Excel o CSV. | Administrador |
 | **Catálogos** | Lugares, escuelas (con su color para los gráficos) y carreras: agregar, renombrar, bloquear y eliminar lo que no se usa. | Administrador |
 | **Escáner** | Registro de asistencia por turnos, con contador en vivo (sección 6). | Los tres roles |
@@ -257,6 +257,8 @@ Codigo Proyecto/
     │   ├── models.py          Modelos de datos
     │   ├── views.py           Pantallas principales (inicio, actividades, reportes, escáner, usuarios, auditoría)
     │   ├── views_alumnos.py   Directorio, ficha y bloqueo de alumnos
+    │   ├── usuarios_masivos.py      Lectura, validación y creación de usuarios desde Excel o CSV
+    │   ├── views_usuarios_masivos.py  Pantalla Importar usuarios
     │   ├── views_catalogos.py Lugares, escuelas y carreras
     │   ├── views_importar.py  Importación de la nómina desde la web
     │   ├── exportaciones.py   Exportaciones de Reportes (Excel y CSV)
@@ -319,7 +321,7 @@ Codigo Proyecto/
 
 ## 9. Pruebas automatizadas
 
-La suite tiene **706 tests** y se ejecuta con:
+La suite tiene **718 tests** y se ejecuta con:
 
 ```bash
 docker compose exec web python manage.py test --parallel --noinput
@@ -342,7 +344,7 @@ Qué se verifica, por tema:
 | Autenticación y contraseñas | Inicio de sesión con credenciales válidas e inválidas, usuario inactivo que no entra, cierre de sesión, redirección `next` permitida solo hacia rutas internas, cambio de contraseña, recuperación por token y cambio de clave obligatorio. | `tests_extremos`, `tests_integrales`, `tests_views_criticas` |
 | Límite de intentos | El sexto intento de login se bloquea; el escáner responde un aviso en JSON al pasar el tope y el límite es por usuario; límite de la inscripción pública. | `tests_ratelimit`, `tests_limite_inscripcion` |
 | Permisos por rol | Qué puede abrir cada rol y el usuario anónimo, que un creador no vea ni exporte actividades de otro, respuestas 401 y 403 en los endpoints JSON y rechazo de peticiones sin token CSRF. | `tests_roles_completo`, `tests`, `tests_decorators_utils`, `tests_adicionales` |
-| Usuarios y documento de identidad | Documento obligatorio, guardado normalizado, rechazo de duplicados, confirmación al cambiarlo, registro en la auditoría y bloqueo de usuarios. | `tests_rut_usuarios`, `tests_caracteres` |
+| Usuarios y documento de identidad | Documento obligatorio, guardado normalizado, rechazo de duplicados, confirmación al cambiarlo, registro en la auditoría y bloqueo de usuarios. Carga masiva: vista previa sin escribir, filas omitidas si la cuenta existe, errores por fila, enlace para crear la contraseña y solo para el Administrador. | `tests_rut_usuarios`, `tests_caracteres`, `tests_usuarios_masivos` |
 | RUT, RUN provisorio y pasaporte | Limpieza de puntos y guion, dígito verificador, documentos extranjeros, búsqueda del alumno en distintos formatos y formato de pantalla. | `tests`, `tests_decorators_utils`, `tests_formato_rut` |
 | Escáner de asistencia | Registro por RUT, QR y código de barras, confirmación en dos etapas, duplicados, talleres sin inscripción, actividades inactivas, teclado en español e inglés, turnos guardados, contador en vivo con varios operadores y lista para elegir la actividad. | `tests_views_criticas`, `tests_escaner_teclado`, `tests_escaner_turno`, `tests_integrales`, `tests_adicionales` |
 | Alumnos y nómina | Importación desde Excel y CSV (vista previa, errores por fila, bloqueo masivo), alumnos bloqueados que no se inscriben ni se registran, directorio con buscador, ficha con historial y bloqueo manual que la nómina respeta. | `tests_importador`, `tests_importar_web`, `tests_alumnos_bloqueados`, `tests_alumnos_pantalla` |
