@@ -22,7 +22,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
 > exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
-> actividades con invitación, la cancelación de inscripciones, la lista de espera y la carga masiva de usuarios. La suite tiene 718 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización. La suite tiene 734 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -745,11 +745,33 @@ cuentas. Cada cuenta nueva queda activa y sin contraseña utilizable, y la perso
 que vence para crear su contraseña (el mismo mecanismo de recuperar contraseña); así ninguna clave viaja por
 correo. Sin migraciones. Pruebas en `tests_usuarios_masivos`.
 
-### 18.11 Pendiente
+### 18.11 P4: retención de datos y anonimización (`f033cfe`)
+
+Decisiones del Punto: la base principal guarda dos años y el histórico queda en los respaldos mensuales; la
+auditoría (con la IP y el navegador) también se guarda dos años; antes de borrar se avisa a los Administradores
+para que verifiquen los respaldos. Con esto quedan resueltos el pendiente de la sección 16.9 y el derecho al
+olvido del backlog.
+
+- **Retención** (`retencion.py`, comando `retencion`, servicio `tareas` en `docker-compose.yml`). Una vez al día
+  se revisa si hay actividades terminadas o registros de auditoría de más de `RETENCION_ANIOS` años. Si los hay,
+  se abre un proceso (`AvisoRetencion`) con la fecha de corte y un plazo de 10 días, y se avisa por correo a todos
+  los Administradores; los recordatorios salen a los 7 y 3 días mientras nadie actúe. Nada se borra solo: si el
+  plazo vence, el aviso se repite cada día. El borrado lo ejecuta un Administrador desde el Inicio, con una casilla
+  que confirma que verificó el respaldo mensual y la prueba de recuperación. Se borra solo lo anterior a la fecha
+  de corte anunciada, queda en la auditoría con su nombre y todos los Administradores reciben un correo que dice
+  quién lo hizo. Si dos lo intentan, el segundo ve que ya estaba hecho.
+- **Anonimización** (`anonimizacion.py`, ficha del alumno). Reemplaza el nombre, el RUT y el correo del alumno,
+  de sus invitaciones y acompañantes y de los registros de auditoría que lo nombran; lo deja bloqueado y lo saca
+  de las listas de espera. Se conservan la carrera, la escuela, la jornada y la participación, así los reportes no
+  cambian. Hay que escribir ANONIMIZAR para confirmar.
+- La Política de Privacidad explica el plazo de dos años y la supresión. Migración `0037_retencion`. Pruebas en
+  `tests_retencion`.
+
+### 18.12 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".
 - **P3, correo:** cuenta de correo institucional, que debe entregar el Punto. Mientras tanto los correos salen
   por consola.
-- **P4, datos:** retención de dos años en la base principal (verificando antes que los datos estén en un
-  respaldo mensual), decisión sobre la IP y el navegador de la auditoría y anonimización.
+- **P4, datos:** plazo de conservación de los respaldos mensuales, que la Política de Privacidad deja por
+  confirmar.

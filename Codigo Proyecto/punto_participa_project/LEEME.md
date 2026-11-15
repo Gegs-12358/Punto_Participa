@@ -26,6 +26,7 @@ Luego abre <http://localhost:8000/login/>.
 | Cambiaste `Dockerfile`, `requirements.txt` o `entrypoint.sh` | `docker compose up -d --build` |
 | Quieres correr las pruebas | `docker compose exec web python manage.py test --parallel --noinput` |
 | Quieres ver errores | `docker compose logs web --tail 50` |
+| Editaste `retencion.py` o el `.env` y quieres que lo tome el servicio `tareas` | `docker compose up -d --force-recreate tareas` |
 
 ## Más documentación
 

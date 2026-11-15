@@ -39,4 +39,4 @@ class Command(BaseCommand):
             'esperando': 'Proceso abierto; hoy no corresponde avisar.',
         }
         detalle = f' (plazo: {aviso.fecha_programada:%d/%m/%Y})' if aviso else ''
-        self.stdout.write(f'{timezone.now():%d/%m/%Y %H:%M} {textos[estado]}{detalle}')
+        self.stdout.write(f'{timezone.localtime():%d/%m/%Y %H:%M} {textos[estado]}{detalle}')

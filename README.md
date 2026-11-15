@@ -46,7 +46,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**. La entrega está fijada para el 1 de diciembre de 2026.
 
-* Suite de pruebas automatizadas: 718 tests (detalle en la sección 9).
+* Suite de pruebas automatizadas: 734 tests (detalle en la sección 9).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 * El historial detallado de cambios está en [`docs/CAMBIOS.md`](Codigo%20Proyecto/punto_participa_project/docs/CAMBIOS.md) y la guía de estilo de las pantallas en [`docs/GUIA_ESTILO.md`](Codigo%20Proyecto/punto_participa_project/docs/GUIA_ESTILO.md).
 
@@ -104,6 +104,13 @@ Si llega alguien que no está en la lista, el escáner ofrece agregarlo: un alum
 * Al cancelar, el cupo vuelve a quedar libre y la inscripción pasa a un historial de cancelaciones, que se ve en Participantes. El estudiante puede volver a inscribirse si hay cupo.
 * Cuando un taller está lleno, su página ofrece anotarse en la **lista de espera** con el RUT. Anotarse no inscribe: cuando alguien cancela, se avisa por correo a todos los de la lista y el cupo es para el primero que se inscribe. Al inscribirse, el estudiante sale de la lista.
 * Las cancelaciones, las anotaciones y los avisos quedan en la auditoría.
+
+### 3.4 Retención de datos y anonimización
+
+* La base principal guarda dos años. Las actividades que terminaron hace más tiempo (con sus inscripciones, asistencias, invitados, cancelaciones y correos) y los registros de auditoría de esa antigüedad, incluidas la IP y el navegador, se borran de ella. El histórico completo queda en los respaldos mensuales.
+* **Nada se borra solo.** Cuando hay datos vencidos, el sistema avisa por correo a todos los Administradores y les da 10 días para verificar los respaldos. Los recordatorios salen a los 7 y a los 3 días. Si el plazo vence sin que nadie haya actuado, no se borra nada y el aviso se repite cada día.
+* El borrado lo ejecuta un Administrador desde el Inicio, marcando que verificó los respaldos y presionando **"Ya verifiqué los respaldos: borrar ahora"**. Queda en la auditoría con su nombre y todos los Administradores reciben un correo que dice quién lo hizo.
+* Desde la ficha de un alumno, el Administrador puede **anonimizarlo**: se reemplazan el nombre, el RUT y el correo (también en sus invitaciones, acompañantes y registros de auditoría) y se conservan la carrera, la escuela, la jornada y su participación, para que los reportes no cambien. Hay que escribir ANONIMIZAR para confirmar y no se puede deshacer.
 
 ---
 
@@ -208,6 +215,16 @@ El servicio `respaldo` de `docker-compose.yml` respalda la base de datos y las i
 
 La restauración, la ubicación de la carpeta y la solución de problemas están en [`respaldo/LEEME.md`](Codigo%20Proyecto/punto_participa_project/respaldo/LEEME.md). Los respaldos contienen datos personales: guárdalos en un lugar con acceso restringido y fuera del repositorio (`respaldos/` está en `.gitignore`).
 
+### 5.2 Tareas programadas (retención de datos)
+
+El servicio `tareas` revisa una vez al día (cada `TAREAS_CADA_HORAS` horas) si hay datos de más de `RETENCION_ANIOS` años y envía los avisos de la sección 3.4. Nunca borra: eso lo hace un Administrador desde el Inicio. Los días de aviso se configuran con `RETENCION_AVISOS_DIAS` (por defecto `10,7,3`).
+
+| Acción | Comando |
+| --- | --- |
+| Ver qué haría hoy, sin enviar correos ni borrar | `docker compose exec web python manage.py retencion --simular` |
+| Ver lo que está haciendo | `docker compose logs tareas --tail 20` |
+| Aplicar cambios en `retencion.py` o en el `.env` | `docker compose up -d --force-recreate tareas` |
+
 ### Advertencia sobre los datos
 
 Los datos viven en volúmenes de Docker (`pgdata` para la base de datos y `media_volume` para los archivos subidos). **Nunca ejecutes** `docker compose down -v`, `docker volume prune` ni `docker system prune --volumes`, porque borran esos volúmenes y se pierde toda la información.
@@ -270,7 +287,10 @@ Codigo Proyecto/
     │   ├── views_cancelacion.py  Cancelación desde el enlace del alumno y desde Participantes
     │   ├── lista_espera.py    Lista de espera y aviso cuando se libera un cupo
     │   ├── escaner_invitacion.py  Escáner en las actividades con invitación
-    │   ├── management/commands/   seed_data, perf_seed e importar_alumnos
+    │   ├── retencion.py       Avisos de retención y borrado de los datos de más de dos años
+    │   ├── views_retencion.py Botón del Inicio que ejecuta el borrado
+    │   ├── anonimizacion.py   Anonimización de un alumno
+    │   ├── management/commands/   seed_data, perf_seed, importar_alumnos y retencion
     │   ├── migrations/        Migraciones de la base de datos
     │   ├── static/            JavaScript, CSS, imágenes y Chart.js
     │   ├── templates/         Plantillas HTML
@@ -278,9 +298,10 @@ Codigo Proyecto/
     │   └── tests_*.py         Pruebas automatizadas
     ├── punto_participa/       Configuración del proyecto Django
     ├── respaldo/              Scripts y guía del respaldo automático
+    ├── tareas/                Ciclo diario del servicio tareas
     ├── docs/                  CAMBIOS.md (historial) y GUIA_ESTILO.md
     ├── Dockerfile
-    ├── docker-compose.yml     Servicios db, web y respaldo
+    ├── docker-compose.yml     Servicios db, web, respaldo y tareas
     ├── entrypoint.sh          Script de arranque del contenedor
     ├── env.example            Plantilla de variables de entorno
     └── requirements.txt
@@ -305,15 +326,14 @@ Codigo Proyecto/
 * Registro de auditoría de las acciones del sistema, incluidos los turnos del escáner y las exportaciones.
 * Respaldo automático con prueba de recuperación y copias mensuales permanentes.
 * Cancelación de inscripciones con enlace personal aleatorio, sin indexar en buscadores y con límite de 30 envíos por minuto por IP. La lista de espera usa el mismo límite de intentos que la inscripción pública.
+* Retención de dos años en la base principal, con borrado ejecutado por un Administrador después de verificar los respaldos, y anonimización de alumnos a pedido. La IP y el navegador de la auditoría se borran junto con el resto de los registros de más de dos años.
 * Política de Privacidad pública (`/privacidad/`) y aceptación obligatoria al inscribirse, registrada en la auditoría. El texto es un borrador pendiente de revisión de Duoc UC.
 
 ### Pendientes antes de producción
 
 * Envío de correos por SMTP con una cuenta institucional (hoy salen por consola o por una cuenta de prueba).
 * Lectura de la IP real del visitante cuando el sistema quede detrás de un proxy, para que los límites de intentos cuenten por visitante y la auditoría guarde la IP correcta.
-* Retención de datos: dos años en la base principal y el histórico completo en los respaldos mensuales.
-* Derecho al olvido (anonimizar en vez de borrar en cascada) y decisión sobre la IP y el navegador que guarda la auditoría.
-* Ubicación definitiva de la carpeta de respaldos en el servidor.
+* Ubicación definitiva de la carpeta de respaldos en el servidor y plazo de conservación de los respaldos mensuales (la Política de Privacidad lo deja por confirmar).
 * Revisión de la Política de Privacidad por parte de Duoc UC.
 * Rotar las claves usadas en desarrollo y preparar la configuración de Docker para producción.
 
@@ -321,7 +341,7 @@ Codigo Proyecto/
 
 ## 9. Pruebas automatizadas
 
-La suite tiene **718 tests** y se ejecuta con:
+La suite tiene **734 tests** y se ejecuta con:
 
 ```bash
 docker compose exec web python manage.py test --parallel --noinput
@@ -358,6 +378,7 @@ Qué se verifica, por tema:
 | Invitaciones por correo | Envío y registro de la notificación, fallo de SMTP registrado como fallido, límite por envío, previsualización y enlace correcto según el tipo de actividad. | `tests_adicionales`, `tests_extremos`, `tests_integrales`, `tests_correo_invitacion` |
 | Reportes y auditoría | Inscritos y asistentes con filtros, filtro por tipo y lugar, pestañas, cada creador ve solo lo suyo, la auditoría guarda los datos de la petición y su exportación es solo para el Administrador. | `tests_kpi_inscritos`, `tests_reportes_tipo`, `tests_auditoria_limites`, `tests_integrales`, `tests_roles_completo` |
 | Interfaz | Botones con ícono y aviso, filtros activos, menú Exportar, pantallas sin símbolos de texto antiguos y menú con la página actual marcada. | `tests_ui` |
+| Retención y anonimización | Fecha de corte, avisos a todos los Administradores a los 10, 7 y 3 días, aviso diario cuando vence el plazo sin borrar nada, borrado solo con el botón del Administrador y con la casilla marcada, correo a todos con el nombre de quien borró, aviso cuando otro ya lo hizo, y anonimización que conserva la participación. | `tests_retencion` |
 | Configuración, privacidad y respaldo | Configuración desde `.env`, colores de las escuelas, Política de Privacidad y consentimiento, datos de prueba repetibles y scripts del respaldo. | `tests_p0_tecnicos`, `tests_privacidad`, `tests_seed_data`, `tests_respaldo` |
 | Resistencia y consistencia | Carga de muchas inscripciones y asistencias sin duplicados, inscripciones simultáneas que no superan los cupos y reversión de los cambios cuando ocurre un error. | `tests_resistencia` |
 
