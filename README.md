@@ -421,3 +421,13 @@ Todo el sistema se ejecuta con Docker Compose en tres servicios: `db` (PostgreSQ
 ## 13. Código del proyecto
 
 La carpeta `Codigo Proyecto` contiene el código del sistema Punto Participa. El historial de commits fue reconstruido el 05/10/2026 a partir de respaldos locales (archivos zip); la fecha de cada commit corresponde a la fecha del respaldo del que proviene.
+
+---
+
+## 14. Licencia
+
+Punto Participa, plataforma de gestión de actividades y asistencia del Punto Estudiantil de Duoc UC Sede Alameda.
+
+Copyright (C) 2026 Gabriel Eduardo González Soto, Pablo Emilio Rebolledo Alvear y Diverson Nonnombre Nonnombre.
+
+Este programa es software libre: puede redistribuirse y modificarse bajo los términos de la Licencia Pública General GNU (GPL) publicada por la Free Software Foundation, versión 3. Se distribuye con la esperanza de que sea útil, pero sin ninguna garantía. El texto completo está en el archivo [`LICENSE`](LICENSE).
