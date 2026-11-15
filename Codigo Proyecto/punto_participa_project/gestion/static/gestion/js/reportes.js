@@ -32,13 +32,13 @@
             const el = document.getElementById(id);
             if (!el) return [];
             try { return JSON.parse(el.textContent); }
-            catch (e) { console.error('Error al parsear ' + id + ':', e); return []; }
+            catch (e) { console.error('Error al leer ' + id + ':', e); return []; }
         }
 
         function mostrarSinDatos(canvas) {
             if (canvas && canvas.parentElement) {
                 canvas.parentElement.innerHTML =
-                    '<p class="text-muted text-center" style="padding:40px;">No hay datos disponibles.</p>';
+                    '<p class="grafico-vacio">No hay asistentes con estos filtros.</p>';
             }
         }
 
@@ -51,146 +51,194 @@
             });
         }
 
-        // Devuelve colores del backend o fallback
-        function obtenerColores(colorsId, total) {
-            const colores = colorsId ? obtenerDatos(colorsId) : [];
-            return Array.from({ length: total }, (_, i) =>
-                (colores && colores[i]) || COLORES_FALLBACK[i % COLORES_FALLBACK.length]
-            );
+        function porcentaje(parte, total) {
+            return total > 0 ? Math.round(parte / total * 100) + '%' : '0%';
         }
 
-        // Leyenda HTML con texto coloreado (1 color por label)
-        function renderLegendColored(chart, containerId) {
+        function colorDe(colores, i) {
+            return (colores && colores[i]) || COLORES_FALLBACK[i % COLORES_FALLBACK.length];
+        }
+
+        // Aclara un color hacia el blanco (0 = igual, 1 = blanco)
+        function aclarar(hex, cuanto) {
+            const n = parseInt(hex.replace('#', ''), 16);
+            const mezcla = c => Math.round(c + (255 - c) * cuanto);
+            const r = mezcla(n >> 16), g = mezcla((n >> 8) & 255), b = mezcla(n & 255);
+            return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+
+        // Varias carreras de una escuela: tonos cada vez más claros del color de la escuela
+        function tonosPorEscuela(coloresBase, total) {
+            const vistos = {};
+            return Array.from({ length: total }, function (_, i) {
+                const base = colorDe(coloresBase, i);
+                const vez = vistos[base] || 0;
+                vistos[base] = vez + 1;
+                return aclarar(base, Math.min(vez * 0.14, 0.75));
+            });
+        }
+
+        // Leyenda con muestra de color: [{color, texto}]
+        function leyenda(containerId, items) {
             const container = document.getElementById(containerId);
-            if (!container || !chart) return;
+            if (!container) return;
             container.innerHTML = '';
-            chart.data.labels.forEach(function (label, i) {
-                const bg = chart.data.datasets[0].backgroundColor;
-                const color = Array.isArray(bg) ? bg[i] : bg;
+            items.forEach(function (it) {
                 const item = document.createElement('span');
-                item.className = 'chart-legend-item';
-                item.style.color = color;
-                item.textContent = label;
+                item.className = 'chart-legend-item chart-legend-item--muestra';
+                item.style.setProperty('--muestra', it.color);
+                item.textContent = it.texto;
                 container.appendChild(item);
             });
         }
 
+        // Lista numerada (el número coincide con el de la barra): [{color, texto, detalle}]
+        function lista(containerId, items) {
+            const ol = document.getElementById(containerId);
+            if (!ol) return;
+            ol.innerHTML = '';
+            items.forEach(function (it) {
+                const li = document.createElement('li');
+                li.className = 'con-muestra';
+                li.style.setProperty('--muestra', it.color);
+                const nombre = document.createElement('span');
+                nombre.className = 'grafico-lista__nombre';
+                nombre.textContent = it.texto;
+                const dato = document.createElement('strong');
+                dato.textContent = it.detalle;
+                li.appendChild(nombre);
+                li.appendChild(dato);
+                ol.appendChild(li);
+            });
+        }
+
+        const ejeEntero = {
+            beginAtZero: true,
+            ticks: { precision: 0, callback: v => formatoNumero.format(v) },
+            grid: { color: '#EEF1F5' }
+        };
+
         // ------------------------------------------------------------
-        // Creador: Barras
+        // Barras verticales. numerar: el eje muestra 1, 2, 3... y los nombres van en una lista;
+        // si no, el eje muestra el nombre y la leyenda la cantidad y el porcentaje.
         // ------------------------------------------------------------
-        function crearBarras(canvasId, labelsId, dataId, colorsId, legendId) {
+        function crearBarras(canvasId, labelsId, dataId, colorsId, opciones) {
             const canvas = document.getElementById(canvasId);
             if (!canvas) return;
-
             const labels = obtenerDatos(labelsId);
             const data = obtenerDatos(dataId);
-
             if (!labels.length) { mostrarSinDatos(canvas); return; }
 
-            const colores = obtenerColores(colorsId, labels.length);
+            const coloresBackend = colorsId ? obtenerDatos(colorsId) : [];
+            const colores = labels.map((_, i) => colorDe(coloresBackend, i));
+            const total = data.reduce((a, b) => a + b, 0);
+            const numerar = opciones && opciones.listaId;
 
-            const chart = new Chart(canvas, {
+            new Chart(canvas, {
                 type: 'bar',
                 data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Asistentes',
-                        data: data,
-                        backgroundColor: colores,
-                        borderColor: colores,
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }]
+                    labels: numerar ? labels.map((_, i) => String(i + 1)) : labels,
+                    datasets: [{ label: 'Asistentes', data: data, backgroundColor: colores, borderRadius: 4,
+                                 maxBarThickness: 56 }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    animation: { duration: 600 },
+                    animation: { duration: 500 },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1, callback: v => formatoNumero.format(v) }
-                        },
-                        x: { ticks: { display: false }, grid: { display: false } }
+                        y: ejeEntero,
+                        x: { grid: { display: false },
+                             ticks: numerar ? { font: { weight: '700' } }
+                                          : { display: labels.every(l => l.length <= 14), maxRotation: 0 } }
                     },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
-                                title: ctx => ctx[0].label,
-                                label: ctx => 'Asistentes: ' + formatoNumero.format(ctx.parsed.y)
+                                title: items => labels[items[0].dataIndex],
+                                label: ctx => 'Asistentes: ' + formatoNumero.format(ctx.parsed.y) +
+                                    ' (' + porcentaje(ctx.parsed.y, total) + ')'
                             }
                         }
                     }
                 }
             });
 
-            if (legendId) renderLegendColored(chart, legendId);
-            return chart;
+            if (numerar) {
+                lista(opciones.listaId, labels.map((l, i) => ({
+                    color: colores[i], texto: l, detalle: formatoNumero.format(data[i])
+                })));
+            } else if (opciones && opciones.legendId) {
+                leyenda(opciones.legendId, labels.map((l, i) => ({
+                    color: colores[i],
+                    texto: l + ': ' + formatoNumero.format(data[i]) + ' (' + porcentaje(data[i], total) + ')'
+                })));
+            }
         }
 
         // ------------------------------------------------------------
-        // Creador: Dona
+        // Dona de carreras: tonos del color de la escuela, leyenda con cantidad y porcentaje
         // ------------------------------------------------------------
-        function crearDonut(canvasId, labelsId, dataId, colorsId, legendId) {
+        function crearDonaCarreras(canvasId, labelsId, dataId, colorsId, escuelasId, legendId) {
             const canvas = document.getElementById(canvasId);
             if (!canvas) return;
-
             const labels = obtenerDatos(labelsId);
             const data = obtenerDatos(dataId);
-
             if (!labels.length) { mostrarSinDatos(canvas); return; }
 
-            const colores = obtenerColores(colorsId, labels.length);
+            const colores = tonosPorEscuela(obtenerDatos(colorsId), labels.length);
+            const escuelas = obtenerDatos(escuelasId);
+            const total = data.reduce((a, b) => a + b, 0);
 
-            const chart = new Chart(canvas, {
+            new Chart(canvas, {
                 type: 'doughnut',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: colores,
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
+                    datasets: [{ data: data, backgroundColor: colores, borderWidth: 2, borderColor: '#fff' }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    animation: { duration: 600 },
-                    cutout: '60%',
+                    animation: { duration: 500 },
+                    cutout: '58%',
                     plugins: {
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
-                                label: ctx => {
-                                    const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                    const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
-                                    return ctx.label + ': ' + formatoNumero.format(ctx.parsed) + ' (' + pct + '%)';
-                                }
+                                label: ctx => ctx.label + ': ' + formatoNumero.format(ctx.parsed) +
+                                    ' (' + porcentaje(ctx.parsed, total) + ')',
+                                footer: items => escuelas[items[0].dataIndex] || ''
                             }
                         }
                     }
                 }
             });
 
-            if (legendId) renderLegendColored(chart, legendId);
-            return chart;
+            leyenda(legendId, labels.map((l, i) => ({
+                color: colores[i],
+                texto: l + ': ' + formatoNumero.format(data[i]) + ' (' + porcentaje(data[i], total) + ')'
+            })));
         }
 
         // ------------------------------------------------------------
         // PESTAÑA GENERAL
         // ------------------------------------------------------------
-        crearBarras('graficoBarrasReportes', 'labels_barras', 'data_barras', null, 'legendBarrasReportes');
-        crearDonut('graficoPastelReportes', 'labels_pastel', 'data_pastel', 'data_colores_pastel', 'legendPastelReportes');
-        crearBarras('graficoJornadaReportes', 'labels_jornada', 'data_jornada', null, 'legendJornadaReportes');
+        crearBarras('graficoBarrasReportes', 'labels_barras', 'data_barras', null,
+                    { listaId: 'listaBarrasReportes' });
+        crearDonaCarreras('graficoPastelReportes', 'labels_pastel', 'data_pastel', 'data_colores_pastel',
+                          'escuelas_pastel', 'legendPastelReportes');
+        crearBarras('graficoJornadaReportes', 'labels_jornada', 'data_jornada', null,
+                    { legendId: 'legendJornadaReportes' });
 
         // ------------------------------------------------------------
         // PESTAÑA DETALLADO
         // ------------------------------------------------------------
-        crearBarras('graficoBarrasDetalle', 'labels_barras_detalle', 'data_barras_detalle', 'data_colores_barras_detalle', 'legendBarrasDetalle');
-        crearDonut('graficoPastelDetalle', 'labels_pastel_detalle', 'data_pastel_detalle', 'data_colores_pastel_detalle', 'legendPastelDetalle');
-        crearBarras('graficoJornadaDetalle', 'labels_jornada_detalle', 'data_jornada_detalle', null, 'legendJornadaDetalle');
+        crearBarras('graficoBarrasDetalle', 'labels_barras_detalle', 'data_barras_detalle',
+                    'data_colores_barras_detalle', { legendId: 'legendBarrasDetalle' });
+        crearDonaCarreras('graficoPastelDetalle', 'labels_pastel_detalle', 'data_pastel_detalle',
+                          'data_colores_pastel_detalle', 'escuelas_pastel_detalle', 'legendPastelDetalle');
+        crearBarras('graficoJornadaDetalle', 'labels_jornada_detalle', 'data_jornada_detalle', null,
+                    { legendId: 'legendJornadaDetalle' });
 
         // ------------------------------------------------------------
         // TABS

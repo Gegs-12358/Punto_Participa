@@ -188,72 +188,81 @@
     <div class="panel">
         <div class="panel-head">
             <div>
-                <span class="eyebrow">RESUMEN</span>
-                <h2>Actividades programadas, en curso y finalizadas</h2>
+                <span class="eyebrow">CALENDARIO</span>
+                <h2>Actividades terminadas, en curso y próximas</h2>
             </div>
-            <span class="badge">Últimos 6 meses</span>
+            <span class="badge">{{ rango_meses }}</span>
         </div>
+        <p class="grafico-ayuda">Cuántas actividades empiezan cada mes. Cada una se cuenta una sola vez: gris si ya terminó, verde si está ocurriendo ahora y azul si todavía no empieza. No incluye las canceladas.</p>
         <div class="chart-container">
-            <canvas id="graficoLinea" role="img" aria-label="Resumen de actividades por mes"></canvas>
+            <canvas id="graficoMeses" role="img" aria-label="Actividades por mes: terminadas, en curso y próximas"></canvas>
         </div>
-        <div class="chart-legend" id="legendLinea"></div>
+        <div class="chart-legend chart-legend--fila" id="legendMeses"></div>
     </div>
 
     <div class="panel">
         <div class="panel-head">
             <div>
-                <span class="eyebrow">COMPARATIVO</span>
-                <h2>Inscritos vs. asistentes (top 10 actividades)</h2>
+                <span class="eyebrow">TALLERES</span>
+                <h2>Talleres realizados: inscritos y asistentes</h2>
             </div>
+            <span class="badge">Los 8 más recientes</span>
         </div>
+        <p class="grafico-ayuda">Compara cuántos se inscribieron con cuántos llegaron. La diferencia son los que no asistieron. Solo talleres que ya empezaron; las actividades masivas no tienen inscripción. El número bajo las barras corresponde a la lista.</p>
         <div class="chart-container">
-            <canvas id="graficoComparativo" role="img" aria-label="Inscritos vs asistentes por actividad"></canvas>
+            <canvas id="graficoComparativo" role="img" aria-label="Inscritos y asistentes por taller"></canvas>
         </div>
-        <div class="chart-legend" id="legendComparativo"></div>
+        <div class="chart-legend chart-legend--fila" id="legendComparativo"></div>
+        <ol class="grafico-lista" id="listaComparativo"></ol>
     </div>
 </div>
 
 <!-- ============================================================ -->
-<!-- FILA DE 3: BARRAS + DONA CARRERA + DONA ESCUELA -->
+<!-- FILA DE 3: ACTIVIDADES + CARRERAS + ESCUELAS -->
 <!-- ============================================================ -->
 <div class="charts-grid-3">
     <div class="panel">
         <div class="panel-head">
             <div>
-                <span class="eyebrow">GRÁFICO DE BARRAS</span>
-                <h2>Top 5 actividades con más asistentes</h2>
+                <span class="eyebrow">ASISTENCIA</span>
+                <h2>Actividades con más asistentes</h2>
             </div>
+            <span class="badge">Top 5</span>
         </div>
+        <p class="grafico-ayuda">Personas registradas en el escáner en cada actividad. El número de la barra corresponde a la lista.</p>
         <div class="chart-container">
-            <canvas id="graficoBarras" role="img" aria-label="Gráfico de barras: asistentes por actividad"></canvas>
+            <canvas id="graficoBarras" role="img" aria-label="Actividades con más asistentes"></canvas>
         </div>
-        <div class="chart-legend" id="legendBarras"></div>
+        <ol class="grafico-lista" id="listaBarras"></ol>
     </div>
 
     <div class="panel">
         <div class="panel-head">
             <div>
-                <span class="eyebrow">GRÁFICO CIRCULAR</span>
-                <h2>Asistentes por carrera (top 6)</h2>
+                <span class="eyebrow">CARRERAS</span>
+                <h2>Carreras con más asistentes</h2>
             </div>
+            <span class="badge">Top 6</span>
         </div>
+        <p class="grafico-ayuda">Asistentes según la carrera que tenían al asistir. Las carreras de una misma escuela tienen tonos del mismo color.</p>
         <div class="chart-container">
-            <canvas id="graficoPastel" role="img" aria-label="Gráfico circular: distribución por carrera"></canvas>
+            <canvas id="graficoPastel" role="img" aria-label="Carreras con más asistentes"></canvas>
         </div>
-        <div class="chart-legend" id="legendPastel"></div>
+        <div class="chart-legend chart-legend--lista" id="legendPastel"></div>
     </div>
 
     <div class="panel">
         <div class="panel-head">
             <div>
-                <span class="eyebrow">PARTICIPACIÓN</span>
-                <h2>Asistentes por escuela (top 6)</h2>
+                <span class="eyebrow">ESCUELAS</span>
+                <h2>Asistentes por escuela</h2>
             </div>
         </div>
+        <p class="grafico-ayuda">Qué parte de los asistentes viene de cada escuela.</p>
         <div class="chart-container">
-            <canvas id="graficoEscuela" role="img" aria-label="Participación por escuela"></canvas>
+            <canvas id="graficoEscuela" role="img" aria-label="Asistentes por escuela"></canvas>
         </div>
-        <div class="chart-legend" id="legendEscuela"></div>
+        <div class="chart-legend chart-legend--lista" id="legendEscuela"></div>
     </div>
 </div>
 
@@ -471,10 +480,14 @@
 {{ labels_pastel|json_script:"labels_pastel" }}
 {{ data_pastel|json_script:"data_pastel" }}
 {{ data_colores_pastel|json_script:"data_colores_pastel" }}
-{{ labels_linea|json_script:"labels_linea" }}
-{{ data_programadas|json_script:"data_programadas" }}
-{{ data_en_curso|json_script:"data_en_curso" }}
-{{ data_finalizadas|json_script:"data_finalizadas" }}
+{{ tipos_barras|json_script:"tipos_barras" }}
+{{ escuelas_pastel|json_script:"escuelas_pastel" }}
+{{ total_carreras|json_script:"total_carreras" }}
+{{ labels_meses|json_script:"labels_meses" }}
+{{ data_meses_finalizadas|json_script:"data_meses_finalizadas" }}
+{{ data_meses_en_curso|json_script:"data_meses_en_curso" }}
+{{ data_meses_proximas|json_script:"data_meses_proximas" }}
+{{ mes_actual|json_script:"mes_actual" }}
 {{ labels_comp|json_script:"labels_comp" }}
 {{ data_comp_inscritos|json_script:"data_comp_inscritos" }}
 {{ data_comp_asistentes|json_script:"data_comp_asistentes" }}

@@ -359,7 +359,7 @@ class VistasPermisosYReportesIntegralTests(BaseSistemaTestCase):
         reportes = self.client.get(reverse("reportes"))
         self.assertEqual(dashboard.status_code, 200)
         self.assertEqual(reportes.status_code, 200)
-        self.assertContains(dashboard, "graficoLinea")
+        self.assertContains(dashboard, "graficoMeses")
         self.assertContains(reportes, "graficoBarrasReportes")
 
     def test_creador_no_puede_ver_actividad_de_otro_creador(self):

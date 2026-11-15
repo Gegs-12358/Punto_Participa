@@ -228,73 +228,91 @@ def _construir_desglose_tipo(act_qs, asis_qs, carrera=None, jornada=None, escuel
     }
 
 
+MESES_CORTOS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+
+
 def _construir_graficos_dashboard(asis_qs, act_qs, carreras_cache, ahora):
     """Construye labels/data/colores de los 5 gráficos del dashboard,
     excluyendo elementos sin datos."""
 
-    # ---- Top 5 barras (solo actividades con asistencias > 0) ----
+    # ---- Top 5: actividades con más asistentes ----
     top = (
         act_qs
         .annotate(t=Count('asistencias'))
         .filter(t__gt=0)
-        .order_by('-t')[:5]
+        .order_by('-t', 'titulo')[:5]
     )
-    labels_barras = [(a.titulo[:15] + '...') if len(a.titulo) > 15 else a.titulo for a in top]
+    tipos = dict(Actividad.TIPO_CHOICES)
+    labels_barras = [a.titulo for a in top]
+    tipos_barras = [tipos.get(a.tipo, a.tipo) for a in top]
     data_barras = [a.t for a in top]
 
-    # ---- Dona de carreras (solo carreras con asistentes > 0) ----
-    por_carrera = (
+    # ---- Carreras con más asistentes (color = escuela de la carrera) ----
+    por_carrera = list(
         asis_qs
         .values('carrera')
         .annotate(t=Count('id'))
         .filter(t__gt=0)
-        .order_by('-t')[:6]
+        .order_by('-t', 'carrera')[:6]
     )
     labels_pastel = [i['carrera'] or 'Sin carrera' for i in por_carrera]
     data_pastel = [i['t'] for i in por_carrera]
-    # [REFACTOR] Uso del helper
     data_colores_pastel = _colores_por_carrera(por_carrera, carreras_cache)
+    escuelas_pastel = []
+    for i in por_carrera:
+        c = carreras_cache.get((i['carrera'] or '').lower())
+        escuelas_pastel.append(c.escuela if c and c.escuela else 'Sin escuela')
+    total_carreras = asis_qs.count()
 
-    # ---- Línea mensual ----
-    fecha_min = (ahora - timedelta(days=30 * 5)).replace(day=1)
+    # ---- Actividades por mes (cada una una vez, en el mes en que empieza) ----
+    # Siete meses: los cinco anteriores, el actual y el siguiente. El estado sale de las fechas, no del campo
+    # estado (que no cambia solo): ya terminó, está ocurriendo o todavía no empieza. Las canceladas no se cuentan.
+    local = timezone.localtime(ahora)
+    meses = []
+    anio, mes = local.year, local.month
+    for desplazamiento in range(-5, 2):
+        m = mes + desplazamiento
+        a = anio + (m - 1) // 12
+        m = (m - 1) % 12 + 1
+        meses.append((a, m))
+    tz = timezone.get_current_timezone()
+    desde = timezone.make_aware(datetime(meses[0][0], meses[0][1], 1), tz)
+    a_fin, m_fin = meses[-1][0] + (meses[-1][1] // 12), meses[-1][1] % 12 + 1
+    hasta = timezone.make_aware(datetime(a_fin, m_fin, 1), tz)
+    indice = {am: k for k, am in enumerate(meses)}
+    data_fin = [0] * len(meses)
+    data_curso = [0] * len(meses)
+    data_prox = [0] * len(meses)
+    for ini, fin in (act_qs.exclude(estado='CANCELADA')
+                     .filter(fecha_inicio__gte=desde, fecha_inicio__lt=hasta)
+                     .values_list('fecha_inicio', 'fecha_fin')):
+        k = indice.get((timezone.localtime(ini).year, timezone.localtime(ini).month))
+        if k is None:
+            continue
+        if fin and fin <= ahora:
+            data_fin[k] += 1
+        elif ini <= ahora:
+            data_curso[k] += 1
+        else:
+            data_prox[k] += 1
+    labels_meses = [MESES_CORTOS[m - 1] + (f' {a}' if m == 1 or k == 0 else '') for k, (a, m) in enumerate(meses)]
+    mes_actual = 5
+    rango_meses = f'{MESES_CORTOS[meses[0][1] - 1]} {meses[0][0]} a {MESES_CORTOS[meses[-1][1] - 1].lower()} {meses[-1][0]}'
 
-    def agrupar(qs, campo):
-        return {
-            i['mes'].strftime('%Y-%m'): i['t']
-            for i in qs.annotate(mes=TruncMonth(campo))
-                    .values('mes').annotate(t=Count('id'))
-            if i['mes']
-        }
-
-    d_prog = agrupar(act_qs.filter(fecha_inicio__gte=fecha_min), 'fecha_inicio')
-    d_curso = agrupar(
-        act_qs.filter(fecha_inicio__gte=fecha_min, estado='ACTIVA'),
-        'fecha_inicio'
-    )
-    d_fin = agrupar(
-        act_qs.filter(fecha_fin__gte=fecha_min, estado='FINALIZADA'),
-        'fecha_fin'
-    )
-
-    labels_linea, data_prog, data_curso, data_fin = [], [], [], []
-    for i in range(5, -1, -1):
-        ref = ahora - timedelta(days=30 * i)
-        labels_linea.append(ref.strftime('%b').capitalize())
-        data_prog.append(d_prog.get(ref.strftime('%Y-%m'), 0))
-        data_curso.append(d_curso.get(ref.strftime('%Y-%m'), 0))
-        data_fin.append(d_fin.get(ref.strftime('%Y-%m'), 0))
-
-    # ---- Comparativo: TODAS las actividades con datos reales ----
+    # ---- Talleres ya realizados: inscritos y asistentes (las masivas no tienen inscripción; los que no han
+    # empezado quedarían con 0 asistentes y parecería inasistencia) ----
     comp = (
         act_qs
+        .filter(tipo='TALLER', fecha_inicio__lte=ahora)
+        .exclude(estado='CANCELADA')
         .annotate(
             ti=Count('inscripciones', distinct=True),
             ta=Count('asistencias', distinct=True),
         )
-        .filter(Q(ti__gt=0) | Q(ta__gt=0))
-        .order_by('-ti', '-ta')[:10]
+        .filter(ti__gt=0)
+        .order_by('-fecha_inicio', 'titulo')[:8]
     )
-    labels_comp = [(a.titulo[:12] + '...') if len(a.titulo) > 12 else a.titulo for a in comp]
+    labels_comp = [a.titulo for a in comp]
     data_comp_insc = [a.ti for a in comp]
     data_comp_asis = [a.ta for a in comp]
 
@@ -318,10 +336,15 @@ def _construir_graficos_dashboard(asis_qs, act_qs, carreras_cache, ahora):
         'labels_pastel': labels_pastel,
         'data_pastel': data_pastel,
         'data_colores_pastel': data_colores_pastel,
-        'labels_linea': labels_linea,
-        'data_programadas': data_prog,
-        'data_en_curso': data_curso,
-        'data_finalizadas': data_fin,
+        'labels_meses': labels_meses,
+        'data_meses_finalizadas': data_fin,
+        'data_meses_en_curso': data_curso,
+        'data_meses_proximas': data_prox,
+        'mes_actual': mes_actual,
+        'rango_meses': rango_meses,
+        'tipos_barras': tipos_barras,
+        'escuelas_pastel': escuelas_pastel,
+        'total_carreras': total_carreras,
         'labels_comp': labels_comp,
         'data_comp_inscritos': data_comp_insc,
         'data_comp_asistentes': data_comp_asis,
@@ -708,23 +731,27 @@ def reportes(request):
     carreras_cache = _get_carreras_cache()
 
     # ---- Dona de Carreras (general) ----
-    por_carrera = (
+    por_carrera = list(
         asis_qs.values('carrera')
         .annotate(t=Count('id'))
         .filter(t__gt=0)
-        .order_by('-t')
+        .order_by('-t', 'carrera')
     )
     labels_pastel = [i['carrera'] or 'Sin carrera' for i in por_carrera]
     data_pastel = [i['t'] for i in por_carrera]
     # [REFACTOR] Uso del helper
     data_colores_pastel = _colores_por_carrera(por_carrera, carreras_cache)
+    escuelas_pastel = []
+    for i in por_carrera:
+        c = carreras_cache.get((i['carrera'] or '').lower())
+        escuelas_pastel.append(c.escuela if c and c.escuela else 'Sin escuela')
 
     # ---- Barras de Jornada (general) ----
     por_jornada = (
         asis_qs.values('jornada')
         .annotate(t=Count('id'))
         .filter(t__gt=0)
-        .order_by('-t')
+        .order_by('-t', 'jornada')
     )
     labels_jornada = [i['jornada'] or 'Sin jornada' for i in por_jornada]
     data_jornada = [i['t'] for i in por_jornada]
@@ -783,12 +810,20 @@ def reportes(request):
             det_escuelas[escuela_item] += vals['t']
             det_carreras[carrera_n] += vals['t']
 
-    # ---- Colores del detalle ----
+    # ---- Detalle ordenado: escuelas de mayor a menor; carreras agrupadas por escuela (en el orden de las
+    # escuelas) y dentro de cada escuela de mayor a menor ----
     mapa = colores_escuelas()
+    det_escuelas = dict(sorted(det_escuelas.items(), key=lambda x: (-x[1], x[0])))
+    orden_escuela = {e: k for k, e in enumerate(det_escuelas)}
+    det_carreras = dict(sorted(
+        det_carreras.items(),
+        key=lambda x: (orden_escuela.get(escuela_de_carrera.get(x[0]) or 'Sin asignar', 99), -x[1], x[0] or '')))
     data_colores_barras_detalle = [color_para_escuela(e, mapa) for e in det_escuelas.keys()]
     data_colores_pastel_detalle = []
+    escuelas_pastel_detalle = []
     for carrera_n in det_carreras.keys():
         data_colores_pastel_detalle.append(color_para_escuela(escuela_de_carrera.get(carrera_n), mapa))
+        escuelas_pastel_detalle.append(escuela_de_carrera.get(carrera_n) or 'Sin escuela')
 
     actividades_opciones = (
         Actividad.objects.filter(creado_por=request.user) if (es_creador and not es_admin)
@@ -797,9 +832,11 @@ def reportes(request):
 
     # ---- Barras general: solo actividades con al menos 1 asistente ----
     acts_con_datos = [a for a in act_qs if a.total_asistentes_calc > 0]
-    labels_barras = [a.titulo for a in acts_con_datos]
-    data_barras = [a.total_asistentes_calc for a in acts_con_datos]
     total_acts_con_datos = len(acts_con_datos)
+    # El gráfico muestra las 10 con más asistentes; el resto está en la tabla
+    top_acts = sorted(acts_con_datos, key=lambda a: (-a.total_asistentes_calc, a.titulo))[:10]
+    labels_barras = [a.titulo for a in top_acts]
+    data_barras = [a.total_asistentes_calc for a in top_acts]
 
     from .utils import paginar
     context = {
@@ -817,7 +854,9 @@ def reportes(request):
 
         'labels_barras_detalle': list(det_escuelas.keys()),
         'data_barras_detalle': list(det_escuelas.values()),
-        'labels_pastel_detalle': list(det_carreras.keys()),
+        'labels_pastel_detalle': [c or 'Sin carrera' for c in det_carreras.keys()],
+        'escuelas_pastel_detalle': escuelas_pastel_detalle,
+        'escuelas_pastel': escuelas_pastel,
         'data_pastel_detalle': list(det_carreras.values()),
         'data_colores_barras_detalle': data_colores_barras_detalle,
         'data_colores_pastel_detalle': data_colores_pastel_detalle,

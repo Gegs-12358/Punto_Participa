@@ -1,15 +1,16 @@
 // ============================================================
-// dashboard.js - Gráficos del Dashboard con Chart.js
+// dashboard.js - Gráficos del Inicio con Chart.js
+// Cada gráfico lleva una línea de ayuda en la plantilla que explica qué cuenta.
 // ============================================================
 
 (function () {
 
-    // Paleta de respaldo (solo se usa si el backend no envía colores)
-    const COLORES_FALLBACK = [
-        '#132CAA', '#F1B634', '#2B9141', '#BF0249',
-        '#F78B30', '#3CB8C1', '#9521B2', '#37A7C6',
-        '#BDC601', '#939393'
-    ];
+    const AZUL = '#002F5F';
+    const AMARILLO = '#FBB800';
+    const VERDE = '#2B9141';
+    const GRIS = '#A0A7B4';
+    const AZUL_CLARO = '#3D7BD9';
+    const COLORES_RESPALDO = ['#132CAA', '#F1B634', '#2B9141', '#BF0249', '#F78B30', '#3CB8C1'];
 
     const formatoNumero = new Intl.NumberFormat('es-CL');
 
@@ -17,7 +18,10 @@
 
         if (typeof Chart === 'undefined') {
             console.error('Chart.js no está cargado.');
-            mostrarErrorGraficos();
+            document.querySelectorAll('canvas').forEach(function (c) {
+                c.parentElement.innerHTML =
+                    '<p class="text-danger text-center" style="padding:40px;">Error al cargar los gráficos.</p>';
+            });
             return;
         }
 
@@ -28,369 +32,339 @@
             const el = document.getElementById(id);
             if (!el) return [];
             try { return JSON.parse(el.textContent); }
-            catch (e) { console.error('Error al parsear ' + id + ':', e); return []; }
+            catch (e) { console.error('Error al leer ' + id + ':', e); return []; }
         }
 
-        function mostrarSinDatos(canvas) {
+        function mostrarSinDatos(canvas, texto) {
             if (canvas && canvas.parentElement) {
                 canvas.parentElement.innerHTML =
-                    '<p class="text-muted text-center" style="padding:40px;">No hay datos disponibles.</p>';
+                    '<p class="grafico-vacio">' + (texto || 'Todavía no hay datos para mostrar.') + '</p>';
             }
         }
 
-        function mostrarErrorGraficos() {
-            document.querySelectorAll('canvas').forEach(function (c) {
-                if (c && c.parentElement) {
-                    c.parentElement.innerHTML =
-                        '<p class="text-danger text-center" style="padding:40px;">Error al cargar los gráficos.</p>';
-                }
-            });
+        function recortar(texto, max) {
+            return texto.length > max ? texto.slice(0, max - 1) + '…' : texto;
         }
 
-        // Devuelve colores del backend o fallback
-        function obtenerColores(colorsId, total) {
-            const colores = colorsId ? obtenerDatos(colorsId) : [];
-            return Array.from({ length: total }, (_, i) =>
-                (colores && colores[i]) || COLORES_FALLBACK[i % COLORES_FALLBACK.length]
-            );
+        function porcentaje(parte, total) {
+            return total > 0 ? Math.round(parte / total * 100) + '%' : '0%';
         }
 
-        // Leyenda HTML con texto coloreado (1 color por label)
-        function renderLegendColored(chart, containerId) {
+        // Leyenda con una muestra de color por ítem: [{color, texto}]
+        function leyenda(containerId, items) {
             const container = document.getElementById(containerId);
-            if (!container || !chart) return;
+            if (!container) return;
             container.innerHTML = '';
-            chart.data.labels.forEach(function (label, i) {
-                const bg = chart.data.datasets[0].backgroundColor;
-                const color = Array.isArray(bg) ? bg[i] : bg;
+            items.forEach(function (it) {
                 const item = document.createElement('span');
-                item.className = 'chart-legend-item';
-                item.style.color = color;
-                item.textContent = label;
+                item.className = 'chart-legend-item chart-legend-item--muestra';
+                item.style.setProperty('--muestra', it.color);
+                item.textContent = it.texto;
                 container.appendChild(item);
             });
         }
 
-        // Leyenda HTML para múltiples datasets (línea, comparativo)
-        function renderLegendDatasets(chart, containerId, key) {
-            const container = document.getElementById(containerId);
-            if (!container || !chart) return;
-            container.innerHTML = '';
-            chart.data.datasets.forEach(function (dataset) {
-                const color = dataset[key] || dataset.borderColor || dataset.backgroundColor;
-                const item = document.createElement('span');
-                item.className = 'chart-legend-item';
-                item.style.color = Array.isArray(color) ? color[0] : color;
-                item.textContent = dataset.label;
-                container.appendChild(item);
-            });
-        }
+        const ejeEntero = {
+            beginAtZero: true,
+            ticks: { precision: 0, callback: v => formatoNumero.format(v) },
+            grid: { color: '#EEF1F5' }
+        };
 
-        // ------------------------------------------------------------
-        // Configuración global
-        // ------------------------------------------------------------
         Chart.defaults.font.family = "'Lato', 'Roboto', system-ui, sans-serif";
         Chart.defaults.font.size = 12;
         Chart.defaults.color = '#4a5568';
 
+        // Lista numerada bajo un gráfico: [{texto, detalle, color}]
+        function lista(containerId, items) {
+            const ol = document.getElementById(containerId);
+            if (!ol) return;
+            ol.innerHTML = '';
+            items.forEach(function (it) {
+                const li = document.createElement('li');
+                if (it.color) {
+                    li.className = 'con-muestra';
+                    li.style.setProperty('--muestra', it.color);
+                }
+                const nombre = document.createElement('span');
+                nombre.className = 'grafico-lista__nombre';
+                nombre.textContent = it.texto;
+                const dato = document.createElement('strong');
+                dato.textContent = it.detalle;
+                li.appendChild(nombre);
+                li.appendChild(dato);
+                ol.appendChild(li);
+            });
+        }
+
+        // Aclara un color hacia el blanco (0 = igual, 1 = blanco)
+        function aclarar(hex, cuanto) {
+            const n = parseInt(hex.replace('#', ''), 16);
+            const mezcla = c => Math.round(c + (255 - c) * cuanto);
+            const r = mezcla(n >> 16), g = mezcla((n >> 8) & 255), b = mezcla(n & 255);
+            return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+
         // ------------------------------------------------------------
-        // 1. Barras - Asistencia por Actividad (Top 5)
-        //    Colores del backend (por escuela si aplica) o fallback
+        // 1. Actividades por mes: una línea por estado, calculado con las fechas
+        // ------------------------------------------------------------
+        const ctxMeses = document.getElementById('graficoMeses');
+        if (ctxMeses) {
+            const labels = obtenerDatos('labels_meses');
+            const fin = obtenerDatos('data_meses_finalizadas');
+            const curso = obtenerDatos('data_meses_en_curso');
+            const prox = obtenerDatos('data_meses_proximas');
+            const actual = obtenerDatos('mes_actual');
+            const total = fin.concat(curso, prox).reduce((a, b) => a + b, 0);
+
+            if (!labels.length || total === 0) {
+                mostrarSinDatos(ctxMeses, 'No hay actividades en estos meses.');
+            } else {
+                const etiquetas = labels.map((l, i) => i === actual ? [l, '(este mes)'] : l);
+                const linea = (label, data, color) => ({
+                    label: label, data: data, borderColor: color, backgroundColor: color,
+                    borderWidth: 2.5, tension: 0, fill: false, pointRadius: 4, pointHoverRadius: 6
+                });
+                new Chart(ctxMeses, {
+                    type: 'line',
+                    data: {
+                        labels: etiquetas,
+                        datasets: [
+                            linea('Terminadas', fin, GRIS),
+                            linea('En curso', curso, VERDE),
+                            linea('Próximas', prox, AZUL_CLARO)
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 500 },
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            x: { grid: { display: false },
+                                 ticks: { font: ctx => ({ weight: ctx.index === actual ? '800' : '400' }) } },
+                            y: Object.assign({ title: { display: true, text: 'Actividades' } }, ejeEntero)
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: items => labels[items[0].dataIndex],
+                                    label: ctx => ctx.dataset.label + ': ' + formatoNumero.format(ctx.parsed.y),
+                                    footer: items => 'Total del mes: ' + formatoNumero.format(
+                                        items.reduce((a, it) => a + it.parsed.y, 0))
+                                }
+                            }
+                        }
+                    }
+                });
+                leyenda('legendMeses', [
+                    { color: GRIS, texto: 'Terminadas' },
+                    { color: VERDE, texto: 'En curso ahora' },
+                    { color: AZUL_CLARO, texto: 'Próximas' }
+                ]);
+            }
+        }
+
+        // ------------------------------------------------------------
+        // 2. Talleres realizados: inscritos y asistentes (barras verticales numeradas + lista)
+        // ------------------------------------------------------------
+        const ctxComp = document.getElementById('graficoComparativo');
+        if (ctxComp) {
+            const labels = obtenerDatos('labels_comp');
+            const insc = obtenerDatos('data_comp_inscritos');
+            const asis = obtenerDatos('data_comp_asistentes');
+
+            if (!labels.length) {
+                mostrarSinDatos(ctxComp, 'Todavía no hay talleres realizados con inscritos.');
+            } else {
+                new Chart(ctxComp, {
+                    type: 'bar',
+                    data: {
+                        labels: labels.map((_, i) => String(i + 1)),
+                        datasets: [
+                            { label: 'Inscritos', data: insc, backgroundColor: AZUL, borderRadius: 3,
+                              maxBarThickness: 34, categoryPercentage: 0.7 },
+                            { label: 'Asistentes', data: asis, backgroundColor: AMARILLO, borderRadius: 3,
+                              maxBarThickness: 34, categoryPercentage: 0.7 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 500 },
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { font: { weight: '700' } } },
+                            y: ejeEntero
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: items => labels[items[0].dataIndex],
+                                    label: ctx => ctx.dataset.label + ': ' + formatoNumero.format(ctx.parsed.y),
+                                    footer: items => {
+                                        const i = items[0].dataIndex;
+                                        return 'Asistió el ' + porcentaje(asis[i], insc[i]) + ' de los inscritos';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                leyenda('legendComparativo', [
+                    { color: AZUL, texto: 'Inscritos' },
+                    { color: AMARILLO, texto: 'Asistentes' }
+                ]);
+                lista('listaComparativo', labels.map((l, i) => ({
+                    texto: l,
+                    detalle: formatoNumero.format(asis[i]) + ' de ' + formatoNumero.format(insc[i]) +
+                        ' (' + porcentaje(asis[i], insc[i]) + ')'
+                })));
+            }
+        }
+
+        // ------------------------------------------------------------
+        // 3. Actividades con más asistentes (barras verticales numeradas + lista)
         // ------------------------------------------------------------
         const ctxBarras = document.getElementById('graficoBarras');
         if (ctxBarras) {
             const labels = obtenerDatos('labels_barras');
             const data = obtenerDatos('data_barras');
+            const tipos = obtenerDatos('tipos_barras');
 
             if (!labels.length) {
-                mostrarSinDatos(ctxBarras);
+                mostrarSinDatos(ctxBarras, 'Todavía no hay asistencias registradas.');
             } else {
-                const colores = obtenerColores(null, labels.length);
-
-                const chartBarras = new Chart(ctxBarras, {
+                const colores = labels.map((_, i) => COLORES_RESPALDO[i % COLORES_RESPALDO.length]);
+                new Chart(ctxBarras, {
                     type: 'bar',
                     data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Asistencias',
-                            data: data,
-                            backgroundColor: colores,
-                            borderColor: colores,
-                            borderWidth: 1,
-                            borderRadius: 4
-                        }]
+                        labels: labels.map((_, i) => String(i + 1)),
+                        datasets: [{ label: 'Asistentes', data: data, backgroundColor: colores, borderRadius: 4,
+                                     maxBarThickness: 48 }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        animation: { duration: 600 },
+                        animation: { duration: 500 },
                         scales: {
-                            y: { beginAtZero: true, ticks: { stepSize: 1, callback: v => formatoNumero.format(v) } },
-                            x: { ticks: { display: false }, grid: { display: false } }
+                            x: { grid: { display: false }, ticks: { font: { weight: '700' } } },
+                            y: ejeEntero
                         },
                         plugins: {
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    title: ctx => ctx[0].label,
-                                    label: ctx => 'Asistentes: ' + formatoNumero.format(ctx.parsed.y)
+                                    title: items => labels[items[0].dataIndex],
+                                    label: ctx => 'Asistentes: ' + formatoNumero.format(ctx.parsed.y),
+                                    footer: items => tipos[items[0].dataIndex] ? 'Tipo: ' + tipos[items[0].dataIndex] : ''
                                 }
                             }
                         }
                     }
                 });
-
-                renderLegendColored(chartBarras, 'legendBarras');
+                lista('listaBarras', labels.map((l, i) => ({
+                    texto: l, color: colores[i], detalle: formatoNumero.format(data[i])
+                })));
             }
         }
 
         // ------------------------------------------------------------
-        // 2. Dona - Distribución por Carrera
-        //    Colores según escuela de cada carrera (backend)
+        // 4. Carreras con más asistentes (dona; tonos del color de su escuela)
         // ------------------------------------------------------------
         const ctxPastel = document.getElementById('graficoPastel');
         if (ctxPastel) {
             const labels = obtenerDatos('labels_pastel');
             const data = obtenerDatos('data_pastel');
+            const coloresEscuela = obtenerDatos('data_colores_pastel');
+            const escuelas = obtenerDatos('escuelas_pastel');
+            const total = obtenerDatos('total_carreras');
 
             if (!labels.length) {
-                mostrarSinDatos(ctxPastel);
+                mostrarSinDatos(ctxPastel, 'Todavía no hay asistencias registradas.');
             } else {
-                const colores = obtenerColores('data_colores_pastel', labels.length);
-
-                const chartPastel = new Chart(ctxPastel, {
+                // Dos carreras de la misma escuela no quedan con el mismo color: la segunda va más clara
+                const repetidos = {};
+                const colores = labels.map(function (_, i) {
+                    const base = coloresEscuela[i] || COLORES_RESPALDO[i % COLORES_RESPALDO.length];
+                    const vez = repetidos[base] || 0;
+                    repetidos[base] = vez + 1;
+                    return aclarar(base, Math.min(vez * 0.28, 0.7));
+                });
+                new Chart(ctxPastel, {
                     type: 'doughnut',
                     data: {
                         labels: labels,
-                        datasets: [{
-                            data: data,
-                            backgroundColor: colores,
-                            borderWidth: 2,
-                            borderColor: '#fff'
-                        }]
+                        datasets: [{ data: data, backgroundColor: colores, borderWidth: 2, borderColor: '#fff' }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        animation: { duration: 600 },
-                        cutout: '60%',
+                        animation: { duration: 500 },
+                        cutout: '58%',
                         plugins: {
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    label: ctx => {
-                                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                        const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
-                                        return ctx.label + ': ' + formatoNumero.format(ctx.parsed) + ' (' + pct + '%)';
-                                    }
+                                    label: ctx => ctx.label + ': ' + formatoNumero.format(ctx.parsed) +
+                                        ' (' + porcentaje(ctx.parsed, total) + ' del total)',
+                                    footer: items => escuelas[items[0].dataIndex] || ''
                                 }
                             }
                         }
                     }
                 });
-
-                renderLegendColored(chartPastel, 'legendPastel');
+                leyenda('legendPastel', labels.map((l, i) => ({
+                    color: colores[i],
+                    texto: l + ': ' + formatoNumero.format(data[i]) +
+                        ' (' + porcentaje(data[i], total) + ')'
+                })));
             }
         }
 
         // ------------------------------------------------------------
-        // 3. Línea - Resumen de Actividades por Mes
-        // ------------------------------------------------------------
-        const ctxLinea = document.getElementById('graficoLinea');
-        if (ctxLinea) {
-            const labels = obtenerDatos('labels_linea');
-            const dProg = obtenerDatos('data_programadas');
-            const dCurso = obtenerDatos('data_en_curso');
-            const dFin = obtenerDatos('data_finalizadas');
-
-            if (!labels.length) {
-                mostrarSinDatos(ctxLinea);
-            } else {
-                const chartLinea = new Chart(ctxLinea, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: 'Programadas',
-                                data: dProg,
-                                borderColor: '#132CAA',
-                                backgroundColor: 'rgba(19, 44, 170, 0.1)',
-                                borderWidth: 2,
-                                tension: 0.35,
-                                fill: true,
-                                pointRadius: 4,
-                                pointBackgroundColor: '#132CAA'
-                            },
-                            {
-                                label: 'En curso',
-                                data: dCurso,
-                                borderColor: '#2B9141',
-                                backgroundColor: 'rgba(43, 145, 65, 0.1)',
-                                borderWidth: 2,
-                                tension: 0.35,
-                                fill: true,
-                                pointRadius: 4,
-                                pointBackgroundColor: '#2B9141'
-                            },
-                            {
-                                label: 'Finalizadas',
-                                data: dFin,
-                                borderColor: '#939393',
-                                backgroundColor: 'rgba(147, 147, 147, 0.1)',
-                                borderWidth: 2,
-                                tension: 0.35,
-                                fill: true,
-                                pointRadius: 4,
-                                pointBackgroundColor: '#939393'
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: { duration: 600 },
-                        interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            y: { beginAtZero: true, ticks: { stepSize: 1, callback: v => formatoNumero.format(v) } },
-                            x: { grid: { display: false } }
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: ctx => ctx.dataset.label + ': ' + formatoNumero.format(ctx.parsed.y)
-                                }
-                            }
-                        }
-                    }
-                });
-
-                renderLegendDatasets(chartLinea, 'legendLinea', 'borderColor');
-            }
-        }
-
-        // ------------------------------------------------------------
-        // 4. Comparativo - Inscritos vs Asistentes
-        // ------------------------------------------------------------
-        const ctxComp = document.getElementById('graficoComparativo');
-        if (ctxComp) {
-            const labels = obtenerDatos('labels_comp');
-            const dInscritos = obtenerDatos('data_comp_inscritos');
-            const dAsistentes = obtenerDatos('data_comp_asistentes');
-
-            if (!labels.length) {
-                mostrarSinDatos(ctxComp);
-            } else {
-                const chartComp = new Chart(ctxComp, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: 'Inscritos',
-                                data: dInscritos,
-                                backgroundColor: 'rgba(0, 47, 95, 0.85)',
-                                borderColor: '#002f5f',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                barPercentage: 0.8,
-                                categoryPercentage: 0.7
-                            },
-                            {
-                                label: 'Asistentes',
-                                data: dAsistentes,
-                                backgroundColor: 'rgba(251, 184, 0, 0.85)',
-                                borderColor: '#fbb800',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                barPercentage: 0.8,
-                                categoryPercentage: 0.7
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: { duration: 600 },
-                        // FORZAR que las barras NO se apilen y siempre se vean ambas
-                        scales: {
-                            x: {
-                                stacked: false,
-                                ticks: { display: false },
-                                grid: { display: false }
-                            },
-                            y: {
-                                stacked: false,
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1,
-                                    callback: v => formatoNumero.format(v)
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    title: ctx => ctx[0].label,
-                                    label: ctx => ctx.dataset.label + ': ' + formatoNumero.format(ctx.parsed.y)
-                                }
-                            }
-                        }
-                    }
-                });
-
-                renderLegendDatasets(chartComp, 'legendComparativo', 'borderColor');
-            }
-        }
-
-        // ------------------------------------------------------------
-        // 5. Dona - Participación por Escuela
-        //    Colores oficiales del manual Duoc UC (desde el backend)
+        // 5. Asistentes por escuela (dona con número y porcentaje en la leyenda)
         // ------------------------------------------------------------
         const ctxEscuela = document.getElementById('graficoEscuela');
         if (ctxEscuela) {
             const labels = obtenerDatos('labels_escuela');
             const data = obtenerDatos('data_escuela');
+            const colores = obtenerDatos('data_colores_escuela');
 
             if (!labels.length) {
-                mostrarSinDatos(ctxEscuela);
+                mostrarSinDatos(ctxEscuela, 'Todavía no hay asistencias registradas.');
             } else {
-                const colores = obtenerColores('data_colores_escuela', labels.length);
-
-                const chartEscuela = new Chart(ctxEscuela, {
+                const total = data.reduce((a, b) => a + b, 0);
+                const color = i => colores[i] || COLORES_RESPALDO[i % COLORES_RESPALDO.length];
+                new Chart(ctxEscuela, {
                     type: 'doughnut',
                     data: {
                         labels: labels,
-                        datasets: [{
-                            data: data,
-                            backgroundColor: colores,
-                            borderWidth: 2,
-                            borderColor: '#fff'
-                        }]
+                        datasets: [{ data: data, backgroundColor: labels.map((_, i) => color(i)),
+                                     borderWidth: 2, borderColor: '#fff' }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        animation: { duration: 600 },
-                        cutout: '60%',
+                        animation: { duration: 500 },
+                        cutout: '58%',
                         plugins: {
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    label: ctx => {
-                                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                        const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
-                                        return ctx.label + ': ' + formatoNumero.format(ctx.parsed) + ' (' + pct + '%)';
-                                    }
+                                    label: ctx => ctx.label + ': ' + formatoNumero.format(ctx.parsed) +
+                                        ' (' + porcentaje(ctx.parsed, total) + ')'
                                 }
                             }
                         }
                     }
                 });
-
-                renderLegendColored(chartEscuela, 'legendEscuela');
+                leyenda('legendEscuela', labels.map((l, i) => ({
+                    color: color(i),
+                    texto: l.replace(/^Escuela de /, '') + ': ' + formatoNumero.format(data[i]) +
+                        ' (' + porcentaje(data[i], total) + ')'
+                })));
             }
         }
     });

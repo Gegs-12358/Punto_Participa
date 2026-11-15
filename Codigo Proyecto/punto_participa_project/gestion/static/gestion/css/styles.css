@@ -1155,7 +1155,7 @@ a.role:hover {
 
 .charts-row .chart-container,
 .charts-grid .chart-container {
-    height: 200px;
+    height: 220px;
     min-height: 180px;
     margin-top: 6px;
 }
@@ -1209,6 +1209,92 @@ a.role:hover {
     overflow-wrap: break-word;
     word-break: break-word;
     text-align: left;
+}
+
+/* Línea de ayuda bajo el título de cada gráfico: qué cuenta y cómo leerlo */
+.grafico-ayuda {
+    margin: 4px 0 2px;
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: var(--muted);
+}
+
+.grafico-vacio {
+    margin: 0;
+    padding: 40px 12px;
+    text-align: center;
+    color: var(--muted);
+}
+
+/* Leyenda con muestra de color (Inicio) */
+.chart-legend-item--muestra {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.chart-legend-item--muestra::before {
+    content: "";
+    flex: none;
+    width: 10px;
+    height: 10px;
+    margin-top: 1px;
+    border-radius: 2px;
+    background: var(--muestra);
+}
+
+.chart-legend--fila {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 18px;
+}
+
+.chart-legend--fila .chart-legend-item {
+    font-size: 11.5px;
+}
+
+/* Lista numerada bajo un gráfico de barras: el número coincide con el de la barra */
+.grafico-lista {
+    margin: 6px 0 0;
+    padding-left: 22px;
+    font-size: 11px;
+    line-height: 1.35;
+    color: var(--ink);
+}
+
+.grafico-lista li {
+    padding: 1px 0;
+}
+
+.grafico-lista li::marker {
+    font-weight: 800;
+    color: var(--navy);
+}
+
+.grafico-lista li > span,
+.grafico-lista li > strong {
+    vertical-align: top;
+}
+
+.grafico-lista__nombre {
+    margin-right: 6px;
+}
+
+.grafico-lista li.con-muestra .grafico-lista__nombre::before {
+    content: "";
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    margin-right: 5px;
+    border-radius: 2px;
+    background: var(--muestra);
+}
+
+.charts-grid-3 .chart-legend.chart-legend--lista {
+    grid-template-columns: 1fr;
 }
 
 .charts-grid-3 .chart-legend {

@@ -234,39 +234,43 @@
         <div class="panel">
             <div class="panel-head">
                 <div>
-                    <span class="eyebrow">GRÁFICO DE BARRAS</span>
-                    <h2>Asistentes por Actividad</h2>
-                    <p class="panel-subtitle">Total: {{ total_asistentes_filtrado|default:"0" }} asistentes en {{ total_acts_con_datos }} actividades con datos</p>
+                    <span class="eyebrow">ACTIVIDADES</span>
+                    <h2>Asistentes por actividad</h2>
+                    <p class="panel-subtitle">Total: {{ total_asistentes_filtrado|default:"0" }} asistentes en {{ total_acts_con_datos }} actividad{{ total_acts_con_datos|pluralize:"es" }} con datos</p>
                 </div>
+                {% if total_acts_con_datos > 10 %}<span class="badge">Top 10</span>{% endif %}
             </div>
+            <p class="grafico-ayuda">Ordenadas de mayor a menor según los filtros. El número de la barra corresponde a la lista{% if total_acts_con_datos > 10 %}; el resto está en la tabla de abajo{% endif %}.</p>
             <div class="chart-container">
                 <canvas id="graficoBarrasReportes" role="img" aria-label="Gráfico de barras: asistentes por actividad"></canvas>
             </div>
-            <div class="chart-legend" id="legendBarrasReportes"></div>
+            <ol class="grafico-lista" id="listaBarrasReportes"></ol>
         </div>
 
         <div class="panel">
             <div class="panel-head">
                 <div>
-                    <span class="eyebrow">GRÁFICO CIRCULAR</span>
-                    <h2>Asistentes por carrera (agregado)</h2>
-                    <p class="panel-subtitle">{{ labels_pastel|length }} carreras · {{ total_asistentes_filtrado|default:"0" }} asistentes</p>
+                    <span class="eyebrow">CARRERAS</span>
+                    <h2>Asistentes por carrera</h2>
+                    <p class="panel-subtitle">{{ labels_pastel|length }} carrera{{ labels_pastel|length|pluralize }} · {{ total_asistentes_filtrado|default:"0" }} asistentes</p>
                 </div>
             </div>
+            <p class="grafico-ayuda">De mayor a menor. Las carreras de una misma escuela tienen tonos del mismo color.</p>
             <div class="chart-container">
                 <canvas id="graficoPastelReportes" role="img" aria-label="Gráfico circular: distribución por carrera"></canvas>
             </div>
-            <div class="chart-legend" id="legendPastelReportes"></div>
+            <div class="chart-legend chart-legend--lista" id="legendPastelReportes"></div>
         </div>
 
         <div class="panel">
             <div class="panel-head">
                 <div>
-                    <span class="eyebrow">GRÁFICO DE BARRAS</span>
-                    <h2>Asistentes por jornada (agregado)</h2>
-                    <p class="panel-subtitle">{{ labels_jornada|length }} jornadas registradas</p>
+                    <span class="eyebrow">JORNADAS</span>
+                    <h2>Asistentes por jornada</h2>
+                    <p class="panel-subtitle">{{ labels_jornada|length }} jornada{{ labels_jornada|length|pluralize }} con asistentes</p>
                 </div>
             </div>
+            <p class="grafico-ayuda">Según la jornada que tenía cada alumno al asistir.</p>
             <div class="chart-container">
                 <canvas id="graficoJornadaReportes" role="img" aria-label="Gráfico de barras: asistentes por jornada"></canvas>
             </div>
@@ -350,11 +354,12 @@
         <div class="panel">
             <div class="panel-head">
                 <div>
-                    <span class="eyebrow">GRÁFICO DE BARRAS</span>
-                    <h2>Asistentes por Escuela</h2>
-                    <p class="panel-subtitle">{{ labels_barras_detalle|length }} escuelas con participación</p>
+                    <span class="eyebrow">ESCUELAS</span>
+                    <h2>Asistentes por escuela</h2>
+                    <p class="panel-subtitle">{{ labels_barras_detalle|length }} escuela{{ labels_barras_detalle|length|pluralize }} con participación</p>
                 </div>
             </div>
+            <p class="grafico-ayuda">De mayor a menor, con el color de cada escuela.</p>
             <div class="chart-container">
                 <canvas id="graficoBarrasDetalle" role="img" aria-label="Gráfico de barras: asistentes por escuela"></canvas>
             </div>
@@ -364,25 +369,27 @@
         <div class="panel">
             <div class="panel-head">
                 <div>
-                    <span class="eyebrow">GRÁFICO CIRCULAR</span>
-                    <h2>Asistentes por carrera (cruzado con escuela)</h2>
-                    <p class="panel-subtitle">{{ labels_pastel_detalle|length }} carreras registradas</p>
+                    <span class="eyebrow">CARRERAS POR ESCUELA</span>
+                    <h2>Asistentes por carrera, agrupados por escuela</h2>
+                    <p class="panel-subtitle">{{ labels_pastel_detalle|length }} carrera{{ labels_pastel_detalle|length|pluralize }} con asistentes</p>
                 </div>
             </div>
+            <p class="grafico-ayuda">Las carreras van juntas con su escuela, en el mismo orden del gráfico de escuelas. Cada escuela usa tonos de su color.</p>
             <div class="chart-container">
                 <canvas id="graficoPastelDetalle" role="img" aria-label="Gráfico circular: distribución detallada por carrera"></canvas>
             </div>
-            <div class="chart-legend" id="legendPastelDetalle"></div>
+            <div class="chart-legend chart-legend--lista" id="legendPastelDetalle"></div>
         </div>
 
         <div class="panel">
             <div class="panel-head">
                 <div>
-                    <span class="eyebrow">GRÁFICO DE BARRAS</span>
-                    <h2>Asistentes por jornada (detalle por actividad)</h2>
-                    <p class="panel-subtitle">Distribución por jornada de la participación</p>
+                    <span class="eyebrow">JORNADAS</span>
+                    <h2>Asistentes por jornada</h2>
+                    <p class="panel-subtitle">{{ labels_jornada_detalle|length }} jornada{{ labels_jornada_detalle|length|pluralize }} con asistentes</p>
                 </div>
             </div>
+            <p class="grafico-ayuda">Según la jornada que tenía cada alumno al asistir.</p>
             <div class="chart-container">
                 <canvas id="graficoJornadaDetalle" role="img" aria-label="Gráfico de barras: asistentes por jornada (detallado)"></canvas>
             </div>
@@ -464,6 +471,8 @@
 {{ data_colores_pastel_detalle|json_script:"data_colores_pastel_detalle" }}
 {{ labels_jornada_detalle|json_script:"labels_jornada_detalle" }}
 {{ data_jornada_detalle|json_script:"data_jornada_detalle" }}
+{{ escuelas_pastel|json_script:"escuelas_pastel" }}
+{{ escuelas_pastel_detalle|json_script:"escuelas_pastel_detalle" }}
 
 {% endblock %}
 
