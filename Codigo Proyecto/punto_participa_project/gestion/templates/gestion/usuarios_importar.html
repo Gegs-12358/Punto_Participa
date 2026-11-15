@@ -1,0 +1,182 @@
+{% extends 'gestion/base.html' %}
+{% load static ui %}
+{% load formato %}
+{% block title %}Importar usuarios{% endblock %}
+
+{% block content %}
+
+<div class="page-title">
+    <div>
+        <nav class="breadcrumbs" aria-label="Navegación">
+            <a href="{% url 'usuarios' %}">Usuarios</a>
+            <span class="sep">›</span>
+            <span class="current">Importar usuarios</span>
+        </nav>
+        <h1>Importar usuarios</h1>
+        <p>Crea varias cuentas a la vez desde un archivo .xlsx o .csv.</p>
+    </div>
+    <div class="page-title__acciones">
+        <img class="page-title__ilustracion" src="{% static 'gestion/img/encabezado/usuarios.webp' %}" alt="" width="92" height="92">
+        <p class="globo-mascota">¡Reviso el archivo antes de crear las cuentas!</p>
+    </div>
+</div>
+
+{% if error %}
+<div class="panel" role="alert">
+    <p><strong>No se pudo continuar:</strong> {{ error }}</p>
+</div>
+{% endif %}
+
+{% if resultado %}
+<!-- ============================================================ -->
+<!-- RESULTADO -->
+<!-- ============================================================ -->
+<div class="panel" role="status">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">LISTO</span>
+            <h2>Usuarios creados</h2>
+            <p class="panel-subtitle">Archivo: {{ resultado.nombre }}</p>
+        </div>
+    </div>
+    <ul>
+        <li>Cuentas creadas: <strong>{{ resultado.creados|length }}</strong></li>
+        <li>Filas omitidas porque la cuenta ya existía: <strong>{{ resultado.omitidas }}</strong></li>
+        <li>Filas con error (no se crearon): <strong>{{ resultado.errores }}</strong></li>
+    </ul>
+    <p>Cada persona recibió un correo con un enlace para crear su contraseña. El enlace vence; si se le pasa
+        el plazo, puede usar "¿Olvidaste tu contraseña?" en la pantalla de inicio de sesión.</p>
+    {% if resultado.fallidos %}
+    <p><strong>No se pudo enviar el correo a {{ resultado.fallidos|length }} cuenta{{ resultado.fallidos|length|pluralize }}:</strong>
+        {% for usuario, rol in resultado.fallidos %}{{ usuario }}{% if not forloop.last %}, {% endif %}{% endfor %}.
+        La cuenta quedó creada: pídeles que usen "¿Olvidaste tu contraseña?".</p>
+    {% endif %}
+    <p><a class="btn" href="{% url 'usuarios' %}">Volver a Usuarios</a>
+        <a href="{% url 'importar_usuarios' %}">Importar otro archivo</a></p>
+</div>
+
+{% elif vista_previa %}
+<!-- ============================================================ -->
+<!-- VISTA PREVIA -->
+<!-- ============================================================ -->
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">VISTA PREVIA</span>
+            <h2>Revisa antes de confirmar</h2>
+            <p class="panel-subtitle">Archivo: {{ nombre_archivo }}. Todavía no se creó ninguna cuenta.</p>
+        </div>
+    </div>
+    <ul>
+        <li>Filas leídas: <strong>{{ resumen.total }}</strong></li>
+        <li>Cuentas que se crearán: <strong>{{ resumen.nuevos }}</strong></li>
+        <li>Filas omitidas porque la cuenta ya existe: <strong>{{ resumen.omitidas }}</strong></li>
+        <li>Filas con error (no se crearán): <strong>{{ resumen.errores }}</strong></li>
+    </ul>
+</div>
+
+{% if nuevos %}
+<div class="panel">
+    <div class="panel-head"><div><span class="eyebrow">NUEVOS</span><h2>Cuentas que se crearán</h2></div></div>
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Cuentas que se crearán</caption>
+            <thead><tr><th>Usuario</th><th>Nombre</th><th>Correo</th><th>RUT</th><th>Rol</th></tr></thead>
+            <tbody>
+                {% for d in nuevos %}
+                <tr><td><strong>{{ d.usuario }}</strong></td><td>{{ d.nombre }}</td><td>{{ d.correo }}</td><td>{{ d.rut|rut_fmt }}</td><td>{{ d.rol }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if nuevos_extra %}<p>… y {{ nuevos_extra }} más.</p>{% endif %}
+</div>
+{% endif %}
+
+{% if omitidas %}
+<div class="panel">
+    <div class="panel-head"><div><span class="eyebrow">OMITIDAS</span><h2>Filas que se saltarán</h2>
+        <p class="panel-subtitle">La carga nunca modifica cuentas existentes.</p></div></div>
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Filas omitidas</caption>
+            <thead><tr><th>Fila</th><th>Usuario</th><th>Motivo</th></tr></thead>
+            <tbody>
+                {% for fila, usuario, motivo in omitidas %}
+                <tr><td>{{ fila }}</td><td>{{ usuario }}</td><td>{{ motivo }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if omitidas_extra %}<p>… y {{ omitidas_extra }} más.</p>{% endif %}
+</div>
+{% endif %}
+
+{% if errores %}
+<div class="panel">
+    <div class="panel-head"><div><span class="eyebrow">ERRORES</span><h2>Filas con error</h2></div></div>
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Filas con error</caption>
+            <thead><tr><th>Fila</th><th>Detalle</th></tr></thead>
+            <tbody>
+                {% for fila, mensaje in errores %}
+                <tr><td>{{ fila }}</td><td class="celda-texto">{{ mensaje }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if errores_extra %}<p>… y {{ errores_extra }} más.</p>{% endif %}
+</div>
+{% endif %}
+
+<div class="panel">
+    {% if nuevos %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="confirmar">
+        <p>Al confirmar se crean las cuentas y cada persona recibe un correo con un enlace para crear su contraseña.</p>
+        <button class="btn" type="submit">{% icono "guardar" %} Crear {{ resumen.nuevos }} cuenta{{ resumen.nuevos|pluralize }}</button>
+        <a href="{% url 'importar_usuarios' %}" class="btn btn-outline-secondary">Cancelar</a>
+    </form>
+    {% else %}
+    <p>No hay cuentas nuevas que crear.</p>
+    <p><a class="btn" href="{% url 'importar_usuarios' %}">Volver</a></p>
+    {% endif %}
+</div>
+
+{% else %}
+<!-- ============================================================ -->
+<!-- SUBIDA -->
+<!-- ============================================================ -->
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">PASO 1</span>
+            <h2>Sube el archivo</h2>
+            <p class="panel-subtitle">Primero verás una vista previa; no se crea ninguna cuenta hasta que confirmes.</p>
+        </div>
+    </div>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="previsualizar">
+        <p>
+            <label for="archivo">Archivo (.xlsx o .csv, máximo 5 MB)</label><br>
+            <input type="file" id="archivo" name="archivo" accept=".xlsx,.csv" required>
+        </p>
+        <p>
+            Columnas: <code>nombre</code>, <code>correo</code>, <code>rut</code> y <code>rol</code>.
+            La columna <code>usuario</code> es opcional: si no viene, se usa lo que está antes de la @ del correo.
+            Roles válidos: {% for r in roles %}<strong>{{ r }}</strong>{% if not forloop.last %}, {% endif %}{% endfor %}.
+            <a href="{% url 'plantilla_usuarios' %}">Descargar plantilla</a>
+        </p>
+        <p>
+            Las filas cuyo usuario, RUT o correo ya existen se omiten: la carga no modifica cuentas.
+            Cada persona recibe un correo con un enlace para crear su contraseña.
+        </p>
+        <button class="btn" type="submit">{% icono "subir" %} Ver vista previa</button>
+    </form>
+</div>
+{% endif %}
+
+{% endblock %}

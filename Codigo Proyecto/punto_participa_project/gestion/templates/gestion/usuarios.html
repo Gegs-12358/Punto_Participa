@@ -17,6 +17,7 @@
     <div class="page-title__acciones">
         <img class="page-title__ilustracion" src="{% static 'gestion/img/encabezado/usuarios.webp' %}" alt="" width="92" height="92">
         <p class="globo-mascota">¡Administra quién entra y qué puede hacer!</p>
+        <a href="{% url 'importar_usuarios' %}" class="btn btn-outline-secondary">{% icono "subir" %} Importar usuarios</a>
         <button class="btn" id="btnNuevoUsuario" data-action="user-new">
             {% icono "agregar" %} Nuevo usuario
         </button>

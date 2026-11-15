@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Tu cuenta en Punto Participa</title>
+</head>
+
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0;">
+        <div style="background-color: #003366; padding: 20px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Punto Participa</h1>
+        </div>
+
+        <div style="padding: 30px; color: #333333;">
+            <h2 style="color: #003366; margin-top: 0;">Se creó tu cuenta</h2>
+
+            <p style="font-size: 16px; line-height: 1.6;">Hola {{ user.first_name }},</p>
+            <p style="font-size: 16px; line-height: 1.6;">
+                El Punto Estudiantil te creó una cuenta en Punto Participa con el rol <strong>{{ rol }}</strong>.
+            </p>
+
+            <div style="background-color: #f9f9f9; border-left: 4px solid #FFC107; padding: 15px; margin-bottom: 20px;">
+                <p style="margin: 5px 0;"><strong>Tu usuario:</strong> {{ user.username }}</p>
+            </div>
+
+            <p style="font-size: 16px; line-height: 1.6;">
+                Para entrar, primero crea tu contraseña en el siguiente enlace. Es personal y vence en
+                {{ dias }} día{{ dias|pluralize }}.
+            </p>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <a href="{{ enlace }}"
+                    style="background-color: #FFC107; color: #003366; padding: 15px 30px; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 16px;">
+                    Crear mi contraseña
+                </a>
+            </div>
+
+            <p style="font-size: 12px; color: #888888;">
+                Si el enlace vence, usa "¿Olvidaste tu contraseña?" en la pantalla de inicio de sesión.<br>
+                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>{{ enlace }}
+            </p>
+        </div>
+
+        <div style="background-color: #f4f4f4; padding: 15px; text-align: center; font-size: 12px; color: #888888;">
+            Punto Participa - Duoc UC Sede Alameda
+        </div>
+    </div>
+</body>
+
+</html>
