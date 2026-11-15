@@ -348,6 +348,26 @@ class Inscripcion(FotoAcademica):
         return f"{self.alumno} - {self.actividad}"
 
 
+class ListaEspera(models.Model):
+    """
+    Estudiantes que pidieron aviso cuando un taller lleno libere un cupo. Cuando alguien cancela, se avisa por
+    correo a todos los de la lista y el primero que se inscribe obtiene el cupo. Al inscribirse sale de la lista.
+    """
+    actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, related_name='lista_espera')
+    alumno = models.ForeignKey('Alumno', on_delete=models.CASCADE, related_name='listas_espera')
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    ultimo_aviso = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Lista de espera'
+        verbose_name_plural = 'Listas de espera'
+        ordering = ['fecha_registro']
+        constraints = [models.UniqueConstraint(fields=['actividad', 'alumno'], name='unico_en_lista_espera')]
+
+    def __str__(self):
+        return f"{self.alumno} - {self.actividad} (lista de espera)"
+
+
 class InscripcionCancelada(FotoAcademica):
     """
     Historial de inscripciones canceladas. Al cancelar, la fila sale de Inscripcion y queda aquí,

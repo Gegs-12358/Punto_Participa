@@ -138,6 +138,54 @@
                             <p>No quedan cupos disponibles para este taller.</p>
                         </div>
 
+                        {% if acepta_espera %}
+                        <div aria-live="polite">
+                            {% if error %}
+                            <div class="alert alert-danger" role="alert">
+                                <div><strong>{% icono "alerta" "icono--texto" %} Error</strong><span>{{ error }}</span></div>
+                            </div>
+                            {% endif %}
+                            {% if exito %}
+                            <div class="alert alert-success" role="status">
+                                <div><strong>{% icono "guardar" "icono--texto" %} Lista de espera</strong><span>{{ exito }}</span></div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        {% if not exito %}
+                        <form method="POST" class="lista-espera">
+                            {% csrf_token %}
+                            <input type="hidden" name="accion" value="lista_espera">
+                            <div class="lista-espera__aviso">
+                                <h4>{% icono "reloj" "icono--texto" %} Lista de espera</h4>
+                                <p>Si te anotas, te avisaremos por correo cuando se libere un cupo.</p>
+                                <p><strong>Anotarte no te inscribe:</strong> cuando llegue el aviso, el cupo será
+                                    para el primero que se inscriba.</p>
+                            </div>
+
+                            <div class="floating-group">
+                                <input type="text" name="rut" id="rut_espera" class="floating-input"
+                                    placeholder=" " maxlength="30" autocomplete="off"
+                                    aria-label="RUT o pasaporte del estudiante" required>
+                                <label for="rut_espera" class="floating-label">
+                                    RUT / Pasaporte <span class="required">*</span>
+                                </label>
+                            </div>
+
+                            <label for="acepta_politica_espera" style="display: flex; gap: 8px; align-items: flex-start; font-size: 14px;">
+                                <input type="checkbox" name="acepta_politica" id="acepta_politica_espera" required>
+                                <span>He leído y acepto la
+                                    <a href="{% url 'privacidad' %}" target="_blank" rel="noopener">Política de Privacidad</a>
+                                    <span class="required">*</span></span>
+                            </label>
+
+                            <button type="submit" class="btn btn-block btn-outline-secondary">
+                                {% icono "correo" %} Anotarme en la lista de espera
+                            </button>
+                        </form>
+                        {% endif %}
+                        {% endif %}
+
                         {% elif estado == 'finalizado' %}
 
                         <div class="state-box neutral" role="alert">

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Se liberó un cupo</title>
+</head>
+
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0;">
+        <div style="background-color: #003366; padding: 20px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Punto Participa</h1>
+        </div>
+
+        <div style="padding: 30px; color: #333333;">
+            <h2 style="color: #003366; margin-top: 0;">Se liberó un cupo en {{ actividad.titulo }}</h2>
+
+            <p style="font-size: 16px; line-height: 1.6;">Hola {{ alumno.nombres }},</p>
+            <p style="font-size: 16px; line-height: 1.6;">
+                Te anotaste en la lista de espera de este taller y acaba de liberarse un cupo.
+                Los cupos se asignan por orden de inscripción, así que si te interesa, inscríbete cuanto antes.
+            </p>
+
+            <div style="background-color: #f9f9f9; border-left: 4px solid #FFC107; padding: 15px; margin-bottom: 20px;">
+                <p style="margin: 5px 0;"><strong>Fecha:</strong> {{ actividad.fecha_inicio|date:"d/m/Y" }}</p>
+                <p style="margin: 5px 0;"><strong>Horario:</strong> {{ actividad.fecha_inicio|date:"H:i" }} a {{ actividad.fecha_fin|date:"H:i" }} horas</p>
+                <p style="margin: 5px 0;"><strong>Lugar:</strong> {{ actividad.lugar_completo }}</p>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <a href="{{ enlace }}"
+                    style="background-color: #FFC107; color: #003366; padding: 15px 30px; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 16px;">
+                    Inscribirme
+                </a>
+            </div>
+
+            <p style="font-size: 12px; color: #888888;">
+                Si cuando entres ya no quedan cupos, sigues en la lista y te avisaremos si se libera otro.<br>
+                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>{{ enlace }}
+            </p>
+        </div>
+
+        <div style="background-color: #f4f4f4; padding: 15px; text-align: center; font-size: 12px; color: #888888;">
+            Punto Participa - Duoc UC Sede Alameda
+        </div>
+    </div>
+</body>
+
+</html>

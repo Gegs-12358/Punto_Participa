@@ -126,6 +126,49 @@
     {% include 'gestion/includes/paginacion.html' with pagina=inscripciones param='page_insc' %}
 </div>
 
+{% if total_lista_espera %}
+<!-- ============================================================ -->
+<!-- LISTA DE ESPERA -->
+<!-- ============================================================ -->
+<div class="panel">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">LISTA DE ESPERA</span>
+            <h2>Lista de espera</h2>
+            <p class="panel-subtitle">{{ total_lista_espera }} {% if total_lista_espera == 1 %}persona espera{% else %}personas esperan{% endif %} un cupo. Cuando se libera uno, se les avisa a todas por correo y lo obtiene la primera que se inscribe.</p>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <caption class="visually-hidden">Lista de espera</caption>
+            <thead>
+                <tr>
+                    <th>Alumno</th>
+                    <th>RUT</th>
+                    <th>Carrera</th>
+                    <th>Correo</th>
+                    <th>Anotado el</th>
+                    <th>Último aviso</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in lista_espera %}
+                <tr>
+                    <td><strong>{{ e.alumno.nombres }} {{ e.alumno.apellidos }}</strong></td>
+                    <td>{{ e.alumno.rut|rut_fmt }}</td>
+                    <td class="celda-texto">{{ e.alumno.carrera }}</td>
+                    <td>{{ e.alumno.correo }}</td>
+                    <td>{{ e.fecha_registro|date:"d/m/Y H:i" }}</td>
+                    <td>{{ e.ultimo_aviso|date:"d/m/Y H:i"|default:"Sin avisos" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
 {% if total_cancelaciones %}
 <!-- ============================================================ -->
 <!-- CANCELACIONES -->
@@ -135,7 +178,7 @@
         <div>
             <span class="eyebrow">CANCELACIONES</span>
             <h2>Inscripciones canceladas</h2>
-            <p class="panel-subtitle">{{ total_cancelaciones }} cancelacion{{ total_cancelaciones|pluralize:"es" }}{% if total_cancelaciones > 100 %}; se muestran las 100 más recientes{% endif %}</p>
+            <p class="panel-subtitle">{{ total_cancelaciones }} {% if total_cancelaciones == 1 %}cancelación{% else %}cancelaciones{% endif %}{% if total_cancelaciones > 100 %}; se muestran las 100 más recientes{% endif %}</p>
         </div>
     </div>
 

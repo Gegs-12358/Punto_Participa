@@ -4,6 +4,7 @@ Cancelación de inscripciones (la lógica está en cancelaciones.py).
 - cancelar_inscripcion: página pública del enlace personal. Pide confirmar antes de cancelar.
   Límite de 30 envíos por minuto por IP; no se indexa en buscadores.
 - cancelar_inscripcion_gestor: botón en Participantes, para el Administrador y el creador.
+Al cancelar se avisa por correo a la lista de espera del taller (lista_espera.py).
 Las dos dejan registro en la auditoría.
 """
 from django.contrib import messages
@@ -17,6 +18,7 @@ from django_ratelimit.decorators import ratelimit
 from .cancelaciones import (NoSePuedeCancelar, alumno_puede_cancelar, cancelar,
                             limite_cancelacion)
 from .decorators import role_required
+from .lista_espera import avisar as avisar_lista_espera
 from .models import Actividad, Inscripcion, InscripcionCancelada
 from .permissions import puede_gestionar_actividad
 from .views import registrar_log
@@ -44,6 +46,18 @@ def _auditar(request, cancelacion, por_gestor):
                   f'{nombre} - {cancelacion.actividad.titulo} (cancelada {quien}). Cupo liberado.',
                   'Alumno', alumno.id, nombre,
                   cambios_json={'actividad': cancelacion.actividad_id, 'por_gestor': por_gestor})
+
+
+def _avisar_lista(request, actividad):
+    """Avisa a la lista de espera que se liberó un cupo y lo deja en la auditoría. Devuelve los avisos enviados."""
+    enviados, fallidos = avisar_lista_espera(actividad)
+    if enviados or fallidos:
+        registrar_log(request, 'Inscripciones', 'Aviso a lista de espera',
+                      f'"{actividad.titulo}": se liberó un cupo. {enviados} aviso{"s" if enviados != 1 else ""} '
+                      f'enviado{"s" if enviados != 1 else ""}' + (f', {fallidos} con error' if fallidos else '') + '.',
+                      'Actividad', actividad.id, actividad.titulo,
+                      cambios_json={'enviados': enviados, 'fallidos': fallidos})
+    return enviados
 
 
 @ratelimit(key='ip', rate='30/m', method='POST', block=False)
@@ -74,6 +88,7 @@ def cancelar_inscripcion(request, token):
             contexto['error'] = str(e)
         else:
             _auditar(request, cancelacion, por_gestor=False)
+            _avisar_lista(request, actividad)
             contexto.update(estado_pagina='ya_cancelada', cancelacion=cancelacion,
                             puede_volver=_puede_volver(actividad),
                             exito='Tu inscripción quedó cancelada y el cupo quedó libre para otro estudiante.')
@@ -99,5 +114,10 @@ def cancelar_inscripcion_gestor(request, pk, inscripcion_id):
         messages.error(request, f'No se canceló la inscripción de {nombre}: {e}')
     else:
         _auditar(request, cancelacion, por_gestor=True)
-        messages.success(request, f'Inscripción de {nombre} cancelada. El cupo quedó disponible.')
+        avisados = _avisar_lista(request, actividad)
+        texto = f'Inscripción de {nombre} cancelada. El cupo quedó disponible.'
+        if avisados:
+            texto += (f' Se avisó por correo a {avisados} persona{"s" if avisados != 1 else ""} '
+                      f'de la lista de espera.')
+        messages.success(request, texto)
     return redirect('participantes_actividad', pk=actividad.pk)

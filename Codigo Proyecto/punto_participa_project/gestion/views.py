@@ -1325,6 +1325,8 @@ def participantes_actividad(request, pk):
         'filtro_estado': filtro,
         'total_inscritos': Inscripcion.objects.filter(actividad=actividad).count(),
         'total_asistentes': Asistencia.objects.filter(actividad=actividad).count(),
+        'lista_espera': actividad.lista_espera.select_related('alumno')[:200],
+        'total_lista_espera': actividad.lista_espera.count(),
         'cancelaciones': actividad.cancelaciones.select_related('alumno', 'cancelada_por')[:100],
         'total_cancelaciones': actividad.cancelaciones.count(),
         'puede_cancelar': actividad.tipo == 'TALLER' and actividad.estado == 'ACTIVA'
@@ -2081,7 +2083,9 @@ def exportar_auditoria(request):
 # ============================================================
 
 def _render_inscripcion(request, actividad, estado='con_cupos', error=None, exito=None):
-    ctx = {'actividad': actividad, 'estado': estado}
+    from .lista_espera import acepta_anotaciones
+    ctx = {'actividad': actividad, 'estado': estado,
+           'acepta_espera': estado == 'sin_cupos' and acepta_anotaciones(actividad)}
     if error:
         ctx['error'] = error
     if exito:
@@ -2106,6 +2110,8 @@ def inscripcion_taller(request, actividad_id):
     if actividad.estado != 'ACTIVA' or actividad.fecha_fin <= ahora:
         return _render_inscripcion(request, actividad, _estado_cerrado(actividad))
     if (actividad.cupos_disponibles or 0) <= 0:
+        if request.method == 'POST' and request.POST.get('accion') == 'lista_espera':
+            return _anotar_lista_espera(request, actividad)
         return _render_inscripcion(request, actividad, 'sin_cupos')
     if request.method != 'POST':
         return _render_inscripcion(request, actividad, 'con_cupos')
@@ -2157,6 +2163,8 @@ def inscripcion_taller(request, actividad_id):
 
             inscripcion = Inscripcion.objects.create(actividad=act_lock, alumno=alumno, estado='CONFIRMADA')
             cupos_restantes = act_lock.cupos_disponibles
+            from .lista_espera import quitar as quitar_de_lista_espera
+            quitar_de_lista_espera(act_lock, alumno)
     except IntegrityError:
         return _render_inscripcion(request, actividad, 'con_cupos', 'Ya estás inscrito en este taller.')
     try:
@@ -2177,7 +2185,45 @@ def inscripcion_taller(request, actividad_id):
     else:
         aviso = ' No pudimos enviarte el correo de confirmación; tu inscripción igual quedó registrada.'
     return _render_inscripcion(request, actividad, 'con_cupos', exito=
-                               f'¡Inscripción exitosa! Cupos disponibles: {cupos_restantes}.{aviso}')
+                               f'Cupos disponibles: {cupos_restantes}.{aviso}')
+
+
+def _anotar_lista_espera(request, actividad):
+    """Anota al estudiante en la lista de espera de un taller sin cupos."""
+    from .cancelaciones import ocultar_correo
+    from .lista_espera import acepta_anotaciones, anotar
+
+    def error(texto):
+        return _render_inscripcion(request, actividad, 'sin_cupos', texto)
+
+    if not acepta_anotaciones(actividad):
+        return error('El taller ya comenzó: no se reciben anotaciones en la lista de espera.')
+    if not request.POST.get('acepta_politica'):
+        return error('Debes aceptar la Política de Privacidad para anotarte en la lista de espera.')
+    if _inscripcion_bloqueada(request):
+        return error('Demasiados intentos fallidos. Espera unos minutos e inténtalo de nuevo.')
+    documento = limpiar_documento(request.POST.get('rut'), 40)
+    if not documento:
+        return error('Debes ingresar tu RUT.')
+    alumno = buscar_alumno_por_documento(documento)
+    if not alumno:
+        _registrar_fallo_inscripcion(request)
+        return error('No estás registrado en el sistema. Verifica tu RUT o contacta a Punto Estudiantil.')
+    resultado = anotar(actividad, alumno)
+    if resultado == 'inscrito':
+        return error('Ya estás inscrito en este taller.')
+    correo = ocultar_correo(alumno.correo)
+    destino = f' a {correo}' if correo else ''
+    if resultado == 'ya_estaba':
+        return _render_inscripcion(request, actividad, 'sin_cupos', exito=
+                                   f'Ya estabas en la lista de espera (todavía no estás inscrito). Te avisaremos{destino} '
+                                   'si se libera un cupo.')
+    registrar_log(request, 'Inscripciones', 'Anotación en lista de espera',
+                  f'{alumno.nombres} {alumno.apellidos} - {actividad.titulo} - Política de Privacidad v2026-1 aceptada',
+                  'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
+    return _render_inscripcion(request, actividad, 'sin_cupos', exito=
+                               f'Quedaste en la lista de espera (todavía no estás inscrito). Si se libera un cupo te '
+                               f'avisaremos{destino}, y el cupo será para el primero que se inscriba.')
 
 LIMITE_FALLOS_INSCRIPCION = 15
 VENTANA_FALLOS_INSCRIPCION = 15 * 60  # segundos
