@@ -1,10 +1,25 @@
 {% load ui %}
-{# Pestañas de Catálogos. Cada vista pasa "pestana" = lugares | escuelas | carreras. #}
-<nav class="tabs" aria-label="Catálogos">
-    <a href="{% url 'catalogo_lugares' %}" class="tab-button{% if pestana == 'lugares' %} active{% endif %}"
-        style="text-decoration: none;"{% if pestana == 'lugares' %} aria-current="page"{% endif %}>{% icono "lugar" %} Lugares</a>
-    <a href="{% url 'catalogo_escuelas' %}" class="tab-button{% if pestana == 'escuelas' %} active{% endif %}"
-        style="text-decoration: none;"{% if pestana == 'escuelas' %} aria-current="page"{% endif %}>{% icono "escuela" %} Escuelas</a>
-    <a href="{% url 'catalogo_carreras' %}" class="tab-button{% if pestana == 'carreras' %} active{% endif %}"
-        style="text-decoration: none;"{% if pestana == 'carreras' %} aria-current="page"{% endif %}>{% icono "alumnos" %} Carreras</a>
+{# Pestañas de Catálogos, con el mismo estilo que las de Reportes. Cada vista pasa "pestana" = lugares | escuelas | carreras. #}
+<nav class="tabs tabs--vistas" aria-label="Catálogos">
+    <a href="{% url 'catalogo_lugares' %}" class="tab-button tab-vista{% if pestana == 'lugares' %} active{% endif %}"{% if pestana == 'lugares' %} aria-current="page"{% endif %}>
+        {% icono "lugar" "tab-vista__icono" %}
+        <span class="tab-vista__texto">
+            <span class="tab-vista__titulo">Lugares</span>
+            <span class="tab-vista__desc">Salas y espacios que se eligen al crear una actividad</span>
+        </span>
+    </a>
+    <a href="{% url 'catalogo_escuelas' %}" class="tab-button tab-vista{% if pestana == 'escuelas' %} active{% endif %}"{% if pestana == 'escuelas' %} aria-current="page"{% endif %}>
+        {% icono "escuela" "tab-vista__icono" %}
+        <span class="tab-vista__texto">
+            <span class="tab-vista__titulo">Escuelas</span>
+            <span class="tab-vista__desc">Escuelas de la sede y el color de cada una en los gráficos</span>
+        </span>
+    </a>
+    <a href="{% url 'catalogo_carreras' %}" class="tab-button tab-vista{% if pestana == 'carreras' %} active{% endif %}"{% if pestana == 'carreras' %} aria-current="page"{% endif %}>
+        {% icono "alumnos" "tab-vista__icono" %}
+        <span class="tab-vista__texto">
+            <span class="tab-vista__titulo">Carreras</span>
+            <span class="tab-vista__desc">Carreras de cada escuela, usadas en la nómina y los reportes</span>
+        </span>
+    </a>
 </nav>
