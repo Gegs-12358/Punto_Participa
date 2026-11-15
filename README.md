@@ -46,7 +46,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**. La entrega está fijada para el 1 de diciembre de 2026.
 
-* Suite de pruebas automatizadas: 666 tests (detalle en la sección 9).
+* Suite de pruebas automatizadas: 706 tests (detalle en la sección 9).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 * El historial detallado de cambios está en [`docs/CAMBIOS.md`](Codigo%20Proyecto/punto_participa_project/docs/CAMBIOS.md) y la guía de estilo de las pantallas en [`docs/GUIA_ESTILO.md`](Codigo%20Proyecto/punto_participa_project/docs/GUIA_ESTILO.md).
 
@@ -66,7 +66,7 @@ El proyecto está en desarrollo y funciona de punta a punta en un entorno local 
 | **Catálogos** | Lugares, escuelas (con su color para los gráficos) y carreras: agregar, renombrar, bloquear y eliminar lo que no se usa. | Administrador |
 | **Escáner** | Registro de asistencia por turnos, con contador en vivo (sección 6). | Los tres roles |
 | **Auditoría** | Registro de todas las acciones del sistema, con filtros y exportación. | Administrador |
-| **Páginas públicas** | Inscripción a talleres, página de las actividades masivas, respuesta a una invitación (`/invitacion/<enlace>/`) y Política de Privacidad. | Sin cuenta |
+| **Páginas públicas** | Inscripción a talleres (con lista de espera cuando están llenos), cancelación de la inscripción (`/inscripcion/cancelar/<enlace>/`), página de las actividades masivas, respuesta a una invitación (`/invitacion/<enlace>/`) y Política de Privacidad. | Sin cuenta |
 
 ### 3.1 Exportaciones
 
@@ -96,6 +96,14 @@ Son actividades cerradas, para una lista de alumnos que define quien las crea. N
 5. En la entrada se usa el escáner de siempre (sección 6). Un acompañante se registra con su propio documento.
 
 Si llega alguien que no está en la lista, el escáner ofrece agregarlo: un alumno de la nómina entra como invitado **agregado en la entrada**, y una persona externa entra como acompañante de un invitado que tenga cupo libre. Los datos de invitados y acompañantes se guardan el mismo tiempo que el resto de la información del sistema.
+
+### 3.3 Cancelación de inscripciones y lista de espera
+
+* Al inscribirse en un taller, el estudiante recibe un correo de confirmación con un **enlace personal para cancelar**. Puede usarlo hasta 24 horas antes del inicio; después debe avisar al Punto Estudiantil.
+* El Administrador y el creador del taller pueden cancelar una inscripción desde **Participantes** hasta que empiece el taller. No se cancela a quien ya tiene la asistencia registrada.
+* Al cancelar, el cupo vuelve a quedar libre y la inscripción pasa a un historial de cancelaciones, que se ve en Participantes. El estudiante puede volver a inscribirse si hay cupo.
+* Cuando un taller está lleno, su página ofrece anotarse en la **lista de espera** con el RUT. Anotarse no inscribe: cuando alguien cancela, se avisa por correo a todos los de la lista y el cupo es para el primero que se inscribe. Al inscribirse, el estudiante sale de la lista.
+* Las cancelaciones, las anotaciones y los avisos quedan en la auditoría.
 
 ---
 
@@ -256,6 +264,9 @@ Codigo Proyecto/
     │   ├── invitados.py       Lectura y validación de la lista de invitados
     │   ├── views_invitados.py Pantalla Invitados y envío de las invitaciones
     │   ├── views_invitacion_publica.py  Respuesta del alumno desde su enlace
+    │   ├── cancelaciones.py   Cancelación de inscripciones y correo de confirmación
+    │   ├── views_cancelacion.py  Cancelación desde el enlace del alumno y desde Participantes
+    │   ├── lista_espera.py    Lista de espera y aviso cuando se libera un cupo
     │   ├── escaner_invitacion.py  Escáner en las actividades con invitación
     │   ├── management/commands/   seed_data, perf_seed e importar_alumnos
     │   ├── migrations/        Migraciones de la base de datos
@@ -291,6 +302,7 @@ Codigo Proyecto/
 * Tolerancia a caracteres especiales en los datos de entrada y escape en la salida.
 * Registro de auditoría de las acciones del sistema, incluidos los turnos del escáner y las exportaciones.
 * Respaldo automático con prueba de recuperación y copias mensuales permanentes.
+* Cancelación de inscripciones con enlace personal aleatorio, sin indexar en buscadores y con límite de 30 envíos por minuto por IP. La lista de espera usa el mismo límite de intentos que la inscripción pública.
 * Política de Privacidad pública (`/privacidad/`) y aceptación obligatoria al inscribirse, registrada en la auditoría. El texto es un borrador pendiente de revisión de Duoc UC.
 
 ### Pendientes antes de producción
@@ -307,7 +319,7 @@ Codigo Proyecto/
 
 ## 9. Pruebas automatizadas
 
-La suite tiene **666 tests** y se ejecuta con:
+La suite tiene **706 tests** y se ejecuta con:
 
 ```bash
 docker compose exec web python manage.py test --parallel --noinput
@@ -340,6 +352,7 @@ Qué se verifica, por tema:
 | Exportaciones | Protección contra fórmulas, BOM y separador `;`, contenido de los tres reportes (inscritos, asistentes, no asistieron, porcentaje), fechas reales, hoja Información, permisos y registro en la auditoría. | `tests_exportaciones`, `tests_exportaciones_p1`, `tests_extremos`, `tests_integrales` |
 | Actividades, inscripciones y cupos | Crear, editar y eliminar actividades, validación de fechas, cupos e imágenes, inscripción pública, página pública de las masivas, recálculo de cupos y panel de participación del detalle. | `tests_integrales`, `tests_adicionales`, `tests_extremos`, `tests_forms_fechas`, `tests_forms_imagen`, `tests_actividad_publica`, `tests_embudo` |
 | Actividades con invitación | Lectura y validación de la lista (columnas, dígito verificador, repetidos, nómina y bloqueados), permisos de la pantalla Invitados, envío con enlace personal, respuesta con acompañantes y su validación, cambios hasta que empieza la actividad, escáner con invitados, acompañantes y agregados en la entrada, y reportes y exportaciones con invitados. | `tests_invitados`, `tests_invitacion_respuesta`, `tests_escaner_invitacion`, `tests_reportes_invitacion` |
+| Cancelación y lista de espera | Correo de confirmación con enlace, cancelación por el alumno hasta 24 horas antes y por el gestor hasta el inicio, historial y devolución del cupo, permisos, anotación en la lista de espera y aviso a todos al liberarse un cupo. | `tests_cancelacion`, `tests_lista_espera` |
 | Invitaciones por correo | Envío y registro de la notificación, fallo de SMTP registrado como fallido, límite por envío, previsualización y enlace correcto según el tipo de actividad. | `tests_adicionales`, `tests_extremos`, `tests_integrales`, `tests_correo_invitacion` |
 | Reportes y auditoría | Inscritos y asistentes con filtros, filtro por tipo y lugar, pestañas, cada creador ve solo lo suyo, la auditoría guarda los datos de la petición y su exportación es solo para el Administrador. | `tests_kpi_inscritos`, `tests_reportes_tipo`, `tests_auditoria_limites`, `tests_integrales`, `tests_roles_completo` |
 | Interfaz | Botones con ícono y aviso, filtros activos, menú Exportar, pantallas sin símbolos de texto antiguos y menú con la página actual marcada. | `tests_ui` |

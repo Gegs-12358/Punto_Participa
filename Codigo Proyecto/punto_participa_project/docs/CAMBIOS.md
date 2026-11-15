@@ -22,7 +22,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
 > exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
-> actividades con invitación. La suite tiene 666 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> actividades con invitación, la cancelación de inscripciones y la lista de espera. La suite tiene 706 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -461,7 +461,7 @@ No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de
 - [ ] Confirmar con Duoc UC la autorización de la carga y el formato real del archivo.
 
 **Calidad**
-- [x] Suite completa de tests en verde (666 pruebas al 12/11/2026). El 92 % de cobertura se midió con 323 y está pendiente de recalcular.
+- [x] Suite completa de tests en verde (706 pruebas al 15/11/2026). El 92 % de cobertura se midió con 323 y está pendiente de recalcular.
 - [ ] Usar Git (los ZIPs numerados, los `.bak` y las copias duplicadas indican que hoy el versionado es manual).
 
 ---
@@ -716,12 +716,29 @@ se agrega en la entrada; no hay cupo total; y los datos se guardan el mismo tiem
 Pruebas nuevas: `tests_invitados`, `tests_invitacion_respuesta`, `tests_escaner_invitacion` y
 `tests_reportes_invitacion`.
 
-### 18.8 Pendiente
+### 18.8 Cancelación de inscripciones y lista de espera (13–15/11/2026)
 
-- **Plan original:** prueba de usabilidad del escáner con operadores (H001); corregir en el backlog el
-  criterio "límite por IP" (lo implementado es por usuario, porque los operadores comparten red);
-  ubicación definitiva de los respaldos.
-- **P3, correo:** carga masiva de usuarios con contraseña inicial por correo; cancelación de inscripción
-  con aviso a la lista de espera; cuenta institucional. Depende de que el Punto entregue la cuenta.
+| Commit | Cambio |
+|---|---|
+| `5bac5e5` | H002: la página del taller usa los textos del backlog, "Sin cupos disponibles" y "Evento ya realizado". Un taller cancelado tenía el mismo aviso que uno terminado; ahora dice "Taller cancelado". |
+| `a10f836` | Cancelación de inscripciones (`gestion/cancelaciones.py`, `views_cancelacion.py`, migración `0035`). Al inscribirse llega un correo de confirmación con un enlace personal (`Inscripcion.token`). El alumno cancela con ese enlace hasta 24 horas antes del inicio; el Administrador o el creador, desde Participantes, hasta que empiece. La fila pasa a `InscripcionCancelada` (historial) y el cupo se devuelve: así los conteos de inscritos, el escáner y los reportes no necesitan filtrar estados. No se cancela a quien ya tiene asistencia. |
+| `bce4fe3` | Lista de espera (`gestion/lista_espera.py`, modelo `ListaEspera`, migración `0036`). En un taller lleno, la página ofrece anotarse con el RUT; anotarse no inscribe. Al cancelar una inscripción se avisa por correo a todos los de la lista y el cupo es para el primero que se inscribe. Panel de lista de espera en Participantes. |
+
+Pruebas nuevas: `tests_cancelacion` y `tests_lista_espera`. La prueba que comprobaba que al inscribirse no
+se enviaba correo cambió: ahora se envía exactamente uno, el de confirmación.
+
+### 18.9 Documentación del curso (15/11/2026)
+
+Documentos 01 y 02 en revisión 03, 04 en revisión 02 y 05 en revisión 03, rearmados sobre las plantillas
+oficiales (`23dbacd`): casos de uso en UML 2.5, diagramas al día, propuesta de valor con indicadores y
+mejoras de la contraparte como adicionales en el backlog, sin cambiar pesos ni prioridades. Se ordenaron las
+actas, se agregó la licencia GNU GPL v3 y se ocultaron datos personales en la evidencia de pantallazos.
+
+### 18.10 Pendiente
+
+- **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
+  respaldos. El criterio del backlog ya dice "límite por usuario".
+- **P3, correo:** carga masiva de usuarios con contraseña inicial por correo; cuenta institucional. Depende de
+  que el Punto entregue la cuenta.
 - **P4, datos:** retención de dos años en la base principal (verificando antes que los datos estén en un
   respaldo mensual), decisión sobre la IP y el navegador de la auditoría y anonimización.
