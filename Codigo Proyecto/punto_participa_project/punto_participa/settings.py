@@ -163,6 +163,13 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=f'Punto Participa <{EM
 # URL del sitio (para correos y enlaces absolutos)
 SITE_URL = config('SITE_URL', default='http://127.0.0.1:8000')
 
+# Retención de datos (gestion/retencion.py): se borra de la base principal lo que tenga más de
+# RETENCION_ANIOS años; los respaldos mensuales conservan el histórico. Antes de borrar se avisa al
+# Administrador los días indicados en RETENCION_AVISOS_DIAS (el primero fija la fecha del borrado).
+RETENCION_ANIOS = config('RETENCION_ANIOS', default=2, cast=int)
+RETENCION_AVISOS_DIAS = sorted({int(d) for d in config('RETENCION_AVISOS_DIAS', default='10,7,3').split(',')
+                                if d.strip().isdigit() and int(d) > 0}, reverse=True) or [10, 7, 3]
+
 # ==================== AUTENTICACIÓN ====================
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'

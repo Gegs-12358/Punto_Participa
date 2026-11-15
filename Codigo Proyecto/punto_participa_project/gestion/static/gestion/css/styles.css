@@ -1708,6 +1708,44 @@ a.role:hover {
     border-left: 4px solid var(--gold);
 }
 
+/* Aviso de retención de datos en el Inicio (Administrador): más grande que las alertas comunes */
+.alert.aviso-retencion {
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--ink);
+    margin: 0 0 16px;
+}
+
+.aviso-retencion__form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    margin-top: 8px;
+}
+
+.aviso-retencion__form label {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: auto;
+    margin: 0;
+    font-weight: 600;
+}
+
+.aviso-retencion__form input[type="checkbox"] {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+}
+
+.alert.aviso-retencion strong {
+    color: #896000;
+    font-size: 15px;
+}
+
 .alert-info {
     background: #e6f2fa;
     color: var(--blue);

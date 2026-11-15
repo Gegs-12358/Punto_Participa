@@ -85,12 +85,39 @@
             <p class="ficha-nota"><strong>Bloqueado porque no vino en la última nómina.</strong>
                 Si viene en la próxima, se activa solo. Si lo desbloqueas ahora y tampoco viene en la próxima, se volverá a bloquear.</p>
             {% endif %}
+            {% if not anonimizado %}
             <form method="post" action="{% url 'alumno_bloqueo' alumno.pk %}"
                 data-confirmar="¿Desbloquear a {{ alumno.nombres }} {{ alumno.apellidos }}? Podrá volver a inscribirse y registrar asistencia.">
                 {% csrf_token %}
                 <input type="hidden" name="accion" value="desbloquear">
                 <input type="hidden" name="volver" value="detalle">
                 <button type="submit" class="btn secondary">{% icono "desbloquear" %} Desbloquear</button>
+            </form>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        <div class="panel" id="anonimizar">
+            <div class="panel-head">
+                <div>
+                    <span class="eyebrow">DATOS PERSONALES</span>
+                    <h2>{% if anonimizado %}Anonimizado{% else %}Anonimizar{% endif %}</h2>
+                </div>
+            </div>
+            {% if anonimizado %}
+            <p class="ficha-nota">Los datos personales de este alumno fueron anonimizados. Se conservan su carrera,
+                escuela, jornada y participación para las estadísticas.</p>
+            {% else %}
+            <p class="ficha-nota">Reemplaza el nombre, el documento y el correo del alumno (y de las invitaciones y
+                acompañantes asociados) en el sistema y en la auditoría. Se conservan su carrera, escuela, jornada y
+                participación. <strong>No se puede deshacer.</strong> Úsalo cuando el titular pida la supresión de
+                sus datos.</p>
+            <form method="post" action="{% url 'alumno_anonimizar' alumno.pk %}" class="ficha-bloqueo"
+                data-confirmar="¿Anonimizar los datos de {{ alumno.nombres }} {{ alumno.apellidos }}? No se puede deshacer.">
+                {% csrf_token %}
+                <label for="confirmacion"><span>Escribe <strong>ANONIMIZAR</strong> para confirmar</span></label>
+                <input type="text" id="confirmacion" name="confirmacion" required autocomplete="off" maxlength="20">
+                <button type="submit" class="btn danger">{% icono "eliminar" %} Anonimizar datos</button>
             </form>
             {% endif %}
         </div>

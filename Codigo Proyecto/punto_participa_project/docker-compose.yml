@@ -38,6 +38,24 @@ services:
     ports:
       - "8000:8000"
 
+  # Tareas programadas (retención de datos, ver gestion/retencion.py). Usa la misma imagen que web
+  # y corre "python manage.py retencion" una vez al día.
+  tareas:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - media_volume:/app/media
+    entrypoint: ["sh", "/app/tareas/programar.sh"]
+
   # Respaldo automático (historia 008). Usa la misma imagen de PostgreSQL que la base,
   # así pg_dump es de la misma versión. Ver respaldo/LEEME.md
   respaldo:

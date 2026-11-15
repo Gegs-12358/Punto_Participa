@@ -1,6 +1,6 @@
 from django.urls import path
 from . import (exportaciones, views, views_actividad_publica, views_alumnos, views_catalogos,
-               views_cancelacion, views_importar, views_usuarios_masivos, views_invitacion_publica, views_invitados)
+               views_cancelacion, views_importar, views_usuarios_masivos, views_retencion, views_invitacion_publica, views_invitados)
 
 # Sin app_name para mantener compatibilidad con los templates existentes
 
@@ -37,6 +37,8 @@ urlpatterns = [
     path('alumnos/', views_alumnos.lista_alumnos, name='lista_alumnos'),
     path('alumnos/<int:pk>/', views_alumnos.alumno_detalle, name='alumno_detalle'),
     path('alumnos/<int:pk>/bloqueo/', views_alumnos.alumno_bloqueo, name='alumno_bloqueo'),
+    path('alumnos/<int:pk>/anonimizar/', views_alumnos.alumno_anonimizar, name='alumno_anonimizar'),
+    path('retencion/<int:pk>/ejecutar/', views_retencion.retencion_ejecutar, name='retencion_ejecutar'),
     path('alumnos/importar/', views_importar.importar_alumnos_web, name='importar_alumnos'),
     path('catalogos/lugares/', views_catalogos.catalogo_lugares, name='catalogo_lugares'),
     path('catalogos/escuelas/', views_catalogos.catalogo_escuelas, name='catalogo_escuelas'),

@@ -110,8 +110,10 @@ def _historial(alumno):
 def alumno_detalle(request, pk):
     alumno = get_object_or_404(Alumno, pk=pk)
     historial = _historial(alumno)
+    from .anonimizacion import esta_anonimizado
     return render(request, 'gestion/alumno_detalle.html', {
         'alumno': alumno,
+        'anonimizado': esta_anonimizado(alumno),
         'historial': historial,
         'resumen': {
             'actividades': len(historial),
@@ -133,6 +135,10 @@ def alumno_bloqueo(request, pk):
     volver = 'alumno_detalle' if request.POST.get('volver') == 'detalle' else 'lista_alumnos'
     destino = redirect(volver, pk=alumno.pk) if volver == 'alumno_detalle' else redirect(volver)
     nombre = f'{alumno.nombres} {alumno.apellidos}'
+    from .anonimizacion import esta_anonimizado
+    if esta_anonimizado(alumno):
+        messages.error(request, 'Este alumno fue anonimizado: no se puede bloquear ni desbloquear.')
+        return destino
 
     if accion == 'bloquear':
         motivo = limpiar_texto(request.POST.get('motivo', ''))[:MAX_MOTIVO]
@@ -167,3 +173,26 @@ def alumno_bloqueo(request, pk):
     else:
         messages.error(request, 'Acción no válida.')
     return destino
+
+
+@login_required
+@role_required('Administrador')
+@require_POST
+def alumno_anonimizar(request, pk):
+    """Anonimiza al alumno (irreversible). Hay que escribir ANONIMIZAR para confirmar."""
+    from .anonimizacion import anonimizar, esta_anonimizado
+    alumno = get_object_or_404(Alumno, pk=pk)
+    if esta_anonimizado(alumno):
+        messages.info(request, 'Este alumno ya estaba anonimizado.')
+        return redirect('alumno_detalle', pk=alumno.pk)
+    if (request.POST.get('confirmacion') or '').strip().upper() != 'ANONIMIZAR':
+        messages.error(request, 'Para anonimizar escribe ANONIMIZAR en el recuadro de confirmación.')
+        return redirect('alumno_detalle', pk=alumno.pk)
+    corregidos = anonimizar(alumno)
+    registrar_log(request, 'Alumnos', 'Anonimización de alumno',
+                  f'Alumno #{alumno.pk} anonimizado: se reemplazaron su nombre, documento y correo, y se conservaron '
+                  f'su carrera, escuela, jornada y participación. Registros de auditoría corregidos: {corregidos}.',
+                  'Alumno', alumno.pk, 'Alumno anonimizado')
+    messages.success(request, 'Datos personales anonimizados. Se conservan la carrera, la escuela, la jornada y la '
+                              'participación para las estadísticas.')
+    return redirect('alumno_detalle', pk=alumno.pk)

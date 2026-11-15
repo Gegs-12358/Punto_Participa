@@ -18,6 +18,29 @@
     </button>
 </div>
 
+{% if retencion %}
+<div class="alert alert-warning aviso-retencion" role="alert">
+    <div>
+        {% if retencion.faltan > 0 %}
+        <strong>{% icono "alerta" "icono--texto" %} Retención de datos: quedan {{ retencion.faltan }} día{{ retencion.faltan|pluralize }} (plazo: {{ retencion.aviso.fecha_programada|date:"d/m/Y" }})</strong>
+        {% else %}
+        <strong>{% icono "alerta" "icono--texto" %} Retención de datos: el plazo venció el {{ retencion.aviso.fecha_programada|date:"d/m/Y" }} y el borrado sigue pendiente</strong>
+        {% endif %}
+        <span>Hay datos anteriores al {{ retencion.aviso.fecha_corte|date:"d/m/Y" }} que deben borrarse de la base principal:
+            {{ retencion.aviso.resumen.actividades }} actividad{{ retencion.aviso.resumen.actividades|pluralize:"es" }} con sus inscripciones y asistencias, y
+            {{ retencion.aviso.resumen.auditoria }} registro{{ retencion.aviso.resumen.auditoria|pluralize }} de auditoría.
+            Antes, verifica que el respaldo mensual esté al día y que la prueba de recuperación funcione. Nada se borra
+            hasta que un Administrador lo ejecute, y se avisará a los demás quién lo hizo.</span>
+        <form method="post" action="{% url 'retencion_ejecutar' retencion.aviso.pk %}" class="aviso-retencion__form"
+            data-confirmar="¿Borrar ahora los datos anteriores al {{ retencion.aviso.fecha_corte|date:"d/m/Y" }}? Solo quedarán en los respaldos.">
+            {% csrf_token %}
+            <label><input type="checkbox" name="verificado" required> Verifiqué el respaldo mensual y la prueba de recuperación</label>
+            <button type="submit" class="btn danger">{% icono "eliminar" %} Ya verifiqué los respaldos: borrar ahora</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
 <!-- ============================================================ -->
 <!-- FILTROS -->
 <!-- ============================================================ -->
@@ -465,6 +488,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'gestion/js/catalogos.js' %}"></script>
 <script src="{% static 'gestion/js/vendor/chart.umd.js' %}"></script>
 <script src="{% static 'gestion/js/dashboard.js' %}"></script>
 {% endblock %}

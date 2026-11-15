@@ -661,7 +661,12 @@ def dashboard(request):
         **graficos,
     }
 
-    # [REFACTOR] Debug temporal eliminado.
+    if es_admin:
+        from .retencion import proceso_abierto
+        aviso = proceso_abierto()
+        if aviso:
+            context['retencion'] = {'aviso': aviso, 'faltan': (aviso.fecha_programada - timezone.localdate()).days}
+
     return render(request, 'gestion/dashboard.html', context)
 
 

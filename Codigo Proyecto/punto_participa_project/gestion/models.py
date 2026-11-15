@@ -348,6 +348,31 @@ class Inscripcion(FotoAcademica):
         return f"{self.alumno} - {self.actividad}"
 
 
+class AvisoRetencion(models.Model):
+    """
+    Un proceso de retención de datos: qué fecha de corte se anunció, el plazo para borrar, qué avisos se
+    enviaron a los Administradores y quién ejecutó el borrado. Lo maneja retencion.py.
+    """
+    fecha_corte = models.DateField(help_text='Se borra lo anterior a esta fecha.')
+    fecha_programada = models.DateField(help_text='Plazo para que un Administrador ejecute el borrado.')
+    creado = models.DateTimeField(auto_now_add=True)
+    avisos_enviados = models.JSONField(default=list, blank=True)
+    resumen = models.JSONField(default=dict, blank=True)
+    ultimo_aviso = models.DateField(null=True, blank=True)
+    ejecutado = models.DateTimeField(null=True, blank=True)
+    ejecutado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                      related_name='retenciones_ejecutadas')
+    resumen_ejecutado = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Aviso de retención'
+        verbose_name_plural = 'Avisos de retención'
+        ordering = ['-creado']
+
+    def __str__(self):
+        return f"Retención al {self.fecha_corte} (plazo {self.fecha_programada})"
+
+
 class ListaEspera(models.Model):
     """
     Estudiantes que pidieron aviso cuando un taller lleno libere un cupo. Cuando alguien cancela, se avisa por
