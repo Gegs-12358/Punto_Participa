@@ -66,6 +66,15 @@ _TRAZOS = {
 
 
 @register.simple_tag
+def url_absoluta(ruta):
+    """Dirección completa (con SITE_URL) para los correos: un enlace o imagen relativa no sirve fuera del sitio."""
+    from django.conf import settings
+    if not ruta or str(ruta).startswith(('http://', 'https://')):
+        return ruta or ''
+    return settings.SITE_URL.rstrip('/') + '/' + str(ruta).lstrip('/')
+
+
+@register.simple_tag
 def icono(nombre, clase=''):
     """SVG del ícono `nombre`; hereda el color del texto (currentColor)."""
     trazo = _TRAZOS.get(nombre)

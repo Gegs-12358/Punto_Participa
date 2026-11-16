@@ -21,12 +21,7 @@
         <div class="enrollment-wrap">
             <div class="event-card card event-card--invitacion">
 
-                <div class="event-banner">
-                    <div>
-                        <span>INVITACIÓN</span>
-                        <h2>{{ actividad.titulo }}</h2>
-                    </div>
-                </div>
+                {% include 'gestion/includes/portada_actividad.html' with etiqueta='INVITACIÓN' %}
 
                 <div class="event-body">
                     <div class="date-tile">
@@ -35,8 +30,8 @@
                     </div>
 
                     <div class="event-copy">
-                        <h1>Hola, {{ invitado.nombre }}</h1>
-                        <p>{{ actividad.descripcion }}</p>
+                        <h2 class="event-copy__saludo">Hola, {{ invitado.nombre }}</h2>
+                        {% if actividad.descripcion %}<p>{{ actividad.descripcion|linebreaksbr }}</p>{% endif %}
                         <ul>
                             <li><strong>{% icono "actividad" "icono--texto" %} Fecha:</strong>
                                 {{ actividad.fecha_inicio|date:"d \d\e F \d\e Y, H:i" }} a {{ actividad.fecha_fin|date:"H:i" }}</li>
@@ -100,7 +95,7 @@
                             </fieldset>
                             {% endif %}
 
-                            <label for="acepta_politica" class="form-invitacion__politica">
+                            <label for="acepta_politica" class="casilla form-invitacion__politica">
                                 <input type="checkbox" name="acepta_politica" id="acepta_politica" required>
                                 <span>He leído y acepto la
                                     <a href="{% url 'privacidad' %}" target="_blank" rel="noopener">Política de Privacidad</a>,

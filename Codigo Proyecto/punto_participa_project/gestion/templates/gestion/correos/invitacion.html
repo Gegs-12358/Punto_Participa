@@ -1,89 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
     <meta charset="utf-8">
-    <title>Invitación</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invitación: {{ actividad.titulo }}</title>
 </head>
 
-<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
-    <div
-        style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e0e0e0;">
-        <!-- Header -->
-        <div style="background-color: #003366; padding: 20px; text-align: center;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Punto Participa</h1>
-        </div>
+<body style="margin: 0; font-family: Arial, Helvetica, sans-serif; background-color: #eef2f6; padding: 20px;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; border: 1px solid #dde3ea;">
+        {% include 'gestion/correos/_cabecera.html' %}
 
-        <!-- Contenido -->
-        <div style="padding: 30px; color: #333333;">
-            <h2 style="color: #003366; margin-top: 0;">¡Súmate al {{ actividad.titulo }}!</h2>
+        <div style="padding: 28px 30px 24px; color: #1f2d3d;">
+            <span style="display: inline-block; background-color: #FBB800; color: #002F5F; font-size: 11px; font-weight: bold; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 999px;">{% if actividad.tipo == 'TALLER' %}TALLER{% else %}ACTIVIDAD{% endif %}</span>
+            <h2 style="color: #002F5F; margin: 10px 0 16px; font-size: 24px; line-height: 1.25;">{{ actividad.titulo }}</h2>
+            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Hola {{ alumno.nombres|default:"" }},</p>
+            {% if actividad.descripcion %}<p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">{{ actividad.descripcion|linebreaksbr }}</p>{% endif %}
 
-            <p style="font-size: 16px; line-height: 1.6;">
-                Hola {{ alumno.nombres|default:"" }},
-            </p>
-
-            <p style="font-size: 16px; line-height: 1.6;">
-                {{ actividad.descripcion }}
-            </p>
-
-            <!-- Cronograma -->
-            <div style="background-color: #f9f9f9; border-left: 4px solid #FFC107; padding: 15px; margin-bottom: 20px;">
-                <h3 style="margin: 0 0 10px 0; color: #003366;">A continuación, detallamos el cronograma de las
-                    sesiones:</h3>
-
-                {% if actividad.cronograma %}
-                <p style="margin: 5px 0;"><strong>Fechas:</strong> {{ actividad.cronograma }}</p>
-                {% else %}
-                <p style="margin: 5px 0;"><strong>Fecha:</strong> {{ actividad.fecha_inicio|date:"d/m/Y" }}</p>
-                {% endif %}
-
-                <p style="margin: 5px 0;"><strong>Lugar:</strong> {{ actividad.lugar_completo }}</p>
-                <p style="margin: 5px 0;"><strong>Horario:</strong> {{ actividad.fecha_inicio|date:"H:i" }} a {{actividad.fecha_fin|date:"H:i" }} horas.</p>
-            </div>
+            {% include 'gestion/correos/_datos_actividad.html' %}
 
 {% if actividad.tipo == 'TALLER' %}
-            <p style="font-size: 16px; line-height: 1.6;">Asegura tu cupo registrándote en el siguiente enlace:</p>
-
-            <div style="text-align: center; margin-bottom: 20px;">
+            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Los cupos son limitados. Asegura el tuyo inscribiéndote aquí:</p>
+            <div style="text-align: center; margin: 0 0 22px;">
                 <a href="{{ site_url }}/taller/{{ actividad.id }}/"
-                    style="background-color: #FFC107; color: #003366; padding: 15px 30px; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 16px;">
-                    Inscribirme
-                </a>
+                    style="display: inline-block; background-color: #FBB800; color: #002F5F; padding: 14px 32px; text-decoration: none; font-weight: bold; border-radius: 6px; font-size: 16px;">Inscribirme</a>
             </div>
 {% else %}
-            <p style="font-size: 16px; line-height: 1.6;">Esta actividad no requiere inscripción previa: solo tienes que asistir.</p>
-
-            <div style="text-align: center; margin-bottom: 20px;">
+            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Esta actividad no requiere inscripción previa: solo tienes que asistir.</p>
+            <div style="text-align: center; margin: 0 0 22px;">
                 <a href="{{ site_url }}/actividad/{{ actividad.id }}/"
-                    style="background-color: #FFC107; color: #003366; padding: 15px 30px; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 16px;">
-                    Ver detalles
-                </a>
+                    style="display: inline-block; background-color: #FBB800; color: #002F5F; padding: 14px 32px; text-decoration: none; font-weight: bold; border-radius: 6px; font-size: 16px;">Ver detalles</a>
             </div>
 {% endif %}
+            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">¡No dejes pasar esta oportunidad de participar y potenciar tu desarrollo personal y profesional! ¡Te esperamos!</p>
 
-            <!-- Cierre Genérico -->
-            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
-                ¡No dejes pasar esta oportunidad de participar y potenciar tu desarrollo personal y profesional! ¡Te
-                esperamos!
+            <p style="font-size: 12px; line-height: 1.5; color: #6b7785; margin: 0;">
+                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>{{ site_url }}/{% if actividad.tipo == 'TALLER' %}taller{% else %}actividad{% endif %}/{{ actividad.id }}/
             </p>
-
-{% if actividad.tipo == 'TALLER' %}
-            <p style="font-size: 12px; color: #888888;">
-                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
-                {{ site_url }}/taller/{{ actividad.id }}/
-            </p>
-{% else %}
-            <p style="font-size: 12px; color: #888888;">
-                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
-                {{ site_url }}/actividad/{{ actividad.id }}/
-            </p>
-{% endif %}
         </div>
 
-        <!-- Footer -->
-        <div style="background-color: #f4f4f4; padding: 15px; text-align: center; font-size: 12px; color: #888888;">
-            Punto Participa - Duoc UC Sede Alameda
-        </div>
+        {% include 'gestion/correos/_pie.html' %}
     </div>
 </body>
 

@@ -2338,19 +2338,109 @@ td.celda-texto {
     box-shadow: var(--shadow-md);
 }
 
-.event-banner {
-    height: 140px;
-    padding: 20px;
+/* Portada: la imagen de la actividad con el tipo y el título encima. Sin imagen, franja azul con la mascota. */
+.event-portada {
+    position: relative;
+    min-height: 150px;
     display: flex;
-    align-items: end;
-    background:
-        linear-gradient(
-            110deg,
-            rgba(0, 47, 95, 0.95),
-            rgba(0, 84, 154, 0.72)
-        ),
-        linear-gradient(35deg, #d2dce4, #7f9db6);
+    align-items: flex-end;
+    overflow: hidden;
+    background: linear-gradient(110deg, var(--navy) 0%, #00549a 100%);
     color: #fff;
+}
+
+.event-portada--imagen {
+    min-height: 0;
+    aspect-ratio: 16 / 8;
+    max-height: 300px;
+    background: var(--navy);
+}
+
+.event-portada__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Degradado para que el título se lea sobre cualquier foto */
+.event-portada--imagen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0, 31, 63, 0) 35%, rgba(0, 31, 63, 0.88) 100%);
+}
+
+.event-portada__mascota {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    width: 120px;
+    transform: translateY(-50%);
+    opacity: 0.95;
+}
+
+.event-portada__texto {
+    position: relative;
+    z-index: 1;
+    padding: 18px 20px;
+    max-width: calc(100% - 130px);
+}
+
+.event-portada--imagen .event-portada__texto {
+    max-width: none;
+}
+
+.event-portada__tipo {
+    display: inline-block;
+    margin-bottom: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--gold);
+    color: var(--navy);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.event-portada h1 {
+    margin: 0;
+    color: #fff;
+    font-size: clamp(22px, 5vw, 30px);
+    line-height: 1.15;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.event-copy p {
+    margin: 0 0 10px;
+    line-height: 1.5;
+}
+
+.event-copy__saludo {
+    margin: 0 0 8px;
+    color: var(--navy);
+    font-size: 22px;
+}
+
+/* Casilla de la Política de Privacidad en las páginas públicas */
+.casilla {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 14px;
+    line-height: 1.4;
+    cursor: pointer;
+}
+
+.casilla input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    min-height: 0;
+    margin: 1px 0 0;
+    padding: 0;
+    accent-color: var(--navy);
 }
 
 .event-body {
@@ -2397,6 +2487,44 @@ td.celda-texto {
     display: grid;
     font-size: 11.5px;
     font-weight: 700;
+}
+
+.seat-note strong {
+    font-size: 26px;
+    line-height: 1.1;
+}
+
+.seat-note__ultimos {
+    color: var(--red);
+}
+
+/* Estados de las páginas públicas (sin cupos, realizado, cancelado): mensaje grande y con color */
+.state-box {
+    text-align: center;
+    display: grid;
+    gap: 6px;
+    padding: 6px 0;
+}
+
+.state-box h3 {
+    margin: 4px 0 0;
+    font-size: 24px;
+    line-height: 1.15;
+    color: var(--muted);
+}
+
+.state-box.error h3 {
+    color: var(--red);
+}
+
+.state-box p {
+    margin: 0;
+    color: var(--muted);
+}
+
+.state-box.neutral .state-icon {
+    background: var(--surface);
+    color: var(--muted);
 }
 
 /* Lista de espera en la página de un taller lleno: se distingue de la inscripción */

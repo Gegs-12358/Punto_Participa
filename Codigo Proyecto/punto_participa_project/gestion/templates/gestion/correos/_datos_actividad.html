@@ -1,0 +1,10 @@
+{# Fecha, horario y lugar de la actividad, igual en todos los correos. #}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f7fb; border-left: 4px solid #FBB800; border-radius: 4px; margin: 0 0 22px;">
+    <tr><td style="padding: 14px 16px; font-size: 15px; line-height: 1.7; color: #1f2d3d;">
+        <strong style="color: #002F5F;">Fecha:</strong> {{ actividad.fecha_inicio|date:"l j \d\e F \d\e Y"|capfirst }}<br>
+        <strong style="color: #002F5F;">Horario:</strong> {{ actividad.fecha_inicio|date:"H:i" }} a {{ actividad.fecha_fin|date:"H:i" }} horas<br>
+        <strong style="color: #002F5F;">Lugar:</strong> {{ actividad.lugar_completo }}
+        {% if actividad.tipo == 'INVITACION' and actividad.acompanantes_por_invitado %}<br>
+        <strong style="color: #002F5F;">Acompañantes:</strong> puedes venir con hasta {{ actividad.acompanantes_por_invitado }}.{% endif %}
+    </td></tr>
+</table>

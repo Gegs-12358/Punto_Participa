@@ -26,15 +26,7 @@
 
             <div class="event-card card">
 
-                <img class="event-logo" src="{% static 'gestion/img/logo.png' %}" alt="Punto Participa Duoc UC"
-                    onerror="this.style.display='none'">
-
-                <div class="event-banner">
-                    <div>
-                        <span>{{ actividad.get_tipo_display|upper }}</span>
-                        <h2>{{ actividad.titulo }}</h2>
-                    </div>
-                </div>
+                {% include 'gestion/includes/portada_actividad.html' %}
 
                 <div class="event-body">
 
@@ -44,12 +36,7 @@
                     </div>
 
                     <div class="event-copy">
-                        <h1>{{ actividad.titulo }}</h1>
-                        {% if actividad.imagen %}
-                        <img src="{{ actividad.imagen.url }}" alt="{{ actividad.titulo }}"
-                            style="max-width: 100%; border-radius: 8px;">
-                        {% endif %}
-                        <p>{{ actividad.descripcion }}</p>
+                        {% if actividad.descripcion %}<p>{{ actividad.descripcion|linebreaksbr }}</p>{% endif %}
                         <ul>
                             <li><strong>{% icono "actividad" "icono--texto" %} Fecha:</strong>
                                 {% if actividad.cronograma %}
@@ -70,20 +57,27 @@
                             <small>Esta actividad no requiere inscripción previa: solo tienes que asistir.</small>
                         </div>
                         {% elif estado == 'finalizada' %}
-                        <div class="alert alert-danger" role="status">
-                            <div>
-                                <strong>Actividad finalizada</strong>
-                                <span>Esta actividad ya se realizó.</span>
-                            </div>
+                        <div class="state-box neutral" role="status">
+                            <div class="state-icon">{% icono "reloj" %}</div>
+                            <h3>Evento ya realizado</h3>
+                            <p>Esta actividad ya se realizó.</p>
                         </div>
                         {% else %}
-                        <div class="alert alert-danger" role="status">
-                            <div>
-                                <strong>Actividad cancelada</strong>
-                                <span>Esta actividad fue cancelada. Si tienes dudas, contacta a Punto Estudiantil.</span>
-                            </div>
+                        <div class="state-box error" role="status">
+                            <div class="state-icon">{% icono "alerta" %}</div>
+                            <h3>Actividad cancelada</h3>
+                            <p>Si tienes dudas, contacta a Punto Estudiantil.</p>
                         </div>
                         {% endif %}
+                    </div>
+                </div>
+
+                <div class="event-footer">
+                    <div>Contacta Punto Estudiantil: <a href="mailto:puntoestu@duoc.cl">puntoestu@duoc.cl</a></div>
+                    <div>
+                        <a href="https://www.duoc.cl" target="_blank" rel="noopener">www.duoc.cl</a>
+                        <span> | </span>
+                        <a href="{% url 'privacidad' %}">Política de Privacidad</a>
                     </div>
                 </div>
 
