@@ -46,7 +46,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**. La entrega está fijada para el 1 de diciembre de 2026.
 
-* Suite de pruebas automatizadas: 702 tests (detalle en la sección 9).
+* Suite de pruebas automatizadas: 697 tests (detalle en la sección 9).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 * El historial detallado de cambios está en [`docs/CAMBIOS.md`](Codigo%20Proyecto/punto_participa_project/docs/CAMBIOS.md) y la guía de estilo de las pantallas en [`docs/GUIA_ESTILO.md`](Codigo%20Proyecto/punto_participa_project/docs/GUIA_ESTILO.md).
 
@@ -373,7 +373,7 @@ Codigo Proyecto/
 
 ## 9. Pruebas automatizadas
 
-La suite tiene **702 tests** y se ejecuta con:
+La suite tiene **697 tests** y se ejecuta con:
 
 ```bash
 docker compose exec web python manage.py test --parallel --noinput

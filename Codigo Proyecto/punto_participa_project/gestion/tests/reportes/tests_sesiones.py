@@ -76,8 +76,7 @@ class CumplimientoTests(BaseCumplimientoTests):
         self.assertEqual((ana['sesiones_asistidas'], ana['porcentaje'], ana['cumple']), ([1, 4], 50, False))
         self.assertEqual((sin['asistidas'], sin['cumple']), (0, False))
         self.assertEqual(juan['marcas'], [True, True, True, False])
-
-    def test_subir_el_minimo_cambia_quien_cumple(self):
+        # Subir el mínimo a 100 % deja a todos sin cumplir
         Actividad.objects.filter(pk=self.actividad.pk).update(asistencia_minima=100)
         self.actividad.refresh_from_db()
         self.assertFalse(any(p['cumple'] for p in cumplimiento(self.actividad)))

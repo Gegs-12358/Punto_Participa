@@ -73,7 +73,8 @@ class HoraAlEditarTests(BaseSesionesForm):
 
 class CrearConSesionesTests(BaseSesionesForm):
     def test_crea_las_sesiones_en_orden_y_la_actividad_termina_con_la_ultima(self):
-        r = self.crear(sesiones=[self.fila(19, '15:00', '17:00'), self.fila(12)],
+        # Una fila vacía (se agregó y no se llenó) se ignora
+        r = self.crear(sesiones=[self.fila(19, '15:00', '17:00'), ('', '', '', ''), self.fila(12)],
                        asistencia_minima='80')
         self.assertTrue(r.json()['success'], r.json())
         act = Actividad.objects.get(titulo='Taller de oratoria')
@@ -90,11 +91,6 @@ class CrearConSesionesTests(BaseSesionesForm):
         act = Actividad.objects.get(titulo='Taller de oratoria')
         self.assertEqual(act.sesiones.count(), 1)
         self.assertEqual(act.asistencia_minima, 75)
-
-    def test_filas_vacias_se_ignoran(self):
-        r = self.crear(sesiones=[('', '', '', ''), self.fila(12)])
-        self.assertTrue(r.json()['success'], r.json())
-        self.assertEqual(Actividad.objects.get(titulo='Taller de oratoria').sesiones.count(), 2)
 
     def test_sesiones_invalidas_se_rechazan_con_un_mensaje_claro(self):
         casos = [
@@ -146,12 +142,15 @@ class EditarSesionesTests(BaseSesionesForm):
         self.assertEqual(Sesion.objects.get(pk=self.s3.pk).numero, 4)
         self.assertEqual(AsistenciaSesion.objects.get(alumno=self.alumno).sesion_id, self.s3.pk)
 
-    def test_quitar_una_sesion_sin_asistencias(self):
+    def test_quitar_sesiones_sin_asistencias(self):
         r = self.editar(self.act, sesiones=[self.fila(12, id_=self.s2.pk)])
         self.assertTrue(r.json()['success'], r.json())
         self.assertFalse(Sesion.objects.filter(pk=self.s3.pk).exists())
         self.act.refresh_from_db()
         self.assertEqual(self.act.fecha_fin, Sesion.objects.get(pk=self.s2.pk).fecha_fin)
+        # Y quitando todas las adicionales queda de una sesión
+        self.assertTrue(self.editar(self.act).json()['success'])
+        self.assertEqual(list(self.act.sesiones.values_list('pk', flat=True)), [self.s1.pk])
 
     def test_no_se_quita_una_sesion_con_asistencias(self):
         AsistenciaSesion.objects.create(sesion=self.s3, alumno=self.alumno)
@@ -159,11 +158,6 @@ class EditarSesionesTests(BaseSesionesForm):
         self.assertFalse(r.json()['success'])
         self.assertIn('ya tiene asistencias registradas', r.json()['html'])
         self.assertTrue(Sesion.objects.filter(pk=self.s3.pk).exists())
-
-    def test_quitar_todas_las_adicionales_la_deja_de_una_sesion(self):
-        r = self.editar(self.act)
-        self.assertTrue(r.json()['success'], r.json())
-        self.assertEqual(list(self.act.sesiones.values_list('pk', flat=True)), [self.s1.pk])
 
     def test_sesiones_ya_realizadas_que_no_cambian_no_se_rechazan(self):
         # Un taller a mitad de camino: las dos primeras sesiones ya pasaron y se edita otra cosa
@@ -219,7 +213,7 @@ class MostrarSesionesTests(BaseSesionesForm):
         self.crear(sesiones=[self.fila(12, '15:00', '17:30')], tipo='MASIVA')
         self.act = Actividad.objects.get(titulo='Taller de oratoria')
 
-    def test_pagina_publica_detalle_y_correo_listan_las_sesiones(self):
+    def test_pagina_publica_detalle_y_correo_listan_las_sesiones_solo_si_hay_varias(self):
         publica = self.client.get(reverse('actividad_publica', args=[self.act.pk]))
         self.assertContains(publica, '2 sesiones:')
         self.assertContains(publica, '15:00 a 17:30')
@@ -234,7 +228,8 @@ class MostrarSesionesTests(BaseSesionesForm):
         self.assertIn('2. ', html)
         self.assertEqual(len(mail.outbox), 0)
 
-    def test_una_actividad_de_una_sesion_se_muestra_como_siempre(self):
-        publica = self.client.get(reverse('actividad_publica', args=[self.actividad_masiva.pk]))
-        self.assertNotContains(publica, 'sesiones:')
-        self.assertContains(publica, 'Fecha:')
+        # Una actividad de una sola sesión se muestra como siempre
+        una = self.client.get(reverse('actividad_publica', args=[self.actividad_masiva.pk]))
+        self.assertNotContains(una, 'sesiones:')
+        self.assertContains(una, 'Fecha:')
+

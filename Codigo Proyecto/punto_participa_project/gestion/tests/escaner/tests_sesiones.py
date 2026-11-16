@@ -95,11 +95,9 @@ class SesionParaTests(BaseSistemaTestCase):
         for caso, momento, esperada in casos:
             with self.subTest(caso=caso):
                 self.assertEqual(self.actividad_masiva.sesion_para(momento), esperada)
-
-    def test_en_curso_solo_durante_una_sesion(self):
+        # "En curso" solo durante una sesión, no entre dos
         self.assertTrue(self.actividad_masiva.sesion_en_curso(a_las(0, 10)))
-        self.assertFalse(self.actividad_masiva.sesion_en_curso(a_las(0, 13)))   # entre dos sesiones
-
+        self.assertFalse(self.actividad_masiva.sesion_en_curso(a_las(0, 13)))
 
 class RegistrosCreadosPorOtroCaminoTests(BaseSistemaTestCase):
     """Datos de prueba y admin: toda asistencia o ingreso queda también en su sesión."""

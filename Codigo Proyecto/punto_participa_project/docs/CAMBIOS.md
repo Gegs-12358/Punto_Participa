@@ -22,7 +22,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
 > exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
-> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 702 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 697 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -980,7 +980,17 @@ para los certificados, y la asistencia por sesión en Participantes, Reportes y 
 Con esto queda completo lo de varias sesiones. El sistema entrega la lista de quienes cumplen; los certificados
 se siguen haciendo fuera del sistema, como se decidió. Pruebas en `reportes/tests_sesiones`.
 
-### 18.24 Pendiente
+### 18.24 Revisión de las pruebas de varias sesiones (16/11/2026)
+
+Se midió qué líneas del sistema recorre cada una de las 49 pruebas nuevas de las partes 1 a 3, comparándolas con
+las 320 de escáner, actividades, reportes, inscripciones e invitaciones. Ninguna repite una prueba que ya
+existía: las que pasan por el mismo código revisan algo distinto (75 % por defecto, inscripción durante la
+primera sesión, que la sesión siga las fechas de la actividad, la conversión de los datos). Sí había cinco pares
+dentro de las nuevas que eran la misma acción con una variante pequeña; se juntaron conservando todas las
+revisiones (filas vacías, quitar todas las sesiones, una actividad de una sola sesión en pantalla, "en curso" y
+subir el mínimo). Quedan 697 pruebas.
+
+### 18.25 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".
