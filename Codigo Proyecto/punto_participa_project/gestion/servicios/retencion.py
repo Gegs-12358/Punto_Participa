@@ -31,7 +31,7 @@ from django.db import transaction
 from django.template.loader import render_to_string
 from django.utils import timezone
 
-from .models import (Acompanante, Actividad, Asistencia, AvisoRetencion, Inscripcion, InscripcionCancelada,
+from ..models import (Acompanante, Actividad, Asistencia, AvisoRetencion, Inscripcion, InscripcionCancelada,
                      Invitado, ListaEspera, LogAuditoria, NotificacionCorreo, TurnoEscaneo, UsuarioSistema)
 
 
@@ -103,7 +103,7 @@ def _enviar(aviso, tipo, dias=None):
     enviados = 0
     for perfil in administradores():
         try:
-            html = render_to_string('gestion/email_retencion.html', {**contexto, 'nombre': perfil.user.first_name})
+            html = render_to_string('gestion/correos/retencion.html', {**contexto, 'nombre': perfil.user.first_name})
             texto = (f'{asunto}. Fecha de corte: {aviso.fecha_corte:%d/%m/%Y}. Plazo: {aviso.fecha_programada:%d/%m/%Y}. '
                      f'Revisa el detalle en el correo HTML o en el Inicio del sistema.')
             enviados += send_mail(asunto, texto, settings.DEFAULT_FROM_EMAIL, [perfil.user.email],

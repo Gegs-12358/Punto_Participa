@@ -23,8 +23,8 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from .importador_alumnos import ArchivoInvalido, leer_filas  # noqa: F401  (ArchivoInvalido se reexporta)
-from .models import Rol, UsuarioSistema
-from .utils import limpiar_texto, normalizar_documento
+from ..models import Rol, UsuarioSistema
+from ..utils import limpiar_texto, normalizar_documento
 
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ class Resultado:
 
 def analizar(filas):
     """Valida las filas sin escribir nada. Devuelve un Resultado."""
-    from .views.usuarios import _username_valido
+    from ..views.usuarios import _username_valido
     res = Resultado(total=len(filas))
     roles = {_sin_tildes(r.nombre): r for r in Rol.objects.all()}
     nombres_roles = ', '.join(sorted(r.nombre for r in roles.values()))
@@ -127,7 +127,7 @@ def enviar_bienvenida(user, rol):
     enlace = enlace_crear_clave(user)
     dias = max(1, round(settings.PASSWORD_RESET_TIMEOUT / 86400))
     try:
-        html = render_to_string('gestion/email_bienvenida_usuario.html',
+        html = render_to_string('gestion/correos/bienvenida_usuario.html',
                                 {'user': user, 'rol': rol, 'enlace': enlace, 'dias': dias})
         n = send_mail(subject='Tu cuenta en Punto Participa',
                       message=(f'Hola {user.first_name}, se creó tu cuenta en Punto Participa con el rol {rol}. '

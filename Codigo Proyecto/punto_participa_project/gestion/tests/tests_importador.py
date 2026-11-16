@@ -17,7 +17,7 @@ from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 
-from gestion.importador_alumnos import (
+from gestion.servicios.importador_alumnos import (
     ArchivoInvalido, Resultado, analizar, aplicar, bloqueo_masivo, leer_filas,
 )
 from gestion.management.commands.seed_data import calcular_dv
@@ -278,11 +278,11 @@ class LecturaDeArchivoTests(ImportadorBase):
 
     def test_limite_de_tamano_y_de_filas(self):
         texto = (';'.join(COLS) + '\n' + ';'.join(['x'] * 7) + '\n').encode()
-        with mock.patch('gestion.importador_alumnos.MAX_BYTES', 10):
+        with mock.patch('gestion.servicios.importador_alumnos.MAX_BYTES', 10):
             with self.assertRaises(ArchivoInvalido):
                 leer_filas(io.BytesIO(texto), 'datos.csv')
         texto3 = (';'.join(COLS) + '\n' + (';'.join(['x'] * 7) + '\n') * 3).encode()
-        with mock.patch('gestion.importador_alumnos.MAX_FILAS', 2):
+        with mock.patch('gestion.servicios.importador_alumnos.MAX_FILAS', 2):
             with self.assertRaises(ArchivoInvalido):
                 leer_filas(io.BytesIO(texto3), 'datos.csv')
 
@@ -293,7 +293,7 @@ class LecturaDeArchivoTests(ImportadorBase):
         buf = io.BytesIO()
         wb.save(buf)
         buf.seek(0)
-        with mock.patch('gestion.importador_alumnos.MAX_BYTES_DESCOMPRIMIDO', 10):
+        with mock.patch('gestion.servicios.importador_alumnos.MAX_BYTES_DESCOMPRIMIDO', 10):
             with self.assertRaises(ArchivoInvalido) as ctx:
                 leer_filas(buf, 'nomina.xlsx')
         self.assertIn('descomprimido', str(ctx.exception))

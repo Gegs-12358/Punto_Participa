@@ -24,8 +24,8 @@ from django.core.validators import validate_email
 from django.db import transaction
 
 from .importador_alumnos import ArchivoInvalido, inferir_tipo, leer_filas
-from .models import Acompanante, Alumno, Carrera, Invitado, Jornada
-from .utils import limpiar_texto, normalizar_documento, validar_documento, validar_rut
+from ..models import Acompanante, Alumno, Carrera, Invitado, Jornada
+from ..utils import limpiar_texto, normalizar_documento, validar_documento, validar_rut
 
 COLUMNAS_INVITADOS = ['rut', 'nombres', 'carrera', 'correo']
 _NOMBRE_COLUMNA = {'rut': 'rut', 'nombres': 'nombre', 'carrera': 'carrera', 'correo': 'correo'}

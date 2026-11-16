@@ -803,6 +803,9 @@ Sin cambios en lo que hace el sistema (las 747 pruebas pasan igual y las URL con
   (igual a `_filtrar_por_foto`), `_id_valido` y `_id_o_none` (iguales a `utils.id_o_none`), el largo máximo
   del nombre del acompañante definido dos veces y un `import re` repetido en `utils.py`. Cada archivo de vistas
   tiene su propio registro de errores (`logger`).
+- **Servicios y correos:** los 7 módulos de lógica que no dependen de una pantalla (anonimización,
+  cancelaciones, importador de alumnos, invitados, lista de espera, retención y usuarios masivos) pasaron a
+  `gestion/servicios/`, y las 7 plantillas de correo a `templates/gestion/correos/` (sin el prefijo `email_`).
 - Para correr una prueba suelta: `python manage.py test gestion.tests.tests_escaner_turno`.
 
 ### 18.14 Pendiente

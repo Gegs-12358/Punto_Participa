@@ -231,7 +231,7 @@ El servicio `tareas` revisa una vez al día (cada `TAREAS_CADA_HORAS` horas) si 
 | --- | --- |
 | Ver qué haría hoy, sin enviar correos ni borrar | `docker compose exec web python manage.py retencion --simular` |
 | Ver lo que está haciendo | `docker compose logs tareas --tail 20` |
-| Aplicar cambios en `retencion.py` o en el `.env` | `docker compose up -d --force-recreate tareas` |
+| Aplicar cambios en `servicios/retencion.py` o en el `.env` | `docker compose up -d --force-recreate tareas` |
 
 ### Advertencia sobre los datos
 
@@ -296,18 +296,19 @@ Codigo Proyecto/
     │   │   ├── alumnos.py         Directorio, ficha, bloqueo, anonimización e importación de la nómina
     │   │   ├── catalogos.py       Lugares, escuelas y carreras
     │   │   └── auditoria.py       Pantalla Auditoría
-    │   ├── importador_alumnos.py  Lectura y validación de la nómina
-    │   ├── usuarios_masivos.py    Lectura, validación y creación de usuarios desde Excel o CSV
-    │   ├── invitados.py       Lectura y validación de la lista de invitados
-    │   ├── cancelaciones.py   Cancelación de inscripciones y correo de confirmación
-    │   ├── lista_espera.py    Lista de espera y aviso cuando se libera un cupo
-    │   ├── retencion.py       Avisos de retención y borrado de los datos de más de dos años
-    │   ├── anonimizacion.py   Anonimización de un alumno
+    │   ├── servicios/         Lógica que no depende de una pantalla:
+    │   │   ├── importador_alumnos.py  Lectura y validación de la nómina
+    │   │   ├── usuarios_masivos.py    Lectura, validación y creación de usuarios desde Excel o CSV
+    │   │   ├── invitados.py       Lectura y validación de la lista de invitados
+    │   │   ├── cancelaciones.py   Cancelación de inscripciones y correo de confirmación
+    │   │   ├── lista_espera.py    Lista de espera y aviso cuando se libera un cupo
+    │   │   ├── retencion.py       Avisos de retención y borrado de los datos de más de dos años
+    │   │   └── anonimizacion.py   Anonimización de un alumno
     │   ├── permissions.py, decorators.py, utils.py  Permisos por rol, decoradores y utilidades
     │   ├── management/commands/   seed_data, perf_seed, importar_alumnos y retencion
     │   ├── migrations/        Migraciones de la base de datos
     │   ├── static/            JavaScript, CSS, imágenes y Chart.js
-    │   ├── templates/         Plantillas HTML
+    │   ├── templates/         Plantillas HTML (los correos, en templates/gestion/correos/)
     │   ├── templatetags/      Íconos, filtros y piezas comunes de interfaz
     │   └── tests/             Pruebas automatizadas (tests_*.py)
     ├── punto_participa/       Configuración del proyecto Django

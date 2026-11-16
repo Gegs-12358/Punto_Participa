@@ -15,7 +15,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Inscripcion, ListaEspera
+from ..models import Inscripcion, ListaEspera
 
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ def avisar(actividad):
     for registro in pendientes:
         alumno = registro.alumno
         try:
-            html = render_to_string('gestion/email_lista_espera.html',
+            html = render_to_string('gestion/correos/lista_espera.html',
                                     {'actividad': actividad, 'alumno': alumno, 'enlace': enlace})
             n = send_mail(subject=f'Se liberó un cupo: {actividad.titulo}',
                           message=(f'Hola {alumno.nombres}, se liberó un cupo en {actividad.titulo}. Los cupos se '

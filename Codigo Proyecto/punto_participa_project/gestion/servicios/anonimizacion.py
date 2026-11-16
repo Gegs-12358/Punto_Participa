@@ -16,8 +16,8 @@ from django.db import transaction
 from django.db.models import Q, TextField
 from django.db.models.functions import Cast
 
-from .models import Alumno, Invitado, ListaEspera, LogAuditoria
-from .utils import formatear_rut
+from ..models import Alumno, Invitado, ListaEspera, LogAuditoria
+from ..utils import formatear_rut
 
 NOMBRE = 'Alumno'
 APELLIDO = 'anonimizado'

@@ -18,9 +18,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from ..cancelaciones import alumno_puede_cancelar, cancelar, limite_cancelacion, NoSePuedeCancelar
+from ..servicios.cancelaciones import alumno_puede_cancelar, cancelar, limite_cancelacion, NoSePuedeCancelar
 from ..decorators import role_required
-from ..lista_espera import avisar as avisar_lista_espera
+from ..servicios.lista_espera import avisar as avisar_lista_espera
 from ..models import Actividad, Inscripcion, InscripcionCancelada
 from ..permissions import puede_gestionar_actividad
 from ..utils import buscar_alumno_por_documento, limpiar_documento
@@ -56,7 +56,7 @@ def _registrar_fallo_inscripcion(request):
 
 
 def _render_inscripcion(request, actividad, estado='con_cupos', error=None, exito=None):
-    from ..lista_espera import acepta_anotaciones
+    from ..servicios.lista_espera import acepta_anotaciones
     ctx = {'actividad': actividad, 'estado': estado,
            'acepta_espera': estado == 'sin_cupos' and acepta_anotaciones(actividad)}
     if error:
@@ -136,7 +136,7 @@ def inscripcion_taller(request, actividad_id):
 
             inscripcion = Inscripcion.objects.create(actividad=act_lock, alumno=alumno, estado='CONFIRMADA')
             cupos_restantes = act_lock.cupos_disponibles
-            from ..lista_espera import quitar as quitar_de_lista_espera
+            from ..servicios.lista_espera import quitar as quitar_de_lista_espera
             quitar_de_lista_espera(act_lock, alumno)
     except IntegrityError:
         return _render_inscripcion(request, actividad, 'con_cupos', 'Ya estás inscrito en este taller.')
@@ -151,7 +151,7 @@ def inscripcion_taller(request, actividad_id):
         )
 
     actividad.cupos_disponibles = cupos_restantes
-    from ..cancelaciones import enviar_confirmacion, ocultar_correo
+    from ..servicios.cancelaciones import enviar_confirmacion, ocultar_correo
     if enviar_confirmacion(inscripcion):
         aviso = (f' Te enviamos la confirmación a {ocultar_correo(alumno.correo)}, '
                  'con el enlace para cancelar si no puedes asistir.')
@@ -163,8 +163,8 @@ def inscripcion_taller(request, actividad_id):
 
 def _anotar_lista_espera(request, actividad):
     """Anota al estudiante en la lista de espera de un taller sin cupos."""
-    from ..cancelaciones import ocultar_correo
-    from ..lista_espera import acepta_anotaciones, anotar
+    from ..servicios.cancelaciones import ocultar_correo
+    from ..servicios.lista_espera import acepta_anotaciones, anotar
 
     def error(texto):
         return _render_inscripcion(request, actividad, 'sin_cupos', texto)

@@ -60,7 +60,7 @@ class CorreoVerDetallesTests(TestCase):
             correo='ana@example.com', carrera='Informática', jornada='Diurna')
 
     def _html(self, actividad):
-        return render_to_string('gestion/email_invitacion.html', {
+        return render_to_string('gestion/correos/invitacion.html', {
             'actividad': actividad, 'alumno': self.alumno, 'site_url': 'http://sitio.test'})
 
     def test_la_masiva_lleva_ver_detalles_y_ningun_enlace_de_inscripcion(self):

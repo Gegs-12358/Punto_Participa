@@ -11,10 +11,10 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from ..anonimizacion import anonimizar, esta_anonimizado
+from ..servicios.anonimizacion import anonimizar, esta_anonimizado
 from ..models import (Acompanante, Actividad, Alumno, Asistencia, AvisoRetencion, Inscripcion, Invitado,
                      ListaEspera, LogAuditoria)
-from ..retencion import ciclo, fecha_corte
+from ..servicios.retencion import ciclo, fecha_corte
 from .tests_integrales import BaseSistemaTestCase
 
 

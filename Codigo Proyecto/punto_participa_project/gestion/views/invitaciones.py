@@ -24,7 +24,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from ..decorators import role_required
-from ..invitados import analizar, aplicar, ArchivoInvalido, documento_valido, leer, MAX_NOMBRE_ACOMPANANTE
+from ..servicios.invitados import analizar, aplicar, ArchivoInvalido, documento_valido, leer, MAX_NOMBRE_ACOMPANANTE
 from ..models import Acompanante, Actividad, Alumno, Invitado, NotificacionCorreo
 from ..permissions import puede_gestionar_actividad
 from ..utils import formatear_rut, id_o_none, limpiar_texto, normalizar_documento, paginar
@@ -71,7 +71,7 @@ def enviar_invitaciones(request):
         enviados = fallidos = 0
         for alumno in alumnos:
             try:
-                html = render_to_string('gestion/email_invitacion.html', {
+                html = render_to_string('gestion/correos/invitacion.html', {
                     'actividad': actividad, 'alumno': alumno, 'site_url': settings.SITE_URL,
                 })
                 n = send_mail(
@@ -124,7 +124,7 @@ def previsualizar_invitacion(request, pk):
         if not alumno:
             return _error_json('No hay alumnos que coincidan con los filtros.')
 
-        html = render_to_string('gestion/email_invitacion.html', {
+        html = render_to_string('gestion/correos/invitacion.html', {
             'actividad': actividad, 'alumno': alumno, 'site_url': settings.SITE_URL,
         })
         return JsonResponse({
@@ -292,7 +292,7 @@ def enviar_invitaciones_lista(request, pk):
     for invitado in destinatarios:
         enlace = enlace_invitacion(invitado)
         try:
-            html = render_to_string('gestion/email_invitacion_especial.html',
+            html = render_to_string('gestion/correos/invitacion_especial.html',
                                     {'actividad': actividad, 'invitado': invitado, 'enlace': enlace})
             n = send_mail(
                 subject=f'Invitación: {actividad.titulo}',

@@ -19,5 +19,6 @@ Vistas de la aplicación, separadas por tema. Cada archivo agrupa lo que hace al
   auditoria.py           Pantalla Auditoría y sus filtros.
 
 Las URL están en gestion/urls.py. La lógica que no depende de una pantalla (retención, cancelaciones,
-lista de espera, importadores, invitados) está en los módulos de gestion/.
+lista de espera, importadores, invitados) está en gestion/servicios/. Los correos están en
+templates/gestion/correos/.
 """

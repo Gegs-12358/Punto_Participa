@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from ..decorators import role_required
-from ..importador_alumnos import analizar, aplicar, ArchivoInvalido, bloqueo_masivo, leer_filas, MAX_BYTES
+from ..servicios.importador_alumnos import analizar, aplicar, ArchivoInvalido, bloqueo_masivo, leer_filas, MAX_BYTES
 from ..models import Alumno, Asistencia, Carrera, Inscripcion, Jornada
 from ..utils import limpiar_texto, normalizar_documento, paginar
 
@@ -106,7 +106,7 @@ def _historial(alumno):
 def alumno_detalle(request, pk):
     alumno = get_object_or_404(Alumno, pk=pk)
     historial = _historial(alumno)
-    from ..anonimizacion import esta_anonimizado
+    from ..servicios.anonimizacion import esta_anonimizado
     return render(request, 'gestion/alumno_detalle.html', {
         'alumno': alumno,
         'anonimizado': esta_anonimizado(alumno),
@@ -131,7 +131,7 @@ def alumno_bloqueo(request, pk):
     volver = 'alumno_detalle' if request.POST.get('volver') == 'detalle' else 'lista_alumnos'
     destino = redirect(volver, pk=alumno.pk) if volver == 'alumno_detalle' else redirect(volver)
     nombre = f'{alumno.nombres} {alumno.apellidos}'
-    from ..anonimizacion import esta_anonimizado
+    from ..servicios.anonimizacion import esta_anonimizado
     if esta_anonimizado(alumno):
         messages.error(request, 'Este alumno fue anonimizado: no se puede bloquear ni desbloquear.')
         return destino
@@ -176,7 +176,7 @@ def alumno_bloqueo(request, pk):
 @require_POST
 def alumno_anonimizar(request, pk):
     """Anonimiza al alumno (irreversible). Hay que escribir ANONIMIZAR para confirmar."""
-    from ..anonimizacion import anonimizar, esta_anonimizado
+    from ..servicios.anonimizacion import anonimizar, esta_anonimizado
     alumno = get_object_or_404(Alumno, pk=pk)
     if esta_anonimizado(alumno):
         messages.info(request, 'Este alumno ya estaba anonimizado.')

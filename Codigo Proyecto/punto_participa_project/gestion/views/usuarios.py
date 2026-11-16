@@ -18,9 +18,9 @@ from django.utils.crypto import get_random_string
 from django.views.decorators.debug import sensitive_post_parameters
 
 from ..decorators import role_required
-from ..importador_alumnos import MAX_BYTES
+from ..servicios.importador_alumnos import MAX_BYTES
 from ..models import LogAuditoria, Rol, UsuarioSistema
-from ..usuarios_masivos import analizar, aplicar, ArchivoInvalido, leer
+from ..servicios.usuarios_masivos import analizar, aplicar, ArchivoInvalido, leer
 from ..utils import id_o_none, limpiar_documento, limpiar_texto, normalizar_documento
 
 from .comun import _error_json, registrar_log

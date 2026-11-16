@@ -153,7 +153,7 @@ def solicitar_recuperacion(request):
             uid = urlsafe_base64_encode(force_bytes(usuario.pk))
             token = PasswordResetTokenGenerator().make_token(usuario)
             enlace = f'{settings.SITE_URL.rstrip("/")}/restablecer-contrasena/{uid}/{token}/'
-            html = render_to_string('gestion/email_recuperacion.html',
+            html = render_to_string('gestion/correos/recuperacion.html',
                                     {'user': usuario, 'enlace': enlace})
             send_mail(
                 subject='Recuperación de contraseña - Punto Participa',

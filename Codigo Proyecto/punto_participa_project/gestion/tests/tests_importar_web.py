@@ -5,7 +5,7 @@ from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 
-from gestion.importador_alumnos import MAX_BYTES
+from gestion.servicios.importador_alumnos import MAX_BYTES
 from gestion.management.commands.seed_data import calcular_dv
 from gestion.models import Alumno, Carrera, Jornada, LogAuditoria, Rol, UsuarioSistema
 

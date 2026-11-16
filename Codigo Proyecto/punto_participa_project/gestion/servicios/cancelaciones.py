@@ -17,7 +17,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Actividad, Asistencia, Inscripcion, InscripcionCancelada
+from ..models import Actividad, Asistencia, Inscripcion, InscripcionCancelada
 
 
 logger = logging.getLogger(__name__)
@@ -116,7 +116,7 @@ def enviar_confirmacion(inscripcion):
     contexto = {'actividad': actividad, 'alumno': alumno, 'enlace': enlace, 'limite': limite,
                 'puede_cancelar': timezone.now() < limite}
     try:
-        html = render_to_string('gestion/email_confirmacion_inscripcion.html', contexto)
+        html = render_to_string('gestion/correos/confirmacion_inscripcion.html', contexto)
         texto = (f'Hola {alumno.nombres}, quedaste inscrito en {actividad.titulo}. '
                  + (f'Si no puedes asistir, cancela en {enlace} para liberar tu cupo.'
                     if contexto['puede_cancelar'] else ''))

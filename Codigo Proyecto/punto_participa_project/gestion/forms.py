@@ -333,7 +333,7 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
     def _leer_lista_invitados(self, tipo):
         """Lee el archivo de invitados (solo si es con invitación). Las filas quedan en
         self.filas_invitados; la vista las revisa y las carga después de guardar."""
-        from .invitados import ArchivoInvalido, leer
+        from .servicios.invitados import ArchivoInvalido, leer
         self.filas_invitados = None
         archivo = self.cleaned_data.get('lista_invitados')
         if tipo != 'INVITACION':

@@ -9,7 +9,7 @@ from django.core import mail
 from django.urls import reverse
 from django.utils import timezone
 
-from ..cancelaciones import NoSePuedeCancelar, cancelar, ocultar_correo
+from ..servicios.cancelaciones import NoSePuedeCancelar, cancelar, ocultar_correo
 from ..models import Alumno, Asistencia, Inscripcion, InscripcionCancelada, LogAuditoria
 from .tests_integrales import BaseSistemaTestCase
 

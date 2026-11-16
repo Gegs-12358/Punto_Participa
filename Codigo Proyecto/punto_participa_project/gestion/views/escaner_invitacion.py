@@ -23,7 +23,7 @@ from django.db import IntegrityError, transaction
 from django.http import JsonResponse
 from django.utils import timezone
 
-from ..invitados import MAX_NOMBRE_ACOMPANANTE
+from ..servicios.invitados import MAX_NOMBRE_ACOMPANANTE
 from ..models import Acompanante, Alumno, Asistencia, foto_academica, Invitado
 from ..utils import buscar_alumno_por_documento, formatear_rut, limpiar_texto, normalizar_documento
 

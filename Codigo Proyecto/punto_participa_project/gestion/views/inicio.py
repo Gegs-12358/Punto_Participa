@@ -15,7 +15,7 @@ from ..decorators import role_required
 from ..models import (Actividad, Asistencia, AvisoRetencion, Carrera, Inscripcion, Jornada, LogAuditoria,
                       NotificacionCorreo)
 from ..permissions import tiene_rol
-from ..retencion import ejecutar, nombre_usuario, YaEjecutado
+from ..servicios.retencion import ejecutar, nombre_usuario, YaEjecutado
 
 from .comun import _colores_por_carrera, _get_carreras_cache, color_para_escuela, colores_escuelas
 from .reportes import _construir_desglose_tipo, _filtrar_por_foto
@@ -254,7 +254,7 @@ def dashboard(request):
     }
 
     if es_admin:
-        from ..retencion import proceso_abierto
+        from ..servicios.retencion import proceso_abierto
         aviso = proceso_abierto()
         if aviso:
             context['retencion'] = {'aviso': aviso, 'faltan': (aviso.fecha_programada - timezone.localdate()).days}

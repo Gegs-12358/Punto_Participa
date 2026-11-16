@@ -8,8 +8,8 @@ from django.core import mail
 from django.urls import reverse
 from django.utils import timezone
 
-from ..cancelaciones import cancelar
-from ..lista_espera import avisar
+from ..servicios.cancelaciones import cancelar
+from ..servicios.lista_espera import avisar
 from ..models import Alumno, Inscripcion, ListaEspera, LogAuditoria
 from .tests_integrales import BaseSistemaTestCase
 

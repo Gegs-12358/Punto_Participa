@@ -34,7 +34,7 @@ class CorreoInvitacionTests(TestCase):
         self.alumno = crear_alumno()
 
     def _html(self, actividad):
-        return render_to_string('gestion/email_invitacion.html', {
+        return render_to_string('gestion/correos/invitacion.html', {
             'actividad': actividad, 'alumno': self.alumno, 'site_url': 'http://sitio.test'})
 
     def test_un_taller_lleva_el_enlace_de_inscripcion(self):

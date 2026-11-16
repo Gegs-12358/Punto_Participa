@@ -30,8 +30,8 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import transaction
 
-from .models import Alumno, Carrera, Jornada
-from .utils import (
+from ..models import Alumno, Carrera, Jornada
+from ..utils import (
     limpiar_texto,
     normalizar_documento,
     validar_documento,

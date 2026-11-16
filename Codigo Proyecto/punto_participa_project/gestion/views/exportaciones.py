@@ -366,7 +366,7 @@ _RESPUESTA = {'CONFIRMADO': 'Confirmó', 'RECHAZADO': 'No asistirá', 'PENDIENTE
 
 def _filas_invitacion(actividades, f, orden, por_id, tipos_doc, metodos):
     """Invitados y acompañantes de las actividades con invitación, para el listado."""
-    from ..importador_alumnos import inferir_tipo
+    from ..servicios.importador_alumnos import inferir_tipo
     filas = []
     invitados = (_invitados(actividades, f).select_related('alumno', 'registrado_por')
                  .prefetch_related('acompanantes__registrado_por'))

@@ -15,7 +15,7 @@ import os
 
 from django.core.management.base import BaseCommand, CommandError
 
-from gestion.importador_alumnos import (
+from gestion.servicios.importador_alumnos import (
     ArchivoInvalido, analizar, aplicar, bloqueo_masivo, leer_filas,
 )
 from gestion.models import LogAuditoria

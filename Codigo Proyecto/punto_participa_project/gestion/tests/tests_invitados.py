@@ -18,7 +18,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ..forms import ActividadForm
-from ..invitados import analizar, aplicar, leer
+from ..servicios.invitados import analizar, aplicar, leer
 from ..management.commands.seed_data import calcular_dv
 from ..models import Actividad, Alumno, Asistencia, Invitado, LogAuditoria, NotificacionCorreo
 from .tests_integrales import BaseSistemaTestCase

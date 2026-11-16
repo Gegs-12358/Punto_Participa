@@ -9,7 +9,7 @@ El servicio "tareas" de docker-compose lo corre una vez al día.
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from gestion import retencion
+from gestion.servicios import retencion
 
 
 class Command(BaseCommand):

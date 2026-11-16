@@ -13,7 +13,7 @@ from datetime import timedelta
 from django.urls import reverse
 from django.utils import timezone
 
-from ..importador_alumnos import analizar, aplicar
+from ..servicios.importador_alumnos import analizar, aplicar
 from ..models import Actividad, Alumno, Asistencia, Inscripcion, LogAuditoria
 from .tests_integrales import BaseSistemaTestCase
 
