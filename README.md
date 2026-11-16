@@ -249,7 +249,7 @@ Los datos viven en volúmenes de Docker (`pgdata` para la base de datos y `media
 
 La pantalla del escáner (`/escaneo/`) registra la asistencia a una actividad por **turnos**:
 
-1. El operador elige la actividad de una lista con buscador. Primero aparecen las que están en curso. Al elegirla empieza su turno. El Administrador y el Encargado de Registrar ven todas las actividades activas; el Creador de Evento, solo las que creó (también se revisa al registrar y en el contador, no solo en la lista).
+1. El operador elige la actividad de una lista con buscador. Primero aparecen las que están en curso. Al elegirla empieza su turno. Los tres roles ven todas las actividades activas, también el Creador de Evento las de otros creadores.
 2. Lee o digita el documento y confirma en el cuadro que muestra el nombre y el RUT del alumno.
 3. Al terminar, presiona **Finalizar turno** y ve cuántas asistencias registró y en cuánto tiempo. Si elige otra actividad, el turno anterior se cierra solo.
 
@@ -333,7 +333,7 @@ Codigo Proyecto/
 ## 8. Seguridad
 
 * Credenciales y claves fuera del código, en variables de entorno (`.env`). La configuración de HTTPS, cookies seguras, HSTS y correo también se toma de ahí.
-* Rol obligatorio para cada usuario y permisos según el rol y la propiedad de cada actividad, también en el escáner.
+* Rol obligatorio para cada usuario y permisos según el rol y la propiedad de cada actividad.
 * Documento de identidad obligatorio para cada usuario; al cambiarlo, el servidor pide confirmación y deja registro en la auditoría.
 * Límite de intentos en el inicio de sesión y en la recuperación de contraseña (5 intentos por IP cada 15 minutos).
 * Límite de lecturas por usuario en la pantalla del escáner (120 por minuto), con aviso en pantalla al superarlo.
@@ -387,7 +387,7 @@ Qué se verifica, por tema:
 | Permisos por rol | Qué puede abrir cada rol y el usuario anónimo, que un creador no vea ni exporte actividades de otro, respuestas 401 y 403 en los endpoints JSON y rechazo de peticiones sin token CSRF. | `tests_roles_completo`, `tests`, `tests_decorators_utils`, `tests_adicionales` |
 | Usuarios y documento de identidad | Documento obligatorio, guardado normalizado, rechazo de duplicados, confirmación al cambiarlo, registro en la auditoría y bloqueo de usuarios. Carga masiva: vista previa sin escribir, filas omitidas si la cuenta existe, errores por fila, enlace para crear la contraseña y solo para el Administrador. | `tests_rut_usuarios`, `tests_caracteres`, `tests_usuarios_masivos` |
 | RUT, RUN provisorio y pasaporte | Limpieza de puntos y guion, dígito verificador, documentos extranjeros, búsqueda del alumno en distintos formatos y formato de pantalla. | `tests`, `tests_decorators_utils`, `tests_formato_rut` |
-| Escáner de asistencia | Registro por RUT, QR y código de barras, confirmación en dos etapas, duplicados, talleres sin inscripción, actividades inactivas, teclado en español e inglés, turnos guardados, contador en vivo con varios operadores, lista para elegir la actividad, el Creador solo escanea sus actividades y una actividad que se finaliza entre las dos etapas no registra. | `tests_views_criticas`, `tests_escaner_teclado`, `tests_escaner_turno`, `tests_integrales`, `tests_adicionales` |
+| Escáner de asistencia | Registro por RUT, QR y código de barras, confirmación en dos etapas, duplicados, talleres sin inscripción, actividades inactivas, teclado en español e inglés, turnos guardados, contador en vivo con varios operadores, lista para elegir la actividad, el Creador escanea también actividades de otros y una actividad que se finaliza entre las dos etapas no registra. | `tests_views_criticas`, `tests_escaner_teclado`, `tests_escaner_turno`, `tests_integrales`, `tests_adicionales` |
 | Alumnos y nómina | Importación desde Excel y CSV (vista previa, errores por fila, bloqueo masivo), alumnos bloqueados que no se inscriben ni se registran, directorio con buscador, ficha con historial y bloqueo manual que la nómina respeta. | `tests_importador`, `tests_importar_web`, `tests_alumnos_bloqueados`, `tests_alumnos_pantalla` |
 | Catálogos | Lugares, escuelas y carreras: agregar, renombrar con confirmación, crear una carrera nueva y bloquear la antigua, bloquear y eliminar lo que no se usa, número de sala y migraciones que unifican los datos existentes. | `tests_lugares`, `tests_catalogo_lugares`, `tests_lugar_numero`, `tests_catalogo_escuelas_carreras` |
 | Datos al participar | La carrera, la escuela y la jornada se guardan al inscribirse y al asistir, no cambian si el alumno cambia de carrera y se corrigen al renombrar en Catálogos. | `tests_foto_academica` |

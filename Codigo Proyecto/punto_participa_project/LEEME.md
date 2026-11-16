@@ -26,6 +26,7 @@ Luego abre <http://localhost:8000/login/>.
 | Cambiaste `Dockerfile`, `requirements.txt` o `entrypoint.sh` | `docker compose up -d --build` |
 | Quieres correr las pruebas | `docker compose exec web python manage.py test --parallel --noinput` |
 | Quieres ver errores | `docker compose logs web --tail 50` |
+| En Windows, `web` se reinicia con `exec /app/entrypoint.sh: no such file or directory` | Los `.sh` quedaron con fin de línea de Windows (copia anterior al `.gitattributes`). En PowerShell: `Remove-Item entrypoint.sh, respaldo\*.sh, tareas\*.sh` y `git checkout -- .`; luego `docker compose up -d --force-recreate web respaldo tareas` |
 | Editaste `gestion/servicios/retencion.py` o el `.env` y quieres que lo tome el servicio `tareas` | `docker compose up -d --force-recreate tareas` |
 
 ## Más documentación

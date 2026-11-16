@@ -823,15 +823,15 @@ Se corrigió "¡Súmate al Charla…" y "cronograma de las sesiones". Pruebas en
 Revisó permisos, vistas críticas, privacidad, resistencia y pruebas integrales sobre la versión `48d3684`. Sus
 cambios se integraron a la estructura nueva:
 
-- **Escáner:** el Creador de Evento solo puede escanear las actividades que creó (el Administrador y el Encargado
-  de Registrar, todas). Se revisa al elegir la actividad, al recuperar la sesión, en el contador y al registrar,
-  no solo en la lista (`_puede_escanear_actividad` en `views/escaner.py`). Si la actividad deja de estar activa,
-  el turno se cierra.
+- **Escáner:** propuso que el Creador de Evento escaneara solo las actividades que creó. El equipo decidió
+  (16/11/2026) que los tres roles escaneen cualquier actividad activa, porque en el Punto se reparten el
+  registro; las pruebas comprueban ahora que el Creador ve, elige y registra en actividades de otros. De su
+  propuesta quedó que, si la actividad deja de estar activa, el turno se cierra.
 - **Middleware:** el cambio obligatorio de contraseña ya no atrapa cualquier error, solo la falta de perfil.
 - **Pruebas nuevas (10):** perfil inactivo y usuario sin perfil no entran; contraseña temporal obliga al cambio;
   cuenta inactiva no recibe el correo de recuperación ni puede restablecer; actividad finalizada entre las dos
-  etapas del escáner no registra; el Creador no ve, no elige, no consulta el contador ni registra en actividades
-  ajenas y el Administrador ve todas.
+  etapas del escáner no registra; el Creador y el Administrador ven todas las actividades en el escáner y el
+  Creador puede elegir y registrar en las de otros.
 - **`.gitattributes`** en la raíz: los `.sh` siempre con fin de línea LF, también en Windows. Con CRLF fallan
   dentro de Docker (respaldo y tareas).
 - **`media/` en `.gitignore`:** las imágenes que suben los usuarios nunca se suben a GitHub, aunque alguien corra
