@@ -2,7 +2,7 @@
 source = gestion
 omit =
     gestion/migrations/*
-    gestion/tests*.py
+    gestion/tests/*
     gestion/management/*
     gestion/apps.py
     gestion/__init__.py

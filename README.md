@@ -303,7 +303,7 @@ Codigo Proyecto/
     │   ├── static/            JavaScript, CSS, imágenes y Chart.js
     │   ├── templates/         Plantillas HTML
     │   ├── templatetags/      Íconos, filtros y piezas comunes de interfaz
-    │   └── tests_*.py         Pruebas automatizadas
+    │   └── tests/             Pruebas automatizadas (tests_*.py)
     ├── punto_participa/       Configuración del proyecto Django
     ├── respaldo/              Scripts y guía del respaldo automático
     ├── tareas/                Ciclo diario del servicio tareas
@@ -360,7 +360,7 @@ En paralelo termina en unos dos minutos y medio en un notebook del equipo. Sin `
 Las pruebas usan una base de datos temporal con datos inventados, así que no tocan los datos del sistema. Para correr solo un área, indica su archivo, por ejemplo:
 
 ```bash
-docker compose exec web python manage.py test gestion.tests_escaner_turno --noinput
+docker compose exec web python manage.py test gestion.tests.tests_escaner_turno --noinput
 ```
 
 Los reportes y el dashboard cuentan como inscritos a quienes tienen una inscripción confirmada, sin exigir asistencia, y respetan los filtros de carrera, jornada y escuela según los datos que el alumno tenía al participar.
