@@ -1,22 +1,75 @@
+"""
+URL de la aplicación, agrupadas igual que los archivos de gestion/views/.
+Los nombres (name=...) son los que usan las plantillas; no cambian aunque una vista se mueva de archivo.
+"""
 from django.urls import path
-from . import (exportaciones, views, views_actividad_publica, views_alumnos, views_catalogos,
-               views_cancelacion, views_importar, views_usuarios_masivos, views_retencion, views_invitacion_publica, views_invitados)
 
-# Sin app_name para mantener compatibilidad con los templates existentes
+from .views import (actividades, alumnos, auditoria, catalogos, cuentas, escaner, exportaciones, inicio,
+                    inscripciones, invitaciones, reportes, usuarios)
 
 urlpatterns = [
     # ============================================================
-    # AUTENTICACIÓN
+    # CUENTAS
     # ============================================================
-    path('', views.dashboard, name='dashboard'),
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
-    path('cambiar-contrasena/', views.cambiar_contrasena, name='cambiar_contrasena'),
+    path('login/', cuentas.login_view, name='login'),
+    path('logout/', cuentas.logout_view, name='logout'),
+    path('cambiar-contrasena/', cuentas.cambiar_contrasena, name='cambiar_contrasena'),
+    path('recuperar-contrasena/', cuentas.solicitar_recuperacion, name='recuperar_contrasena'),
+    path('restablecer-contrasena/<uidb64>/<token>/', cuentas.restablecer_contrasena, name='restablecer_contrasena'),
 
     # ============================================================
-    # REPORTES
+    # INICIO
     # ============================================================
-    path('reportes/', views.reportes, name='reportes'),
+    path('', inicio.dashboard, name='dashboard'),
+    path('retencion/<int:pk>/ejecutar/', inicio.retencion_ejecutar, name='retencion_ejecutar'),
+
+    # ============================================================
+    # ACTIVIDADES
+    # ============================================================
+    path('actividades/', actividades.lista_actividades, name='lista_actividades'),
+    path('actividades/nueva/', actividades.crear_actividad, name='crear_actividad'),
+    path('actividades/editar/<int:pk>/', actividades.editar_actividad, name='editar_actividad'),
+    path('actividades/eliminar-ajax/<int:pk>/', actividades.eliminar_ajax, name='eliminar_ajax'),
+    path('actividades/<int:pk>/', actividades.actividad_detalle, name='actividad_detalle'),
+    path('actividades/<int:pk>/notificaciones/', actividades.notificaciones_actividad,
+         name='notificaciones_actividad'),
+    path('actividades/<int:pk>/participantes/', actividades.participantes_actividad,
+         name='participantes_actividad'),
+
+    # ============================================================
+    # INVITACIONES (correo por carrera, lista de invitados y respuesta pública)
+    # ============================================================
+    path('actividades/enviar-invitaciones/', invitaciones.enviar_invitaciones, name='enviar_invitaciones'),
+    path('actividades/previsualizar-invitacion/<int:pk>/', invitaciones.previsualizar_invitacion,
+         name='previsualizar_invitacion'),
+    path('actividades/<int:pk>/invitados/', invitaciones.invitados_actividad, name='invitados_actividad'),
+    path('actividades/<int:pk>/invitados/<int:invitado_id>/quitar/', invitaciones.quitar_invitado,
+         name='quitar_invitado'),
+    path('actividades/invitados/plantilla.csv', invitaciones.plantilla_invitados, name='plantilla_invitados'),
+    path('actividades/<int:pk>/invitados/enviar/', invitaciones.enviar_invitaciones_lista,
+         name='enviar_invitaciones_lista'),
+    path('invitacion/<str:token>/', invitaciones.responder_invitacion, name='responder_invitacion'),
+
+    # ============================================================
+    # INSCRIPCIONES (página pública, cancelación y lista de espera)
+    # ============================================================
+    path('taller/<int:actividad_id>/', inscripciones.inscripcion_taller, name='inscripcion_taller'),
+    path('actividad/<int:actividad_id>/', inscripciones.actividad_publica, name='actividad_publica'),
+    path('inscripcion/cancelar/<str:token>/', inscripciones.cancelar_inscripcion, name='cancelar_inscripcion'),
+    path('actividades/<int:pk>/inscripciones/<int:inscripcion_id>/cancelar/',
+         inscripciones.cancelar_inscripcion_gestor, name='cancelar_inscripcion_gestor'),
+    path('privacidad/', inscripciones.politica_privacidad, name='privacidad'),
+
+    # ============================================================
+    # ESCÁNER
+    # ============================================================
+    path('escaneo/', escaner.escaneo, name='escaneo'),
+    path('escaneo/contador/', escaner.escaneo_contador, name='escaneo_contador'),
+
+    # ============================================================
+    # REPORTES Y EXPORTACIONES
+    # ============================================================
+    path('reportes/', reportes.reportes, name='reportes'),
     path('reportes/descargar/<str:tipo>/<str:formato>/', exportaciones.exportar_reporte, name='exportar_reporte'),
     # Direcciones anteriores: resumen por actividad y participación por escuela/carrera/jornada
     path('reportes/exportar/<str:formato>/', exportaciones.exportar_resumen, name='exportar_reportes'),
@@ -26,69 +79,30 @@ urlpatterns = [
     # ============================================================
     # USUARIOS
     # ============================================================
-    path('usuarios/', views.usuarios, name='usuarios'),
-    path('usuarios/guardar/', views.guardar_usuario, name='guardar_usuario'),
-    path('usuarios/importar/', views_usuarios_masivos.importar_usuarios, name='importar_usuarios'),
-    path('usuarios/importar/plantilla.csv', views_usuarios_masivos.plantilla_usuarios, name='plantilla_usuarios'),
+    path('usuarios/', usuarios.usuarios, name='usuarios'),
+    path('usuarios/guardar/', usuarios.guardar_usuario, name='guardar_usuario'),
+    path('usuarios/importar/', usuarios.importar_usuarios, name='importar_usuarios'),
+    path('usuarios/importar/plantilla.csv', usuarios.plantilla_usuarios, name='plantilla_usuarios'),
 
     # ============================================================
-    # ALUMNOS (IMPORTACIÓN)
+    # ALUMNOS
     # ============================================================
-    path('alumnos/', views_alumnos.lista_alumnos, name='lista_alumnos'),
-    path('alumnos/<int:pk>/', views_alumnos.alumno_detalle, name='alumno_detalle'),
-    path('alumnos/<int:pk>/bloqueo/', views_alumnos.alumno_bloqueo, name='alumno_bloqueo'),
-    path('alumnos/<int:pk>/anonimizar/', views_alumnos.alumno_anonimizar, name='alumno_anonimizar'),
-    path('retencion/<int:pk>/ejecutar/', views_retencion.retencion_ejecutar, name='retencion_ejecutar'),
-    path('alumnos/importar/', views_importar.importar_alumnos_web, name='importar_alumnos'),
-    path('catalogos/lugares/', views_catalogos.catalogo_lugares, name='catalogo_lugares'),
-    path('catalogos/escuelas/', views_catalogos.catalogo_escuelas, name='catalogo_escuelas'),
-    path('catalogos/carreras/', views_catalogos.catalogo_carreras, name='catalogo_carreras'),
-
-    path('recuperar-contrasena/', views.solicitar_recuperacion, name='recuperar_contrasena'),
-    path('restablecer-contrasena/<uidb64>/<token>/', views.restablecer_contrasena, name='restablecer_contrasena'),
+    path('alumnos/', alumnos.lista_alumnos, name='lista_alumnos'),
+    path('alumnos/<int:pk>/', alumnos.alumno_detalle, name='alumno_detalle'),
+    path('alumnos/<int:pk>/bloqueo/', alumnos.alumno_bloqueo, name='alumno_bloqueo'),
+    path('alumnos/<int:pk>/anonimizar/', alumnos.alumno_anonimizar, name='alumno_anonimizar'),
+    path('alumnos/importar/', alumnos.importar_alumnos_web, name='importar_alumnos'),
 
     # ============================================================
-    # ACTIVIDADES
+    # CATÁLOGOS
     # ============================================================
-    path('actividades/', views.lista_actividades, name='lista_actividades'),
-    path('actividades/nueva/', views.crear_actividad, name='crear_actividad'),
-    path('actividades/editar/<int:pk>/', views.editar_actividad, name='editar_actividad'),
-    path('actividades/enviar-invitaciones/', views.enviar_invitaciones, name='enviar_invitaciones'),
-    path('actividades/previsualizar-invitacion/<int:pk>/', views.previsualizar_invitacion, name='previsualizar_invitacion'),
-    path('actividades/eliminar-ajax/<int:pk>/', views.eliminar_ajax, name='eliminar_ajax'),
-    # ============================================================
-    # DETALLE DE ACTIVIDAD
-    # ============================================================
-    path( 'actividades/<int:pk>/', views.actividad_detalle, name='actividad_detalle'),
-    path( 'actividades/<int:pk>/notificaciones/', views.notificaciones_actividad, name='notificaciones_actividad'),
-    path( 'actividades/<int:pk>/participantes/', views.participantes_actividad, name='participantes_actividad'),
-    path('actividades/<int:pk>/invitados/', views_invitados.invitados_actividad, name='invitados_actividad'),
-    path('actividades/<int:pk>/inscripciones/<int:inscripcion_id>/cancelar/',
-         views_cancelacion.cancelar_inscripcion_gestor, name='cancelar_inscripcion_gestor'),
-    path('actividades/<int:pk>/invitados/<int:invitado_id>/quitar/', views_invitados.quitar_invitado,
-         name='quitar_invitado'),
-    path('actividades/invitados/plantilla.csv', views_invitados.plantilla_invitados, name='plantilla_invitados'),
-    path('actividades/<int:pk>/invitados/enviar/', views_invitados.enviar_invitaciones_lista,
-         name='enviar_invitaciones_lista'),
-    # ============================================================
-    # ESCÁNER
-    # ============================================================
-    path('escaneo/', views.escaneo, name='escaneo'),
-    path('escaneo/contador/', views.escaneo_contador, name='escaneo_contador'),
+    path('catalogos/lugares/', catalogos.catalogo_lugares, name='catalogo_lugares'),
+    path('catalogos/escuelas/', catalogos.catalogo_escuelas, name='catalogo_escuelas'),
+    path('catalogos/carreras/', catalogos.catalogo_carreras, name='catalogo_carreras'),
 
     # ============================================================
     # AUDITORÍA
     # ============================================================
-    path('auditoria/', views.lista_auditoria, name='auditoria'),
+    path('auditoria/', auditoria.lista_auditoria, name='auditoria'),
     path('auditoria/exportar/', exportaciones.exportar_auditoria, name='exportar_auditoria'),
-
-    # ============================================================
-    # INSCRIPCIÓN PÚBLICA
-    # ============================================================
-    path('taller/<int:actividad_id>/', views.inscripcion_taller, name='inscripcion_taller'),
-    path('actividad/<int:actividad_id>/', views_actividad_publica.actividad_publica, name='actividad_publica'),
-    path('privacidad/', views.politica_privacidad, name='privacidad'),
-    path('invitacion/<str:token>/', views_invitacion_publica.responder_invitacion, name='responder_invitacion'),
-    path('inscripcion/cancelar/<str:token>/', views_cancelacion.cancelar_inscripcion, name='cancelar_inscripcion'),
-
 ]

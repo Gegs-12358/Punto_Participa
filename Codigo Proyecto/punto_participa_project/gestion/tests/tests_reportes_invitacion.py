@@ -16,7 +16,7 @@ from django.utils import timezone
 
 from ..models import Acompanante, Actividad, Asistencia, Invitado
 from .tests_invitados import BaseInvitadosTests, rut
-from ..views import _embudo_actividad
+from ..views.actividades import _embudo_actividad
 
 
 class BaseReportesInvitacionTests(BaseInvitadosTests):

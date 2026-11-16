@@ -38,16 +38,15 @@ from django.db.models import Count, IntegerField, OuterRef, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.shortcuts import redirect, render
 
-from .models import Actividad, Alumno, Asistencia, Carrera, Escuela, Inscripcion, Lugar
-from .utils import limpiar_texto
-from .views import COLORES_FALLBACK, COLOR_SIN_ESCUELA, registrar_log, role_required
+from ..decorators import role_required
+from ..models import Actividad, Alumno, Asistencia, Carrera, Escuela, Inscripcion, Lugar
+from ..utils import id_o_none, limpiar_texto
+
+from .comun import COLOR_SIN_ESCUELA, COLORES_FALLBACK, registrar_log
+
 
 MAX_NOMBRE = Lugar._meta.get_field('nombre').max_length
 
-
-# ============================================================
-# AYUDAS COMUNES
-# ============================================================
 
 def _limpiar_nombre(valor):
     """Quita caracteres de control y deja un solo espacio entre palabras."""
@@ -89,10 +88,6 @@ def _color_o_none(valor):
     return valor.upper() if PATRON_COLOR.match(valor) else None
 
 
-def _id_o_none(valor):
-    return int(valor) if (valor or '').isdigit() else None
-
-
 def _cambiar_activo(request, obj, activo, tipo, terminacion):
     """Bloquea o desbloquea. tipo: "lugar"/"escuela"/"carrera"; terminacion: "o"/"a"."""
     estado = f'desbloquead{terminacion}' if activo else f'bloquead{terminacion}'
@@ -113,10 +108,6 @@ def _subconsulta_conteo(modelo, campo):
     return Coalesce(Subquery(conteo, output_field=IntegerField()), Value(0))
 
 
-# ============================================================
-# LUGARES
-# ============================================================
-
 def _lugares_con_uso():
     return Lugar.objects.annotate(
         total_actividades=_subconsulta_conteo(Actividad, 'lugar'),
@@ -132,7 +123,7 @@ def catalogo_lugares(request):
 
     return render(request, 'gestion/catalogo_lugares.html', {
         'lugares': _lugares_con_uso(),
-        'editar_id': _id_o_none(request.GET.get('editar')),
+        'editar_id': id_o_none(request.GET.get('editar')),
         'max_nombre': MAX_NOMBRE,
         'pestana': 'lugares',
     })
@@ -210,10 +201,6 @@ def _procesar_lugar(request):
         messages.error(request, 'Acción no válida.')
 
 
-# ============================================================
-# ESCUELAS
-# ============================================================
-
 @login_required
 @role_required('Administrador')
 def catalogo_escuelas(request):
@@ -231,7 +218,7 @@ def catalogo_escuelas(request):
         'escuelas': escuelas,
         'color_sugerido': sugerido,
         'color_sin_escuela': COLOR_SIN_ESCUELA,
-        'editar_id': _id_o_none(request.GET.get('editar')),
+        'editar_id': id_o_none(request.GET.get('editar')),
         'max_nombre': Escuela._meta.get_field('nombre').max_length,
         'pestana': 'escuelas',
     })
@@ -314,10 +301,6 @@ def _procesar_escuela(request):
         messages.error(request, 'Acción no válida.')
 
 
-# ============================================================
-# CARRERAS
-# ============================================================
-
 def _carreras_con_uso(escuela=None):
     carreras = Carrera.objects.annotate(
         total_alumnos=_subconsulta_conteo(Alumno, 'carrera'),
@@ -335,7 +318,7 @@ def _contexto_carreras(request, **extra):
         'escuelas_activas': Escuela.objects.filter(activo=True).order_by('nombre'),
         'escuelas_todas': Escuela.objects.order_by('nombre'),
         'escuela_filtro': escuela_filtro,
-        'editar_id': _id_o_none(request.GET.get('editar')),
+        'editar_id': id_o_none(request.GET.get('editar')),
         'max_nombre': Carrera._meta.get_field('nombre').max_length,
         'pestana': 'carreras',
         **extra,

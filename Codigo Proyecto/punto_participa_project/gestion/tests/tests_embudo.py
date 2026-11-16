@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from ..models import Actividad, Alumno, Asistencia, Inscripcion, NotificacionCorreo
 from .tests_integrales import BaseSistemaTestCase
-from ..views import _embudo_actividad
+from ..views.actividades import _embudo_actividad
 
 
 class EmbudoTallerTests(BaseSistemaTestCase):

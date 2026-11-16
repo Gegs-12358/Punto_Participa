@@ -17,7 +17,7 @@ from punto_participa.settings import _lista
 
 from ..models import Escuela, LogAuditoria
 from .tests_integrales import BaseSistemaTestCase
-from ..views import COLOR_POR_ESCUELA, _colores_por_carrera, color_para_escuela, colores_escuelas
+from ..views.comun import COLOR_POR_ESCUELA, _colores_por_carrera, color_para_escuela, colores_escuelas
 
 INFORMATICA = 'Escuela de Informática y Telecomunicaciones'
 URL_ESCUELAS = reverse('catalogo_escuelas')

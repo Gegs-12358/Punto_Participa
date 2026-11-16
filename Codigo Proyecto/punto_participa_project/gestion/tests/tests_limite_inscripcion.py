@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ..models import Actividad, Alumno, Inscripcion
-from ..views import LIMITE_FALLOS_INSCRIPCION
+from ..views.inscripciones import LIMITE_FALLOS_INSCRIPCION
 
 
 class LimiteFallosInscripcionTests(TestCase):

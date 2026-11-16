@@ -172,7 +172,7 @@ class RollbackTransaccionalTests(BaseSistemaTestCase):
     def test_falla_de_auditoria_no_tumba_la_inscripcion(self):
         cupos_iniciales = self.actividad.cupos_disponibles
         with patch(
-            "gestion.views.registrar_log",
+            "gestion.views.inscripciones.registrar_log",
             side_effect=RuntimeError("falla controlada de auditoria"),
         ):
             response = self.client.post(
@@ -194,7 +194,7 @@ class RollbackTransaccionalTests(BaseSistemaTestCase):
         self.client.raise_request_exception = False
 
         with patch(
-            "gestion.views.registrar_log",
+            "gestion.views.escaner.registrar_log",
             side_effect=RuntimeError("fallo controlado de auditoria"),
         ):
             self.client.post(

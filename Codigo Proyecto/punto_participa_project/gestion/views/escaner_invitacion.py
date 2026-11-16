@@ -23,12 +23,17 @@ from django.db import IntegrityError, transaction
 from django.http import JsonResponse
 from django.utils import timezone
 
-from .models import Acompanante, Alumno, Asistencia, Invitado, foto_academica
-from .utils import buscar_alumno_por_documento, formatear_rut, limpiar_texto, normalizar_documento
-from .views import _contador_escaneo, _error_json, registrar_log
+from ..invitados import MAX_NOMBRE_ACOMPANANTE
+from ..models import Acompanante, Alumno, Asistencia, foto_academica, Invitado
+from ..utils import buscar_alumno_por_documento, formatear_rut, limpiar_texto, normalizar_documento
+
+from .comun import _error_json, registrar_log
+from .escaner import _contador_escaneo
+
 
 METODOS = {'RUT': 'RUT', 'QR': 'Código QR', 'CODIGO': 'Código de barras'}
-MAX_NOMBRE = Acompanante._meta.get_field('nombre').max_length
+
+
 
 
 def _persona_invitado(invitado):
@@ -197,7 +202,7 @@ def _agregar_acompanante(request, actividad, doc, metodo, opciones):
         invitado_id = 0
     if not doc:
         return _error_json('Falta el documento del acompañante.')
-    if not nombre or len(nombre) > MAX_NOMBRE:
+    if not nombre or len(nombre) > MAX_NOMBRE_ACOMPANANTE:
         return _error_json('Escribe el nombre completo del acompañante.')
     if invitado_id not in {o['id'] for o in opciones}:
         return _error_json('Elige un invitado que todavía tenga cupo de acompañante.')

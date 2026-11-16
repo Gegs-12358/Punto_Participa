@@ -280,24 +280,30 @@ Codigo Proyecto/
 └── punto_participa_project/   Aplicación Django
     ├── gestion/               Lógica de la aplicación
     │   ├── models.py          Modelos de datos
-    │   ├── views.py           Pantallas principales (inicio, actividades, reportes, escáner, usuarios, auditoría)
-    │   ├── views_alumnos.py   Directorio, ficha y bloqueo de alumnos
-    │   ├── usuarios_masivos.py      Lectura, validación y creación de usuarios desde Excel o CSV
-    │   ├── views_usuarios_masivos.py  Pantalla Importar usuarios
-    │   ├── views_catalogos.py Lugares, escuelas y carreras
-    │   ├── views_importar.py  Importación de la nómina desde la web
-    │   ├── exportaciones.py   Exportaciones de Reportes (Excel y CSV)
+    │   ├── urls.py            Direcciones, agrupadas igual que las vistas
+    │   ├── views/             Pantallas, un archivo por tema:
+    │   │   ├── comun.py           Lo que usan varias pantallas (auditoría, errores JSON, colores)
+    │   │   ├── cuentas.py         Inicio de sesión y contraseñas
+    │   │   ├── inicio.py          Inicio (dashboard) y botón de retención de datos
+    │   │   ├── actividades.py     Listado, detalle, participantes, crear, editar y eliminar
+    │   │   ├── inscripciones.py   Inscripción pública, lista de espera, cancelación y páginas públicas
+    │   │   ├── invitaciones.py    Correo de invitación, lista de invitados y respuesta del alumno
+    │   │   ├── escaner.py         Escáner de asistencia, turnos y contador en vivo
+    │   │   ├── escaner_invitacion.py  Escáner en las actividades con invitación
+    │   │   ├── reportes.py        Pantalla Reportes y filtros compartidos
+    │   │   ├── exportaciones.py   Descargas en Excel y CSV de Reportes y Auditoría
+    │   │   ├── usuarios.py        Usuarios y carga masiva
+    │   │   ├── alumnos.py         Directorio, ficha, bloqueo, anonimización e importación de la nómina
+    │   │   ├── catalogos.py       Lugares, escuelas y carreras
+    │   │   └── auditoria.py       Pantalla Auditoría
     │   ├── importador_alumnos.py  Lectura y validación de la nómina
+    │   ├── usuarios_masivos.py    Lectura, validación y creación de usuarios desde Excel o CSV
     │   ├── invitados.py       Lectura y validación de la lista de invitados
-    │   ├── views_invitados.py Pantalla Invitados y envío de las invitaciones
-    │   ├── views_invitacion_publica.py  Respuesta del alumno desde su enlace
     │   ├── cancelaciones.py   Cancelación de inscripciones y correo de confirmación
-    │   ├── views_cancelacion.py  Cancelación desde el enlace del alumno y desde Participantes
     │   ├── lista_espera.py    Lista de espera y aviso cuando se libera un cupo
-    │   ├── escaner_invitacion.py  Escáner en las actividades con invitación
     │   ├── retencion.py       Avisos de retención y borrado de los datos de más de dos años
-    │   ├── views_retencion.py Botón del Inicio que ejecuta el borrado
     │   ├── anonimizacion.py   Anonimización de un alumno
+    │   ├── permissions.py, decorators.py, utils.py  Permisos por rol, decoradores y utilidades
     │   ├── management/commands/   seed_data, perf_seed, importar_alumnos y retencion
     │   ├── migrations/        Migraciones de la base de datos
     │   ├── static/            JavaScript, CSS, imágenes y Chart.js

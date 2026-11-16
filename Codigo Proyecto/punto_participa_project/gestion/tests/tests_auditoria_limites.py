@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase
 
 from gestion.models import LogAuditoria
-from gestion.views import registrar_log
+from gestion.views.comun import registrar_log
 
 
 class RegistrarLogLimitesTests(TestCase):

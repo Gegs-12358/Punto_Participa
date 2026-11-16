@@ -787,7 +787,25 @@ A pedido del equipo, sin cambiar la forma de ningún gráfico (líneas, barras v
 - Escuelas y jornadas con cantidad y porcentaje en la leyenda. Cada gráfico tiene una línea de ayuda. Pruebas en
   `tests_graficos_inicio`.
 
-### 18.13 Pendiente
+### 18.13 Orden de los archivos (15/11/2026)
+
+Sin cambios en lo que hace el sistema (las 747 pruebas pasan igual y las URL conservan sus nombres).
+
+- **Pruebas** (`a0cc974`): las 50 pasaron a `gestion/tests/`. Se borraron 8 imágenes que ninguna pantalla
+  usaba (unos 10 MB) y el reporte de cobertura de octubre.
+- **Vistas:** `views.py` (2.346 líneas) y los nueve `views_*.py` se repartieron en `gestion/views/`, un
+  archivo por tema (cuentas, inicio, actividades, inscripciones, invitaciones, escáner, reportes,
+  exportaciones, usuarios, alumnos, catálogos y auditoría), más `comun.py` con lo que usan varias pantallas.
+  `exportaciones.py` y `escaner_invitacion.py` también entraron a la carpeta porque son vistas. `urls.py`
+  quedó agrupado igual. Cada archivo explica arriba qué contiene y `views/__init__.py` tiene el índice.
+- **Redundancias eliminadas:** `_exportar_excel` y `_exportar_csv` (reemplazadas por el exportador de
+  Reportes; sus pruebas ahora prueban ese exportador), el alias `_get_perfil_o_none`, `_filtrar_inscripciones`
+  (igual a `_filtrar_por_foto`), `_id_valido` y `_id_o_none` (iguales a `utils.id_o_none`), el largo máximo
+  del nombre del acompañante definido dos veces y un `import re` repetido en `utils.py`. Cada archivo de vistas
+  tiene su propio registro de errores (`logger`).
+- Para correr una prueba suelta: `python manage.py test gestion.tests.tests_escaner_turno`.
+
+### 18.14 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

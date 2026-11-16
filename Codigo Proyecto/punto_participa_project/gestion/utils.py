@@ -11,12 +11,10 @@ Contiene funciones auxiliares para:
 """
 
 import re
-
-from django.core.paginator import Paginator
-
-import re
 import unicodedata
 from datetime import datetime
+
+from django.core.paginator import Paginator
 
 # NUL, caracteres de control (excepto \t y \n), DEL, ancho cero,
 # marcas de dirección bidi y BOM.

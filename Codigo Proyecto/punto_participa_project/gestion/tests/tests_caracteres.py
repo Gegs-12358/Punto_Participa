@@ -15,7 +15,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .. import views
+from ..views import inscripciones, usuarios
 from ..models import Actividad, Alumno, Inscripcion, Rol, UsuarioSistema
 from .tests_general import ENTRADAS_HOSTILES
 
@@ -62,7 +62,7 @@ class GuardarUsuarioHostilTestCase(TestCase):
 
     def setUp(self):
         self.client.login(username='admin_h', password='clave123')
-        self.url = reverse(views.guardar_usuario)
+        self.url = reverse(usuarios.guardar_usuario)
 
     def _assert_controlada(self, r):
         """Respuesta JSON, sin 5xx y sin redirección/permiso denegado."""
@@ -145,7 +145,7 @@ class InscripcionPublicaHostilTestCase(TestCase):
         )
 
     def setUp(self):
-        self.url = reverse(views.inscripcion_taller, args=[self.taller.pk])
+        self.url = reverse(inscripciones.inscripcion_taller, args=[self.taller.pk])
 
     def test_rut_hostil_no_devuelve_500_ni_refleja_html(self):
         for texto in ENTRADAS:

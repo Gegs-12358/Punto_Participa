@@ -27,31 +27,67 @@ Reglas:
     y filtrar), con encabezado fijo y autofiltro.
   - Cada descarga queda registrada en la auditoría.
 """
-import csv
 from collections import defaultdict
+import csv
+
+from openpyxl import Workbook
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
+from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.utils import get_column_letter
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Exists, OuterRef, Q
 from django.http import Http404, HttpResponse
 from django.utils import timezone
-from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
-from openpyxl.utils import get_column_letter
 
-from .decorators import role_required
-from .models import Acompanante, Actividad, Alumno, Asistencia, Carrera, Inscripcion, Invitado, NotificacionCorreo
-from .utils import fecha_o_none, formatear_rut, id_o_none, limpiar_texto
-from .views import (SISTEMA, _aplicar_filtros_reporte, _filtrar_auditoria, _filtrar_por_foto, _sanitizar_celda,
-                    filtros_auditoria, registrar_log)
+from ..decorators import role_required
+from ..models import (Acompanante, Actividad, Alumno, Asistencia, Carrera, Inscripcion, Invitado,
+                      NotificacionCorreo)
+from ..utils import fecha_o_none, formatear_rut, id_o_none, limpiar_texto
+
+from .auditoria import _filtrar_auditoria, filtros_auditoria, SISTEMA
+from .comun import registrar_log
+from .reportes import _aplicar_filtros_reporte, _filtrar_por_foto
+
+
+# Caracteres con los que Excel/LibreOffice interpretan una celda como fórmula
+_PREFIJOS_FORMULA = ('=', '+', '-', '@', '\t', '\r')
+
+
+def _sanitizar_celda(valor):
+    """
+    Neutraliza la inyección de fórmulas en exportaciones CSV/Excel.
+    Si un texto empieza con un carácter de fórmula, se le antepone un
+    apóstrofe para que la planilla lo trate como texto literal.
+    También quita caracteres de control (NUL, etc.) que harían fallar
+    la exportación a Excel. Los valores que no son texto (números,
+    fechas) pasan sin cambios.
+    """
+    if isinstance(valor, str):
+        valor = ILLEGAL_CHARACTERS_RE.sub('', valor)
+    if isinstance(valor, str) and valor.startswith(_PREFIJOS_FORMULA):
+        return "'" + valor
+    return valor
+
 
 # Tipo de cada columna: cómo se escribe en Excel y en CSV
 TEXTO, ENTERO, FECHA, PORCENTAJE = 'texto', 'entero', 'fecha', 'porcentaje'
+
+
 TEXTO_LARGO = 'texto_largo'   # columna ancha con salto de línea (p. ej., el detalle de la auditoría)
+
+
 ANCHO_TEXTO_LARGO = 80
 
+
 FORMATO_FECHA_EXCEL = 'dd/mm/yyyy hh:mm'
+
+
 FORMATO_FECHA_CSV = '%d/%m/%Y %H:%M'
+
+
 COLOR_ENCABEZADO = '002F5F'   # --navy de la guía de estilo
+
 
 SI, NO, NO_APLICA, PENDIENTE = 'Sí', 'No', 'No aplica', 'Pendiente'
 
@@ -67,10 +103,6 @@ class Reporte:
         self.filas = filas                # [[valor, ...], ...]
         self.definiciones = definiciones  # [(columna, explicación), ...]
 
-
-# ============================================================
-# DATOS
-# ============================================================
 
 def _filtros(request):
     """Filtros de la URL, ya limpios."""
@@ -334,7 +366,7 @@ _RESPUESTA = {'CONFIRMADO': 'Confirmó', 'RECHAZADO': 'No asistirá', 'PENDIENTE
 
 def _filas_invitacion(actividades, f, orden, por_id, tipos_doc, metodos):
     """Invitados y acompañantes de las actividades con invitación, para el listado."""
-    from .importador_alumnos import inferir_tipo
+    from ..importador_alumnos import inferir_tipo
     filas = []
     invitados = (_invitados(actividades, f).select_related('alumno', 'registrado_por')
                  .prefetch_related('acompanantes__registrado_por'))
@@ -376,10 +408,6 @@ REPORTES = {
     'participantes': reporte_participantes,
 }
 
-
-# ============================================================
-# ESCRITURA
-# ============================================================
 
 def _texto_csv(valor, tipo):
     if valor is None:
@@ -515,10 +543,6 @@ def _respuesta_csv(reporte):
     return respuesta
 
 
-# ============================================================
-# VISTAS
-# ============================================================
-
 FORMATOS = {'excel': 'excel', 'xlsx': 'excel', 'csv': 'csv'}
 
 
@@ -560,10 +584,6 @@ def exportar_resumen(request, formato):
 def exportar_participacion(request, formato):
     return exportar_reporte(request, 'participacion', formato)
 
-
-# ============================================================
-# AUDITORÍA
-# ============================================================
 
 def _etiquetas_auditoria(f):
     etiquetas = []

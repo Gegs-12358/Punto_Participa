@@ -11,7 +11,7 @@ from openpyxl import load_workbook
 
 from ..models import LogAuditoria
 from .tests_integrales import BaseSistemaTestCase
-from ..views import SISTEMA, tono_accion
+from ..views.auditoria import SISTEMA, tono_accion
 
 
 class AuditoriaPantallaTests(BaseSistemaTestCase):

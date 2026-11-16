@@ -25,7 +25,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from gestion.utils import normalizar_documento
-from gestion.views import COLOR_POR_ESCUELA
+from gestion.views.comun import COLOR_POR_ESCUELA
 
 from gestion.models import (
     Escuela,

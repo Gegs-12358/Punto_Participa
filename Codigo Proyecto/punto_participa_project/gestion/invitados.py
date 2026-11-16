@@ -24,13 +24,14 @@ from django.core.validators import validate_email
 from django.db import transaction
 
 from .importador_alumnos import ArchivoInvalido, inferir_tipo, leer_filas
-from .models import Alumno, Carrera, Invitado, Jornada
+from .models import Acompanante, Alumno, Carrera, Invitado, Jornada
 from .utils import limpiar_texto, normalizar_documento, validar_documento, validar_rut
 
 COLUMNAS_INVITADOS = ['rut', 'nombres', 'carrera', 'correo']
 _NOMBRE_COLUMNA = {'rut': 'rut', 'nombres': 'nombre', 'carrera': 'carrera', 'correo': 'correo'}
 
 MAX_NOMBRE = Invitado._meta.get_field('nombre').max_length
+MAX_NOMBRE_ACOMPANANTE = Acompanante._meta.get_field('nombre').max_length
 MAX_CARRERA = Invitado._meta.get_field('carrera').max_length
 MAX_JORNADA = Invitado._meta.get_field('jornada').max_length
 

@@ -10,7 +10,7 @@ Cubre los flujos de seguridad y operación:
 - Colores de escuela
 
 Ejecutar con:
-    python manage.py test gestion.tests_views_criticas -v 2
+    python manage.py test gestion.tests.tests_views_criticas -v 2
 """
 import logging
 import re
@@ -29,7 +29,8 @@ from django.utils.http import urlsafe_base64_encode
 
 from ..models import Actividad, Alumno, Asistencia, Carrera, Inscripcion, Jornada, LogAuditoria, Rol, UsuarioSistema
 from .tests_integrales import BaseSistemaTestCase
-from ..views import color_para_escuela, _parse_rut_escaneo
+from ..views.comun import color_para_escuela
+from ..views.escaner import _parse_rut_escaneo
 
 # ---------------------------------------------------------------------------
 # Silenciar logging durante esta suite.

@@ -54,7 +54,7 @@ class Resultado:
 
 def analizar(filas):
     """Valida las filas sin escribir nada. Devuelve un Resultado."""
-    from .views import _username_valido
+    from .views.usuarios import _username_valido
     res = Resultado(total=len(filas))
     roles = {_sin_tildes(r.nombre): r for r in Rol.objects.all()}
     nombres_roles = ', '.join(sorted(r.nombre for r in roles.values()))

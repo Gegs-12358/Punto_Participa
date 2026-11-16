@@ -112,7 +112,7 @@ class Escuela(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
     activo = models.BooleanField(default=True, db_index=True)
     # Color de la escuela en los gráficos ("#307FE2"). Vacío: se usa el color oficial
-    # conocido por nombre (views.COLOR_POR_ESCUELA) o gris.
+    # conocido por nombre (views/comun.py, COLOR_POR_ESCUELA) o gris.
     color = models.CharField(
         max_length=7, blank=True, default='',
         validators=[RegexValidator(r'^#[0-9A-Fa-f]{6}$', 'Usa un color como #307FE2.')],
