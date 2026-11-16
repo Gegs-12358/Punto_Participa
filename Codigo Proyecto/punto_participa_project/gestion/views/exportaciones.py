@@ -303,7 +303,8 @@ def reporte_participantes(request, datos=None):
     personas = {}
 
     for i in insc_qs.order_by().values('actividad_id', 'alumno_id', 'escuela', 'carrera', 'jornada',
-                                       'estado', 'fecha_inscripcion', *alumno):
+                                       'estado', 'fecha_inscripcion', 'politica_version', 'politica_aceptada',
+                                       *alumno):
         personas[(i['actividad_id'], i['alumno_id'])] = {'insc': i, 'datos': i, 'asis': None}
     for i in asis_qs.order_by().values('actividad_id', 'alumno_id', 'escuela', 'carrera', 'jornada',
                                        'fecha_ingreso', 'metodo_ingreso', 'registrado_por__username', *alumno):
@@ -340,6 +341,7 @@ def reporte_participantes(request, datos=None):
             metodos.get(asis['metodo_ingreso'], asis['metodo_ingreso']) if asis else '',
             (asis['registrado_por__username'] or '') if asis else '',
             'Alumno',
+            insc['politica_version'] if insc else '', _local(insc['politica_aceptada']) if insc else None,
         ]))
     filas += _filas_invitacion(actividades, f, orden, por_id, tipos_doc, metodos)
     filas = [fila for _, fila in sorted(filas, key=lambda x: x[0])]
@@ -350,13 +352,16 @@ def reporte_participantes(request, datos=None):
          ('Apellidos', TEXTO), ('Nombres', TEXTO), ('Correo', TEXTO), ('Escuela', TEXTO), ('Carrera', TEXTO),
          ('Jornada', TEXTO), ('Inscrito', TEXTO), ('Estado inscripción', TEXTO), ('Fecha inscripción', FECHA),
          ('Asistió', TEXTO), ('Ingreso', FECHA), ('Método', TEXTO), ('Registrado por', TEXTO),
-         ('Participa como', TEXTO)],
+         ('Participa como', TEXTO), ('Política aceptada', TEXTO), ('Aceptó el', FECHA)],
         filas,
         [('Listado', 'Una fila por alumno y actividad: quienes se inscribieron, quienes asistieron, o ambos.'),
          ('Inscrito', '"No aplica" en actividades masivas, que no tienen inscripción.'),
          ('Asistió', '"Pendiente" si la actividad todavía no empieza.'),
          ('Participa como', 'Alumno (talleres y masivas), Invitado o Acompañante de… (con invitación). '
                             'En las con invitación, Inscrito = confirmó y la fecha es la de su respuesta.'),
+         ('Política aceptada', 'Versión de la Política de Privacidad que aceptó al inscribirse o responder la '
+                               'invitación, y cuándo. Los acompañantes quedan cubiertos por la aceptación de su '
+                               'invitado. Vacío en registros anteriores al 16/11/2026: esos están en la auditoría.'),
          ('Datos personales', 'Contiene datos personales de alumnos: no compartir fuera de la institución.')],
     )
 
@@ -390,6 +395,7 @@ def _filas_invitacion(actividades, f, orden, por_id, tipos_doc, metodos):
             SI if inv.estado == 'CONFIRMADO' else NO, _RESPUESTA.get(inv.estado, inv.estado),
             _local(inv.fecha_respuesta), *asistencia(inv),
             'Invitado (agregado en la entrada)' if inv.agregado_en_entrada else 'Invitado',
+            inv.politica_version, _local(inv.politica_aceptada),
         ]))
         for ac in inv.acompanantes.all():
             tipo_ac = inferir_tipo(ac.rut)
@@ -398,6 +404,7 @@ def _filas_invitacion(actividades, f, orden, por_id, tipos_doc, metodos):
                 formatear_rut(ac.rut) if tipo_ac == 'RUT' else ac.rut, tipos_doc.get(tipo_ac, tipo_ac),
                 '', ac.nombre, '', '', '', '', NO_APLICA, '', _local(ac.fecha_registro), *asistencia(ac),
                 f'Acompañante de {inv.nombre}' + (' (agregado en la entrada)' if ac.agregado_en_entrada else ''),
+                inv.politica_version, _local(inv.politica_aceptada),
             ]))
     return filas
 

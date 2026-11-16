@@ -46,7 +46,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**. La entrega está fijada para el 1 de diciembre de 2026.
 
-* Suite de pruebas automatizadas: 763 tests (detalle en la sección 9).
+* Suite de pruebas automatizadas: 771 tests (detalle en la sección 9).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 * El historial detallado de cambios está en [`docs/CAMBIOS.md`](Codigo%20Proyecto/punto_participa_project/docs/CAMBIOS.md) y la guía de estilo de las pantallas en [`docs/GUIA_ESTILO.md`](Codigo%20Proyecto/punto_participa_project/docs/GUIA_ESTILO.md).
 
@@ -348,7 +348,7 @@ Codigo Proyecto/
 * Respaldo automático con prueba de recuperación y copias mensuales permanentes.
 * Cancelación de inscripciones con enlace personal aleatorio, sin indexar en buscadores y con límite de 30 envíos por minuto por IP. La lista de espera usa el mismo límite de intentos que la inscripción pública.
 * Retención de dos años en la base principal, con borrado ejecutado por un Administrador después de verificar los respaldos, y anonimización de alumnos a pedido. La IP y el navegador de la auditoría se borran junto con el resto de los registros de más de dos años.
-* Política de Privacidad pública (`/privacidad/`) y aceptación obligatoria al inscribirse, registrada en la auditoría. El texto es un borrador pendiente de revisión de Duoc UC.
+* Política de Privacidad pública (`/privacidad/`) y aceptación obligatoria al inscribirse, al anotarse en la lista de espera y al responder una invitación. La versión aceptada y la fecha quedan en el propio registro (y en la auditoría), y salen en el Listado de participantes. El texto es un borrador pendiente de revisión de Duoc UC.
 
 ### Pendientes antes de producción
 
@@ -362,7 +362,7 @@ Codigo Proyecto/
 
 ## 9. Pruebas automatizadas
 
-La suite tiene **763 tests** y se ejecuta con:
+La suite tiene **771 tests** y se ejecuta con:
 
 ```bash
 docker compose exec web python manage.py test --parallel --noinput
@@ -401,7 +401,7 @@ Qué se verifica, por tema:
 | Reportes y auditoría | Inscritos y asistentes con filtros, filtro por tipo y lugar, pestañas, cada creador ve solo lo suyo, la auditoría guarda los datos de la petición y su exportación es solo para el Administrador. | `tests_kpi_inscritos`, `tests_reportes_tipo`, `tests_auditoria_limites`, `tests_integrales`, `tests_roles_completo` |
 | Interfaz | Botones con ícono y aviso, filtros activos, menú Exportar, pantallas sin símbolos de texto antiguos y menú con la página actual marcada. | `tests_ui` |
 | Retención y anonimización | Fecha de corte, avisos a todos los Administradores a los 10, 7 y 3 días, aviso diario cuando vence el plazo sin borrar nada, borrado solo con el botón del Administrador y con la casilla marcada, correo a todos con el nombre de quien borró, aviso cuando otro ya lo hizo, y anonimización que conserva la participación. | `tests_retencion` |
-| Configuración, privacidad y respaldo | Configuración desde `.env`, colores de las escuelas, Política de Privacidad y consentimiento, datos de prueba repetibles y scripts del respaldo. | `tests_p0_tecnicos`, `tests_privacidad`, `tests_seed_data`, `tests_respaldo` |
+| Configuración, privacidad y respaldo | Configuración desde `.env`, colores de las escuelas, Política de Privacidad y consentimiento (versión y fecha guardadas aunque falle la auditoría), datos de prueba repetibles y scripts del respaldo. | `tests_p0_tecnicos`, `tests_privacidad`, `tests_consentimiento`, `tests_seed_data`, `tests_respaldo` |
 | Resistencia y consistencia | Carga de muchas inscripciones y asistencias sin duplicados, inscripciones simultáneas que no superan los cupos y reversión de los cambios cuando ocurre un error. | `tests_resistencia` |
 
 Lo que las pruebas automáticas no cubren: el JavaScript de las pantallas y el lector físico de códigos se verifican a mano. La prueba de usabilidad del escáner con operadores reales del Punto está pendiente.

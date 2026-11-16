@@ -91,6 +91,7 @@ def cancelar(inscripcion_id, por=None, desde_enlace=False):
             actividad=actividad, alumno_id=insc.alumno_id, token=insc.token or '',
             fecha_inscripcion=insc.fecha_inscripcion, cancelada_por=por,
             carrera=insc.carrera, escuela=insc.escuela, jornada=insc.jornada,
+            politica_version=insc.politica_version, politica_aceptada=insc.politica_aceptada,
         )
         insc.delete()
         if actividad.tipo == 'TALLER':

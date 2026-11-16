@@ -26,11 +26,13 @@ def acepta_anotaciones(actividad, ahora=None):
     return actividad.tipo == 'TALLER' and actividad.estado == 'ACTIVA' and ahora < actividad.fecha_inicio
 
 
-def anotar(actividad, alumno):
-    """Anota al alumno. Devuelve 'anotado', 'ya_estaba' o 'inscrito'."""
+def anotar(actividad, alumno, consentimiento=None):
+    """Anota al alumno. Devuelve 'anotado', 'ya_estaba' o 'inscrito'.
+    consentimiento: versión y fecha en que aceptó la Política (models.consentimiento())."""
     if Inscripcion.objects.filter(actividad=actividad, alumno=alumno).exists():
         return 'inscrito'
-    _, creado = ListaEspera.objects.get_or_create(actividad=actividad, alumno=alumno)
+    _, creado = ListaEspera.objects.get_or_create(actividad=actividad, alumno=alumno,
+                                                  defaults=consentimiento or {})
     return 'anotado' if creado else 'ya_estaba'
 
 

@@ -22,7 +22,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
 > exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
-> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 763 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 771 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -837,10 +837,20 @@ cambios se integraron a la estructura nueva:
 - **`media/` en `.gitignore`:** las imágenes que suben los usuarios nunca se suben a GitHub, aunque alguien corra
   el sistema fuera de Docker.
 
-Queda pendiente su observación sobre el consentimiento: guardar en la inscripción la versión de la Política
-aceptada y la fecha, no solo en la auditoría.
+Su observación sobre el consentimiento quedó resuelta en la sección 18.16.
 
-### 18.16 Pendiente
+### 18.16 Consentimiento guardado en el registro (16/11/2026)
+
+Observación de QA de Diverson: la aceptación de la Política de Privacidad solo quedaba en la auditoría, que se
+borra a los dos años y que, si fallaba al guardarse, dejaba la inscripción sin evidencia. Ahora la inscripción, la
+anotación en la lista de espera y la respuesta a una invitación guardan **qué versión aceptó la persona y cuándo**
+(`politica_version` y `politica_aceptada`, migración `0038_consentimiento_privacidad`). Al cancelar, la evidencia
+pasa al historial de cancelaciones. La versión vigente está en un solo lugar (`VERSION_POLITICA` en `models.py`) y
+la página de la Política la muestra. El Listado de participantes trae las columnas "Política aceptada" y "Aceptó
+el". Los registros anteriores quedan con esos campos vacíos: su evidencia sigue en la auditoría. Pruebas en
+`tests_consentimiento`, incluida una en que falla la auditoría.
+
+### 18.17 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".
@@ -848,4 +858,3 @@ aceptada y la fecha, no solo en la auditoría.
   por consola.
 - **P4, datos:** plazo de conservación de los respaldos mensuales, que la Política de Privacidad deja por
   confirmar.
-- **Consentimiento:** guardar en la inscripción la versión de la Política aceptada y la fecha (observación de QA).

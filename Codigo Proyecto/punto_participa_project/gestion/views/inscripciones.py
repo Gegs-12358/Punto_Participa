@@ -21,7 +21,7 @@ from django.views.decorators.http import require_POST
 from ..servicios.cancelaciones import alumno_puede_cancelar, cancelar, limite_cancelacion, NoSePuedeCancelar
 from ..decorators import role_required
 from ..servicios.lista_espera import avisar as avisar_lista_espera
-from ..models import Actividad, Inscripcion, InscripcionCancelada
+from ..models import Actividad, consentimiento, Inscripcion, InscripcionCancelada, VERSION_POLITICA
 from ..permissions import puede_gestionar_actividad
 from ..utils import buscar_alumno_por_documento, limpiar_documento
 
@@ -134,7 +134,8 @@ def inscripcion_taller(request, actividad_id):
             act_lock.cupos_disponibles = cupos - 1
             act_lock.save(update_fields=['cupos_disponibles'])
 
-            inscripcion = Inscripcion.objects.create(actividad=act_lock, alumno=alumno, estado='CONFIRMADA')
+            inscripcion = Inscripcion.objects.create(actividad=act_lock, alumno=alumno, estado='CONFIRMADA',
+                                                     **consentimiento())
             cupos_restantes = act_lock.cupos_disponibles
             from ..servicios.lista_espera import quitar as quitar_de_lista_espera
             quitar_de_lista_espera(act_lock, alumno)
@@ -142,7 +143,8 @@ def inscripcion_taller(request, actividad_id):
         return _render_inscripcion(request, actividad, 'con_cupos', 'Ya estás inscrito en este taller.')
     try:
         registrar_log(request, 'Inscripciones', 'Inscripción a taller',
-                      f'{alumno.nombres} {alumno.apellidos} - {actividad.titulo} - Política de Privacidad v2026-1 aceptada',
+                      f'{alumno.nombres} {alumno.apellidos} - {actividad.titulo} - Política de Privacidad '
+                      f'{VERSION_POLITICA} aceptada',
                       'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
     except Exception:
         logger.exception(
@@ -182,7 +184,7 @@ def _anotar_lista_espera(request, actividad):
     if not alumno:
         _registrar_fallo_inscripcion(request)
         return error('No estás registrado en el sistema. Verifica tu RUT o contacta a Punto Estudiantil.')
-    resultado = anotar(actividad, alumno)
+    resultado = anotar(actividad, alumno, consentimiento())
     if resultado == 'inscrito':
         return error('Ya estás inscrito en este taller.')
     correo = ocultar_correo(alumno.correo)
@@ -192,7 +194,8 @@ def _anotar_lista_espera(request, actividad):
                                    f'Ya estabas en la lista de espera (todavía no estás inscrito). Te avisaremos{destino} '
                                    'si se libera un cupo.')
     registrar_log(request, 'Inscripciones', 'Anotación en lista de espera',
-                  f'{alumno.nombres} {alumno.apellidos} - {actividad.titulo} - Política de Privacidad v2026-1 aceptada',
+                  f'{alumno.nombres} {alumno.apellidos} - {actividad.titulo} - Política de Privacidad '
+                  f'{VERSION_POLITICA} aceptada',
                   'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
     return _render_inscripcion(request, actividad, 'sin_cupos', exito=
                                f'Quedaste en la lista de espera (todavía no estás inscrito). Si se libera un cupo te '
@@ -318,4 +321,4 @@ def actividad_publica(request, actividad_id):
 
 def politica_privacidad(request):
     """Página pública con la Política de Privacidad."""
-    return render(request, 'gestion/politica_privacidad.html')
+    return render(request, 'gestion/politica_privacidad.html', {'version_politica': VERSION_POLITICA})

@@ -292,6 +292,31 @@ def foto_academica(alumno):
     return {'carrera': carrera, 'escuela': escuela[:100], 'jornada': jornada}
 
 
+# ============================================================
+# CONSENTIMIENTO (Política de Privacidad)
+# ============================================================
+# Versión vigente de la Política de Privacidad (templates/gestion/politica_privacidad.html). Si cambia el texto,
+# se sube la versión: cada inscripción, anotación y respuesta guarda la que aceptó la persona.
+VERSION_POLITICA = 'v2026-1'
+
+
+class ConsentimientoPrivacidad(models.Model):
+    """Evidencia de que la persona aceptó la Política de Privacidad: qué versión y cuándo. Queda en el propio
+    registro (antes solo estaba en la auditoría, que se borra a los dos años o puede fallar al guardarse).
+    Vacío = registro anterior al 16/11/2026: la evidencia de esos está en la auditoría."""
+    politica_version = models.CharField('Política de Privacidad aceptada', max_length=20, blank=True, default='')
+    politica_aceptada = models.DateTimeField('Aceptó la Política el', null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+
+def consentimiento():
+    """Campos para guardar que se aceptó la Política vigente ahora."""
+    from django.utils import timezone
+    return {'politica_version': VERSION_POLITICA, 'politica_aceptada': timezone.now()}
+
+
 class FotoAcademica(models.Model):
     """
     "Foto" de la carrera, escuela y jornada del alumno en el momento de inscribirse
@@ -319,7 +344,7 @@ class FotoAcademica(models.Model):
         super().save(*args, **kwargs)
 
 
-class Inscripcion(FotoAcademica):
+class Inscripcion(FotoAcademica, ConsentimientoPrivacidad):
     ESTADO_CHOICES = [
         ('CONFIRMADA', 'Confirmada'),
         ('CANCELADA', 'Cancelada'),
@@ -373,7 +398,7 @@ class AvisoRetencion(models.Model):
         return f"Retención al {self.fecha_corte} (plazo {self.fecha_programada})"
 
 
-class ListaEspera(models.Model):
+class ListaEspera(ConsentimientoPrivacidad):
     """
     Estudiantes que pidieron aviso cuando un taller lleno libere un cupo. Cuando alguien cancela, se avisa por
     correo a todos los de la lista y el primero que se inscribe obtiene el cupo. Al inscribirse sale de la lista.
@@ -393,7 +418,7 @@ class ListaEspera(models.Model):
         return f"{self.alumno} - {self.actividad} (lista de espera)"
 
 
-class InscripcionCancelada(FotoAcademica):
+class InscripcionCancelada(FotoAcademica, ConsentimientoPrivacidad):
     """
     Historial de inscripciones canceladas. Al cancelar, la fila sale de Inscripcion y queda aquí,
     así los conteos de inscritos, el escáner y los reportes no cambian, y el alumno puede volver a
@@ -517,7 +542,7 @@ def _token_invitacion():
     return secrets.token_urlsafe(24)
 
 
-class Invitado(models.Model):
+class Invitado(ConsentimientoPrivacidad):
     """
     Alumno invitado a una actividad con invitación. Los datos (nombre, carrera, correo)
     vienen de la lista que cargó el Punto, no de la nómina: la invitación se envía a ESE

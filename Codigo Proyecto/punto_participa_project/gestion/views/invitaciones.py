@@ -25,7 +25,8 @@ from django.views.decorators.http import require_POST
 
 from ..decorators import role_required
 from ..servicios.invitados import analizar, aplicar, ArchivoInvalido, documento_valido, leer, MAX_NOMBRE_ACOMPANANTE
-from ..models import Acompanante, Actividad, Alumno, Invitado, NotificacionCorreo
+from ..models import (Acompanante, Actividad, Alumno, consentimiento, Invitado, NotificacionCorreo,
+                      VERSION_POLITICA)
 from ..permissions import puede_gestionar_actividad
 from ..utils import formatear_rut, id_o_none, limpiar_texto, normalizar_documento, paginar
 
@@ -334,7 +335,6 @@ def enviar_invitaciones_lista(request, pk):
 
 
 
-VERSION_POLITICA = 'v2026-1'
 
 
 def _estado_pagina(actividad):
@@ -419,7 +419,9 @@ def responder_invitacion(request, token):
                     Acompanante.objects.create(actividad=actividad, invitado=invitado, rut=doc, nombre=nombre)
                 invitado.estado = 'CONFIRMADO' if asistira == 'si' else 'RECHAZADO'
                 invitado.fecha_respuesta = timezone.now()
-                invitado.save(update_fields=['estado', 'fecha_respuesta'])
+                for campo, valor in consentimiento().items():
+                    setattr(invitado, campo, valor)
+                invitado.save(update_fields=['estado', 'fecha_respuesta', 'politica_version', 'politica_aceptada'])
             detalle = (f'{invitado.nombre} confirmó su asistencia a "{actividad.titulo}" con '
                        f'{len(filas)} acompañante{"s" if len(filas) != 1 else ""}'
                        if asistira == 'si' else f'{invitado.nombre} no asistirá a "{actividad.titulo}"')

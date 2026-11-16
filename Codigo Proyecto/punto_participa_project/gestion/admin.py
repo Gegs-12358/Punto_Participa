@@ -201,14 +201,15 @@ class ActividadAdmin(admin.ModelAdmin):
 
 @admin.register(Inscripcion)
 class InscripcionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'actividad', 'alumno', 'carrera', 'jornada', 'fecha_inscripcion', 'estado')
+    list_display = ('id', 'actividad', 'alumno', 'carrera', 'jornada', 'fecha_inscripcion', 'estado',
+                    'politica_version')
     list_filter = ('estado', 'fecha_inscripcion', 'escuela', 'jornada')
     search_fields = ('alumno__rut', 'alumno__nombres', 'alumno__apellidos', 'actividad__titulo')
     list_select_related = ('actividad', 'alumno')
     ordering = ('-fecha_inscripcion',)
     date_hierarchy = 'fecha_inscripcion'
-    # La foto académica es historia: no se edita a mano.
-    readonly_fields = ('carrera', 'escuela', 'jornada')
+    # La foto académica y el consentimiento son historia: no se editan a mano.
+    readonly_fields = ('carrera', 'escuela', 'jornada', 'politica_version', 'politica_aceptada')
 
 
 # ============================================================
