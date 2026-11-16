@@ -51,8 +51,33 @@ class ActividadPublicaTests(TestCase):
         self.assertRedirects(
             r, reverse('inscripcion_taller', args=[taller.pk]), fetch_redirect_response=False)
 
-    def test_una_actividad_inexistente_da_404(self):
-        self.assertEqual(self.client.get('/actividad/99999/').status_code, 404)
+    def test_la_direccion_de_taller_de_una_masiva_lleva_a_su_pagina(self):
+        # Alguien escribe /taller/<id>/ para una masiva: va a la página pública, no a un error
+        masiva = crear_actividad()
+        r = self.client.get(reverse('inscripcion_taller', args=[masiva.pk]))
+        self.assertRedirects(
+            r, reverse('actividad_publica', args=[masiva.pk]), fetch_redirect_response=False)
+
+    def test_una_con_invitacion_no_tiene_pagina_publica(self):
+        privada = crear_actividad('INVITACION')
+        for nombre in ('inscripcion_taller', 'actividad_publica'):
+            with self.subTest(pagina=nombre):
+                self.assertEqual(self.client.get(reverse(nombre, args=[privada.pk])).status_code, 404)
+
+    def test_una_actividad_inexistente_da_404_con_la_pagina_del_sistema(self):
+        for url in ('/actividad/99999/', '/taller/99999/', '/no-existe/'):
+            with self.subTest(url=url):
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 404)
+                self.assertContains(r, 'Esta página no existe', status_code=404)
+                self.assertContains(r, 'puntoestu@duoc.cl', status_code=404)
+                self.assertNotContains(r, 'Not Found', status_code=404)
+
+    def test_la_pagina_de_error_interno_se_puede_mostrar(self):
+        # Se dibuja sin datos de la petición, como hace Django cuando algo falla
+        html = render_to_string('500.html')
+        self.assertIn('Algo salió mal', html)
+        self.assertNotIn('Traceback', html)
 
     def test_finalizada_y_cancelada_se_muestran_con_su_estado(self):
         vencida = crear_actividad(dias=-3)

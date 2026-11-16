@@ -2527,6 +2527,11 @@ td.celda-texto {
     color: var(--muted);
 }
 
+/* Páginas de error (404 y 500): solo el mensaje, centrado en la tarjeta */
+.pagina-error {
+    padding: 36px 24px 30px;
+}
+
 /* Lista de espera en la página de un taller lleno: se distingue de la inscripción */
 .lista-espera {
     display: grid;

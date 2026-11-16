@@ -22,7 +22,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
 > exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
-> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 645 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 648 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -869,7 +869,19 @@ comunes en `base.py`. Primero se movieron las clases completas sin tocarlas y se
 Verificación: se midió la cobertura antes y después. No se perdió ninguna línea probada y la matriz nueva cubre 9
 líneas que antes nadie probaba.
 
-### 18.18 Pendiente
+### 18.18 Dirección de taller con una masiva y páginas de error propias (16/11/2026)
+
+Al abrir `/taller/<id>/` con una actividad masiva aparecía una página en blanco que decía "Not Found", en inglés.
+Ahora esa dirección lleva a la página pública de la masiva (`/actividad/<id>/`), igual que la página pública ya
+llevaba los talleres a su inscripción. Las actividades con invitación siguen sin página pública: cada invitado
+tiene su enlace personal.
+
+El sistema tampoco tenía páginas propias de error, así que mostraba las de Django. Se agregan `404.html` ("Esta
+página no existe") y `500.html` ("Algo salió mal"), con el encabezado, los colores y el contacto de Punto
+Estudiantil. No muestran detalles internos. La de error interno no usa etiquetas propias del sistema, para que se
+pueda mostrar aunque algo más esté fallando. Pruebas en `inscripciones/tests_inscripcion_publica`.
+
+### 18.19 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

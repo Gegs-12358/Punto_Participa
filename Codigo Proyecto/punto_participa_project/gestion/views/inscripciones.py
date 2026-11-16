@@ -77,7 +77,12 @@ def inscripcion_taller(request, actividad_id):
     Ahora usa buscar_alumno_por_documento() para aceptar
     RUT con/sin guion, con/sin puntos, pasaportes, etc.
     """
-    actividad = get_object_or_404(Actividad, pk=actividad_id, tipo='TALLER')
+    actividad = get_object_or_404(Actividad, pk=actividad_id)
+    if actividad.tipo == 'MASIVA':
+        # Una masiva no tiene inscripción: se muestra su página pública
+        return redirect('actividad_publica', actividad_id=actividad.pk)
+    if actividad.tipo != 'TALLER':
+        raise Http404('Actividad sin inscripción pública.')
     ahora = timezone.now()
 
     if actividad.estado != 'ACTIVA' or actividad.fecha_fin <= ahora:
