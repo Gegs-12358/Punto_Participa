@@ -320,6 +320,7 @@ def _procesar_form_actividad(request, form, es_nueva):
 
     actividad.save()
     form.save_m2m()
+    form.guardar_sesiones(actividad)
     if actividad.tipo == 'INVITACION' and getattr(form, 'filas_invitados', None):
         from .invitaciones import cargar_lista
         cargar_lista(request, actividad, form.filas_invitados)

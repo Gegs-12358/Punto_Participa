@@ -1920,6 +1920,79 @@ td.celda-texto {
    20. FOOTER
    ============================================================ */
 
+/* Lista de sesiones (páginas públicas y detalle de la actividad) */
+.lista-sesiones {
+    margin: 4px 0 6px;
+    padding-left: 22px;
+}
+
+.lista-sesiones li {
+    margin: 2px 0;
+}
+
+/* Formulario de actividad: sesiones adicionales (includes/sesiones_form.html) */
+.bloque-sesiones {
+    display: grid;
+    gap: 10px;
+    margin: 4px 0 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.bloque-sesiones legend {
+    padding: 0 6px;
+    font-weight: 700;
+    color: var(--navy);
+}
+
+.bloque-sesiones > .btn {
+    justify-self: start;
+    width: auto;
+}
+
+.bloque-sesiones__filas {
+    display: grid;
+    gap: 8px;
+}
+
+.fila-sesion {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr auto;
+    gap: 8px;
+    align-items: end;
+}
+
+.fila-sesion__campo {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.fila-sesion__quitar {
+    width: auto;
+    min-height: 38px;
+    padding: 6px 10px;
+}
+
+.bloque-sesiones__minima[hidden] {
+    display: none;
+}
+
+.bloque-sesiones__minima input {
+    max-width: 120px;
+}
+
+@media (max-width: 560px) {
+    .fila-sesion {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
 /* Escáner: elegir la sesión en las actividades de varias sesiones */
 .turno__sesion {
     display: flex;

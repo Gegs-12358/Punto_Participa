@@ -38,14 +38,7 @@
                     <div class="event-copy">
                         {% if actividad.descripcion %}<p>{{ actividad.descripcion|linebreaksbr }}</p>{% endif %}
                         <ul>
-                            <li><strong>{% icono "actividad" "icono--texto" %} Fecha:</strong>
-                                {% if actividad.cronograma %}
-                                {{ actividad.cronograma }}
-                                {% else %}
-                                {{ actividad.fecha_inicio|date:"d \d\e F \d\e Y, H:i" }} —
-                                {{ actividad.fecha_fin|date:"H:i" }}
-                                {% endif %}
-                            </li>
+                            {% include 'gestion/includes/fecha_actividad.html' with con_cronograma=True %}
                             <li><strong>{% icono "lugar" "icono--texto" %} Lugar:</strong> {{ actividad.lugar_completo }}</li>
                         </ul>
                     </div>

@@ -1,0 +1,17 @@
+{% load ui %}
+{# Fecha de la actividad en las páginas públicas: con varias sesiones, la lista de sesiones. #}
+{% with sesiones=actividad.lista_sesiones %}
+{% if sesiones|length > 1 %}
+<li><strong>{% icono "actividad" "icono--texto" %} {{ sesiones|length }} sesiones:</strong>
+    <ol class="lista-sesiones">
+        {% for s in sesiones %}
+        <li>{{ s.fecha_inicio|date:"l j \d\e F, H:i"|capfirst }} a {{ s.fecha_fin|date:"H:i" }}</li>
+        {% endfor %}
+    </ol>
+</li>
+{% else %}
+<li><strong>{% icono "actividad" "icono--texto" %} Fecha:</strong>
+    {% if con_cronograma and actividad.cronograma %}{{ actividad.cronograma }}{% else %}{{ actividad.fecha_inicio|date:"d \d\e F \d\e Y, H:i" }} a {{ actividad.fecha_fin|date:"H:i" }}{% endif %}
+</li>
+{% endif %}
+{% endwith %}

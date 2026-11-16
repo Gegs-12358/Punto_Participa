@@ -44,6 +44,31 @@ def _asegurar_registro(actividad, momento, metodo, usuario, **persona):
         registrar(actividad.sesion_para(momento), metodo=metodo, usuario=usuario, momento=momento, **persona)
 
 
+def guardar_sesiones(actividad, tramos):
+    """
+    Deja la actividad con estas sesiones: tramos = [(id o None, inicio, fin), ...] en orden. Las que
+    traen id se cambian, las sin id se crean y las que ya no están se quitan (el formulario ya revisó
+    que no tengan asistencias). Se numeran por orden de fecha, y la actividad queda empezando con la
+    primera y terminando con la última.
+    """
+    with transaction.atomic():
+        actuales = {s.id: s for s in actividad.sesiones.select_for_update()}
+        conservar = {i for i, _, _ in tramos if i}
+        Sesion.objects.filter(pk__in=[i for i in actuales if i not in conservar]).delete()
+        # Números provisorios, para no chocar con la regla "un número por actividad" al renumerar
+        for s in actuales.values():
+            if s.id in conservar:
+                Sesion.objects.filter(pk=s.id).update(numero=s.numero + 1000)
+        for numero, (i, inicio, fin) in enumerate(tramos, start=1):
+            if i:
+                Sesion.objects.filter(pk=i, actividad=actividad).update(numero=numero, fecha_inicio=inicio,
+                                                                        fecha_fin=fin)
+            else:
+                Sesion.objects.create(actividad=actividad, numero=numero, fecha_inicio=inicio, fecha_fin=fin)
+        Actividad.objects.filter(pk=actividad.pk).update(fecha_inicio=tramos[0][1], fecha_fin=tramos[-1][2])
+        actividad.fecha_inicio, actividad.fecha_fin = tramos[0][1], tramos[-1][2]
+
+
 # ============================================================
 # Señales
 # ============================================================

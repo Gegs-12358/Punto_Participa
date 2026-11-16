@@ -247,8 +247,20 @@
                 <div class="activity-detail-body">
                     <p><strong>Descripción:</strong> {{ actividad.descripcion }}</p>
                     <p><strong>Lugar:</strong> {{ actividad.lugar_completo }}</p>
+                    {% with sesiones=actividad.lista_sesiones %}
+                    {% if sesiones|length > 1 %}
+                    <p><strong>Sesiones ({{ sesiones|length }}):</strong></p>
+                    <ol class="lista-sesiones">
+                        {% for s in sesiones %}
+                        <li>{{ s.fecha_inicio|date:"D d/m/Y H:i" }} a {{ s.fecha_fin|date:"H:i" }}</li>
+                        {% endfor %}
+                    </ol>
+                    <p><strong>Asistencia mínima para cumplir:</strong> {{ actividad.asistencia_minima }} % de las sesiones</p>
+                    {% else %}
                     <p><strong>Fecha de inicio:</strong> {{ actividad.fecha_inicio|date:"d/m/Y H:i" }}</p>
                     <p><strong>Fecha de fin:</strong> {{ actividad.fecha_fin|date:"d/m/Y H:i" }}</p>
+                    {% endif %}
+                    {% endwith %}
                     <p><strong>Creada por:</strong> {{ actividad.creado_por.username|default:"N/A" }}</p>
                     <p><strong>Fecha de creación:</strong> {{ actividad.fecha_creacion|date:"d/m/Y H:i" }}</p>
 

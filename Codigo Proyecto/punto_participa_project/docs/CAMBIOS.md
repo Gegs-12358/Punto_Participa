@@ -22,7 +22,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
 > exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
-> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 673 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 689 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -940,7 +940,29 @@ Lo que sigue: el formulario para crear y editar las sesiones (con el porcentaje 
 el fin de la primera sesión) y, después, el listado de quienes cumplen, los reportes y las páginas públicas.
 Pruebas en `escaner/tests_sesiones`.
 
-### 18.22 Pendiente
+### 18.22 Actividades de varias sesiones, parte 2: formulario (16/11/2026)
+
+- **Formulario**: debajo de las fechas de siempre (que son la primera sesión) hay un bloque "Sesiones
+  adicionales" con "Agregar sesión": cada sesión lleva su día, hora de inicio y hora de término. Con sesiones
+  adicionales aparece "Asistencia mínima para cumplir (%)", 75 por defecto. Quien crea una actividad de una
+  sola sesión no ve ningún cambio. Lo maneja `gestion/js/sesiones_form.js`; el bloque está en
+  `includes/sesiones_form.html` y se usa en el formulario de la ventana y en el de página completa.
+- **Reglas**: las sesiones adicionales van después de la primera y no se cruzan; una sesión nueva o cambiada no
+  puede ser en el pasado (las ya realizadas que no cambian, sí se aceptan); hasta 30 sesiones; una sesión con
+  asistencias registradas no se puede quitar. Las sesiones se numeran por fecha y la actividad termina con la
+  última. Las asistencias quedan en su sesión aunque cambie el número.
+- **Inscripción**: un taller acepta inscripciones hasta que termina su primera sesión. Con una sola sesión
+  sigue igual (hasta que termina).
+- **Dónde se ven las sesiones**: el detalle de la actividad (con el porcentaje mínimo), las páginas públicas
+  (actividad, inscripción, cancelación e invitación) y los correos listan las sesiones con su día y horario.
+- **Arreglo**: al editar una actividad, el formulario mostraba la fecha y la hora en UTC, 3 horas corridas (una
+  actividad de las 10:15 aparecía a las 13:15). Si se guardaba sin corregirla, la actividad quedaba movida.
+  Ahora muestra la hora de Chile. Conviene revisar las actividades que se editaron antes de este arreglo.
+
+Pruebas en `actividades/tests_sesiones_form`. Lo que sigue (parte 3): el listado de quienes cumplen el mínimo,
+para los certificados, y la asistencia por sesión en Participantes, Reportes y las exportaciones.
+
+### 18.23 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

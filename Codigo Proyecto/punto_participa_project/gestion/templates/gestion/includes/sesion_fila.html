@@ -1,0 +1,14 @@
+{% load ui %}
+<div class="fila-sesion" data-fila-sesion>
+    <input type="hidden" name="sesion_id" value="{{ fila.id|default:'' }}">
+    <label class="fila-sesion__campo">Fecha
+        <input type="date" name="sesion_fecha" value="{{ fila.fecha|default:'' }}" class="form-control">
+    </label>
+    <label class="fila-sesion__campo">Inicio
+        <input type="time" name="sesion_inicio" value="{{ fila.inicio|default:'' }}" class="form-control">
+    </label>
+    <label class="fila-sesion__campo">Término
+        <input type="time" name="sesion_fin" value="{{ fila.fin|default:'' }}" class="form-control">
+    </label>
+    <button type="button" class="btn secondary fila-sesion__quitar" data-quitar-sesion aria-label="Quitar esta sesión" title="Quitar esta sesión">{% icono "eliminar" %}</button>
+</div>

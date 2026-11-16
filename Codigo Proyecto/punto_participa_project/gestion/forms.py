@@ -120,7 +120,7 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
         fields = [
             'titulo', 'descripcion', 'tipo', 'lugar', 'imagen',
             'lugar_numero', 'cupos_totales', 'cronograma',
-            'carreras', 'jornadas', 'acompanantes_por_invitado',
+            'carreras', 'jornadas', 'acompanantes_por_invitado', 'asistencia_minima',
         ]
         widgets = {
             'titulo': forms.TextInput(attrs={
@@ -144,6 +144,12 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
                 'class': 'floating-input',
                 'placeholder': ' ',
                 'min': '1',
+                'step': '1',
+            }),
+            'asistencia_minima': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'max': '100',
                 'step': '1',
             }),
             'acompanantes_por_invitado': forms.NumberInput(attrs={
@@ -177,6 +183,8 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
 
         # Acompañantes: solo se usa en las actividades con invitación; vacío = 0
         self.fields['acompanantes_por_invitado'].required = False
+        # Asistencia mínima: solo cuenta con varias sesiones; vacío = 75 %
+        self.fields['asistencia_minima'].required = False
 
         # Lugar: desplegable con los lugares activos del catálogo. Si se edita una
         # actividad cuyo lugar ya está bloqueado, ese lugar se sigue ofreciendo
@@ -221,14 +229,20 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
             Carrera.objects.filter(filtro_carreras).order_by('escuela', 'nombre')
         )
 
-        # Si estamos editando, prellenar los campos de fecha/hora
-        if self.instance and self.instance.pk:
-            if self.instance.fecha_inicio:
-                self.fields['fecha_inicio_fecha'].initial = self.instance.fecha_inicio.date()
-                self.fields['fecha_inicio_hora'].initial = self.instance.fecha_inicio.time()
-            if self.instance.fecha_fin:
-                self.fields['fecha_fin_fecha'].initial = self.instance.fecha_fin.date()
-                self.fields['fecha_fin_hora'].initial = self.instance.fecha_fin.time()
+        # Si estamos editando, prellenar los campos de fecha/hora con la PRIMERA sesión, en hora de
+        # Chile (antes se mostraba en UTC: 3 horas corrida, y al guardar la actividad se movía).
+        self.sesiones_existentes = (self.instance.lista_sesiones()
+                                    if self.instance and self.instance.pk else [])
+        if self.sesiones_existentes:
+            primera = self.sesiones_existentes[0]
+            inicio, fin = timezone.localtime(primera.fecha_inicio), timezone.localtime(primera.fecha_fin)
+            self.fields['fecha_inicio_fecha'].initial = inicio.date()
+            self.fields['fecha_inicio_hora'].initial = inicio.time()
+            self.fields['fecha_fin_fecha'].initial = fin.date()
+            self.fields['fecha_fin_hora'].initial = fin.time()
+        self.filas_sesiones = self._filas_sesiones()
+        self.errores_sesiones = []
+        self.tramos = []
 
     # ============================================================
     # VALIDACIONES
@@ -289,6 +303,9 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
             cleaned_data['acompanantes_por_invitado'] = 0
         self._validar_cambio_de_tipo(tipo)
         self._leer_lista_invitados(tipo)
+        self._validar_sesiones()
+        if cleaned_data.get('asistencia_minima') is None:
+            cleaned_data['asistencia_minima'] = 75
 
         # Si es TALLER, asegurar que hay cupos
         # Si es TALLER, validar cupos
@@ -329,6 +346,104 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
         elif tipo == 'INVITACION' and (actividad.inscripciones.exists() or actividad.asistencias.exists()):
             self.add_error('tipo', 'Esta actividad ya tiene inscripciones o asistencias: '
                                    'no puede pasar a ser con invitación.')
+
+    # ============================================================
+    # SESIONES ADICIONALES
+    # ============================================================
+
+    MAX_SESIONES = 30
+
+    def _filas_sesiones(self):
+        """Filas del bloque "Sesiones adicionales": lo enviado (si hay errores) o las sesiones guardadas."""
+        if self.is_bound:
+            def lista(campo):
+                if hasattr(self.data, 'getlist'):
+                    return self.data.getlist(campo)
+                valor = self.data.get(campo, [])
+                return list(valor) if isinstance(valor, (list, tuple)) else [valor]
+            datos = [lista(c) for c in ('sesion_id', 'sesion_fecha', 'sesion_inicio', 'sesion_fin')]
+            largo = max(len(d) for d in datos)
+            filas = []
+            for i in range(largo):
+                fila = [limpiar_texto(d[i] if i < len(d) else '')[:20] for d in datos]
+                if any(fila[1:]):
+                    filas.append(dict(zip(('id', 'fecha', 'inicio', 'fin'), fila)))
+            return filas
+        filas = []
+        for s in self.sesiones_existentes[1:]:
+            inicio, fin = timezone.localtime(s.fecha_inicio), timezone.localtime(s.fecha_fin)
+            filas.append({'id': str(s.id), 'fecha': inicio.strftime('%Y-%m-%d'),
+                          'inicio': inicio.strftime('%H:%M'), 'fin': fin.strftime('%H:%M')})
+        return filas
+
+    def _error_sesiones(self, mensaje):
+        self.errores_sesiones.append(mensaje)
+        self.add_error(None, mensaje)
+
+    def _validar_sesiones(self):
+        """
+        Las sesiones adicionales van después de la primera (los campos de fecha de siempre), sin
+        topes entre ellas. Una sesión nueva o cambiada no puede ser en el pasado. Una sesión que ya
+        tiene asistencias no se puede quitar. Deja en self.tramos [(id o None, inicio, fin), ...]
+        con todas las sesiones, en orden.
+        """
+        inicio1, fin1 = self.cleaned_data.get('fecha_inicio'), self.cleaned_data.get('fecha_fin')
+        if not (inicio1 and fin1):
+            return
+        existentes = {str(s.id): s for s in self.sesiones_existentes[1:]}
+        zona = timezone.get_current_timezone()
+        ahora = timezone.now()
+        extra, vistos = [], set()
+        for fila in self.filas_sesiones:
+            try:
+                fecha = datetime.strptime(fila['fecha'], '%Y-%m-%d').date()
+                inicio = timezone.make_aware(datetime.combine(fecha, datetime.strptime(fila['inicio'], '%H:%M').time()), zona)
+                fin = timezone.make_aware(datetime.combine(fecha, datetime.strptime(fila['fin'], '%H:%M').time()), zona)
+            except ValueError:
+                self._error_sesiones('Completa la fecha, la hora de inicio y la hora de término de cada sesión.')
+                return
+            if fila['id'] and (fila['id'] not in existentes or fila['id'] in vistos):
+                self._error_sesiones('Una de las sesiones no es de esta actividad. Recarga la página.')
+                return
+            vistos.add(fila['id'])
+            dia = fecha.strftime('%d/%m/%Y')
+            if fin <= inicio:
+                self._error_sesiones(f'La sesión del {dia} debe terminar después de empezar.')
+                return
+            previa = existentes.get(fila['id'])
+            sin_cambios = previa and (previa.fecha_inicio, previa.fecha_fin) == (inicio, fin)
+            if not sin_cambios and inicio < ahora:
+                self._error_sesiones(f'La sesión del {dia} no puede ser en el pasado.')
+                return
+            extra.append((fila['id'] or None, inicio, fin))
+
+        extra.sort(key=lambda t: t[1])
+        if 1 + len(extra) > self.MAX_SESIONES:
+            self._error_sesiones(f'Una actividad puede tener hasta {self.MAX_SESIONES} sesiones.')
+            return
+        fin_anterior = fin1
+        for _, inicio, fin in extra:
+            if inicio < fin_anterior:
+                self._error_sesiones('Las sesiones adicionales van después de la primera y no pueden '
+                                     'cruzarse entre ellas.')
+                return
+            fin_anterior = fin
+
+        quitadas = [s for i, s in existentes.items() if i not in vistos]
+        for s in quitadas:
+            if s.asistencias.exists():
+                dia = timezone.localtime(s.fecha_inicio).strftime('%d/%m/%Y')
+                self._error_sesiones(f'La sesión del {dia} ya tiene asistencias registradas: no se puede quitar.')
+                return
+
+        primera = self.sesiones_existentes[0].id if self.sesiones_existentes else None
+        self.tramos = [(primera, inicio1, fin1)] + [(int(i) if i else None, a, b) for i, a, b in extra]
+
+    def guardar_sesiones(self, actividad):
+        """Crea, cambia o quita las sesiones según el formulario (después de guardar la actividad)."""
+        from .servicios.sesiones import guardar_sesiones
+        if self.tramos:
+            guardar_sesiones(actividad, self.tramos)
 
     def _leer_lista_invitados(self, tipo):
         """Lee el archivo de invitados (solo si es con invitación). Las filas quedan en
@@ -446,6 +561,9 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
                 datetime.combine(ff_fecha, ff_hora),
                 timezone.get_current_timezone()
             )
+        # Con varias sesiones, la actividad termina con la última
+        if len(self.tramos) > 1:
+            actividad.fecha_fin = self.tramos[-1][2]
 
         es_nueva = not self.instance.pk
         if es_nueva:

@@ -318,6 +318,13 @@ class Actividad(models.Model):
         empezadas = [s for s in sesiones if s.fecha_inicio <= momento]
         return empezadas[-1] if empezadas else sesiones[0]
 
+    @property
+    def cierre_inscripcion(self):
+        """Un taller acepta inscripciones hasta que termina su primera sesión (con una sola sesión,
+        hasta que termina la actividad, como siempre)."""
+        sesiones = self.lista_sesiones() if self.pk else []
+        return sesiones[0].fecha_fin if len(sesiones) > 1 else self.fecha_fin
+
     def sesion_en_curso(self, momento):
         sesiones = self.lista_sesiones()
         if len(sesiones) == 1:

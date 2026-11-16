@@ -85,7 +85,7 @@ def inscripcion_taller(request, actividad_id):
         raise Http404('Actividad sin inscripción pública.')
     ahora = timezone.now()
 
-    if actividad.estado != 'ACTIVA' or actividad.fecha_fin <= ahora:
+    if actividad.estado != 'ACTIVA' or actividad.cierre_inscripcion <= ahora:
         return _render_inscripcion(request, actividad, _estado_cerrado(actividad))
     if (actividad.cupos_disponibles or 0) <= 0:
         if request.method == 'POST' and request.POST.get('accion') == 'lista_espera':
@@ -126,7 +126,7 @@ def inscripcion_taller(request, actividad_id):
             if act_lock.tipo != 'TALLER':
                 return _render_inscripcion(request, act_lock, 'finalizado',
                                            'Esta actividad no corresponde a un taller.')
-            if act_lock.estado != 'ACTIVA' or act_lock.fecha_fin <= timezone.now():
+            if act_lock.estado != 'ACTIVA' or act_lock.cierre_inscripcion <= timezone.now():
                 return _render_inscripcion(request, act_lock, _estado_cerrado(act_lock))
             if Inscripcion.objects.filter(actividad=act_lock, alumno=alumno).exists():
                 return _render_inscripcion(request, act_lock, 'con_cupos',
@@ -218,7 +218,7 @@ def _estado_pagina(actividad, ahora):
 
 
 def _puede_volver(actividad):
-    return actividad.estado == 'ACTIVA' and timezone.now() < actividad.fecha_fin
+    return actividad.estado == 'ACTIVA' and timezone.now() < actividad.cierre_inscripcion
 
 
 def _auditar(request, cancelacion, por_gestor):

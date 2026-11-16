@@ -1,0 +1,27 @@
+{% load ui %}
+{# Sesiones adicionales del formulario de actividad. Lo maneja gestion/js/sesiones_form.js. #}
+<fieldset class="bloque-sesiones" data-sesiones>
+    <legend>Sesiones adicionales</legend>
+    <small class="input-help">Si la actividad tiene varias sesiones, las fechas de arriba son la primera. Agrega aquí las demás, cada una con su día y horario.</small>
+    {% for error in form.errores_sesiones %}
+    <span class="field-error">{{ error }}</span>
+    {% endfor %}
+    <div class="bloque-sesiones__filas" data-sesiones-filas>
+        {% for fila in form.filas_sesiones %}
+        {% include 'gestion/includes/sesion_fila.html' with fila=fila %}
+        {% endfor %}
+    </div>
+    <template data-sesion-plantilla>
+        {% include 'gestion/includes/sesion_fila.html' with fila=None %}
+    </template>
+    <button type="button" class="btn secondary" data-agregar-sesion>{% icono "agregar" %} Agregar sesión</button>
+
+    <div class="form-field bloque-sesiones__minima" data-asistencia-minima{% if not form.filas_sesiones %} hidden{% endif %}>
+        <label for="{{ form.asistencia_minima.id_for_label }}">Asistencia mínima para cumplir (%)</label>
+        {{ form.asistencia_minima }}
+        <small class="input-help">Porcentaje de sesiones al que debe asistir cada persona para el certificado de participación.</small>
+        {% if form.asistencia_minima.errors %}
+        <span class="field-error">{{ form.asistencia_minima.errors.0 }}</span>
+        {% endif %}
+    </div>
+</fieldset>
