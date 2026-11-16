@@ -12,7 +12,9 @@ from django.utils import timezone
 
 from ...models import Alumno, Asistencia, Inscripcion, InscripcionCancelada, LogAuditoria
 from ...servicios.cancelaciones import cancelar, NoSePuedeCancelar, ocultar_correo
-from ..base import BaseSistemaTestCase
+from django.test import override_settings
+
+from ..base import CORREO_FALLIDO, BaseSistemaTestCase, SilenciarRegistros
 
 
 class BaseCancelacion(BaseSistemaTestCase):
@@ -216,3 +218,36 @@ class CancelacionPorElGestorTests(BaseCancelacion):
         self.login_as(self.admin)
         respuesta = self.client.get(reverse('participantes_actividad', args=[self.actividad.pk]))
         self.assertEqual(respuesta.context['total_inscritos'], 0)
+
+
+class CancelacionRechazosTests(SilenciarRegistros, BaseSistemaTestCase):
+    """Cuándo no se puede cancelar, y qué pasa si el correo de confirmación no sale."""
+
+    def setUp(self):
+        self.insc = Inscripcion.objects.create(actividad=self.actividad, alumno=self.alumno)
+
+    def test_inscripcion_que_ya_no_existe(self):
+        with self.assertRaisesMessage(NoSePuedeCancelar, 'ya fue cancelada'):
+            cancelar(999999)
+        self.login_as(self.creador)
+        r = self.client.post(reverse('cancelar_inscripcion_gestor', args=[self.actividad.pk, 999999]), follow=True)
+        self.assertIn('Esa inscripción ya estaba cancelada.', [str(m) for m in r.context['messages']])
+
+    def test_taller_cancelado_o_a_menos_de_24_horas(self):
+        self.actividad.__class__.objects.filter(pk=self.actividad.pk).update(
+            fecha_inicio=timezone.now() + timedelta(hours=10), fecha_fin=timezone.now() + timedelta(hours=12))
+        with self.assertRaisesMessage(NoSePuedeCancelar, 'Faltan menos de 24 horas'):
+            cancelar(self.insc.pk, desde_enlace=True)
+        self.actividad.__class__.objects.filter(pk=self.actividad.pk).update(estado='CANCELADA')
+        with self.assertRaisesMessage(NoSePuedeCancelar, 'El taller no está activo.'):
+            cancelar(self.insc.pk, por=self.creador)
+        self.assertTrue(Inscripcion.objects.filter(pk=self.insc.pk).exists())
+
+    @override_settings(EMAIL_BACKEND=CORREO_FALLIDO)
+    def test_si_el_correo_de_confirmacion_no_sale_la_inscripcion_queda_igual(self):
+        Inscripcion.objects.filter(pk=self.insc.pk).delete()
+        r = self.client.post(reverse('inscripcion_taller', args=[self.actividad.pk]),
+                             {'rut': self.alumno.rut, 'acepta_politica': 'on'})
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(Inscripcion.objects.filter(actividad=self.actividad, alumno=self.alumno).exists())
+

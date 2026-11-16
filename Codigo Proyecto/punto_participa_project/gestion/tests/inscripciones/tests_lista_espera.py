@@ -13,7 +13,9 @@ from django.utils import timezone
 from ...models import Alumno, Inscripcion, ListaEspera, LogAuditoria
 from ...servicios.cancelaciones import cancelar
 from ...servicios.lista_espera import avisar
-from ..base import BaseSistemaTestCase
+from django.test import override_settings
+
+from ..base import CORREO_FALLIDO, BaseSistemaTestCase, SilenciarRegistros
 
 
 class BaseListaEspera(BaseSistemaTestCase):
@@ -141,3 +143,30 @@ class AvisoTests(BaseListaEspera):
         self.assertContains(respuesta, 'Lista de espera')
         self.assertContains(respuesta, '2 personas esperan un cupo')
         self.assertContains(respuesta, 'Sin avisos')
+
+
+class ListaEsperaRechazosTests(SilenciarRegistros, BaseSistemaTestCase):
+    def setUp(self):
+        # Taller lleno (2 cupos, 2 inscritos)
+        self.otro = Alumno.objects.create(rut='111111111', nombres='Otra', apellidos='Persona',
+                                          correo='otra@duocuc.cl', carrera='X', jornada='Diurno')
+        for alumno in (self.alumno_pasaporte, self.otro):
+            Inscripcion.objects.create(actividad=self.actividad, alumno=alumno)
+        self.actividad.recalcular_cupos()
+        self.actividad.save()
+
+    def test_anotarse_sin_rut(self):
+        r = self.client.post(reverse('inscripcion_taller', args=[self.actividad.pk]),
+                             {'accion': 'lista_espera', 'rut': '', 'acepta_politica': 'on'})
+        self.assertContains(r, 'Debes ingresar tu RUT.')
+        self.assertFalse(ListaEspera.objects.exists())
+
+    @override_settings(EMAIL_BACKEND=CORREO_FALLIDO)
+    def test_aviso_con_el_correo_caido_se_cuenta_como_fallido(self):
+        ListaEspera.objects.create(actividad=self.actividad, alumno=self.alumno)
+        Inscripcion.objects.filter(alumno=self.otro).delete()
+        self.actividad.recalcular_cupos()
+        self.actividad.save()
+        self.assertEqual(avisar(self.actividad), (0, 1))
+        self.assertIsNone(ListaEspera.objects.get(alumno=self.alumno).ultimo_aviso)
+

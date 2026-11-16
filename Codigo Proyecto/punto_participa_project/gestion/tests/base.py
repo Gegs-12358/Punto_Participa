@@ -3,16 +3,30 @@ Piezas comunes de las pruebas (este archivo no tiene pruebas propias):
 
   BaseSistemaTestCase  roles, usuarios (admin, creador, otro creador, registrador), carreras, jornadas,
                        alumnos (con RUT y con pasaporte) y tres actividades listas para usar.
+  BackendCorreoFallido servidor de correo que siempre falla (CORREO_FALLIDO), para probar los avisos.
   SilenciarRegistros   apaga el registro de errores mientras corre la clase, para que la salida de las
                        pruebas que provocan fallas a propósito se lea limpia.
 """
 import logging
+import smtplib
 
 from datetime import timedelta
 from django.contrib.auth.models import User
+from django.core.mail.backends.base import BaseEmailBackend
 from django.test import TestCase, override_settings
 from django.utils import timezone
 from ..models import Actividad, Alumno, Carrera, Jornada, Lugar, Rol, UsuarioSistema
+
+
+class BackendCorreoFallido(BaseEmailBackend):
+    """Servidor de correo que siempre falla, como un SMTP caído. Uso:
+    @override_settings(EMAIL_BACKEND=CORREO_FALLIDO)"""
+
+    def send_messages(self, email_messages):
+        raise smtplib.SMTPException('Servidor de correo no disponible (prueba)')
+
+
+CORREO_FALLIDO = 'gestion.tests.base.BackendCorreoFallido'
 
 
 class SilenciarRegistros:

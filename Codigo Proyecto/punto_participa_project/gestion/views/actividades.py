@@ -293,37 +293,11 @@ def _procesar_form_actividad(request, form, es_nueva):
             return None, JsonResponse({'success': False, 'html': html})
         return None, None
 
+    # El formulario ya validó las fechas (término después del inicio) y, al guardar,
+    # arma las fechas con zona horaria y recalcula los cupos (ActividadForm.save).
     actividad = form.save(commit=False)
-    if actividad.fecha_fin <= actividad.fecha_inicio:
-        form.add_error('fecha_fin', 'La fecha de fin debe ser posterior a la fecha de inicio.')
-        if _es_ajax(request):
-            titulo = 'Crear Actividad' if es_nueva else 'Editar Actividad'
-            html = render_to_string('gestion/actividad_form_partial.html',
-                                    {'form': form, 'titulo': titulo}, request=request)
-            return None, JsonResponse({'success': False, 'html': html})
-        return None, None
-
     if es_nueva:
         actividad.creado_por = request.user
-
-    # Delegado al modelo (si implementás Actividad.recalcular_cupos)
-    if hasattr(actividad, 'recalcular_cupos'):
-        if es_nueva:
-            actividad.recalcular_cupos(inscritos_override=0)
-        else:
-            actividad.recalcular_cupos()
-    else:
-        # Fallback: comportamiento original
-        if actividad.tipo == 'TALLER':
-            if es_nueva:
-                actividad.cupos_disponibles = actividad.cupos_totales
-            else:
-                inscritos = Inscripcion.objects.filter(actividad=actividad).count()
-                actividad.cupos_disponibles = max(0, actividad.cupos_totales - inscritos)
-        else:
-            actividad.cupos_totales = None
-            actividad.cupos_disponibles = None
-
     actividad.save()
     form.save_m2m()
     form.guardar_sesiones(actividad)
@@ -337,11 +311,6 @@ def _procesar_form_actividad(request, form, es_nueva):
 @role_required('Administrador', 'Creador de Evento')
 def crear_actividad(request):
     if request.method == 'POST':
-        request.POST = request.POST.copy()
-        for f in ('fecha_inicio', 'fecha_fin'):
-            if f in request.POST and 'T' in request.POST[f]:
-                request.POST[f] = request.POST[f].replace('T', ' ')
-
         form = ActividadForm(request.POST, request.FILES)
         actividad, error = _procesar_form_actividad(request, form, es_nueva=True)
 
@@ -363,9 +332,6 @@ def crear_actividad(request):
                                      'tipo': actividad.tipo, 'es_nueva': True})
             messages.success(request, 'Actividad creada exitosamente.')
             return redirect('lista_actividades')
-
-        if _es_ajax(request) and form.errors:
-            return JsonResponse({'success': False, 'errors': form.errors.as_json()})
     else:
         form = ActividadForm()
 

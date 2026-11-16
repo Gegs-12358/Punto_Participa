@@ -46,7 +46,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**. La entrega está fijada para el 1 de diciembre de 2026.
 
-* Suite de pruebas automatizadas: 697 tests (detalle en la sección 9).
+* Suite de pruebas automatizadas: 736 tests (detalle en la sección 9).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 * El historial detallado de cambios está en [`docs/CAMBIOS.md`](Codigo%20Proyecto/punto_participa_project/docs/CAMBIOS.md) y la guía de estilo de las pantallas en [`docs/GUIA_ESTILO.md`](Codigo%20Proyecto/punto_participa_project/docs/GUIA_ESTILO.md).
 
@@ -373,7 +373,7 @@ Codigo Proyecto/
 
 ## 9. Pruebas automatizadas
 
-La suite tiene **697 tests** y se ejecuta con:
+La suite tiene **736 tests** y se ejecuta con:
 
 ```bash
 docker compose exec web python manage.py test --parallel --noinput
@@ -387,6 +387,8 @@ Las pruebas usan una base de datos temporal con datos inventados, así que no to
 docker compose exec web python manage.py test gestion.tests.escaner --noinput
 docker compose exec web python manage.py test gestion.tests.escaner.tests_turno --noinput
 ```
+
+La cobertura es de **98 %** de las líneas del sistema (medida el 16/11/2026, sin contar migraciones, comandos de administración ni el admin de Django). Lo que queda sin probar son choques entre dos operadores en el mismo instante y errores inesperados genéricos.
 
 Muchas pruebas recorren una tabla de casos (por ejemplo, todos los formatos de RUT o la matriz de permisos). Cada caso se revisa por separado con `subTest`, y si uno falla el informe dice cuál.
 

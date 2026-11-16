@@ -106,9 +106,6 @@ def cambiar_contrasena(request):
     if not perfil.activo:
         messages.error(request, 'Tu cuenta está desactivada.')
         return redirect('login')
-    if not perfil.rol:
-        messages.error(request, 'Tu cuenta no tiene un rol asignado.')
-        return redirect('login')
 
     if request.method == 'POST':
         actual = request.POST.get('contrasena_actual', '')

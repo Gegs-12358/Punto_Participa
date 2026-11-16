@@ -277,3 +277,76 @@ class VistasAjaxYValidacionesExtremasTests(SilenciarRegistros, BaseSistemaTestCa
         self.client.force_login(self.admin)
         response = self.client.get(reverse("exportar_reportes", args=["pdf"]))
         self.assertIn(response.status_code, (200, 400, 404))
+
+
+class CrearYEditarOtrosCaminosTests(BaseSistemaTestCase):
+    """Caminos de crear y editar que no pasan por la ventana (página completa) y sus rechazos."""
+
+    def datos(self, **cambios):
+        inicio = timezone.localtime(timezone.now() + timedelta(days=5))
+        datos = {
+            'titulo': 'Taller nuevo', 'descripcion': 'Descripción', 'tipo': 'TALLER', 'lugar': 'Sala nueva',
+            'cupos_totales': 30,
+            'fecha_inicio_fecha': inicio.strftime('%Y-%m-%d'), 'fecha_inicio_hora': inicio.strftime('%H:%M'),
+            'fecha_fin_fecha': (inicio + timedelta(hours=2)).strftime('%Y-%m-%d'),
+            'fecha_fin_hora': (inicio + timedelta(hours=2)).strftime('%H:%M'),
+            'carreras': [self.carrera.pk], 'jornadas': [self.jornada.pk],
+        }
+        datos.update(cambios)
+        return datos
+
+    def test_filtro_por_fecha_de_creacion(self):
+        self.login_as(self.admin)
+        hoy = timezone.localdate().strftime('%Y-%m-%d')
+        r = self.client.get(reverse('lista_actividades'), {'fecha_creacion': hoy})
+        self.assertContains(r, self.actividad.titulo)
+        r = self.client.get(reverse('lista_actividades'), {'fecha_creacion': '2020-01-01'})
+        self.assertNotContains(r, self.actividad.titulo)
+
+    def test_crear_en_pagina_completa_con_errores_vuelve_al_formulario(self):
+        self.login_as(self.creador)
+        r = self.client.post(reverse('crear_actividad'), self.datos(titulo=''))
+        self.assertEqual(r.status_code, 200)
+        self.assertTemplateUsed(r, 'gestion/actividad_form.html')
+        self.assertFalse(Actividad.objects.filter(descripcion='Descripción').exists())
+
+    def test_editar_en_la_ventana_carga_el_formulario(self):
+        self.login_as(self.creador)
+        r = self.client.get(reverse('editar_actividad', args=[self.actividad.pk]), {'partial': '1'})
+        self.assertTemplateUsed(r, 'gestion/actividad_form_partial.html')
+        self.assertContains(r, self.actividad.titulo)
+
+    def test_editar_la_actividad_de_otro_por_ajax_responde_403(self):
+        self.login_as(self.creador)
+        r = self.client.post(reverse('editar_actividad', args=[self.actividad_otro.pk]), self.datos(),
+                             HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.status_code, 403)
+        self.actividad_otro.refresh_from_db()
+        self.assertNotEqual(self.actividad_otro.titulo, 'Taller nuevo')
+
+    def test_confirmacion_cuenta_inscritos_y_asistentes_y_la_edicion_forzada_queda_en_la_auditoria(self):
+        Inscripcion.objects.create(actividad=self.actividad, alumno=self.alumno)
+        Asistencia.objects.create(actividad=self.actividad, alumno=self.alumno, metodo_ingreso='RUT')
+        self.login_as(self.creador)
+        url = reverse('editar_actividad', args=[self.actividad.pk])
+        aviso = self.client.get(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest').json()
+        self.assertTrue(aviso['requiere_confirmacion'])
+        self.assertIn('1 inscrito y 1 asistente registrados', aviso['mensaje'])
+        r = self.client.post(url, {**self.datos(titulo='Corregido'), 'forzar_edicion': 'true'},
+                             HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertTrue(r.json()['success'], r.json())
+        log = LogAuditoria.objects.filter(accion='Edición de actividad').latest('fecha_registro')
+        self.assertIn('FORZADAMENTE', log.detalle)
+
+    def test_con_invitacion_en_pagina_completa_lleva_a_la_lista_de_invitados(self):
+        from ..invitaciones.tests_lista import csv_archivo, rut
+        self.login_as(self.creador)
+        lista = csv_archivo([[rut(17000001), 'Externa Lista', 'Diseño', 'e@duocuc.cl']])
+        r = self.client.post(reverse('crear_actividad'), self.datos(tipo='INVITACION', titulo='Cena',
+                                                                    lista_invitados=lista))
+        act = Actividad.objects.get(titulo='Cena')
+        self.assertRedirects(r, reverse('invitados_actividad', args=[act.pk]), fetch_redirect_response=False)
+        r = self.client.post(reverse('editar_actividad', args=[act.pk]),
+                             self.datos(tipo='INVITACION', titulo='Cena de gala'))
+        self.assertRedirects(r, reverse('invitados_actividad', args=[act.pk]), fetch_redirect_response=False)
+

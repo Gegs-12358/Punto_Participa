@@ -194,3 +194,17 @@ class EnlaceDelMenuTests(TestCase):
         r = self.client.get(reverse('dashboard'))
         self.assertNotContains(r, f'href="{reverse("lista_alumnos")}"')
         self.assertNotContains(r, reverse('importar_alumnos'))
+
+
+class ImportarAccionDesconocidaTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        rol, _ = Rol.objects.get_or_create(nombre='Administrador')
+        user = User.objects.create_user('admin_accion', password='x')
+        UsuarioSistema.objects.create(user=user, rol=rol, activo=True, must_change_password=False, rut='123456785')
+        self.client.force_login(user)
+
+    def test_accion_desconocida(self):
+        r = self.client.post(reverse('importar_alumnos'), {'accion': 'otra'})
+        self.assertContains(r, 'Acción no válida.')
+

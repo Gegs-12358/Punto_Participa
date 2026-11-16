@@ -22,7 +22,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
 > exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
-> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 697 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 736 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -461,7 +461,7 @@ No hay Analytics, fuentes externas ni otras APIs. Las únicas cookies son las de
 - [ ] Confirmar con Duoc UC la autorización de la carga y el formato real del archivo.
 
 **Calidad**
-- [x] Suite completa de tests en verde (718 pruebas al 15/11/2026). El 92 % de cobertura se midió con 323 y está pendiente de recalcular.
+- [x] Suite completa de tests en verde (736 pruebas al 16/11/2026), con 98 % de cobertura (ver 18.25).
 - [ ] Usar Git (los ZIPs numerados, los `.bak` y las copias duplicadas indican que hoy el versionado es manual).
 
 ---
@@ -990,7 +990,39 @@ dentro de las nuevas que eran la misma acción con una variante pequeña; se jun
 revisiones (filas vacías, quitar todas las sesiones, una actividad de una sola sesión en pantalla, "en curso" y
 subir el mínimo). Quedan 697 pruebas.
 
-### 18.25 Pendiente
+### 18.25 Código que no se ejecutaba y rutas de error sin probar (16/11/2026)
+
+Cobertura medida con toda la suite: **95 % → 98 %** (de 213 a 92 líneas sin probar, sin contar migraciones,
+comandos de administración ni el admin de Django).
+
+- **Código que no se podía ejecutar, quitado**: en `views/actividades.py`, la segunda revisión de que el término
+  sea posterior al inicio (ya la hace el formulario), un "plan B" de cupos para un caso que no existe (y que
+  además recalculaba los cupos por segunda vez: ya lo hace `ActividadForm.save`), la conversión de un formato de
+  fecha antiguo (`2026-11-20T10:00`) que el formulario ya no envía y una respuesta de error que nunca se daba. En
+  `views/cuentas.py`, el aviso "tu cuenta no tiene un rol": el rol es obligatorio en la base de datos.
+- **Pruebas nuevas de rutas de error reales**: inicio de sesión con usuario o clave vacíos, con un rol que no es
+  del sistema y con clave temporal; cambio de clave sin perfil, con la cuenta desactivada, vacía o igual a la
+  actual; Guardar usuario con identificadores inválidos o inexistentes y nombres de usuario repetidos o no
+  permitidos; importaciones sin archivo, con archivo grande, demasiadas filas o acción desconocida; filas con
+  errores en la carga masiva de usuarios; crear y editar en página completa, editar una actividad ajena por AJAX,
+  confirmación con inscritos y asistentes, edición forzada en la auditoría; filtro por fecha de creación;
+  Catálogos sin cambios (no dejan registro) y con nombres repetidos; acciones repetidas sobre un alumno;
+  cancelar una inscripción inexistente, de un taller cancelado o a menos de 24 horas; lista de espera sin RUT;
+  escáner con datos malos al elegir la actividad, turno inexistente y lecturas vacías; búsqueda y filtro de la
+  lista de invitados; filtros de período y tipo del Inicio. La matriz de permisos suma Notificaciones de una
+  actividad ajena.
+- **Correo caído**: confirmación de inscripción, aviso de la lista de espera, aviso de retención y bienvenida de
+  la carga masiva. En todos, la acción principal se completa igual y el fallo queda registrado.
+- **Arreglo en las pruebas**: las dos pruebas de "SMTP caído" usaban un servidor de correo de prueba
+  (`BackendCorreoFallido`) que se perdió al reorganizar las carpetas, porque solo se nombraba como texto. Pasaban
+  por la razón equivocada (Django no encontraba la clase). Ahora está en `tests/base.py` (`CORREO_FALLIDO`) y una
+  prueba de resguardo revisa que todo servidor de correo nombrado en las pruebas exista.
+
+Lo que queda sin probar a propósito: choques entre dos operadores en el mismo instante (`IntegrityError`),
+errores "inesperados" genéricos y algunos límites de intentos por minuto. Probarlos exigiría simular fallas
+internas sin probar nada real. Quedan 736 pruebas.
+
+### 18.26 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

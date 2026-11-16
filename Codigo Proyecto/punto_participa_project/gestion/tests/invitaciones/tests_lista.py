@@ -228,6 +228,27 @@ class PantallaInvitadosTests(BaseInvitadosTests):
         self.assertContains(resp, 'Fuera de la nómina')
         self.assertContains(resp, 'Juan Pérez')
 
+    def test_sin_archivo_avisa(self):
+        self.login_as(self.creador)
+        resp = self.client.post(self.url, {}, follow=True)
+        self.assertContains(resp, 'Elige el archivo con la lista')
+
+    def test_buscar_y_filtrar_por_respuesta(self):
+        Invitado.objects.create(actividad=self.act, rut='200015509', nombre='Juan Pérez', correo='j@duocuc.cl',
+                                estado='CONFIRMADO')
+        Invitado.objects.create(actividad=self.act, rut='XK1', nombre='Rosa Fuera', correo='r@duocuc.cl')
+        self.login_as(self.creador)
+        casos = [
+            ({'q': '20.001.550-9'}, ['Juan Pérez']),          # el documento se busca con o sin puntos
+            ({'q': 'rosa'}, ['Rosa Fuera']),
+            ({'estado': 'CONFIRMADO'}, ['Juan Pérez']),
+            ({'estado': 'PENDIENTE'}, ['Rosa Fuera']),
+        ]
+        for filtro, esperados in casos:
+            with self.subTest(**filtro):
+                nombres = [i.nombre for i in self.client.get(self.url, filtro).context['invitados']]
+                self.assertEqual(nombres, esperados)
+
     def test_archivo_ilegible_avisa(self):
         self.login_as(self.creador)
         malo = SimpleUploadedFile('lista.pdf', b'%PDF', content_type='application/pdf')

@@ -80,7 +80,9 @@ class NormalizacionDeDocumentosTests(TestCase):
         self.assertEqual(buscar_alumno_por_documento('ab123456').pk, p.pk)
 
 
-class RutUsuarioTests(TestCase):
+class BaseGuardarUsuario(TestCase):
+    """Un Administrador con sesión iniciada y ayudas para llamar a Guardar usuario."""
+
     def setUp(self):
         cache.clear()
         self.rol_admin = Rol.objects.create(nombre='Administrador')
@@ -113,6 +115,7 @@ class RutUsuarioTests(TestCase):
         datos.update(extra)
         return self.client.post(URL, datos)
 
+class RutUsuarioTests(BaseGuardarUsuario):
     def test_crear_sin_rut_se_rechaza(self):
         r = self._post(username='nuevo1', rut='')
         self.assertEqual(r.status_code, 400)
@@ -282,3 +285,48 @@ class UsuariosAuditoriaYMiddlewareIntegralTests(BaseSistemaTestCase):
         form = ActividadForm(data=datos, files={"imagen": imagen})
         self.assertFalse(form.is_valid())
         self.assertIn("imagen", form.errors)
+
+
+class GuardarUsuarioRechazosTests(BaseGuardarUsuario):
+    """Datos que Guardar usuario rechaza sin crear ni cambiar nada."""
+
+    def _editar(self, us, **cambios):
+        datos = {'user_id': us.pk, 'username': us.user.username, 'nombre': 'Nombre Prueba',
+                 'email': 'prueba@duocuc.cl', 'rol': self.rol_creador.pk, 'estado': 'on', 'rut': us.rut}
+        datos.update(cambios)
+        return self.client.post(URL, datos)
+
+    def test_identificadores_que_no_son_numeros(self):
+        for campo, valor in (('user_id', 'abc'), ('rol', 'x')):
+            with self.subTest(campo=campo):
+                r = self._post(username='nuevo_ids', rut='12.345.678-5', **{campo: valor})
+                self.assertEqual(r.status_code, 400)
+                self.assertEqual(r.json()['message'], 'Datos inválidos.')
+        self.assertFalse(User.objects.filter(username='nuevo_ids').exists())
+
+    def test_usuario_o_rol_que_no_existen(self):
+        for extra in ({'user_id': 99999}, {'rol': 99999}):
+            with self.subTest(**extra):
+                r = self._post(username='nuevo_404', rut='12.345.678-5', **extra)
+                self.assertEqual(r.status_code, 404)
+                self.assertIn('no encontrado', r.json()['message'])
+        self.assertFalse(User.objects.filter(username='nuevo_404').exists())
+
+    def test_nombre_de_usuario_repetido_al_crear_y_al_editar(self):
+        self._usuario('ocupado', '123456785')
+        r = self._post(username='ocupado', rut='20.001.550-9')
+        self.assertEqual((r.status_code, r.json()['message']), (400, 'Ese nombre de usuario ya está en uso'))
+        otro = self._usuario('otro', '200015509')
+        r = self._editar(otro, username='ocupado')
+        self.assertEqual((r.status_code, r.json()['message']), (400, 'Ese nombre de usuario ya está en uso'))
+        otro.user.refresh_from_db()
+        self.assertEqual(otro.user.username, 'otro')
+
+    def test_nombre_de_usuario_con_caracteres_no_permitidos_al_editar(self):
+        us = self._usuario('valido', '123456785')
+        r = self._editar(us, username='con espacio')
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('solo puede contener', r.json()['message'])
+        us.user.refresh_from_db()
+        self.assertEqual(us.user.username, 'valido')
+

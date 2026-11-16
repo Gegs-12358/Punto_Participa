@@ -9,10 +9,12 @@ import re
 from django.contrib.auth.models import User
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
 
 from ...models import LogAuditoria, UsuarioSistema
-from ..base import BaseSistemaTestCase
+
+from ..base import CORREO_FALLIDO, BaseSistemaTestCase
 
 
 def csv_archivo(filas, encabezado='nombre;correo;rut;rol;usuario'):
@@ -133,3 +135,45 @@ class PermisosTests(BaseCarga):
 
     def test_boton_en_usuarios(self):
         self.assertContains(self.client.get(reverse('usuarios')), self.url)
+
+
+class ImportarUsuariosRechazosTests(BaseCarga):
+    def test_sin_archivo_archivo_grande_y_accion_desconocida(self):
+        from ...servicios.importador_alumnos import MAX_BYTES
+        grande = SimpleUploadedFile('usuarios.csv', b'x' * (MAX_BYTES + 1), content_type='text/csv')
+        casos = [
+            ('sin archivo', {'accion': 'previsualizar'}, 'Selecciona un archivo'),
+            ('archivo demasiado grande', {'accion': 'previsualizar', 'archivo': grande}, 'El archivo supera 5 MB'),
+            ('acción desconocida', {'accion': 'otra'}, 'Acción no válida'),
+        ]
+        for caso, datos, mensaje in casos:
+            with self.subTest(caso=caso):
+                self.assertContains(self.client.post(self.url, datos), mensaje)
+        self.assertFalse(User.objects.filter(email__endswith='@duoc.cl').exists())
+
+
+class CargaMasivaFilasConErroresTests(BaseCarga):
+    def test_errores_por_fila(self):
+        casos = [
+            ('N' * 151 + ';largo@duoc.cl;12.345.678-5;Creador de Evento;', 'El nombre supera 150 caracteres.'),
+            ('Sin Rut;sinrut@duoc.cl;;Creador de Evento;', 'Falta el RUT o documento.'),
+            ('Rut Largo;rutlargo@duoc.cl;1234567890123;Creador de Evento;', 'El RUT supera'),
+        ]
+        for fila, mensaje in casos:
+            with self.subTest(mensaje=mensaje):
+                self.assertContains(self.previsualizar([fila]), mensaje)
+
+    def test_demasiadas_filas(self):
+        from ...servicios.usuarios_masivos import MAX_USUARIOS
+        filas = [f'Persona {i};p{i}@duoc.cl;{i}-1;Creador de Evento;' for i in range(MAX_USUARIOS + 1)]
+        self.assertContains(self.previsualizar(filas), f'el máximo es {MAX_USUARIOS} usuarios')
+
+    @override_settings(EMAIL_BACKEND=CORREO_FALLIDO)
+    def test_si_el_correo_de_bienvenida_no_sale_la_cuenta_igual_se_crea(self):
+        self.previsualizar(['Ana Nueva;ana.nueva@duoc.cl;12.345.678-5;Creador de Evento;'])
+        r = self.confirmar()
+        self.assertTrue(User.objects.filter(email='ana.nueva@duoc.cl').exists())
+        log = LogAuditoria.objects.filter(accion='Carga masiva de usuarios').latest('fecha_registro')
+        self.assertEqual(log.cambios_json['correos_fallidos'], [['ana.nueva', 'Creador de Evento']])
+        self.assertEqual(r.status_code, 200)
+

@@ -40,6 +40,7 @@ MATRIZ = [
     ('participantes_actividad', ['propia'],             'login', 'ok', 'ok', 'inicio'),
     ('participantes_actividad', ['ajena'],              'login', 'ok', 'lista', 'inicio'),
     ('notificaciones_actividad', ['propia'],            'login', 'ok', 'ok', 'inicio'),
+    ('notificaciones_actividad', ['ajena'],             'login', 'ok', 'lista', 'inicio'),
     ('escaneo', [],                                     'login', 'ok', 'ok', 'ok'),
     ('reportes', [],                                    'login', 'ok', 'ok', 'inicio'),
     ('exportar_reportes', ['csv'],                      'login', 'ok', 'ok', '403'),

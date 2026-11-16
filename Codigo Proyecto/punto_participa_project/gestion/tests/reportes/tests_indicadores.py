@@ -13,6 +13,8 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from ..base import BaseSistemaTestCase
+
 
 class BaseKpiTests(TestCase):
     def setUp(self):
@@ -116,3 +118,32 @@ class KpiExportacionTests(BaseKpiTests):
         r = self.client.get(reverse('exportar_reportes', args=['csv']))
         cabecera = r.content.decode('utf-8-sig').splitlines()[0]
         self.assertIn(';', cabecera)
+
+
+class FiltrosDelInicioTests(BaseSistemaTestCase):
+    """Los filtros de período y tipo del Inicio cambian lo que se cuenta."""
+
+    def test_periodo_y_tipo(self):
+        ahora = timezone.now()
+        Actividad.objects.create(titulo='Charla de hoy', descripcion='d', tipo='MASIVA', lugar='Patio',
+                                 fecha_inicio=ahora - timedelta(minutes=1), fecha_fin=ahora + timedelta(hours=1))
+        Actividad.objects.create(titulo='Taller antiguo', descripcion='d', tipo='TALLER', lugar='Sala',
+                                 fecha_inicio=ahora - timedelta(days=40), fecha_fin=ahora - timedelta(days=40, hours=-2),
+                                 cupos_totales=5, cupos_disponibles=5)
+        activas = Actividad.objects.filter(estado='ACTIVA')
+        local = timezone.localtime(ahora)
+        esperado = {
+            'hoy': activas.filter(fecha_inicio__date=timezone.localdate()).count(),
+            '7dias': activas.filter(fecha_inicio__gte=ahora - timedelta(days=7)).count(),
+            'mes': activas.filter(fecha_inicio__year=local.year, fecha_inicio__month=local.month).count(),
+        }
+        self.assertEqual(esperado['hoy'], 1)
+        self.login_as(self.admin)
+        for rango, cantidad in esperado.items():
+            with self.subTest(rango=rango):
+                r = self.client.get(reverse('dashboard'), {'rango': rango})
+                self.assertEqual(r.context['actividades_activas'], cantidad)
+        r = self.client.get(reverse('dashboard'), {'tipo': 'TALLER'})
+        self.assertEqual(r.context['actividades_activas'], activas.filter(tipo='TALLER').count())
+        self.assertLess(r.context['actividades_activas'], activas.count())
+

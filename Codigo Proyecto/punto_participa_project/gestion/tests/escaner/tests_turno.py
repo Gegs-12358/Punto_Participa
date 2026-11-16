@@ -9,7 +9,7 @@ from datetime import timedelta
 from django.urls import reverse
 from django.utils import timezone
 
-from ...models import Asistencia, Inscripcion, LogAuditoria, TurnoEscaneo
+from ...models import Actividad, Asistencia, Inscripcion, LogAuditoria, TurnoEscaneo
 from ..base import BaseSistemaTestCase
 
 
@@ -259,3 +259,45 @@ class ElegirActividadTests(BaseTurnoTests):
         self.assertEqual(resp.status_code, 200)
         titulos = {a.titulo for a in resp.context['actividades_disponibles']}
         self.assertEqual(titulos, {self.actividad.titulo, self.actividad_masiva.titulo, self.actividad_otro.titulo})
+
+
+class EscanerCasosBordeTests(BaseTurnoTests):
+    """Elegir actividad con datos malos, terminar un turno que no existe y lecturas vacías."""
+    AJAX = {'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'}
+
+    def setUp(self):
+        self.client.force_login(self.registrador)
+
+    def test_elegir_actividad_por_ajax_sin_id_inexistente_y_valida(self):
+        r = self.client.post(URL, {'cambiar_actividad': '1'}, **self.AJAX)
+        self.assertEqual((r.status_code, r.json()['message']), (400, 'Debes seleccionar una actividad.'))
+        r = self.client.post(URL, {'cambiar_actividad': '1', 'actividad_id': 999999}, **self.AJAX)
+        self.assertEqual(r.status_code, 404)
+        r = self.client.post(URL, {'cambiar_actividad': '1', 'actividad_id': self.actividad_masiva.pk}, **self.AJAX)
+        self.assertEqual(r.json(), {'success': True, 'redirect_url': '/escaneo/'})
+
+    def test_elegir_una_actividad_inexistente_desde_la_pantalla(self):
+        r = self.client.post(URL, {'cambiar_actividad': '1', 'actividad_id': 999999}, follow=True)
+        self.assertIn('Actividad no válida o inactiva.', [str(m) for m in r.context['messages']])
+
+    def test_finalizar_sin_turno_y_actividad_que_dejo_de_estar_activa(self):
+        r = self.client.post(URL, {'finalizar_turno': '1'}, follow=True)
+        self.assertIn('Turno finalizado.', [str(m) for m in r.context['messages']])
+        self.elegir(self.actividad_masiva)
+        Actividad.objects.filter(pk=self.actividad_masiva.pk).update(estado='FINALIZADA')
+        r = self.client.get(URL)
+        self.assertIsNone(r.context['actividad_seleccionada'])
+        self.assertNotIn('actividad_escaneo_id', self.client.session)
+
+    def test_lectura_que_queda_vacia(self):
+        self.elegir(self.actividad_masiva)
+        r = self.client.post(URL, {'rut': "'"})
+        self.assertEqual((r.status_code, r.json()['message']), (400, 'Debes ingresar un RUT o Pasaporte válido.'))
+
+    def test_las_que_ya_terminaron_pero_siguen_activas_van_al_final(self):
+        ahora = timezone.now()
+        Actividad.objects.filter(pk=self.actividad_otro.pk).update(
+            fecha_inicio=ahora - timedelta(days=3), fecha_fin=ahora - timedelta(days=3, hours=-2))
+        lista = self.client.get(URL).context['actividades_disponibles']
+        self.assertEqual(lista[-1].pk, self.actividad_otro.pk)
+

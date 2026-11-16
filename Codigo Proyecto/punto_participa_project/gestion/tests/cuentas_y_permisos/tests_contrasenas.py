@@ -5,15 +5,17 @@ Correr solo este archivo:
     python manage.py test gestion.tests.cuentas_y_permisos.tests_contrasenas --noinput
 """
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core import mail
+from django.core.cache import cache
 from django.test import override_settings
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
-from ...models import Inscripcion, LogAuditoria
-from ..base import BaseSistemaTestCase, SilenciarRegistros
+from ...models import Inscripcion, LogAuditoria, Rol, UsuarioSistema
+from ..base import CORREO_FALLIDO, BaseSistemaTestCase, SilenciarRegistros
 
 
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
@@ -64,7 +66,7 @@ class SolicitarRecuperacionTests(SilenciarRegistros, BaseSistemaTestCase):
                 self.assertEqual(response.status_code, 302)
                 self.assertEqual(len(mail.outbox), 0)
 
-    @override_settings(EMAIL_BACKEND="gestion.tests.cuentas_y_permisos.tests_contrasenas.BackendCorreoFallido")
+    @override_settings(EMAIL_BACKEND=CORREO_FALLIDO)
     def test_post_con_error_smtp_no_rompe_la_vista(self):
         response = self.client.post(
             reverse('recuperar_contrasena'),
@@ -290,3 +292,53 @@ class AutenticacionYCorreoIntegralTests(BaseSistemaTestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, [self.alumno_pasaporte.correo])
         self.assertIn("Inscripción confirmada", mail.outbox[0].subject)
+
+
+class InicioDeSesionRechazosTests(BaseSistemaTestCase):
+    """Casos del inicio de sesión y del cambio de contraseña que no dejan entrar ni cambiar nada."""
+    CLAVE = 'ClaveSegura123!'
+
+    def setUp(self):
+        cache.clear()   # el inicio de sesión tiene límite de intentos por IP
+
+    def entrar(self, username, password=CLAVE):
+        return self.client.post(reverse('login'), {'username': username, 'password': password})
+
+    def test_usuario_o_clave_vacios(self):
+        r = self.entrar('', '')
+        self.assertContains(r, 'Debes ingresar usuario y contraseña.')
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_cuenta_con_un_rol_que_no_es_del_sistema_no_entra(self):
+        user = User.objects.create_user('rol_raro', password=self.CLAVE)
+        UsuarioSistema.objects.create(user=user, rol=Rol.objects.create(nombre='Visitante'), activo=True,
+                                      must_change_password=False, rut='123456785')
+        self.assertContains(self.entrar('rol_raro'), 'La cuenta tiene un rol no válido.')
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_con_clave_temporal_va_directo_a_cambiarla(self):
+        UsuarioSistema.objects.filter(user=self.creador).update(must_change_password=True)
+        self.assertRedirects(self.entrar(self.creador.username), reverse('cambiar_contrasena'),
+                             fetch_redirect_response=False)
+
+    def test_cambiar_clave_sin_perfil_o_con_la_cuenta_desactivada(self):
+        sin_perfil = User.objects.create_user('sin_perfil_clave', password=self.CLAVE)
+        UsuarioSistema.objects.filter(user=self.registrador).update(activo=False)
+        for usuario, mensaje in ((sin_perfil, 'no tiene un perfil válido'), (self.registrador, 'está desactivada')):
+            with self.subTest(usuario=usuario.username):
+                self.client.force_login(usuario)
+                r = self.client.get(reverse('cambiar_contrasena'), follow=True)
+                self.assertRedirects(r, reverse('login'))
+                self.assertContains(r, mensaje)
+
+    def test_nueva_clave_vacia_o_igual_a_la_actual(self):
+        self.client.force_login(self.creador)
+        for nueva, mensaje in (('', 'Debes ingresar una nueva contraseña.'),
+                               (self.CLAVE, 'debe ser diferente de la actual')):
+            with self.subTest(nueva=nueva or 'vacía'):
+                r = self.client.post(reverse('cambiar_contrasena'), {
+                    'contrasena_actual': self.CLAVE, 'nueva_contrasena': nueva, 'confirmar_contrasena': nueva})
+                self.assertContains(r, mensaje)
+        self.creador.refresh_from_db()
+        self.assertTrue(self.creador.check_password(self.CLAVE))
+

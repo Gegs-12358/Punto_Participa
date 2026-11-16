@@ -117,3 +117,23 @@ class SeedDataTests(TestCase):
         despues = self._conteos()
         self.assertEqual(despues['Alumno'], antes['Alumno'])
         self.assertEqual(despues['Actividad'], antes['Actividad'])
+
+
+class ServidoresDeCorreoDeLasPruebasTests(SimpleTestCase):
+    """Cada EMAIL_BACKEND que nombran las pruebas tiene que existir. Si no existe, Django falla al importarlo
+    y una prueba de "correo caído" pasaría por la razón equivocada (pasó al reorganizar las carpetas)."""
+
+    def test_cada_backend_nombrado_se_puede_importar(self):
+        import re
+        from pathlib import Path
+        from django.utils.module_loading import import_string
+        carpeta = Path(__file__).resolve().parent.parent
+        nombres = set()
+        for archivo in carpeta.rglob('*.py'):
+            nombres |= set(re.findall(r"EMAIL_BACKEND\s*=\s*['\"]([\w.]+)['\"]", archivo.read_text(encoding='utf-8')))
+            nombres |= set(re.findall(r"^CORREO_FALLIDO\s*=\s*'([\w.]+)'", archivo.read_text(encoding='utf-8'), re.M))
+        self.assertIn('gestion.tests.base.BackendCorreoFallido', nombres)
+        for nombre in sorted(nombres):
+            with self.subTest(backend=nombre):
+                import_string(nombre)
+

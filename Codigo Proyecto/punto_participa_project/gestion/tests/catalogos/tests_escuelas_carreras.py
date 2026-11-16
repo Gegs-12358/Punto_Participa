@@ -358,3 +358,44 @@ class ColorParaEscuelaTests(SilenciarRegistros, TestCase):
         for escuela, color in casos:
             with self.subTest(escuela=escuela):
                 self.assertEqual(color_para_escuela(escuela), color)
+
+
+class CatalogosSinCambiosYRepetidosTests(BaseCatalogoTests):
+    """Guardar sin cambiar nada no deja registro; un nombre repetido se rechaza; una acción desconocida avisa."""
+
+    def post(self, url, **datos):
+        return self.client.post(url, datos, follow=True)
+
+    def test_sin_cambios_no_queda_nada_en_la_auditoria(self):
+        from ...models import Lugar
+        lugar = Lugar.objects.get(nombre='Sala 1')
+        antes = LogAuditoria.objects.count()
+        self.post(reverse('catalogo_lugares'), accion='renombrar', lugar_id=lugar.pk, nombre='Sala 1')
+        self.post(URL_ESCUELAS, accion='renombrar', escuela_id=self.esc_diseno.pk, nombre=DISENO,
+                  color=self.esc_diseno.color)
+        carrera = self.carrera
+        self.post(URL_CARRERAS, accion='editar', carrera_id=carrera.pk, nombre=carrera.nombre,
+                  escuela=carrera.escuela)
+        self.assertEqual(LogAuditoria.objects.count(), antes)
+
+    def test_nombres_repetidos_se_rechazan(self):
+        casos = [
+            ('escuela renombrada como otra', URL_ESCUELAS,
+             {'accion': 'renombrar', 'escuela_id': self.esc_diseno.pk, 'nombre': INFORMATICA}),
+            ('carrera nueva con un nombre que ya existe', URL_CARRERAS,
+             {'accion': 'crear', 'nombre': self.carrera.nombre, 'escuela': INFORMATICA}),
+            ('carrera reemplazada por una que ya existe', URL_CARRERAS,
+             {'accion': 'reemplazar', 'carrera_id': self.carrera.pk, 'nombre': self.carrera_2.nombre,
+              'escuela': INFORMATICA}),
+        ]
+        for caso, url, datos in casos:
+            with self.subTest(caso=caso):
+                mensajes = self._mensajes(self.post(url, **datos))
+                self.assertTrue(any('Ya existe' in m for m in mensajes), mensajes)
+        self.assertEqual(Escuela.objects.get(pk=self.esc_diseno.pk).nombre, DISENO)
+        self.assertTrue(Carrera.objects.get(pk=self.carrera.pk).activo)
+
+    def test_accion_desconocida_en_escuelas(self):
+        mensajes = self._mensajes(self.post(URL_ESCUELAS, accion='otra', escuela_id=self.esc_diseno.pk))
+        self.assertIn('Acción no válida.', mensajes)
+

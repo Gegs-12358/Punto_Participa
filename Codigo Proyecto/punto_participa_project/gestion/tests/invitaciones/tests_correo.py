@@ -17,7 +17,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ...models import NotificacionCorreo
-from ..base import BaseSistemaTestCase, SilenciarRegistros
+from ..base import CORREO_FALLIDO, BaseSistemaTestCase, SilenciarRegistros
 
 
 def crear_actividad(tipo, creador=None):
@@ -115,7 +115,7 @@ class InvitacionesYMetodosHttpTests(BaseSistemaTestCase):
         self.assertFalse(response.json()["success"])
 
 
-@override_settings(EMAIL_BACKEND="gestion.tests.invitaciones.tests_correo.BackendCorreoFallido")
+@override_settings(EMAIL_BACKEND=CORREO_FALLIDO)
 class CorreosFallidosExtremosTests(SilenciarRegistros, BaseSistemaTestCase):
     def test_fallo_smtp_se_registra_como_notificacion_fallida(self):
         self.actividad.carreras.set([self.carrera])

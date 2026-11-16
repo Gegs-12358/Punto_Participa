@@ -16,7 +16,7 @@ from django.utils import timezone
 from ...models import Acompanante, Actividad, Alumno, Asistencia, AvisoRetencion, Inscripcion, Invitado, ListaEspera, LogAuditoria
 from ...servicios.anonimizacion import anonimizar, esta_anonimizado
 from ...servicios.retencion import ciclo, fecha_corte
-from ..base import BaseSistemaTestCase
+from ..base import CORREO_FALLIDO, BaseSistemaTestCase
 
 
 @override_settings(RETENCION_ANIOS=2, RETENCION_AVISOS_DIAS=[10, 7, 3])
@@ -37,6 +37,12 @@ class RetencionTests(BaseSistemaTestCase):
 
     def dia(self, n):
         return ciclo(self.hoy + timedelta(days=n))[0]
+
+    @override_settings(EMAIL_BACKEND=CORREO_FALLIDO)
+    def test_con_el_correo_caido_el_aviso_queda_programado_igual(self):
+        self.assertEqual(self.dia(0), 'avisado')
+        self.assertTrue(AvisoRetencion.objects.exists())
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_fecha_de_corte(self):
         self.assertEqual(fecha_corte(date(2026, 11, 15)), date(2024, 11, 15))

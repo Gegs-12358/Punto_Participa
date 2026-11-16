@@ -196,3 +196,31 @@ class NominaRespetaBloqueoManualTests(BaseAlumnosTests):
         aplicar(analizar([(2, self._fila(self.alumno)), (3, self._fila(self.alumno_pasaporte))]))
         self.alumno.refresh_from_db()
         self.assertTrue(self.alumno.activo)
+
+
+class AccionesRepetidasTests(BaseSistemaTestCase):
+    """Repetir una acción sobre un alumno avisa que ya estaba así y no deja otro registro."""
+
+    def setUp(self):
+        self.login_as(self.admin)
+
+    def mensajes(self, r):
+        return [str(m) for m in r.context['messages']]
+
+    def test_bloquear_dos_veces_desbloquear_un_activo_y_anonimizar_dos_veces(self):
+        bloqueo = reverse('alumno_bloqueo', args=[self.alumno.pk])
+        datos = {'accion': 'bloquear', 'motivo': 'Pidió no participar', 'volver': 'detalle'}
+        self.client.post(bloqueo, datos)
+        r = self.client.post(bloqueo, datos, follow=True)
+        self.assertIn('Juan Pérez ya estaba bloqueado a mano.', self.mensajes(r))
+        self.assertEqual(LogAuditoria.objects.filter(accion='Bloquear alumno').count(), 1)
+
+        bloqueo_otro = reverse('alumno_bloqueo', args=[self.alumno_pasaporte.pk])
+        r = self.client.post(bloqueo_otro, {'accion': 'desbloquear'}, follow=True)
+        self.assertTrue(any('ya estaba activo' in m for m in self.mensajes(r)))
+
+        anonimizar = reverse('alumno_anonimizar', args=[self.alumno_pasaporte.pk])
+        self.client.post(anonimizar, {'confirmacion': 'ANONIMIZAR'})
+        r = self.client.post(anonimizar, {'confirmacion': 'ANONIMIZAR'}, follow=True)
+        self.assertIn('Este alumno ya estaba anonimizado.', self.mensajes(r))
+

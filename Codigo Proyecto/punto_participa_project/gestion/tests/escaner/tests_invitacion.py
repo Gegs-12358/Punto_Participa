@@ -123,6 +123,9 @@ class AgregarEnLaEntradaTests(BaseEscanerInvitacionTests):
         sin_cupo = self.escanear(DESCONOCIDO, confirmar=True, agregar='acompanante',
                                  invitado_id=self.juan.pk, nombre='Otro')
         self.assertEqual(sin_cupo.status_code, 400)
+        invitado_raro = self.escanear(DESCONOCIDO, confirmar=True, agregar='acompanante',
+                                      invitado_id='abc', nombre='Otro')
+        self.assertIn('Elige un invitado', invitado_raro.json()['message'])
         self.assertFalse(Acompanante.objects.filter(rut=DESCONOCIDO.replace('-', '')).exists())
 
     def test_sin_cupo_para_nadie_se_rechaza(self):
