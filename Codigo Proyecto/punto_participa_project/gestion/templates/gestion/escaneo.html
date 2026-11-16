@@ -29,9 +29,27 @@
         <h2>{{ actividad_seleccionada.titulo }}</h2>
         <p>
             {{ actividad_seleccionada.get_tipo_display }},
+            {% if sesiones|length > 1 %}
+            <strong>sesión {{ sesion_escaneo.numero }} de {{ sesiones|length }}</strong>,
+            {{ sesion_escaneo.fecha_inicio|date:"d/m/Y H:i" }} a {{ sesion_escaneo.fecha_fin|date:"H:i" }},
+            {% else %}
             {{ actividad_seleccionada.fecha_inicio|date:"d/m/Y H:i" }} a {{ actividad_seleccionada.fecha_fin|date:"H:i" }},
+            {% endif %}
             {{ actividad_seleccionada.lugar_completo }}
         </p>
+        {% if sesiones|length > 1 %}
+        <form method="post" action="{% url 'escaneo' %}" class="turno__sesion">
+            {% csrf_token %}
+            <input type="hidden" name="cambiar_sesion" value="1">
+            <label for="sesionEscaneo">Registrar en</label>
+            <select name="sesion_id" id="sesionEscaneo">
+                {% for s in sesiones %}
+                <option value="{{ s.id }}"{% if s.id == sesion_escaneo.id %} selected{% endif %}>Sesión {{ s.numero }}: {{ s.fecha_inicio|date:"D d/m H:i" }} a {{ s.fecha_fin|date:"H:i" }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn secondary">Cambiar sesión</button>
+        </form>
+        {% endif %}
     </div>
     <div class="turno__acciones">
         <button type="button" class="btn secondary" id="btnCambiarActividad">{% icono "cambiar" %} Cambiar actividad</button>
@@ -49,7 +67,7 @@
         <strong data-contador="mi_turno">{{ contador.mi_turno }}</strong>
     </div>
     <div class="mini-stat">
-        <span>TOTAL EN LA ACTIVIDAD</span>
+        <span>{% if sesiones|length > 1 %}TOTAL EN ESTA SESIÓN{% else %}TOTAL EN LA ACTIVIDAD{% endif %}</span>
         <strong data-contador="total">{{ contador.total }}</strong>
         <small class="mini-stat__nota" data-contador="meta">{% if contador.meta %}de {{ contador.meta }} {{ contador.meta_texto }}{% else %}todos los operadores{% endif %}</small>
     </div>

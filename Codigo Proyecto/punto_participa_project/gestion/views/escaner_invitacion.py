@@ -9,9 +9,9 @@ Si llega alguien que no está en la lista, el operador puede agregarlo en la ent
 - un alumno de la nómina (activo) queda como invitado "agregado en la entrada";
 - otra persona queda como acompañante de un invitado que todavía tenga cupo de acompañante.
 
-La asistencia se guarda en Invitado/Acompanante (ingreso, método, quién registró). A los
-invitados que están en la nómina se les crea además su Asistencia, para que aparezca en la
-ficha del alumno y en los gráficos de Reportes.
+La asistencia de cada sesión se guarda en AsistenciaSesion (invitado o acompañante). El primer
+ingreso queda además en Invitado/Acompanante (ingreso, método, quién registró), y a los invitados
+que están en la nómina se les crea su Asistencia, para la ficha del alumno y los gráficos de Reportes.
 
 Respuestas JSON (las mismas claves que el escáner normal):
 - {confirmar: true, alumno: {...}}: pedir confirmación al operador.
@@ -25,10 +25,11 @@ from django.utils import timezone
 
 from ..servicios.invitados import MAX_NOMBRE_ACOMPANANTE
 from ..models import Acompanante, Alumno, Asistencia, foto_academica, Invitado
+from ..servicios import sesiones as servicio_sesiones
 from ..utils import buscar_alumno_por_documento, formatear_rut, limpiar_texto, normalizar_documento
 
 from .comun import _error_json, registrar_log
-from .escaner import _contador_escaneo
+from .escaner import _contador_escaneo, _sesion_escaneo, _texto_sesion
 
 
 METODOS = {'RUT': 'RUT', 'QR': 'Código QR', 'CODIGO': 'Código de barras'}
@@ -54,11 +55,13 @@ def _persona_acompanante(acompanante):
             'detalle': f'Acompañante de {acompanante.invitado.nombre}.'}
 
 
-def _ya_ingreso(request, actividad, persona, hora):
+def _ya_ingreso(request, actividad, sesion, persona, registro):
+    hora = timezone.localtime(registro.fecha_ingreso).strftime('%H:%M')
+    en_sesion = f' a la sesión {sesion.numero}' if _texto_sesion(actividad, sesion) else ''
     registrar_log(request, 'Escáner', 'Intento de asistencia duplicada',
-                  f'{persona} en "{actividad.titulo}" (ya había ingresado a las {hora})',
+                  f'{persona} en "{actividad.titulo}" (ya había ingresado{en_sesion} a las {hora})',
                   'Actividad', actividad.id, actividad.titulo)
-    return _error_json(f'{persona} ya ingresó a las {hora}.', 409)
+    return _error_json(f'{persona} ya ingresó{en_sesion} a las {hora}.', 409)
 
 
 def _exito(request, actividad, persona, metodo, mensaje):
@@ -66,11 +69,16 @@ def _exito(request, actividad, persona, metodo, mensaje):
                          'alumno': persona, 'contador': _contador_escaneo(request, actividad)})
 
 
-def _marcar_ingreso(registro, request, metodo):
-    registro.ingreso = timezone.now()
-    registro.metodo_ingreso = metodo
-    registro.registrado_por = request.user
-    registro.save(update_fields=['ingreso', 'metodo_ingreso', 'registrado_por'])
+def _marcar_ingreso(registro, request, metodo, sesion):
+    """Ingreso a la sesión; si es el primero a la actividad, queda también en el invitado o acompañante."""
+    campo = 'invitado' if isinstance(registro, Invitado) else 'acompanante'
+    if not servicio_sesiones.registrar(sesion, metodo=metodo, usuario=request.user, **{campo: registro}):
+        raise IntegrityError('otro operador registró esta sesión')
+    if registro.ingreso is None:
+        registro.ingreso = timezone.now()
+        registro.metodo_ingreso = metodo
+        registro.registrado_por = request.user
+        registro.save(update_fields=['ingreso', 'metodo_ingreso', 'registrado_por'])
 
 
 def _asistencia_de_alumno(actividad, invitado, request, metodo):
@@ -102,9 +110,17 @@ def _opciones_acompanante(actividad):
 
 
 def procesar(request, actividad, metodo, documento, confirmar):
+    try:
+        return _procesar(request, actividad, metodo, documento, confirmar)
+    except IntegrityError:
+        return _error_json('Otro operador acaba de registrar a esta persona.', 409)
+
+
+def _procesar(request, actividad, metodo, documento, confirmar):
     doc = normalizar_documento(documento) or ''
     agregar = request.POST.get('agregar', '')
 
+    sesion = _sesion_escaneo(request, actividad)
     with transaction.atomic():
         invitado = actividad.invitados.select_for_update().filter(rut=doc).first() if doc else None
         acompanante = (None if invitado or not doc else
@@ -113,12 +129,12 @@ def procesar(request, actividad, metodo, documento, confirmar):
         # ---- Invitado de la lista ----
         if invitado:
             persona = _persona_invitado(invitado)
-            if invitado.ingreso:
-                return _ya_ingreso(request, actividad, invitado.nombre,
-                                   timezone.localtime(invitado.ingreso).strftime('%H:%M'))
+            previo = servicio_sesiones.registro_en_sesion(sesion, invitado=invitado)
+            if previo:
+                return _ya_ingreso(request, actividad, sesion, invitado.nombre, previo)
             if not confirmar:
                 return JsonResponse({'success': True, 'confirmar': True, 'alumno': persona})
-            _marcar_ingreso(invitado, request, metodo)
+            _marcar_ingreso(invitado, request, metodo, sesion)
             _asistencia_de_alumno(actividad, invitado, request, metodo)
             registrar_log(request, 'Escáner', 'Ingreso de invitado', f'{invitado.nombre} - {actividad.titulo}',
                           'Actividad', actividad.id, actividad.titulo)
@@ -127,12 +143,12 @@ def procesar(request, actividad, metodo, documento, confirmar):
         # ---- Acompañante registrado ----
         if acompanante:
             persona = _persona_acompanante(acompanante)
-            if acompanante.ingreso:
-                return _ya_ingreso(request, actividad, acompanante.nombre,
-                                   timezone.localtime(acompanante.ingreso).strftime('%H:%M'))
+            previo = servicio_sesiones.registro_en_sesion(sesion, acompanante=acompanante)
+            if previo:
+                return _ya_ingreso(request, actividad, sesion, acompanante.nombre, previo)
             if not confirmar:
                 return JsonResponse({'success': True, 'confirmar': True, 'alumno': persona})
-            _marcar_ingreso(acompanante, request, metodo)
+            _marcar_ingreso(acompanante, request, metodo, sesion)
             registrar_log(request, 'Escáner', 'Ingreso de acompañante',
                           f'{acompanante.nombre} (acompaña a {acompanante.invitado.nombre}) - {actividad.titulo}',
                           'Actividad', actividad.id, actividad.titulo)
@@ -155,11 +171,11 @@ def procesar(request, actividad, metodo, documento, confirmar):
             return JsonResponse({'success': False, 'agregar': 'alumno', 'alumno': persona,
                                  'message': f'{persona["nombre"]} no está en la lista de invitados. '
                                             '¿Lo agregas y registras su ingreso?'})
-        return _agregar_alumno(request, actividad, alumno, metodo, persona)
+        return _agregar_alumno(request, actividad, sesion, alumno, metodo, persona)
 
     opciones = _opciones_acompanante(actividad)
     if agregar == 'acompanante' and confirmar:
-        return _agregar_acompanante(request, actividad, doc, metodo, opciones)
+        return _agregar_acompanante(request, actividad, sesion, doc, metodo, opciones)
     if not opciones:
         registrar_log(request, 'Escáner', 'Intento de ingreso sin invitación',
                       f'Documento que no está en la lista de "{actividad.titulo}"',
@@ -174,7 +190,7 @@ def procesar(request, actividad, metodo, documento, confirmar):
     })
 
 
-def _agregar_alumno(request, actividad, alumno, metodo, persona):
+def _agregar_alumno(request, actividad, sesion, alumno, metodo, persona):
     foto = foto_academica(alumno)
     try:
         with transaction.atomic():
@@ -183,7 +199,7 @@ def _agregar_alumno(request, actividad, alumno, metodo, persona):
                 nombre=f'{alumno.nombres} {alumno.apellidos}', correo=alumno.correo,
                 carrera=foto['carrera'], escuela=foto['escuela'], jornada=foto['jornada'],
                 estado='CONFIRMADO', fecha_respuesta=timezone.now(), agregado_en_entrada=True)
-            _marcar_ingreso(invitado, request, metodo)
+            _marcar_ingreso(invitado, request, metodo, sesion)
     except IntegrityError:
         return _error_json('Otro operador acaba de registrar a esta persona.', 409)
     _asistencia_de_alumno(actividad, invitado, request, metodo)
@@ -194,7 +210,7 @@ def _agregar_alumno(request, actividad, alumno, metodo, persona):
     return _exito(request, actividad, persona, metodo, f'{invitado.nombre} agregado e ingreso registrado.')
 
 
-def _agregar_acompanante(request, actividad, doc, metodo, opciones):
+def _agregar_acompanante(request, actividad, sesion, doc, metodo, opciones):
     nombre = limpiar_texto(request.POST.get('nombre') or '')
     try:
         invitado_id = int(request.POST.get('invitado_id') or 0)
@@ -213,7 +229,7 @@ def _agregar_acompanante(request, actividad, doc, metodo, opciones):
                 return _error_json(f'{invitado.nombre} ya no tiene cupo para otro acompañante.', 409)
             acompanante = Acompanante.objects.create(actividad=actividad, invitado=invitado, rut=doc,
                                                      nombre=nombre, agregado_en_entrada=True)
-            _marcar_ingreso(acompanante, request, metodo)
+            _marcar_ingreso(acompanante, request, metodo, sesion)
     except IntegrityError:
         return _error_json('Otro operador acaba de registrar este documento.', 409)
     registrar_log(request, 'Escáner', 'Agregar acompañante en la entrada',
@@ -223,14 +239,12 @@ def _agregar_acompanante(request, actividad, doc, metodo, opciones):
                   f'{nombre} agregado como acompañante de {invitado.nombre}.')
 
 
-def registros(actividad):
-    """Ingresos de invitados y acompañantes, para el contador del escáner."""
-    filas = []
-    for inv in actividad.invitados.filter(ingreso__isnull=False).select_related('registrado_por'):
-        filas.append((inv, inv.nombre))
-    for ac in actividad.acompanantes.filter(ingreso__isnull=False).select_related('registrado_por'):
-        filas.append((ac, ac.nombre))
-    return [{'nombre': nombre, 'metodo': METODOS.get(r.metodo_ingreso, r.metodo_ingreso),
+def registros(sesion):
+    """Ingresos de invitados y acompañantes a una sesión, para el contador del escáner."""
+    filas = (sesion.asistencias.filter(alumno__isnull=True)
+             .select_related('invitado', 'acompanante', 'registrado_por'))
+    return [{'nombre': (r.invitado or r.acompanante).nombre,
+             'metodo': METODOS.get(r.metodo_ingreso, r.metodo_ingreso),
              'registrado_por_id': r.registrado_por_id,
              'operador_nombre': (r.registrado_por.first_name or r.registrado_por.username) if r.registrado_por else '',
-             'fecha': r.ingreso} for r, nombre in filas]
+             'fecha': r.fecha_ingreso} for r in filas]

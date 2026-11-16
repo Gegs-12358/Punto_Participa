@@ -1920,6 +1920,40 @@ td.celda-texto {
    20. FOOTER
    ============================================================ */
 
+/* Escáner: elegir la sesión en las actividades de varias sesiones */
+.turno__sesion {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.turno__sesion label {
+    display: inline;
+    margin: 0;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.turno__sesion .btn {
+    width: auto;
+    min-height: 36px;
+    padding: 6px 12px;
+}
+
+.turno__sesion select {
+    width: auto;
+    max-width: 100%;
+    min-height: 36px;
+    padding: 4px 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--white);
+    font: inherit;
+}
+
 /* Pie de página (includes/pie.html): franja azul con la línea amarilla arriba, como el encabezado abajo */
 .app-footer {
     margin: 28px 0 0;

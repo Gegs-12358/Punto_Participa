@@ -1,6 +1,7 @@
-from django.core.validators import MaxValueValidator, RegexValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 from .utils import limpiar_texto, normalizar_documento
 
 
@@ -210,6 +211,11 @@ class Actividad(models.Model):
     acompanantes_por_invitado = models.PositiveSmallIntegerField(
         default=0, validators=[MaxValueValidator(MAX_ACOMPANANTES)],
         verbose_name='Acompañantes por invitado')
+    # Actividades de varias sesiones: porcentaje mínimo de sesiones para cumplir la asistencia
+    # (certificado de participación). Con una sola sesión, cumple quien asistió.
+    asistencia_minima = models.PositiveSmallIntegerField(
+        default=75, validators=[MinValueValidator(1), MaxValueValidator(100)],
+        verbose_name='Asistencia mínima (%)')
 
     class Meta:
         verbose_name = 'Actividad'
@@ -273,6 +279,73 @@ class Actividad(models.Model):
         else:
             self.cupos_totales = None
             self.cupos_disponibles = None
+
+    # ============================================================
+    # Sesiones
+    # ============================================================
+
+    def lista_sesiones(self):
+        """Sesiones en orden. Si la actividad no tiene (creada con bulk_create), se crea la sesión 1."""
+        sesiones = list(self.sesiones.all())
+        if not sesiones and self.pk:
+            sesiones = [Sesion.objects.create(actividad=self, numero=1, fecha_inicio=self.fecha_inicio,
+                                              fecha_fin=self.fecha_fin)]
+        return sesiones
+
+    @property
+    def varias_sesiones(self):
+        return len(self.lista_sesiones()) > 1
+
+    def sesion_para(self, momento):
+        """
+        Sesión a la que corresponde un registro hecho en `momento`: la de ese mismo día (si hay
+        varias ese día, la que está en curso o la más cercana); si ese día no hay sesión, la última
+        que ya empezó; y antes de la primera, la primera.
+        """
+        from django.utils import timezone
+        sesiones = self.lista_sesiones()
+        if len(sesiones) == 1:
+            return sesiones[0]
+        dia = timezone.localtime(momento).date()
+        del_dia = [s for s in sesiones if timezone.localtime(s.fecha_inicio).date() == dia]
+        if del_dia:
+            def distancia(s):
+                if s.fecha_inicio <= momento <= s.fecha_fin:
+                    return 0
+                return min(abs((s.fecha_inicio - momento).total_seconds()),
+                           abs((s.fecha_fin - momento).total_seconds()))
+            return min(del_dia, key=distancia)
+        empezadas = [s for s in sesiones if s.fecha_inicio <= momento]
+        return empezadas[-1] if empezadas else sesiones[0]
+
+    def sesion_en_curso(self, momento):
+        sesiones = self.lista_sesiones()
+        if len(sesiones) == 1:
+            # Una sola sesión: son las fechas de la actividad (como siempre)
+            return self.fecha_inicio <= momento <= self.fecha_fin
+        return any(s.fecha_inicio <= momento <= s.fecha_fin for s in sesiones)
+
+
+class Sesion(models.Model):
+    """
+    Sesión de una actividad. Toda actividad tiene al menos una (la 1, con las mismas fechas de la
+    actividad). En las de varias sesiones, la actividad empieza con la primera y termina con la última.
+    """
+    actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, related_name='sesiones')
+    numero = models.PositiveSmallIntegerField()
+    fecha_inicio = models.DateTimeField()
+    fecha_fin = models.DateTimeField()
+
+    class Meta:
+        verbose_name = 'Sesión'
+        verbose_name_plural = 'Sesiones'
+        ordering = ['actividad', 'numero']
+        constraints = [
+            models.UniqueConstraint(fields=['actividad', 'numero'], name='unica_sesion_por_numero'),
+        ]
+
+    def __str__(self):
+        return f'Sesión {self.numero} de {self.actividad}'
 
 
 # ==================== MODELOS TRANSACCIONALES ====================
@@ -488,6 +561,52 @@ class Asistencia(FotoAcademica):
 
     def __str__(self):
         return f'{self.alumno} - {self.actividad}'
+
+
+class AsistenciaSesion(models.Model):
+    """
+    Asistencia a una sesión: de un alumno (talleres y masivas), o de un invitado o un acompañante
+    (actividades con invitación). Una persona queda una sola vez por sesión.
+
+    Asistencia (alumno) y el ingreso de Invitado y Acompanante siguen diciendo si la persona vino a
+    la actividad (al menos a una sesión): de eso dependen los reportes y gráficos. Este registro dice
+    a cuáles sesiones vino, para el porcentaje de asistencia.
+    """
+    sesion = models.ForeignKey(Sesion, on_delete=models.CASCADE, related_name='asistencias')
+    alumno = models.ForeignKey('Alumno', on_delete=models.CASCADE, null=True, blank=True,
+                               related_name='asistencias_sesion')
+    invitado = models.ForeignKey('Invitado', on_delete=models.CASCADE, null=True, blank=True,
+                                 related_name='asistencias_sesion')
+    acompanante = models.ForeignKey('Acompanante', on_delete=models.CASCADE, null=True, blank=True,
+                                    related_name='asistencias_sesion')
+    # default y no auto_now_add: la migración copia la hora de las asistencias que ya existían
+    fecha_ingreso = models.DateTimeField(default=timezone.now, db_index=True)
+    metodo_ingreso = models.CharField(max_length=10, blank=True, default='')
+    registrado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                       related_name='+')
+
+    class Meta:
+        verbose_name = 'Asistencia por sesión'
+        verbose_name_plural = 'Asistencias por sesión'
+        ordering = ['-fecha_ingreso']
+        constraints = [
+            models.UniqueConstraint(fields=['sesion', 'alumno'], condition=models.Q(alumno__isnull=False),
+                                    name='una_asistencia_por_sesion_alumno'),
+            models.UniqueConstraint(fields=['sesion', 'invitado'], condition=models.Q(invitado__isnull=False),
+                                    name='una_asistencia_por_sesion_invitado'),
+            models.UniqueConstraint(fields=['sesion', 'acompanante'],
+                                    condition=models.Q(acompanante__isnull=False),
+                                    name='una_asistencia_por_sesion_acompanante'),
+            models.CheckConstraint(
+                condition=(models.Q(alumno__isnull=False, invitado__isnull=True, acompanante__isnull=True)
+                           | models.Q(alumno__isnull=True, invitado__isnull=False, acompanante__isnull=True)
+                           | models.Q(alumno__isnull=True, invitado__isnull=True, acompanante__isnull=False)),
+                name='asistencia_sesion_de_una_sola_persona'),
+        ]
+
+    def __str__(self):
+        persona = self.alumno or self.invitado or self.acompanante
+        return f'{persona} - {self.sesion}'
 
 
 class NotificacionCorreo(models.Model):

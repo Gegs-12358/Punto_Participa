@@ -46,7 +46,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**. La entrega está fijada para el 1 de diciembre de 2026.
 
-* Suite de pruebas automatizadas: 653 tests (detalle en la sección 9).
+* Suite de pruebas automatizadas: 673 tests (detalle en la sección 9).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 * El historial detallado de cambios está en [`docs/CAMBIOS.md`](Codigo%20Proyecto/punto_participa_project/docs/CAMBIOS.md) y la guía de estilo de las pantallas en [`docs/GUIA_ESTILO.md`](Codigo%20Proyecto/punto_participa_project/docs/GUIA_ESTILO.md).
 
@@ -362,7 +362,7 @@ Codigo Proyecto/
 
 ## 9. Pruebas automatizadas
 
-La suite tiene **653 tests** y se ejecuta con:
+La suite tiene **673 tests** y se ejecuta con:
 
 ```bash
 docker compose exec web python manage.py test --parallel --noinput
@@ -389,7 +389,7 @@ Qué se verifica, por carpeta:
 | `actividades` | Crear, editar y eliminar actividades; validación de fechas, cupos, lugar e imágenes; panel de participación del detalle. | `tests_formularios`, `tests_gestion`, `tests_embudo` |
 | `inscripciones` | Inscripción pública y su límite de intentos, página pública de las masivas, portada con la imagen, Política de Privacidad y consentimiento guardado, cancelación por el alumno y por el gestor, lista de espera. | `tests_inscripcion_publica`, `tests_limite`, `tests_portada`, `tests_privacidad`, `tests_consentimiento`, `tests_cancelacion`, `tests_lista_espera` |
 | `invitaciones` | Lista de invitados (columnas, dígito verificador, repetidos, nómina, bloqueados), respuesta con acompañantes, envío con enlace personal, correos de invitación según el tipo de actividad, fallo de SMTP y límite por envío. | `tests_lista`, `tests_respuesta`, `tests_correo` |
-| `escaner` | Registro por RUT, QR y código de barras, dos etapas, duplicados, talleres sin inscripción, actividades inactivas, teclado en español e inglés, turnos y contador en vivo, invitados y acompañantes en la entrada. | `tests_registro`, `tests_turno`, `tests_teclado`, `tests_invitacion` |
+| `escaner` | Registro por RUT, QR y código de barras, dos etapas, duplicados, talleres sin inscripción, actividades inactivas, teclado en español e inglés, turnos y contador en vivo, invitados y acompañantes en la entrada. Actividades de varias sesiones: en qué sesión queda cada registro, una asistencia por sesión, cambio de sesión a mano y conversión de los datos que ya existían. | `tests_registro`, `tests_turno`, `tests_teclado`, `tests_invitacion`, `tests_sesiones` |
 | `reportes` | Inscritos y asistentes con filtros, filtro por tipo y lugar, gráficos, datos académicos guardados al participar, reportes con invitados y exportaciones (fórmulas neutralizadas, BOM, separador `;`, permisos y auditoría). | `tests_indicadores`, `tests_filtros`, `tests_graficos`, `tests_foto_academica`, `tests_invitacion`, `tests_exportaciones` |
 | `alumnos` | Importación desde Excel y CSV, alumnos bloqueados, directorio con buscador, ficha y bloqueo manual. | `tests_importador`, `tests_importar_web`, `tests_bloqueados`, `tests_pantalla` |
 | `catalogos` | Lugares (con número de sala), escuelas y carreras: agregar, renombrar con confirmación, bloquear, eliminar lo que no se usa, colores y migraciones. | `tests_lugares`, `tests_escuelas_carreras` |

@@ -28,6 +28,7 @@ from gestion.models import (
     Actividad,
     Alumno,
     Asistencia,
+    AsistenciaSesion,
     Carrera,
     Inscripcion,
     Jornada,
@@ -203,6 +204,8 @@ class Command(BaseCommand):
             for actividad in actividades_creadas:
                 actividad.carreras.add(carrera)
                 actividad.jornadas.add(jornada)
+                # bulk_create no pasa por las señales: se crea aquí su sesión 1
+                actividad.lista_sesiones()
 
             self.stdout.write(
                 self.style.SUCCESS(
@@ -237,6 +240,15 @@ class Command(BaseCommand):
 
                 Asistencia.objects.bulk_create(
                     asistencias,
+                    batch_size=500,
+                    ignore_conflicts=True,
+                )
+                # Y su asistencia por sesión (la sesión 1 de cada actividad)
+                sesion_de = {a.id: a.lista_sesiones()[0] for a in actividades_creadas}
+                AsistenciaSesion.objects.bulk_create(
+                    [AsistenciaSesion(sesion=sesion_de[a.actividad_id], alumno=a.alumno,
+                                      metodo_ingreso="RUT", registrado_por=creador)
+                     for a in asistencias],
                     batch_size=500,
                     ignore_conflicts=True,
                 )

@@ -22,7 +22,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
 > exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
-> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 653 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 673 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -910,7 +910,37 @@ línea amarilla arriba (como el encabezado abajo) y tres columnas, Punto Partici
 (Sede Alameda, Av. España 8, `puntoestu@duoc.cl`) y enlaces (Política de Privacidad y www.duoc.cl), más el año
 tomado de la fecha actual. En celular las columnas quedan una bajo la otra. Prueba en `sistema/tests_interfaz`.
 
-### 18.21 Pendiente
+### 18.21 Actividades de varias sesiones, parte 1: sesiones y escáner (16/11/2026)
+
+El Punto hace talleres y actividades de varias sesiones y a veces entrega certificados de participación, así
+que necesita saber a cuántas sesiones vino cada persona. Hasta ahora el sistema guardaba una sola asistencia
+por actividad: en la segunda sesión el escáner respondía "ya fue registrada". Decisiones del equipo: todas las
+actividades pueden tener varias sesiones (también las con invitación); cumple quien llega a un porcentaje
+mínimo de sesiones, definido por actividad (75 % por defecto); el sistema entrega el listado de quienes cumplen,
+no los certificados; y un taller acepta inscripciones hasta que termina su primera sesión.
+
+Esta primera parte deja la base:
+
+- **`Sesion`**: toda actividad tiene al menos una. Las que ya existían quedan con una sesión (la 1, con sus
+  mismas fechas). En las de una sola sesión, la sesión sigue las fechas de la actividad, así que todo funciona
+  como antes.
+- **`AsistenciaSesion`**: a qué sesiones vino cada alumno, invitado o acompañante, una vez por sesión.
+  `Asistencia` y el ingreso del invitado siguen diciendo "vino a la actividad" (al menos a una sesión): de eso
+  dependen reportes, gráficos, la ficha del alumno y la retención, que no cambian.
+- **Migración `0039_sesiones`**: crea las sesiones y pasa a la sesión 1 las asistencias e ingresos que ya
+  existían, con su hora, método y operador. Se probó con los datos de prueba completos: 21 actividades, 128
+  asistencias, 1 invitado y 2 acompañantes, sin diferencias.
+- **Escáner**: registra en la sesión del día (si ese día no hay sesión, en la última que ya empezó) y muestra
+  "sesión 2 de 3" con sus horas. El operador puede elegir otra sesión a mano, y eso queda en la auditoría. Una
+  persona se registra una vez por sesión; el contador y "TOTAL EN ESTA SESIÓN" son de la sesión elegida. El
+  resumen del turno suma todas las sesiones.
+- Asistencias e ingresos creados por otro camino (datos de prueba, admin, `perf_seed`) quedan igual en su sesión.
+
+Lo que sigue: el formulario para crear y editar las sesiones (con el porcentaje mínimo y la inscripción hasta
+el fin de la primera sesión) y, después, el listado de quienes cumplen, los reportes y las páginas públicas.
+Pruebas en `escaner/tests_sesiones`.
+
+### 18.22 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

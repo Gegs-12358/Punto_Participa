@@ -20,7 +20,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET
 
 from ..decorators import role_required
-from ..models import Actividad, Asistencia, Inscripcion, TurnoEscaneo
+from ..models import Actividad, Asistencia, AsistenciaSesion, Inscripcion, TurnoEscaneo
+from ..servicios import sesiones as servicio_sesiones
 from ..utils import buscar_alumno_por_documento, formatear_rut, id_o_none, limpiar_documento
 
 from .comun import _error_json, _es_ajax, registrar_log
@@ -67,6 +68,28 @@ def _turno_inicio(request):
     return inicio if inicio and timezone.is_aware(inicio) else None
 
 
+METODOS = {'RUT': 'RUT', 'QR': 'Código QR', 'CODIGO': 'Código de barras'}
+
+
+def _sesion_escaneo(request, actividad):
+    """
+    Sesión en la que se registra. Por defecto, la que corresponde a ahora (Actividad.sesion_para);
+    el operador puede elegir otra de la misma actividad, y queda guardada en su sesión de usuario.
+    """
+    sesiones = actividad.lista_sesiones()
+    elegida = request.session.get('sesion_escaneo_id')
+    for s in sesiones:
+        if s.id == elegida:
+            return s
+    return actividad.sesion_para(timezone.now())
+
+
+def _texto_sesion(actividad, sesion):
+    """"Sesión 2 de 3" en las actividades de varias sesiones; vacío en las de una."""
+    total = len(actividad.lista_sesiones())
+    return f'Sesión {sesion.numero} de {total}' if total > 1 else ''
+
+
 def _iniciar_turno(request, actividad):
     turno = TurnoEscaneo.objects.create(usuario=request.user, actividad=actividad)
     request.session['actividad_escaneo_id'] = actividad.id
@@ -79,6 +102,7 @@ def _iniciar_turno(request, actividad):
 def _terminar_turno(request):
     """Cierra el turno en curso, lo deja en la auditoría y devuelve un resumen (o None)."""
     act_id = request.session.pop('actividad_escaneo_id', None)
+    request.session.pop('sesion_escaneo_id', None)
     inicio = _turno_inicio(request)
     request.session.pop('turno_inicio', None)
     turno_id = request.session.pop('turno_id', None)
@@ -88,8 +112,9 @@ def _terminar_turno(request):
     actividad = Actividad.objects.filter(pk=act_id).first() if act_id else None
     if actividad is None:
         return None
-    registradas = (Asistencia.objects.filter(actividad=actividad, registrado_por=request.user,
-                                             fecha_ingreso__gte=inicio).count() if inicio else 0)
+    # Alumnos, invitados y acompañantes, en cualquiera de las sesiones
+    registradas = (AsistenciaSesion.objects.filter(sesion__actividad=actividad, registrado_por=request.user,
+                                                   fecha_ingreso__gte=inicio).count() if inicio else 0)
     minutos = int((timezone.now() - inicio).total_seconds() // 60) if inicio else None
     duracion = f' en {minutos} min' if minutos is not None else ''
     registrar_log(request, 'Escáner', 'Finalizar turno',
@@ -106,9 +131,11 @@ def _contador_escaneo(request, actividad):
     de la actividad (todos los operadores) y cuántas lleva cada operador.
     """
     inicio = _turno_inicio(request)
+    sesion = _sesion_escaneo(request, actividad)
     if actividad.tipo == 'INVITACION':
-        return _contador_invitacion(request, actividad, inicio)
-    asis = Asistencia.objects.filter(actividad=actividad)
+        return _contador_invitacion(request, actividad, sesion, inicio)
+    # En las actividades de varias sesiones, se cuenta la sesión en la que se está registrando
+    asis = AsistenciaSesion.objects.filter(sesion=sesion, alumno__isnull=False)
     if actividad.tipo == 'TALLER':
         meta = Inscripcion.objects.filter(actividad=actividad, estado='CONFIRMADA').count()
         meta_texto = 'inscritos'
@@ -127,12 +154,13 @@ def _contador_escaneo(request, actividad):
     ultimos = [{
         'nombre': f'{a.alumno.nombres} {a.alumno.apellidos}',
         'iniciales': _iniciales(f'{a.alumno.nombres} {a.alumno.apellidos}'),
-        'metodo': a.get_metodo_ingreso_display(),
+        'metodo': METODOS.get(a.metodo_ingreso, a.metodo_ingreso),
         'operador': ('tú' if a.registrado_por_id == request.user.id
                      else (a.registrado_por.first_name or a.registrado_por.username) if a.registrado_por else ''),
         'hora': timezone.localtime(a.fecha_ingreso).strftime('%H:%M'),
     } for a in asis.select_related('alumno', 'registrado_por').order_by('-fecha_ingreso')[:10]]
     return {
+        'sesion': _texto_sesion(actividad, sesion),
         'total': asis.count(),
         'meta': meta,
         'meta_texto': meta_texto,
@@ -148,10 +176,10 @@ def _iniciales(nombre):
     return ''.join(p[0] for p in nombre.split()[:2]).upper()
 
 
-def _contador_invitacion(request, actividad, inicio):
+def _contador_invitacion(request, actividad, sesion, inicio):
     """Contador del escáner en una actividad con invitación: cuenta invitados y acompañantes."""
     from .escaner_invitacion import registros
-    filas = registros(actividad)
+    filas = registros(sesion)
     en_turno = set(TurnoEscaneo.abiertos(actividad).values_list('usuario_id', flat=True))
     totales = defaultdict(int)
     for f in filas:
@@ -166,6 +194,7 @@ def _contador_invitacion(request, actividad, inicio):
                  + actividad.acompanantes.count())
     filas.sort(key=lambda f: f['fecha'], reverse=True)
     return {
+        'sesion': _texto_sesion(actividad, sesion),
         'total': len(filas),
         'meta': esperados,
         'meta_texto': 'esperados (invitados y acompañantes)',
@@ -244,10 +273,15 @@ def _procesar_escaneo(request):
     # ============================================================
     # PRIMERA ETAPA: PEDIR CONFIRMACIÓN
     # ============================================================
+    sesion = _sesion_escaneo(request, actividad)
+    texto_sesion = _texto_sesion(actividad, sesion)
+    duplicado = (f'La asistencia de la sesión {sesion.numero} ya fue registrada.'
+                 if texto_sesion else 'La asistencia ya fue registrada anteriormente.')
+
     if not confirmar:
-        if Asistencia.objects.filter(actividad=actividad, alumno=alumno).exists():
+        if servicio_sesiones.registro_en_sesion(sesion, alumno=alumno):
             _log_duplicado()
-            return _error_json('La asistencia ya fue registrada anteriormente.', 409)
+            return _error_json(duplicado, 409)
 
         if actividad.tipo == 'TALLER' and not Inscripcion.objects.filter(
             actividad=actividad, alumno=alumno, estado='CONFIRMADA'
@@ -278,9 +312,9 @@ def _procesar_escaneo(request):
                 pk=actividad_id, estado='ACTIVA'
             )
 
-            if Asistencia.objects.filter(actividad=actividad, alumno=alumno).exists():
+            if servicio_sesiones.registro_en_sesion(sesion, alumno=alumno):
                 _log_duplicado()
-                return _error_json('La asistencia ya fue registrada anteriormente.', 409)
+                return _error_json(duplicado, 409)
 
             if actividad.tipo == 'TALLER' and not Inscripcion.objects.filter(
                 actividad=actividad, alumno=alumno, estado='CONFIRMADA'
@@ -291,14 +325,19 @@ def _procesar_escaneo(request):
                     403
                 )
 
-            Asistencia.objects.create(
-                actividad=actividad,
-                alumno=alumno,
-                metodo_ingreso=metodo,
-                registrado_por=request.user
-            )
+            if not servicio_sesiones.registrar(sesion, alumno=alumno, metodo=metodo, usuario=request.user):
+                raise IntegrityError('otro operador registró esta sesión')
+            # Asistencia a la actividad (al menos una sesión): la primera vez que viene
+            if not Asistencia.objects.filter(actividad=actividad, alumno=alumno).exists():
+                Asistencia.objects.create(
+                    actividad=actividad,
+                    alumno=alumno,
+                    metodo_ingreso=metodo,
+                    registrado_por=request.user
+                )
             registrar_log(request, 'Escáner', 'Registro de asistencia',
-                          f'{alumno.nombres} {alumno.apellidos} - {actividad.titulo}',
+                          f'{alumno.nombres} {alumno.apellidos} - {actividad.titulo}'
+                          + (f' ({texto_sesion.lower()})' if texto_sesion else ''),
                           'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
 
     except Actividad.DoesNotExist:
@@ -312,7 +351,8 @@ def _procesar_escaneo(request):
     return JsonResponse({
         'success': True,
         'confirmar': False,
-        'message': f'Asistencia registrada para {alumno.nombres} {alumno.apellidos}.',
+        'message': f'Asistencia registrada para {alumno.nombres} {alumno.apellidos}'
+                   + (f' ({texto_sesion.lower()}).' if texto_sesion else '.'),
         'metodo': metodo,
         'alumno': {
             'nombre': f'{alumno.nombres} {alumno.apellidos}',
@@ -329,9 +369,10 @@ def _actividades_para_escanear():
     Punto se reparte el registro). Primero las que están en curso, luego las próximas (la más cercana
     primero) y al final las que ya terminaron pero siguen activas."""
     ahora = timezone.now()
-    actividades = list(Actividad.objects.filter(estado='ACTIVA'))
+    actividades = list(Actividad.objects.filter(estado='ACTIVA').prefetch_related('sesiones'))
     for a in actividades:
-        a.en_curso = a.fecha_inicio <= ahora <= a.fecha_fin
+        # En las de varias sesiones, "en curso" es que una de sus sesiones está en curso ahora
+        a.en_curso = a.sesion_en_curso(ahora)
     def orden(a):
         if a.en_curso:
             return (0, a.fecha_inicio.timestamp())
@@ -361,6 +402,7 @@ def escaneo(request):
                         or not request.session.get('turno_id')):
                     _terminar_turno(request)
                     _iniciar_turno(request, actividad)
+                    request.session.pop('sesion_escaneo_id', None)
                 if _es_ajax(request):
                     return JsonResponse({'success': True, 'redirect_url': '/escaneo/'})
                 return redirect('escaneo')
@@ -369,6 +411,19 @@ def escaneo(request):
                     return _error_json('Actividad no válida o inactiva.', 404)
                 messages.error(request, 'Actividad no válida o inactiva.')
                 return redirect('escaneo')
+
+        if 'cambiar_sesion' in request.POST:
+            actividad = Actividad.objects.filter(pk=request.session.get('actividad_escaneo_id'),
+                                                 estado='ACTIVA').first()
+            sesion_id = id_o_none(request.POST.get('sesion_id'))
+            if actividad and any(s.id == sesion_id for s in actividad.lista_sesiones()):
+                request.session['sesion_escaneo_id'] = sesion_id
+                registrar_log(request, 'Escáner', 'Cambiar sesión',
+                              f'Registro en "{actividad.titulo}": se eligió otra sesión a mano.',
+                              'Actividad', actividad.id, actividad.titulo)
+            else:
+                messages.error(request, 'Esa sesión no es de la actividad del turno.')
+            return redirect('escaneo')
 
         if 'finalizar_turno' in request.POST:
             resumen = _terminar_turno(request)
@@ -400,8 +455,11 @@ def escaneo(request):
         # Sesiones anteriores a los turnos guardados: el turno empieza ahora
         _iniciar_turno(request, actividad)
 
+    sesion = _sesion_escaneo(request, actividad) if actividad else None
     return render(request, 'gestion/escaneo.html', {
         'actividad_seleccionada': actividad,
+        'sesion_escaneo': sesion,
+        'sesiones': actividad.lista_sesiones() if actividad else [],
         'contador': _contador_escaneo(request, actividad) if actividad else None,
         'actividades_disponibles': _actividades_para_escanear(),
     })
