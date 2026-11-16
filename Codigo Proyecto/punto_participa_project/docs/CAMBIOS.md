@@ -22,7 +22,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
 > exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
-> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 741 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 763 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -808,7 +808,39 @@ Sin cambios en lo que hace el sistema (las 747 pruebas pasan igual y las URL con
   `gestion/servicios/`, y las 7 plantillas de correo a `templates/gestion/correos/` (sin el prefijo `email_`).
 - Para correr una prueba suelta: `python manage.py test gestion.tests.tests_escaner_turno`.
 
-### 18.14 Pendiente
+### 18.14 Páginas públicas y correos con la imagen de la actividad
+
+La página de inscripción a talleres mostraba el logo grande de la mascota aunque la actividad tuviera imagen, la
+invitación no la mostraba y ningún correo la llevaba. Ahora las cuatro páginas públicas comparten una portada
+(`includes/portada_actividad.html`) con la imagen, el tipo y el título (una sola vez); sin imagen, una franja con
+la mascota. Los estados se ven en grande y la casilla de la Política de Privacidad quedó alineada. Los correos
+comparten cabecera con logos e imagen (`correos/_cabecera.html`), el recuadro de fecha, horario y lugar
+(`correos/_datos_actividad.html`) y el pie; las imágenes usan la dirección completa (`{% url_absoluta %}`).
+Se corrigió "¡Súmate al Charla…" y "cronograma de las sesiones". Pruebas en `tests_portada_publica`.
+
+### 18.15 Revisión de QA de Diverson (15/11/2026)
+
+Revisó permisos, vistas críticas, privacidad, resistencia y pruebas integrales sobre la versión `48d3684`. Sus
+cambios se integraron a la estructura nueva:
+
+- **Escáner:** el Creador de Evento solo puede escanear las actividades que creó (el Administrador y el Encargado
+  de Registrar, todas). Se revisa al elegir la actividad, al recuperar la sesión, en el contador y al registrar,
+  no solo en la lista (`_puede_escanear_actividad` en `views/escaner.py`). Si la actividad deja de estar activa,
+  el turno se cierra.
+- **Middleware:** el cambio obligatorio de contraseña ya no atrapa cualquier error, solo la falta de perfil.
+- **Pruebas nuevas (10):** perfil inactivo y usuario sin perfil no entran; contraseña temporal obliga al cambio;
+  cuenta inactiva no recibe el correo de recuperación ni puede restablecer; actividad finalizada entre las dos
+  etapas del escáner no registra; el Creador no ve, no elige, no consulta el contador ni registra en actividades
+  ajenas y el Administrador ve todas.
+- **`.gitattributes`** en la raíz: los `.sh` siempre con fin de línea LF, también en Windows. Con CRLF fallan
+  dentro de Docker (respaldo y tareas).
+- **`media/` en `.gitignore`:** las imágenes que suben los usuarios nunca se suben a GitHub, aunque alguien corra
+  el sistema fuera de Docker.
+
+Queda pendiente su observación sobre el consentimiento: guardar en la inscripción la versión de la Política
+aceptada y la fecha, no solo en la auditoría.
+
+### 18.16 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".
@@ -816,3 +848,4 @@ Sin cambios en lo que hace el sistema (las 747 pruebas pasan igual y las URL con
   por consola.
 - **P4, datos:** plazo de conservación de los respaldos mensuales, que la Política de Privacidad deja por
   confirmar.
+- **Consentimiento:** guardar en la inscripción la versión de la Política aceptada y la fecha (observación de QA).

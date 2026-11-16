@@ -172,10 +172,27 @@ class RoleRequiredDecoratorTestCase(TestCase):
         )
 
         cls.registrador = User.objects.create_user(username='reg2_test', password='clave123')
+        cls.inactivo = User.objects.create_user(username='inactivo2_test', password='clave123')
+        UsuarioSistema.objects.create(
+            user=cls.inactivo, rol=cls.rol_admin, activo=False,
+            must_change_password=False,
+        )
+
+        cls.sin_perfil = User.objects.create_user(username='sin_perfil2_test', password='clave123')
         UsuarioSistema.objects.create(
             user=cls.registrador, rol=cls.rol_registrador, activo=True,
             must_change_password=False,
         )
+
+    def test_usuario_con_perfil_inactivo_no_accede(self):
+        self.client.force_login(self.inactivo)
+        response = self.client.get(reverse('usuarios'))
+        self.assertEqual(response.status_code, 302)
+
+    def test_usuario_sin_perfil_no_accede(self):
+        self.client.force_login(self.sin_perfil)
+        response = self.client.get(reverse('usuarios'))
+        self.assertEqual(response.status_code, 302)
 
     def test_sin_login_redirige_a_login_con_next(self):
         url = reverse('usuarios')

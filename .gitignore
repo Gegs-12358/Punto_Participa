@@ -19,4 +19,7 @@ staticfiles/
 
 # Respaldos de la base (datos personales)
 respaldos/
+
+# Imágenes que suben los usuarios (en Docker viven en un volumen; fuera de Docker quedan en media/)
+media/
 __pycache__/

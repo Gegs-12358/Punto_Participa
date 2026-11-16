@@ -46,7 +46,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**. La entrega está fijada para el 1 de diciembre de 2026.
 
-* Suite de pruebas automatizadas: 741 tests (detalle en la sección 9).
+* Suite de pruebas automatizadas: 763 tests (detalle en la sección 9).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 * El historial detallado de cambios está en [`docs/CAMBIOS.md`](Codigo%20Proyecto/punto_participa_project/docs/CAMBIOS.md) y la guía de estilo de las pantallas en [`docs/GUIA_ESTILO.md`](Codigo%20Proyecto/punto_participa_project/docs/GUIA_ESTILO.md).
 
@@ -56,7 +56,7 @@ El proyecto está en desarrollo y funciona de punta a punta en un entorno local 
 
 | Pantalla | Para qué sirve | Roles |
 | --- | --- | --- |
-| **Inicio** | Resumen del período: actividades en curso, talleres con cupos, inscritos, asistencias del día, invitaciones enviadas, alertas y gráficos. Cada gráfico explica en una línea qué muestra (sección 3.5). | Administrador, Creador |
+| **Inicio** | Resumen del período: actividades en curso, talleres con cupos, inscritos, asistencias del día, invitaciones enviadas, alertas y gráficos. Cada gráfico explica en una línea qué muestra (sección 3.6). | Administrador, Creador |
 | **Actividades** | Crear, editar y eliminar actividades y talleres, con buscador y filtros. El lugar se elige de una lista; si es una sala, se pide su número (por ejemplo, 1203). Desde aquí se envían las invitaciones por correo. Tipos: masiva, taller y con invitación (sección 3.2). | Administrador, Creador |
 | **Detalle de actividad** | Datos de la actividad y el recorrido de la participación: invitados, inscritos, asistieron y no asistieron, con la lista de quienes se inscribieron y no fueron. En las actividades con invitación: invitados, confirmados, rechazados, sin responder, entraron y acompañantes. | Administrador, Creador |
 | **Invitados** | Lista de una actividad con invitación: carga del Excel o CSV con vista previa, estado de cada invitado y sus acompañantes, enlace personal para copiar, envío de las invitaciones y quitar a quien aún no entra. | Administrador, Creador |
@@ -113,7 +113,13 @@ Si llega alguien que no está en la lista, el escáner ofrece agregarlo: un alum
 * Desde la ficha de un alumno, el Administrador puede **anonimizarlo**: se reemplazan el nombre, el RUT y el correo (también en sus invitaciones, acompañantes y registros de auditoría) y se conservan la carrera, la escuela, la jornada y su participación, para que los reportes no cambien. Hay que escribir ANONIMIZAR para confirmar y no se puede deshacer.
 
 
-### 3.5 Gráficos
+### 3.5 Páginas públicas y correos
+
+* Las páginas de inscripción, de actividad masiva, de invitación y de cancelación muestran arriba la **imagen de la actividad** con su tipo y su título. Sin imagen, una franja azul con la mascota.
+* Los estados se ven en grande: "Sin cupos disponibles" en rojo y "Evento ya realizado" o "cancelado" en gris.
+* Los correos de invitación, invitación especial, confirmación de inscripción y lista de espera llevan los logos, la imagen de la actividad y la fecha, el horario y el lugar. Las imágenes usan la dirección completa del sitio (`SITE_URL`), así que se ven en el correo cuando el sistema está publicado.
+
+### 3.6 Gráficos
 
 * Cada gráfico del Inicio y de Reportes tiene, bajo el título, una línea que explica qué cuenta y cómo leerlo. Al pasar el mouse aparece el detalle (total del mes, porcentaje de asistencia, escuela de la carrera).
 * **Actividades terminadas, en curso y próximas** (Inicio): cuántas actividades empiezan cada mes, desde cinco meses atrás hasta el mes siguiente. Cada actividad se cuenta una vez y su estado sale de las fechas; las canceladas no se cuentan.
@@ -243,7 +249,7 @@ Los datos viven en volúmenes de Docker (`pgdata` para la base de datos y `media
 
 La pantalla del escáner (`/escaneo/`) registra la asistencia a una actividad por **turnos**:
 
-1. El operador elige la actividad de una lista con buscador. Primero aparecen las que están en curso. Al elegirla empieza su turno.
+1. El operador elige la actividad de una lista con buscador. Primero aparecen las que están en curso. Al elegirla empieza su turno. El Administrador y el Encargado de Registrar ven todas las actividades activas; el Creador de Evento, solo las que creó (también se revisa al registrar y en el contador, no solo en la lista).
 2. Lee o digita el documento y confirma en el cuadro que muestra el nombre y el RUT del alumno.
 3. Al terminar, presiona **Finalizar turno** y ve cuántas asistencias registró y en cuánto tiempo. Si elige otra actividad, el turno anterior se cierra solo.
 
@@ -327,7 +333,7 @@ Codigo Proyecto/
 ## 8. Seguridad
 
 * Credenciales y claves fuera del código, en variables de entorno (`.env`). La configuración de HTTPS, cookies seguras, HSTS y correo también se toma de ahí.
-* Rol obligatorio para cada usuario y permisos según el rol y la propiedad de cada actividad.
+* Rol obligatorio para cada usuario y permisos según el rol y la propiedad de cada actividad, también en el escáner.
 * Documento de identidad obligatorio para cada usuario; al cambiarlo, el servidor pide confirmación y deja registro en la auditoría.
 * Límite de intentos en el inicio de sesión y en la recuperación de contraseña (5 intentos por IP cada 15 minutos).
 * Límite de lecturas por usuario en la pantalla del escáner (120 por minuto), con aviso en pantalla al superarlo.
@@ -356,7 +362,7 @@ Codigo Proyecto/
 
 ## 9. Pruebas automatizadas
 
-La suite tiene **741 tests** y se ejecuta con:
+La suite tiene **763 tests** y se ejecuta con:
 
 ```bash
 docker compose exec web python manage.py test --parallel --noinput
@@ -381,7 +387,7 @@ Qué se verifica, por tema:
 | Permisos por rol | Qué puede abrir cada rol y el usuario anónimo, que un creador no vea ni exporte actividades de otro, respuestas 401 y 403 en los endpoints JSON y rechazo de peticiones sin token CSRF. | `tests_roles_completo`, `tests`, `tests_decorators_utils`, `tests_adicionales` |
 | Usuarios y documento de identidad | Documento obligatorio, guardado normalizado, rechazo de duplicados, confirmación al cambiarlo, registro en la auditoría y bloqueo de usuarios. Carga masiva: vista previa sin escribir, filas omitidas si la cuenta existe, errores por fila, enlace para crear la contraseña y solo para el Administrador. | `tests_rut_usuarios`, `tests_caracteres`, `tests_usuarios_masivos` |
 | RUT, RUN provisorio y pasaporte | Limpieza de puntos y guion, dígito verificador, documentos extranjeros, búsqueda del alumno en distintos formatos y formato de pantalla. | `tests`, `tests_decorators_utils`, `tests_formato_rut` |
-| Escáner de asistencia | Registro por RUT, QR y código de barras, confirmación en dos etapas, duplicados, talleres sin inscripción, actividades inactivas, teclado en español e inglés, turnos guardados, contador en vivo con varios operadores y lista para elegir la actividad. | `tests_views_criticas`, `tests_escaner_teclado`, `tests_escaner_turno`, `tests_integrales`, `tests_adicionales` |
+| Escáner de asistencia | Registro por RUT, QR y código de barras, confirmación en dos etapas, duplicados, talleres sin inscripción, actividades inactivas, teclado en español e inglés, turnos guardados, contador en vivo con varios operadores, lista para elegir la actividad, el Creador solo escanea sus actividades y una actividad que se finaliza entre las dos etapas no registra. | `tests_views_criticas`, `tests_escaner_teclado`, `tests_escaner_turno`, `tests_integrales`, `tests_adicionales` |
 | Alumnos y nómina | Importación desde Excel y CSV (vista previa, errores por fila, bloqueo masivo), alumnos bloqueados que no se inscriben ni se registran, directorio con buscador, ficha con historial y bloqueo manual que la nómina respeta. | `tests_importador`, `tests_importar_web`, `tests_alumnos_bloqueados`, `tests_alumnos_pantalla` |
 | Catálogos | Lugares, escuelas y carreras: agregar, renombrar con confirmación, crear una carrera nueva y bloquear la antigua, bloquear y eliminar lo que no se usa, número de sala y migraciones que unifican los datos existentes. | `tests_lugares`, `tests_catalogo_lugares`, `tests_lugar_numero`, `tests_catalogo_escuelas_carreras` |
 | Datos al participar | La carrera, la escuela y la jornada se guardan al inscribirse y al asistir, no cambian si el alumno cambia de carrera y se corrigen al renombrar en Catálogos. | `tests_foto_academica` |

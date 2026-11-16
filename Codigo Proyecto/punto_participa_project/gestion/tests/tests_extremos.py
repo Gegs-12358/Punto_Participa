@@ -62,6 +62,16 @@ class BackendCorreoFallido(BaseEmailBackend):
 
 
 class ContraseñasYAutenticacionExtremaTests(BaseSistemaTestCase):
+    def test_usuario_con_contrasena_temporal_es_redirigido_al_cambio(self):
+        self.admin.usuariosistema.must_change_password = True
+        self.admin.usuariosistema.save(update_fields=["must_change_password"])
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("dashboard"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("cambiar_contrasena"))
+
     def test_cambio_contrasena_incorrecta_no_modifica_la_cuenta(self):
         self.client.force_login(self.admin)
         response = self.client.post(

@@ -222,3 +222,49 @@ class ElegirActividadTests(BaseTurnoTests):
         self.assertContains(resp, '<input type="hidden" name="cambiar_actividad" value="1">', html=True)
         self.assertContains(resp, f'name="actividad_id" value="{self.actividad.pk}"')
         self.assertNotContains(resp, 'name="actividad_id" value="" ')
+
+    def test_creador_solo_ve_sus_actividades_en_lista(self):
+        self.client.force_login(self.creador)
+        resp = self.client.get(URL)
+
+        self.assertEqual(resp.status_code, 200)
+        titulos = {a.titulo for a in resp.context['actividades_disponibles']}
+        self.assertEqual(titulos, {self.actividad.titulo, self.actividad_masiva.titulo})
+        self.assertNotIn(self.actividad_otro.titulo, titulos)
+
+    def test_creador_no_puede_seleccionar_actividad_ajena(self):
+        self.client.force_login(self.creador)
+        resp = self.client.post(URL, {'cambiar_actividad': '1', 'actividad_id': self.actividad_otro.pk})
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertNotIn('actividad_escaneo_id', self.client.session)
+        self.assertFalse(LogAuditoria.objects.filter(accion='Iniciar turno',
+                                                     objeto_id=self.actividad_otro.pk).exists())
+
+    def test_creador_no_puede_consultar_contador_ni_registrar_en_actividad_ajena(self):
+        self.client.force_login(self.creador)
+        session = self.client.session
+        session['actividad_escaneo_id'] = self.actividad_otro.pk
+        session.save()
+
+        contador = self.client.get(URL_CONTADOR)
+        self.assertEqual(contador.status_code, 403)
+
+        session = self.client.session
+        session['actividad_escaneo_id'] = self.actividad_otro.pk
+        session.save()
+        asistencias_antes = Asistencia.objects.filter(actividad=self.actividad_otro).count()
+
+        registro = self.client.post(URL, {'rut': '200015509'})
+
+        self.assertEqual(registro.status_code, 403)
+        self.assertEqual(Asistencia.objects.filter(actividad=self.actividad_otro).count(), asistencias_antes)
+        self.assertNotIn('actividad_escaneo_id', self.client.session)
+
+    def test_administrador_ve_todas_las_actividades_en_el_escaner(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get(URL)
+
+        self.assertEqual(resp.status_code, 200)
+        titulos = {a.titulo for a in resp.context['actividades_disponibles']}
+        self.assertEqual(titulos, {self.actividad.titulo, self.actividad_masiva.titulo, self.actividad_otro.titulo})

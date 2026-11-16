@@ -88,6 +88,15 @@ class SolicitarRecuperacionTests(BaseSistemaTestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(len(mail.outbox), 1)
 
+    def test_post_con_usuario_inactivo_no_envia_correo(self):
+        self.admin.is_active = False
+        self.admin.save(update_fields=['is_active'])
+
+        response = self.client.post(reverse('recuperar_contrasena'), {'identificador': self.admin.username})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(mail.outbox), 0)
+
     def test_post_con_usuario_inexistente_no_envia_correo(self):
         response = self.client.post(
             reverse('recuperar_contrasena'),
@@ -131,6 +140,17 @@ class RestablecerContrasenaTests(BaseSistemaTestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Nueva contraseña')
+
+    def test_usuario_inactivo_no_puede_restablecer_contrasena(self):
+        self.admin.is_active = False
+        self.admin.save(update_fields=['is_active'])
+        uid, token = self._generar_enlace(self.admin)
+
+        response = self.client.get(reverse('restablecer_contrasena', args=[uid, token]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Enlace inv')
+        self.assertFalse(response.context['token_valido'])
 
     def test_post_con_contrasenas_distintas_muestra_error(self):
         uid, token = self._generar_enlace(self.admin)
@@ -243,6 +263,19 @@ class ProcesarEscaneoTests(BaseSistemaTestCase):
         response = self.client.post(reverse('escaneo'), {'rut': self.alumno.rut})
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()['confirmar'])
+
+    def test_actividad_finalizada_entre_etapas_rechaza_confirmacion(self):
+        self.seleccionar_actividad()
+        primera = self.client.post(reverse('escaneo'), {'rut': self.alumno.rut})
+        self.assertEqual(primera.status_code, 200)
+        self.assertTrue(primera.json()['confirmar'])
+
+        self.actividad_masiva.estado = 'FINALIZADA'
+        self.actividad_masiva.save(update_fields=['estado'])
+        segunda = self.client.post(reverse('escaneo'), {'rut': self.alumno.rut, 'confirmar': 'true'})
+
+        self.assertEqual(segunda.status_code, 404)
+        self.assertFalse(Asistencia.objects.filter(actividad=self.actividad_masiva, alumno=self.alumno).exists())
 
     def test_segunda_etapa_crea_asistencia(self):
         self.seleccionar_actividad()

@@ -1,0 +1,5 @@
+# Fin de línea: Git guarda todo con LF y cada computador lo convierte al abrirlo.
+# Los .sh siempre con LF, también en Windows: con CRLF fallan dentro de Docker (respaldo y tareas).
+* text=auto
+*.sh text eol=lf
+.gitattributes text eol=lf

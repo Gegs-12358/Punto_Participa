@@ -2,6 +2,8 @@ from django.conf import settings
 from django.shortcuts import redirect
 from django.urls import reverse
 
+from .models import UsuarioSistema
+
 
 class ForzarCambioContrasenaMiddleware:
     """
@@ -38,7 +40,7 @@ class ForzarCambioContrasenaMiddleware:
                 perfil = request.user.usuariosistema
                 if perfil.must_change_password and request.path not in self._rutas_permitidas():
                     return redirect('cambiar_contrasena')
-            except Exception:
+            except UsuarioSistema.DoesNotExist:
                 # Si el usuario no tiene UsuarioSistema asociado
                 # (ej. un superusuario creado con createsuperuser),
                 # no se le exige este cambio.

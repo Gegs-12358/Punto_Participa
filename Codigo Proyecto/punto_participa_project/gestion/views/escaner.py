@@ -21,6 +21,7 @@ from django.views.decorators.http import require_GET
 
 from ..decorators import role_required
 from ..models import Actividad, Asistencia, Inscripcion, TurnoEscaneo
+from ..permissions import puede_gestionar_actividad, tiene_rol
 from ..utils import buscar_alumno_por_documento, formatear_rut, id_o_none, limpiar_documento
 
 from .comun import _error_json, _es_ajax, registrar_log
@@ -55,6 +56,13 @@ def _mensaje_no_encontrado(metodo, documento):
     if metodo != 'QR' and _RE_DOC_CORTO.match(documento or ''):
         return f'Estudiante no encontrado con el documento: {documento}'
     return 'Estudiante no encontrado.'
+
+
+def _puede_escanear_actividad(user, actividad):
+    """El Encargado de Registrar escanea cualquier actividad activa; el Administrador también (puede
+    gestionarlas todas) y el Creador de Evento solo las que creó. Se revisa al elegir la actividad, al
+    recuperar la sesión, en el contador y al registrar, no solo en la lista."""
+    return tiene_rol(user, ['Encargado de Registrar']) or puede_gestionar_actividad(user, actividad)
 
 
 def _turno_inicio(request):
@@ -210,11 +218,20 @@ def _procesar_escaneo(request):
     if not actividad_id:
         return _error_json('Primero selecciona una actividad.')
 
+    try:
+        actividad = Actividad.objects.get(pk=actividad_id, estado='ACTIVA')
+    except Actividad.DoesNotExist:
+        _terminar_turno(request)
+        return _error_json('La actividad no existe o ya no está activa.', 404)
+
+    if not _puede_escanear_actividad(request.user, actividad):
+        _terminar_turno(request)
+        return _error_json('No tienes permiso para escanear esta actividad.', 403)
+
     # Con invitación: entran invitados y acompañantes de la lista (pueden no estar en la nómina)
-    con_invitacion = Actividad.objects.filter(pk=actividad_id, estado='ACTIVA', tipo='INVITACION').first()
-    if con_invitacion:
+    if actividad.tipo == 'INVITACION':
         from . import escaner_invitacion
-        return escaner_invitacion.procesar(request, con_invitacion, metodo, rut_procesado, confirmar)
+        return escaner_invitacion.procesar(request, actividad, metodo, rut_procesado, confirmar)
 
     # ============================================================
     # BUSCAR ALUMNO — Usando helper global
@@ -222,15 +239,6 @@ def _procesar_escaneo(request):
     alumno = buscar_alumno_por_documento(rut_procesado)
     if not alumno:
         return _error_json(_mensaje_no_encontrado(metodo, rut_procesado), 404)
-
-    # ============================================================
-    # VALIDAR ACTIVIDAD
-    # ============================================================
-    try:
-        actividad = Actividad.objects.get(pk=actividad_id, estado='ACTIVA')
-    except Actividad.DoesNotExist:
-        request.session.pop('actividad_escaneo_id', None)
-        return _error_json('La actividad no existe o ya no está activa.', 404)
 
     # ============================================================
     # HELPERS DE LOG
@@ -328,11 +336,15 @@ def _procesar_escaneo(request):
     })
 
 
-def _actividades_para_escanear():
-    """Actividades activas: primero las que están en curso, luego las próximas (la más cercana
-    primero) y al final las que ya terminaron pero siguen activas."""
+def _actividades_para_escanear(user):
+    """Actividades activas que el usuario puede escanear (el Creador de Evento, solo las suyas): primero
+    las que están en curso, luego las próximas (la más cercana primero) y al final las que ya terminaron
+    pero siguen activas."""
     ahora = timezone.now()
-    actividades = list(Actividad.objects.filter(estado='ACTIVA'))
+    qs = Actividad.objects.filter(estado='ACTIVA')
+    if tiene_rol(user, ['Creador de Evento']):
+        qs = qs.filter(creado_por_id=user.id)
+    actividades = list(qs)
     for a in actividades:
         a.en_curso = a.fecha_inicio <= ahora <= a.fecha_fin
     def orden(a):
@@ -358,6 +370,11 @@ def escaneo(request):
                 return redirect('escaneo')
             try:
                 actividad = Actividad.objects.get(pk=actividad_id, estado='ACTIVA')
+                if not _puede_escanear_actividad(request.user, actividad):
+                    if _es_ajax(request):
+                        return _error_json('No tienes permiso para escanear esta actividad.', 403)
+                    messages.error(request, 'No tienes permiso para escanear esta actividad.')
+                    return redirect('escaneo')
                 # Sin aviso emergente: taparía el campo y la pistola escribiría en ninguna parte.
                 # La pantalla ya muestra la actividad y la hora de inicio del turno.
                 if (request.session.get('actividad_escaneo_id') != actividad.id
@@ -398,8 +415,10 @@ def escaneo(request):
         try:
             actividad = Actividad.objects.get(pk=act_id, estado='ACTIVA')
         except Actividad.DoesNotExist:
-            request.session.pop('actividad_escaneo_id', None)
-            request.session.pop('turno_inicio', None)
+            _terminar_turno(request)
+    if actividad and not _puede_escanear_actividad(request.user, actividad):
+        _terminar_turno(request)
+        actividad = None
     if actividad and not request.session.get('turno_id'):
         # Sesiones anteriores a los turnos guardados: el turno empieza ahora
         _iniciar_turno(request, actividad)
@@ -407,7 +426,7 @@ def escaneo(request):
     return render(request, 'gestion/escaneo.html', {
         'actividad_seleccionada': actividad,
         'contador': _contador_escaneo(request, actividad) if actividad else None,
-        'actividades_disponibles': _actividades_para_escanear(),
+        'actividades_disponibles': _actividades_para_escanear(request.user),
     })
 
 
@@ -420,4 +439,7 @@ def escaneo_contador(request):
     actividad = Actividad.objects.filter(pk=act_id, estado='ACTIVA').first() if act_id else None
     if actividad is None:
         return _error_json('No hay una actividad seleccionada.', 404)
+    if not _puede_escanear_actividad(request.user, actividad):
+        _terminar_turno(request)
+        return _error_json('No tienes permiso para escanear esta actividad.', 403)
     return JsonResponse({'success': True, **_contador_escaneo(request, actividad)})
