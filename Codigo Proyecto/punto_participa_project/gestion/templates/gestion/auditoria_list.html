@@ -10,32 +10,49 @@
 <div class="page-title">
     <div>
         <span class="eyebrow">AUDITORÍA</span>
-        <h1>Auditoría del Sistema</h1>
-        <p>Registro histórico de acciones realizadas en el sistema.</p>
+        <h1>Auditoría del sistema</h1>
+        <p>Quién hizo qué y cuándo. Los registros se guardan dos años; usa "Ver todo" para el detalle completo, el ID y la IP.</p>
     </div>
     <div class="page-title__acciones">
         <img class="page-title__ilustracion" src="{% static 'gestion/img/encabezado/auditoria.webp' %}" alt="" width="92" height="92">
         <p class="globo-mascota">¡Aquí queda registrado cada cambio!</p>
-        <a href="{% url 'exportar_auditoria' %}?{{ request.GET.urlencode }}" class="btn secondary"
-            title="Exporta los registros con los filtros aplicados">{% icono "exportar" %} Exportar a Excel</a>
-    </div>
+        <details class="menu-desplegable">
+            <summary class="btn secondary">{% icono "exportar" %} Exportar <span aria-hidden="true">▾</span></summary>
+            <div class="menu-desplegable__panel menu-exportar" role="menu">
+                {% with q=request.GET.urlencode %}
+                <div class="menu-exportar__item">
+                    <div class="menu-exportar__texto">
+                        <strong>Registros de auditoría <em class="menu-exportar__aviso">Datos personales</em></strong>
+                        <span>Una fila por acción, con fecha, usuario, módulo, sobre qué se hizo, detalle completo e IP.</span>
+                    </div>
+                    <div class="menu-exportar__formatos">
+                        <a role="menuitem" href="{% url 'exportar_auditoria' %}?{{ q }}{% if q %}&amp;{% endif %}formato=excel" aria-label="Auditoría en Excel">Excel</a>
+                        <a role="menuitem" href="{% url 'exportar_auditoria' %}?{{ q }}{% if q %}&amp;{% endif %}formato=csv" aria-label="Auditoría en CSV">CSV</a>
+                    </div>
+                </div>
+                <p class="menu-desplegable__nota">La descarga usa los filtros aplicados y queda registrada en la auditoría.</p>
+                {% endwith %}
+            </div>
+        </details>
+</div>
 </div>
 
 <!-- ============================================================ -->
 <!-- FILTROS -->
 <!-- ============================================================ -->
-<form method="get" class="filters-bar" role="search">
+<form method="get" class="filters-bar filters-bar--auditoria" role="search">
     <div class="filter-group filter-group--buscar">
-        <label for="usuario">Usuario</label>
-        <input type="search" id="usuario" name="usuario" value="{{ request.GET.usuario }}" maxlength="150"
-            placeholder="Nombre de usuario">
+        <label for="buscar">Buscar en el detalle</label>
+        <input type="search" id="buscar" name="buscar" value="{{ filtros.buscar }}" maxlength="100"
+            placeholder="Nombre de alumno, actividad, RUT…">
     </div>
     <div class="filter-group">
-        <label for="accion">Acción</label>
-        <select name="accion" id="accion">
-            <option value="">Todas</option>
-            {% for accion in acciones_disponibles %}
-                <option value="{{ accion }}" {% if request.GET.accion == accion %}selected{% endif %}>{{ accion }}</option>
+        <label for="usuario">Usuario</label>
+        <select name="usuario" id="usuario">
+            <option value="">Todos</option>
+            <option value="{{ sistema }}" {% if filtros.usuario == sistema %}selected{% endif %}>Sistema (acciones públicas o automáticas)</option>
+            {% for u in usuarios_disponibles %}
+                <option value="{{ u }}" {% if filtros.usuario == u %}selected{% endif %}>{{ u }}</option>
             {% endfor %}
         </select>
     </div>
@@ -44,13 +61,39 @@
         <select name="modulo" id="modulo">
             <option value="">Todos</option>
             {% for modulo in modulos_disponibles %}
-                <option value="{{ modulo }}" {% if request.GET.modulo == modulo %}selected{% endif %}>{{ modulo }}</option>
+                <option value="{{ modulo }}" {% if filtros.modulo|lower == modulo|lower %}selected{% endif %}>{{ modulo }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label for="accion">Acción</label>
+        <select name="accion" id="accion">
+            <option value="">Todas</option>
+            {% for modulo, acciones in acciones_por_modulo.items %}
+            <optgroup label="{{ modulo }}">
+                {% for accion in acciones %}
+                <option value="{{ accion }}" {% if filtros.accion|lower == accion|lower %}selected{% endif %}>{{ accion }}</option>
+                {% endfor %}
+            </optgroup>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label for="objeto">Sobre qué</label>
+        <select name="objeto" id="objeto">
+            <option value="">Todo</option>
+            {% for objeto in objetos_disponibles %}
+                <option value="{{ objeto }}" {% if filtros.objeto|lower == objeto|lower %}selected{% endif %}>{{ objeto }}</option>
             {% endfor %}
         </select>
     </div>
     <div class="filter-group filter-group--date">
-        <label for="fecha">Fecha</label>
-        <input type="date" id="fecha" name="fecha" value="{{ request.GET.fecha }}">
+        <label for="desde">Desde</label>
+        <input type="date" id="desde" name="desde" value="{{ filtros.desde|date:'Y-m-d' }}">
+    </div>
+    <div class="filter-group filter-group--date">
+        <label for="hasta">Hasta</label>
+        <input type="date" id="hasta" name="hasta" value="{{ filtros.hasta|date:'Y-m-d' }}">
     </div>
     {% url 'auditoria' as url_limpiar %}{% acciones_filtro url_limpiar %}
 </form>
@@ -58,7 +101,7 @@
 <!-- ============================================================ -->
 <!-- CHIPS DE FILTROS ACTIVOS -->
 <!-- ============================================================ -->
-{% chips_filtros "usuario=Usuario,accion=Acción,modulo=Módulo,fecha=Fecha" url_limpiar %}
+{% chips_filtros "buscar=Texto,usuario=Usuario,modulo=Módulo,accion=Acción,objeto=Sobre qué,desde=Desde,hasta=Hasta,fecha=Fecha" url_limpiar chips_valores %}
 
 <!-- ============================================================ -->
 <!-- TABLA DE AUDITORÍA -->
@@ -77,13 +120,11 @@
             <caption class="visually-hidden">Registros de auditoría del sistema</caption>
             <thead>
                 <tr>
-                    <th>Fecha y Hora</th>
+                    <th>Fecha y hora</th>
                     <th>Usuario</th>
                     <th>Módulo</th>
                     <th>Acción</th>
-                    <th>Objeto</th>
-                    <th>ID</th>
-                    <th>IP</th>
+                    <th>Sobre qué</th>
                     <th>Detalle</th>
                 </tr>
             </thead>
@@ -91,54 +132,45 @@
                 {% for log in logs %}
                 <tr>
                     <td class="text-nowrap">
-                        {{ log.fecha_registro|date:"d/m/Y H:i" }}
+                        {{ log.fecha_registro|date:"d/m/Y" }}<br><small class="text-muted">{{ log.fecha_registro|date:"H:i:s" }}</small>
                     </td>
                     <td>
                         {% if log.usuario_sistema %}
                             <strong>{{ log.usuario_sistema.username }}</strong>
                         {% else %}
-                            <span class="text-muted">Sistema</span>
+                            <span class="text-muted" title="Acción pública (inscripción, respuesta a una invitación) o automática">Sistema</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% if log.modulo %}
-                            <span class="role">{{ log.modulo }}</span>
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
+                        {% if log.modulo %}<span class="role">{{ log.modulo }}</span>{% else %}<span class="text-muted">—</span>{% endif %}
                     </td>
                     <td>
-                        <span class="badge {% if 'Eliminar' in log.accion or 'Eliminación' in log.accion %}inactive{% elif 'Crear' in log.accion or 'Guardar' in log.accion %}badge-success{% else %}draft{% endif %}">
-                            {{ log.accion }}
-                        </span>
+                        <span class="badge {{ log.tono }}">{{ log.accion }}</span>
                     </td>
                     <td>
                         {% if log.objeto_tipo %}
                             {{ log.objeto_tipo }}
-                            {% if log.objeto_nombre %}
-                                <br><small class="text-muted">{{ log.objeto_nombre }}</small>
-                            {% endif %}
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if log.objeto_id %}
-                            <code>{{ log.objeto_id }}</code>
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if log.ip_address %}
-                            <code>{{ log.ip_address }}</code>
+                            {% if log.objeto_nombre %}<br><small class="text-muted">{{ log.objeto_nombre }}</small>{% endif %}
                         {% else %}
                             <span class="text-muted">—</span>
                         {% endif %}
                     </td>
                     <td class="detalle-cell">
-                        {% if log.detalle %}
-                            <span title="{{ log.detalle }}">{{ log.detalle|truncatechars:120 }}</span>
+                        {% if log.detalle or log.ip_address or log.objeto_id %}
+                        <details class="auditoria-detalle">
+                            <summary>
+                                <span class="auditoria-detalle__resumen">{{ log.detalle|default:"Sin detalle"|truncatechars:110 }}</span>
+                                <span class="auditoria-detalle__ver">Ver todo</span>
+                            </summary>
+                            <div class="auditoria-detalle__cuerpo">
+                                {% if log.detalle %}<p>{{ log.detalle|linebreaksbr }}</p>{% endif %}
+                                <dl>
+                                    {% if log.objeto_id %}<dt>ID</dt><dd><code>{{ log.objeto_id }}</code></dd>{% endif %}
+                                    {% if log.ip_address %}<dt>IP</dt><dd><code>{{ log.ip_address }}</code></dd>{% endif %}
+                                    {% if log.user_agent %}<dt>Navegador</dt><dd>{{ log.user_agent|truncatechars:160 }}</dd>{% endif %}
+                                </dl>
+                            </div>
+                        </details>
                         {% else %}
                             <span class="text-muted">—</span>
                         {% endif %}
@@ -146,7 +178,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" class="text-center text-muted" style="padding: 40px;">
+                    <td colspan="6" class="text-center text-muted" style="padding: 40px;">
                         <div class="empty-state" style="min-height: auto;">
                             <span>{% icono "auditoria" "icono--grande" %}</span>
                             <h3>Sin resultados</h3>

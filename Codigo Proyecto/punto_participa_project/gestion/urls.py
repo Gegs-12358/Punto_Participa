@@ -80,7 +80,7 @@ urlpatterns = [
     # AUDITORÍA
     # ============================================================
     path('auditoria/', views.lista_auditoria, name='auditoria'),
-    path('auditoria/exportar/', views.exportar_auditoria, name='exportar_auditoria'),
+    path('auditoria/exportar/', exportaciones.exportar_auditoria, name='exportar_auditoria'),
 
     # ============================================================
     # INSCRIPCIÓN PÚBLICA

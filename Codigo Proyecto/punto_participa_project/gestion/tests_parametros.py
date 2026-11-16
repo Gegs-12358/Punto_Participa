@@ -32,12 +32,13 @@ PAGINAS_GET = [
     ('dashboard', [], ['rango', 'tipo', 'carrera', 'jornada']),
     ('lista_actividades', [],
      ['tipo', 'fecha', 'fecha_creacion', 'estado', 'orden', 'page']),
-    ('auditoria', [], ['usuario', 'accion', 'modulo', 'fecha', 'page']),
+    ('auditoria', [], ['usuario', 'accion', 'modulo', 'fecha', 'desde', 'hasta', 'buscar', 'objeto', 'page']),
     ('reportes', [], _FILTROS_REPORTE + ['page_act', 'page_det']),
     ('exportar_reportes', ['csv'], _FILTROS_REPORTE),
     ('exportar_reportes', ['xlsx'], _FILTROS_REPORTE),
     ('exportar_reportes_detalle', ['csv'], _FILTROS_REPORTE),
-    ('exportar_auditoria', [], ['usuario', 'accion', 'modulo', 'fecha']),
+    ('exportar_auditoria', [], ['usuario', 'accion', 'modulo', 'fecha', 'desde', 'hasta', 'buscar', 'objeto',
+                                'formato']),
 ]
 
 

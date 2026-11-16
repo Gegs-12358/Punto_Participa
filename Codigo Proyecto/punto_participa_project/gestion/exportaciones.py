@@ -11,6 +11,8 @@ Tres reportes, cada uno en Excel o CSV, con los mismos filtros de la pantalla:
                  y su asistencia (hora, método y quién lo registró).
   libro          Los tres anteriores en un solo Excel (una hoja cada uno).
 
+También exporta la Auditoría (exportar_auditoria) con el mismo formato.
+
 Actividades con invitación: los números salen de la lista (Invitado y Acompanante), no de
 Inscripcion/Asistencia. Como el escáner les crea también una Asistencia a los invitados de la
 nómina, esas asistencias se excluyen aquí para no contar dos veces.
@@ -39,10 +41,13 @@ from openpyxl.utils import get_column_letter
 from .decorators import role_required
 from .models import Acompanante, Actividad, Alumno, Asistencia, Carrera, Inscripcion, Invitado, NotificacionCorreo
 from .utils import fecha_o_none, formatear_rut, id_o_none, limpiar_texto
-from .views import _aplicar_filtros_reporte, _filtrar_por_foto, _sanitizar_celda, registrar_log
+from .views import (SISTEMA, _aplicar_filtros_reporte, _filtrar_auditoria, _filtrar_por_foto, _sanitizar_celda,
+                    filtros_auditoria, registrar_log)
 
 # Tipo de cada columna: cómo se escribe en Excel y en CSV
 TEXTO, ENTERO, FECHA, PORCENTAJE = 'texto', 'entero', 'fecha', 'porcentaje'
+TEXTO_LARGO = 'texto_largo'   # columna ancha con salto de línea (p. ej., el detalle de la auditoría)
+ANCHO_TEXTO_LARGO = 80
 
 FORMATO_FECHA_EXCEL = 'dd/mm/yyyy hh:mm'
 FORMATO_FECHA_CSV = '%d/%m/%Y %H:%M'
@@ -396,12 +401,19 @@ def _escribir_hoja(ws, reporte):
         celda.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
         anchos.append(len(titulo))
 
+    # Con una columna de texto largo, todas las celdas van arriba para que la fila se lea pareja
+    arriba = any(tipo == TEXTO_LARGO for _, tipo in reporte.columnas)
     for r, fila in enumerate(reporte.filas, start=2):
         for col, ((_, tipo), valor) in enumerate(zip(reporte.columnas, fila), start=1):
             celda = ws.cell(row=r, column=col, value=_sanitizar_celda(valor))
+            if arriba:
+                celda.alignment = Alignment(vertical='top', horizontal='left' if tipo == ENTERO else None)
             if tipo == FECHA and valor is not None:
                 celda.number_format = FORMATO_FECHA_EXCEL
                 largo = 17
+            elif tipo == TEXTO_LARGO:
+                celda.alignment = Alignment(wrap_text=True, vertical='top')
+                largo = ANCHO_TEXTO_LARGO
             elif tipo == PORCENTAJE and valor is not None:
                 celda.number_format = '0.0%'
                 largo = 7
@@ -409,8 +421,9 @@ def _escribir_hoja(ws, reporte):
                 largo = len(str(valor)) if valor is not None else 0
             anchos[col - 1] = max(anchos[col - 1], largo)
 
-    for col, ancho in enumerate(anchos, start=1):
-        ws.column_dimensions[get_column_letter(col)].width = min(ancho + 2, 50)
+    for col, ((_, tipo), ancho) in enumerate(zip(reporte.columnas, anchos), start=1):
+        ws.column_dimensions[get_column_letter(col)].width = (
+            ANCHO_TEXTO_LARGO if tipo == TEXTO_LARGO else min(ancho + 2, 50))
     ws.freeze_panes = 'A2'
     # Al imprimir: horizontal, todas las columnas en el ancho de la hoja y el encabezado en cada página
     ws.page_setup.orientation = 'landscape'
@@ -422,11 +435,12 @@ def _escribir_hoja(ws, reporte):
         ws.auto_filter.ref = f'A1:{get_column_letter(len(reporte.columnas))}{len(reporte.filas) + 1}'
 
 
-def _escribir_informacion(ws, reportes, request, f, etiquetas):
+def _escribir_informacion(ws, reportes, request, f, etiquetas, titulo='Punto Participa: exportación de reportes',
+                          sin_filtros='Todas las actividades visibles para tu usuario'):
     ws.title = 'Información'
     negrita = Font(bold=True)
     filas = [
-        ('Punto Participa: exportación de reportes', None),
+        (titulo, None),
         (None, None),
         ('Contenido', ', '.join(r.titulo for r in reportes)),
         ('Generado el', _local(timezone.now())),
@@ -434,7 +448,7 @@ def _escribir_informacion(ws, reportes, request, f, etiquetas):
         (None, None),
         ('Filtros aplicados', None),
     ]
-    filas += [(k, v) for k, v in etiquetas] or [('(ninguno)', 'Todas las actividades visibles para tu usuario')]
+    filas += [(k, v) for k, v in etiquetas] or [('(ninguno)', sin_filtros)]
     filas += [(None, None), ('Qué significa cada columna', None)]
     for r in reportes:
         filas += [(f'{r.titulo}: {col}', texto) for col, texto in r.definiciones]
@@ -476,12 +490,12 @@ def _nombre_archivo(clave, extension):
     return f'punto_participa_{clave}_{timezone.localtime():%Y%m%d_%H%M}.{extension}'
 
 
-def _respuesta_excel(reportes, request, f, etiquetas, clave):
+def _respuesta_excel(reportes, request, f, etiquetas, clave, **info):
     wb = Workbook()
     _escribir_hoja(wb.active, reportes[0])
     for r in reportes[1:]:
         _escribir_hoja(wb.create_sheet(), r)
-    _escribir_informacion(wb.create_sheet(), reportes, request, f, etiquetas)
+    _escribir_informacion(wb.create_sheet(), reportes, request, f, etiquetas, **info)
     respuesta = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     respuesta['Content-Disposition'] = f'attachment; filename="{_nombre_archivo(clave, "xlsx")}"'
@@ -545,3 +559,66 @@ def exportar_resumen(request, formato):
 
 def exportar_participacion(request, formato):
     return exportar_reporte(request, 'participacion', formato)
+
+
+# ============================================================
+# AUDITORÍA
+# ============================================================
+
+def _etiquetas_auditoria(f):
+    etiquetas = []
+    if f['usuario']:
+        etiquetas.append(('Usuario', 'Sistema (sin usuario)' if f['usuario'] == SISTEMA else f['usuario']))
+    for clave, nombre in (('modulo', 'Módulo'), ('accion', 'Acción'), ('objeto', 'Sobre qué'),
+                          ('buscar', 'Texto buscado')):
+        if f[clave]:
+            etiquetas.append((nombre, f[clave]))
+    if f['desde']:
+        etiquetas.append(('Desde', f['desde'].strftime('%d/%m/%Y')))
+    if f['hasta']:
+        etiquetas.append(('Hasta', f['hasta'].strftime('%d/%m/%Y')))
+    return etiquetas
+
+
+def reporte_auditoria(request, f):
+    filas = [[
+        _local(log.fecha_registro),
+        log.usuario_sistema.username if log.usuario_sistema else 'Sistema',
+        log.modulo or '', log.accion, log.objeto_tipo or '', log.objeto_nombre or '', log.objeto_id,
+        log.detalle or '', log.ip_address or '',
+    ] for log in _filtrar_auditoria(request, f)]
+    return Reporte(
+        'auditoria', 'Auditoría', 'Auditoría',
+        [('Fecha y hora', FECHA), ('Usuario', TEXTO), ('Módulo', TEXTO), ('Acción', TEXTO),
+         ('Sobre qué', TEXTO), ('Nombre', TEXTO), ('ID', ENTERO), ('Detalle', TEXTO_LARGO), ('IP', TEXTO)],
+        filas,
+        [('Fecha y hora', 'Hora de Chile en que ocurrió la acción.'),
+         ('Usuario', 'Quién la hizo. "Sistema" son acciones públicas (inscripción, respuesta a una invitación) '
+                     'o automáticas (retención de datos).'),
+         ('Sobre qué', 'Tipo de registro afectado: actividad, alumno, usuario, etc.'),
+         ('Nombre', 'Nombre del registro afectado en ese momento.'),
+         ('ID', 'Número interno del registro afectado.'),
+         ('IP', 'Dirección desde la que se hizo. Se borra junto con el registro a los dos años.')],
+    )
+
+
+@login_required
+@role_required('Administrador', json_response=True)
+def exportar_auditoria(request):
+    formato = FORMATOS.get(request.GET.get('formato', 'excel'), 'excel')
+    f = filtros_auditoria(request)
+    reporte = reporte_auditoria(request, f)
+    etiquetas = _etiquetas_auditoria(f)
+    texto_filtros = '; '.join(f'{k}: {v}' for k, v in etiquetas) or 'sin filtros'
+    n = len(reporte.filas)
+    registrar_log(
+        request, 'Auditoría', 'Exportar auditoría',
+        f'Auditoría ({"Excel" if formato == "excel" else "CSV"}), {n} fila{"s" if n != 1 else ""}. '
+        f'Filtros: {texto_filtros}.',
+        cambios_json={'formato': formato, 'filas': n, 'filtros': dict(etiquetas)},
+    )
+    if formato == 'csv':
+        return _respuesta_csv(reporte)
+    return _respuesta_excel([reporte], request, f, etiquetas, 'auditoria',
+                            titulo='Punto Participa: exportación de la auditoría',
+                            sin_filtros='Todos los registros de la auditoría')
