@@ -46,7 +46,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**. La entrega está fijada para el 1 de diciembre de 2026.
 
-* Suite de pruebas automatizadas: 771 tests (detalle en la sección 9).
+* Suite de pruebas automatizadas: 645 tests (detalle en la sección 9).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 * El historial detallado de cambios está en [`docs/CAMBIOS.md`](Codigo%20Proyecto/punto_participa_project/docs/CAMBIOS.md) y la guía de estilo de las pantallas en [`docs/GUIA_ESTILO.md`](Codigo%20Proyecto/punto_participa_project/docs/GUIA_ESTILO.md).
 
@@ -316,7 +316,7 @@ Codigo Proyecto/
     │   ├── static/            JavaScript, CSS, imágenes y Chart.js
     │   ├── templates/         Plantillas HTML (los correos, en templates/gestion/correos/)
     │   ├── templatetags/      Íconos, filtros y piezas comunes de interfaz
-    │   └── tests/             Pruebas automatizadas (tests_*.py)
+    │   └── tests/             Pruebas automatizadas, en una carpeta por tema
     ├── punto_participa/       Configuración del proyecto Django
     ├── respaldo/              Scripts y guía del respaldo automático
     ├── tareas/                Ciclo diario del servicio tareas
@@ -362,47 +362,41 @@ Codigo Proyecto/
 
 ## 9. Pruebas automatizadas
 
-La suite tiene **771 tests** y se ejecuta con:
+La suite tiene **645 tests** y se ejecuta con:
 
 ```bash
 docker compose exec web python manage.py test --parallel --noinput
 ```
 
-En paralelo termina en unos dos minutos y medio en un notebook del equipo. Sin `--parallel` corre en serie y demora bastante más.
+En paralelo termina en unos dos minutos en un notebook del equipo. Sin `--parallel` corre en serie y demora bastante más.
 
-Las pruebas usan una base de datos temporal con datos inventados, así que no tocan los datos del sistema. Para correr solo un área, indica su archivo, por ejemplo:
+Las pruebas usan una base de datos temporal con datos inventados, así que no tocan los datos del sistema. Están en `gestion/tests/`, en una carpeta por tema que sigue las mismas áreas de `views/` y `servicios/`. Para correr solo un tema o un archivo:
 
 ```bash
-docker compose exec web python manage.py test gestion.tests.tests_escaner_turno --noinput
+docker compose exec web python manage.py test gestion.tests.escaner --noinput
+docker compose exec web python manage.py test gestion.tests.escaner.tests_turno --noinput
 ```
+
+Muchas pruebas recorren una tabla de casos (por ejemplo, todos los formatos de RUT o la matriz de permisos). Cada caso se revisa por separado con `subTest`, y si uno falla el informe dice cuál.
 
 Los reportes y el dashboard cuentan como inscritos a quienes tienen una inscripción confirmada, sin exigir asistencia, y respetan los filtros de carrera, jornada y escuela según los datos que el alumno tenía al participar.
 
-Qué se verifica, por tema:
+Qué se verifica, por carpeta:
 
-| Tema | Qué se verifica | Archivos |
+| Carpeta | Qué se verifica | Archivos |
 | --- | --- | --- |
-| Autenticación y contraseñas | Inicio de sesión con credenciales válidas e inválidas, usuario inactivo que no entra, cierre de sesión, redirección `next` permitida solo hacia rutas internas, cambio de contraseña, recuperación por token y cambio de clave obligatorio. | `tests_extremos`, `tests_integrales`, `tests_views_criticas` |
-| Límite de intentos | El sexto intento de login se bloquea; el escáner responde un aviso en JSON al pasar el tope y el límite es por usuario; límite de la inscripción pública. | `tests_ratelimit`, `tests_limite_inscripcion` |
-| Permisos por rol | Qué puede abrir cada rol y el usuario anónimo, que un creador no vea ni exporte actividades de otro, respuestas 401 y 403 en los endpoints JSON y rechazo de peticiones sin token CSRF. | `tests_roles_completo`, `tests`, `tests_decorators_utils`, `tests_adicionales` |
-| Usuarios y documento de identidad | Documento obligatorio, guardado normalizado, rechazo de duplicados, confirmación al cambiarlo, registro en la auditoría y bloqueo de usuarios. Carga masiva: vista previa sin escribir, filas omitidas si la cuenta existe, errores por fila, enlace para crear la contraseña y solo para el Administrador. | `tests_rut_usuarios`, `tests_caracteres`, `tests_usuarios_masivos` |
-| RUT, RUN provisorio y pasaporte | Limpieza de puntos y guion, dígito verificador, documentos extranjeros, búsqueda del alumno en distintos formatos y formato de pantalla. | `tests`, `tests_decorators_utils`, `tests_formato_rut` |
-| Escáner de asistencia | Registro por RUT, QR y código de barras, confirmación en dos etapas, duplicados, talleres sin inscripción, actividades inactivas, teclado en español e inglés, turnos guardados, contador en vivo con varios operadores, lista para elegir la actividad, el Creador escanea también actividades de otros y una actividad que se finaliza entre las dos etapas no registra. | `tests_views_criticas`, `tests_escaner_teclado`, `tests_escaner_turno`, `tests_integrales`, `tests_adicionales` |
-| Alumnos y nómina | Importación desde Excel y CSV (vista previa, errores por fila, bloqueo masivo), alumnos bloqueados que no se inscriben ni se registran, directorio con buscador, ficha con historial y bloqueo manual que la nómina respeta. | `tests_importador`, `tests_importar_web`, `tests_alumnos_bloqueados`, `tests_alumnos_pantalla` |
-| Catálogos | Lugares, escuelas y carreras: agregar, renombrar con confirmación, crear una carrera nueva y bloquear la antigua, bloquear y eliminar lo que no se usa, número de sala y migraciones que unifican los datos existentes. | `tests_lugares`, `tests_catalogo_lugares`, `tests_lugar_numero`, `tests_catalogo_escuelas_carreras` |
-| Datos al participar | La carrera, la escuela y la jornada se guardan al inscribirse y al asistir, no cambian si el alumno cambia de carrera y se corrigen al renombrar en Catálogos. | `tests_foto_academica` |
-| Datos hostiles y caracteres especiales | Apóstrofes y tildes, caracteres nulos y de control, normalización Unicode, y que entradas o parámetros hostiles no generen error 500 ni reflejen HTML. | `tests`, `tests_caracteres`, `tests_parametros` |
-| Exportaciones | Protección contra fórmulas, BOM y separador `;`, contenido de los tres reportes (inscritos, asistentes, no asistieron, porcentaje), fechas reales, hoja Información, permisos y registro en la auditoría. | `tests_exportaciones`, `tests_exportaciones_p1`, `tests_extremos`, `tests_integrales` |
-| Actividades, inscripciones y cupos | Crear, editar y eliminar actividades, validación de fechas, cupos e imágenes, inscripción pública, página pública de las masivas, recálculo de cupos y panel de participación del detalle. | `tests_integrales`, `tests_adicionales`, `tests_extremos`, `tests_forms_fechas`, `tests_forms_imagen`, `tests_actividad_publica`, `tests_embudo` |
-| Actividades con invitación | Lectura y validación de la lista (columnas, dígito verificador, repetidos, nómina y bloqueados), permisos de la pantalla Invitados, envío con enlace personal, respuesta con acompañantes y su validación, cambios hasta que empieza la actividad, escáner con invitados, acompañantes y agregados en la entrada, y reportes y exportaciones con invitados. | `tests_invitados`, `tests_invitacion_respuesta`, `tests_escaner_invitacion`, `tests_reportes_invitacion` |
-| Cancelación y lista de espera | Correo de confirmación con enlace, cancelación por el alumno hasta 24 horas antes y por el gestor hasta el inicio, historial y devolución del cupo, permisos, anotación en la lista de espera y aviso a todos al liberarse un cupo. | `tests_cancelacion`, `tests_lista_espera` |
-| Invitaciones por correo | Envío y registro de la notificación, fallo de SMTP registrado como fallido, límite por envío, previsualización y enlace correcto según el tipo de actividad. | `tests_adicionales`, `tests_extremos`, `tests_integrales`, `tests_correo_invitacion` |
-| Gráficos | Actividades por mes según sus fechas (terminadas, en curso y próximas, sin las canceladas), talleres ya realizados, orden de mayor a menor, máximo de 10 actividades en Reportes y carreras agrupadas por escuela. | `tests_graficos_inicio` |
-| Reportes y auditoría | Inscritos y asistentes con filtros, filtro por tipo y lugar, pestañas, cada creador ve solo lo suyo, la auditoría guarda los datos de la petición y su exportación es solo para el Administrador. | `tests_kpi_inscritos`, `tests_reportes_tipo`, `tests_auditoria_limites`, `tests_integrales`, `tests_roles_completo` |
-| Interfaz | Botones con ícono y aviso, filtros activos, menú Exportar, pantallas sin símbolos de texto antiguos y menú con la página actual marcada. | `tests_ui` |
-| Retención y anonimización | Fecha de corte, avisos a todos los Administradores a los 10, 7 y 3 días, aviso diario cuando vence el plazo sin borrar nada, borrado solo con el botón del Administrador y con la casilla marcada, correo a todos con el nombre de quien borró, aviso cuando otro ya lo hizo, y anonimización que conserva la participación. | `tests_retencion` |
-| Configuración, privacidad y respaldo | Configuración desde `.env`, colores de las escuelas, Política de Privacidad y consentimiento (versión y fecha guardadas aunque falle la auditoría), datos de prueba repetibles y scripts del respaldo. | `tests_p0_tecnicos`, `tests_privacidad`, `tests_consentimiento`, `tests_seed_data`, `tests_respaldo` |
-| Resistencia y consistencia | Carga de muchas inscripciones y asistencias sin duplicados, inscripciones simultáneas que no superan los cupos y reversión de los cambios cuando ocurre un error. | `tests_resistencia` |
+| `cuentas_y_permisos` | Inicio y cierre de sesión, `next` solo hacia rutas internas, cambio y recuperación de contraseña. Matriz de permisos: qué responde cada una de las 27 pantallas a quien no inició sesión, al Administrador, al Creador y al Registrador. Cuentas inactivas o sin perfil, respuestas 401 y 403 en JSON, CSRF. Documento de identidad de los usuarios y carga masiva. | `tests_contrasenas`, `tests_roles`, `tests_usuarios`, `tests_usuarios_masivos` |
+| `actividades` | Crear, editar y eliminar actividades; validación de fechas, cupos, lugar e imágenes; panel de participación del detalle. | `tests_formularios`, `tests_gestion`, `tests_embudo` |
+| `inscripciones` | Inscripción pública y su límite de intentos, página pública de las masivas, portada con la imagen, Política de Privacidad y consentimiento guardado, cancelación por el alumno y por el gestor, lista de espera. | `tests_inscripcion_publica`, `tests_limite`, `tests_portada`, `tests_privacidad`, `tests_consentimiento`, `tests_cancelacion`, `tests_lista_espera` |
+| `invitaciones` | Lista de invitados (columnas, dígito verificador, repetidos, nómina, bloqueados), respuesta con acompañantes, envío con enlace personal, correos de invitación según el tipo de actividad, fallo de SMTP y límite por envío. | `tests_lista`, `tests_respuesta`, `tests_correo` |
+| `escaner` | Registro por RUT, QR y código de barras, dos etapas, duplicados, talleres sin inscripción, actividades inactivas, teclado en español e inglés, turnos y contador en vivo, invitados y acompañantes en la entrada. | `tests_registro`, `tests_turno`, `tests_teclado`, `tests_invitacion` |
+| `reportes` | Inscritos y asistentes con filtros, filtro por tipo y lugar, gráficos, datos académicos guardados al participar, reportes con invitados y exportaciones (fórmulas neutralizadas, BOM, separador `;`, permisos y auditoría). | `tests_indicadores`, `tests_filtros`, `tests_graficos`, `tests_foto_academica`, `tests_invitacion`, `tests_exportaciones` |
+| `alumnos` | Importación desde Excel y CSV, alumnos bloqueados, directorio con buscador, ficha y bloqueo manual. | `tests_importador`, `tests_importar_web`, `tests_bloqueados`, `tests_pantalla` |
+| `catalogos` | Lugares (con número de sala), escuelas y carreras: agregar, renombrar con confirmación, bloquear, eliminar lo que no se usa, colores y migraciones. | `tests_lugares`, `tests_escuelas_carreras` |
+| `datos` | Auditoría (pantalla, filtros, exportación y límites de los campos), retención de dos años y anonimización. | `tests_auditoria`, `tests_retencion` |
+| `sistema` | Funciones de RUT y formato, entradas hostiles que no producen error 500 ni reflejan HTML, límite de intentos del login y del escáner, configuración desde `.env`, respaldo, interfaz, y resistencia (carga, concurrencia en los cupos, reversión ante errores). | `tests_utilidades`, `tests_seguridad`, `tests_limites`, `tests_configuracion`, `tests_interfaz`, `tests_resistencia` |
+
+`gestion/tests/base.py` tiene los datos comunes (roles, usuarios, carreras, alumnos y actividades) que usan varias carpetas.
 
 Lo que las pruebas automáticas no cubren: el JavaScript de las pantallas y el lector físico de códigos se verifican a mano. La prueba de usabilidad del escáner con operadores reales del Punto está pendiente.
 

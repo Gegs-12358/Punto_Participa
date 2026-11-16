@@ -22,7 +22,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
 > exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
-> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 771 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 645 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -850,7 +850,26 @@ la página de la Política la muestra. El Listado de participantes trae las colu
 el". Los registros anteriores quedan con esos campos vacíos: su evidencia sigue en la auditoría. Pruebas en
 `tests_consentimiento`, incluida una en que falla la auditoría.
 
-### 18.17 Pendiente
+### 18.17 Pruebas ordenadas por tema y sin repetidas (16/11/2026)
+
+Los 52 archivos `tests_*.py` sueltos pasaron a 10 carpetas dentro de `gestion/tests/` (cuentas_y_permisos,
+actividades, inscripciones, invitaciones, escaner, reportes, alumnos, catalogos, datos y sistema), con los datos
+comunes en `base.py`. Primero se movieron las clases completas sin tocarlas y se comprobó que seguían pasando las
+771. Después se redujeron a **645**:
+
+- Pruebas que solo cambiaban el dato de entrada (formatos de RUT, validación de documentos, colores, número de
+  sala, lectura del escáner, archivos ilegibles) pasaron a tablas de casos con `subTest`. Se conservan todos los
+  casos: si uno falla, el informe dice cuál.
+- La matriz de permisos quedó como una tabla de 27 pantallas por 4 perfiles (sin sesión, Administrador, Creador
+  y Registrador). Antes revisaba unas 12 pantallas en pruebas sueltas; ahora incluye Alumnos, Catálogos, las
+  importaciones y la edición de una actividad ajena.
+- Se quitaron 16 pruebas repetidas fuera de la matriz: la misma acción con la misma revisión en dos archivos. En cada par
+  quedó la versión más completa.
+
+Verificación: se midió la cobertura antes y después. No se perdió ninguna línea probada y la matriz nueva cubre 9
+líneas que antes nadie probaba.
+
+### 18.18 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".
