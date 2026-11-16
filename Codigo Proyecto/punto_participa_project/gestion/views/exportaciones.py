@@ -9,7 +9,9 @@ Tres reportes, cada uno en Excel o CSV, con los mismos filtros de la pantalla:
                  asistentes y no asistieron.
   participantes  Listado nominal: una fila por alumno y actividad, con su inscripción
                  y su asistencia (hora, método y quién lo registró).
-  libro          Los tres anteriores en un solo Excel (una hoja cada uno).
+  sesiones       Asistencia por sesión: una fila por persona y actividad, con las sesiones a las
+                 que vino, el porcentaje y si cumple el mínimo (para los certificados).
+  libro          Los anteriores en un solo Excel (una hoja cada uno).
 
 También exporta la Auditoría (exportar_auditoria) con el mismo formato.
 
@@ -409,10 +411,53 @@ def _filas_invitacion(actividades, f, orden, por_id, tipos_doc, metodos):
     return filas
 
 
+def reporte_sesiones(request, datos=None):
+    """Asistencia por sesión y cumplimiento del mínimo, para los certificados de participación."""
+    from ..servicios.sesiones import cumplimiento
+    f, actividades, _, _ = datos or _base(request)
+    tipos_doc = dict(Alumno.TIPO_DOCUMENTO_CHOICES)
+
+    def coincide(valor, filtro):
+        return not filtro or (valor or '').strip().lower() == filtro.strip().lower()
+
+    filas = []
+    for act in actividades:
+        for p in cumplimiento(act):
+            if not (coincide(p['carrera'], f['carrera']) and coincide(p['jornada'], f['jornada'])
+                    and coincide(p['escuela'], f['escuela'])):
+                continue
+            documento = formatear_rut(p['documento']) if p['tipo_documento'] == 'RUT' else p['documento']
+            filas.append([
+                act.titulo, _local(act.fecha_inicio), documento, tipos_doc.get(p['tipo_documento'], ''),
+                p['apellidos'], p['nombres'], p['correo'], p['escuela'] or 'Sin escuela', p['carrera'],
+                p['jornada'], p['participa_como'], p['total'], p['asistidas'],
+                ', '.join(str(n) for n in p['sesiones_asistidas']),
+                p['asistidas'] / p['total'] if p['total'] else 0, act.asistencia_minima / 100,
+                SI if p['cumple'] else NO,
+            ])
+    return Reporte(
+        'sesiones', 'Asistencia por sesión', 'Asistencia por sesión',
+        [('Actividad', TEXTO), ('Inicio actividad', FECHA), ('Documento', TEXTO), ('Tipo de documento', TEXTO),
+         ('Apellidos', TEXTO), ('Nombres', TEXTO), ('Correo', TEXTO), ('Escuela', TEXTO), ('Carrera', TEXTO),
+         ('Jornada', TEXTO), ('Participa como', TEXTO), ('Sesiones de la actividad', ENTERO),
+         ('Sesiones asistidas', ENTERO), ('Asistió a las sesiones', TEXTO), ('% asistencia', PORCENTAJE),
+         ('Mínimo para cumplir', PORCENTAJE), ('Cumple', TEXTO)],
+        filas,
+        [('Listado', 'Una fila por persona y actividad. En talleres, los inscritos y quienes asistieron; en '
+                     'masivas, quienes asistieron; en las con invitación, los invitados que no dijeron que no '
+                     'y sus acompañantes.'),
+         ('Asistió a las sesiones', 'Números de las sesiones a las que vino (por ejemplo "1, 2, 4").'),
+         ('Cumple', 'Sí cuando asistió al menos al mínimo de sesiones definido en la actividad. Con una sola '
+                    'sesión, cumple quien asistió. Filtra "Sí" para la lista de certificados de participación.'),
+         ('Datos personales', 'Contiene datos personales de alumnos: no compartir fuera de la institución.')],
+    )
+
+
 REPORTES = {
     'resumen': reporte_resumen,
     'participacion': reporte_participacion,
     'participantes': reporte_participantes,
+    'sesiones': reporte_sesiones,
 }
 
 

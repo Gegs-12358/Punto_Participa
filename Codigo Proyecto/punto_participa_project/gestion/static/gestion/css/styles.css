@@ -1930,6 +1930,18 @@ td.celda-texto {
     margin: 2px 0;
 }
 
+/* Participantes: asistencia por sesión */
+.tabla-sesiones th small {
+    display: block;
+    font-weight: 500;
+    color: var(--muted);
+}
+
+.marca-sesion {
+    color: var(--green);
+    font-weight: 700;
+}
+
 /* Formulario de actividad: sesiones adicionales (includes/sesiones_form.html) */
 .bloque-sesiones {
     display: grid;

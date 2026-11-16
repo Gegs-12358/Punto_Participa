@@ -187,10 +187,10 @@ class ParticipantesTests(BaseExportTests):
 
 
 class LibroYGeneralTests(BaseExportTests):
-    def test_libro_completo_trae_las_tres_hojas_e_informacion(self):
+    def test_libro_completo_trae_las_cuatro_hojas_e_informacion(self):
         wb = self.libro('libro')
         self.assertEqual(wb.sheetnames, ['Resumen por actividad', 'Por escuela y carrera', 'Participantes',
-                                         'Información'])
+                                         'Asistencia por sesión', 'Información'])
 
     def test_hoja_informacion_con_filtros_y_usuario(self):
         wb = self.libro('resumen', tipo='TALLER', actividad=self.actividad.pk)

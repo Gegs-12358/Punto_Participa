@@ -50,10 +50,20 @@
                         <a role="menuitem" href="{% url 'exportar_reporte' 'participantes' 'csv' %}?{{ q }}" aria-label="Listado de participantes en CSV">CSV</a>
                     </div>
                 </div>
+                <div class="menu-exportar__item">
+                    <div class="menu-exportar__texto">
+                        <strong>Asistencia por sesión <em class="menu-exportar__aviso">Datos personales</em></strong>
+                        <span>A cuántas sesiones vino cada persona y si cumple el mínimo: la lista para los certificados.</span>
+                    </div>
+                    <div class="menu-exportar__formatos">
+                        <a role="menuitem" href="{% url 'exportar_reporte' 'sesiones' 'excel' %}?{{ q }}" aria-label="Asistencia por sesión en Excel">Excel</a>
+                        <a role="menuitem" href="{% url 'exportar_reporte' 'sesiones' 'csv' %}?{{ q }}" aria-label="Asistencia por sesión en CSV">CSV</a>
+                    </div>
+                </div>
                 <hr>
                 <a role="menuitem" class="menu-exportar__libro" href="{% url 'exportar_reporte' 'libro' 'excel' %}?{{ q }}">
                     <strong>{% icono "exportar" %} Todo en un Excel</strong>
-                    <span>Los tres reportes, cada uno en su hoja.</span>
+                    <span>Los cuatro reportes, cada uno en su hoja.</span>
                 </a>
                 <button type="button" role="menuitem" onclick="window.print()">
                     <strong>{% icono "imprimir" %} Imprimir esta página</strong>

@@ -46,7 +46,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**. La entrega está fijada para el 1 de diciembre de 2026.
 
-* Suite de pruebas automatizadas: 689 tests (detalle en la sección 9).
+* Suite de pruebas automatizadas: 702 tests (detalle en la sección 9).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 * El historial detallado de cambios está en [`docs/CAMBIOS.md`](Codigo%20Proyecto/punto_participa_project/docs/CAMBIOS.md) y la guía de estilo de las pantallas en [`docs/GUIA_ESTILO.md`](Codigo%20Proyecto/punto_participa_project/docs/GUIA_ESTILO.md).
 
@@ -57,10 +57,10 @@ El proyecto está en desarrollo y funciona de punta a punta en un entorno local 
 | Pantalla | Para qué sirve | Roles |
 | --- | --- | --- |
 | **Inicio** | Resumen del período: actividades en curso, talleres con cupos, inscritos, asistencias del día, invitaciones enviadas, alertas y gráficos. Cada gráfico explica en una línea qué muestra (sección 3.6). | Administrador, Creador |
-| **Actividades** | Crear, editar y eliminar actividades y talleres, con buscador y filtros. El lugar se elige de una lista; si es una sala, se pide su número (por ejemplo, 1203). Desde aquí se envían las invitaciones por correo. Tipos: masiva, taller y con invitación (sección 3.2). | Administrador, Creador |
-| **Detalle de actividad** | Datos de la actividad y el recorrido de la participación: invitados, inscritos, asistieron y no asistieron, con la lista de quienes se inscribieron y no fueron. En las actividades con invitación: invitados, confirmados, rechazados, sin responder, entraron y acompañantes. | Administrador, Creador |
+| **Actividades** | Crear, editar y eliminar actividades y talleres, con buscador y filtros. El lugar se elige de una lista; si es una sala, se pide su número (por ejemplo, 1203). Desde aquí se envían las invitaciones por correo. Tipos: masiva, taller y con invitación (sección 3.2). Cualquiera puede tener varias sesiones, con un porcentaje mínimo de asistencia para cumplir (sección 3.7). | Administrador, Creador |
+| **Detalle de actividad** | Datos de la actividad (con sus sesiones, si tiene varias) y el recorrido de la participación: invitados, inscritos, asistieron y no asistieron, con la lista de quienes se inscribieron y no fueron. En las actividades con invitación: invitados, confirmados, rechazados, sin responder, entraron y acompañantes. | Administrador, Creador |
 | **Invitados** | Lista de una actividad con invitación: carga del Excel o CSV con vista previa, estado de cada invitado y sus acompañantes, enlace personal para copiar, envío de las invitaciones y quitar a quien aún no entra. | Administrador, Creador |
-| **Reportes** | Gráficos y tablas por actividad o por escuela y carrera, con filtros por actividad, tipo, lugar, escuela, carrera, jornada y fechas. Menú **Exportar** con tres reportes en Excel o CSV (sección 3.1). | Administrador, Creador |
+| **Reportes** | Gráficos y tablas por actividad o por escuela y carrera, con filtros por actividad, tipo, lugar, escuela, carrera, jornada y fechas. Menú **Exportar** con cuatro reportes en Excel o CSV (sección 3.1). | Administrador, Creador |
 | **Usuarios** | Crear y editar cuentas, asignar el rol y bloquear el acceso, con buscador. **Importar usuarios** crea varias cuentas desde Excel o CSV (nombre, correo, rut, rol y usuario opcional), con vista previa; cada persona recibe un correo con un enlace para crear su contraseña. | Administrador |
 | **Alumnos** | Directorio de la nómina con buscador; ficha de cada alumno con su historial de participación; bloqueo manual con motivo. Desde aquí se importa la nómina en Excel o CSV. | Administrador |
 | **Catálogos** | Lugares, escuelas (con su color para los gráficos) y carreras: agregar, renombrar, bloquear y eliminar lo que no se usa. | Administrador |
@@ -77,7 +77,8 @@ Todas usan los filtros aplicados en Reportes, y cada descarga queda registrada e
 | **Resumen por actividad** | Una fila por actividad: tipo, estado, inicio y término, lugar, creador, cupos, invitados, inscritos, asistentes, no asistieron, porcentaje de asistencia y acompañantes. |
 | **Participación por escuela y carrera** | Inscritos, asistentes y no asistieron por actividad, escuela, carrera y jornada. |
 | **Listado de participantes** | Cada alumno con su inscripción y su asistencia (hora, método y quién la registró). En las actividades con invitación incluye a los acompañantes, y la columna **Participa como** dice si es invitado, agregado en la entrada o acompañante. Contiene datos personales. |
-| **Todo en un Excel** | Los tres anteriores, cada uno en su hoja. |
+| **Asistencia por sesión** | Una fila por persona y actividad: sesiones de la actividad, sesiones a las que vino (por ejemplo "1, 2, 4"), porcentaje, mínimo exigido y **Cumple**. Filtrando "Cumple = Sí" queda la lista para los certificados de participación. Con una sola sesión, cumple quien asistió. Contiene datos personales. |
+| **Todo en un Excel** | Los cuatro anteriores, cada uno en su hoja. |
 
 En Excel las fechas son fechas reales, el encabezado queda fijo, tiene autofiltro y trae una hoja **Información** con la fecha, el usuario, los filtros usados y qué significa cada columna. Los CSV usan `;` y coma decimal para abrirse directo en el Excel en español.
 
@@ -127,6 +128,16 @@ Si llega alguien que no está en la lista, el escáner ofrece agregarlo: un alum
 * En los gráficos de barras con muchas actividades, cada barra lleva un número y debajo hay una lista con el nombre completo y la cifra. En Reportes se muestran las 10 actividades con más asistentes; el resto está en la tabla.
 * En las donas de carreras, las carreras de una misma escuela usan tonos del color de esa escuela (definido en Catálogos), y la leyenda muestra la cantidad y el porcentaje.
 ---
+
+### 3.7 Actividades de varias sesiones
+
+Cualquier actividad (masiva, taller o con invitación) puede tener varias sesiones. En el formulario, las fechas de siempre son la primera sesión y el bloque **Sesiones adicionales** agrega las demás, cada una con su día y horario. Con varias sesiones se define la **asistencia mínima para cumplir** (75 % por defecto).
+
+- La inscripción a un taller vale para todas las sesiones y se puede hacer hasta que termina la primera.
+- El escáner registra en la sesión del día y muestra cuál es ("sesión 2 de 3"); el operador puede cambiarla a mano. Cada persona se registra una vez por sesión.
+- En **Participantes** hay una tabla con una columna por sesión, el porcentaje de cada persona y si cumple. El reporte **Asistencia por sesión** entrega la lista para los certificados de participación (el sistema no genera los certificados).
+- Las páginas públicas y los correos listan las sesiones. Una sesión que ya tiene asistencias no se puede quitar.
+- En los reportes y gráficos, "asistió" sigue significando que vino al menos a una sesión.
 
 ## 4. Tecnologías
 
@@ -362,7 +373,7 @@ Codigo Proyecto/
 
 ## 9. Pruebas automatizadas
 
-La suite tiene **689 tests** y se ejecuta con:
+La suite tiene **702 tests** y se ejecuta con:
 
 ```bash
 docker compose exec web python manage.py test --parallel --noinput
@@ -390,7 +401,7 @@ Qué se verifica, por carpeta:
 | `inscripciones` | Inscripción pública y su límite de intentos, página pública de las masivas, portada con la imagen, Política de Privacidad y consentimiento guardado, cancelación por el alumno y por el gestor, lista de espera. | `tests_inscripcion_publica`, `tests_limite`, `tests_portada`, `tests_privacidad`, `tests_consentimiento`, `tests_cancelacion`, `tests_lista_espera` |
 | `invitaciones` | Lista de invitados (columnas, dígito verificador, repetidos, nómina, bloqueados), respuesta con acompañantes, envío con enlace personal, correos de invitación según el tipo de actividad, fallo de SMTP y límite por envío. | `tests_lista`, `tests_respuesta`, `tests_correo` |
 | `escaner` | Registro por RUT, QR y código de barras, dos etapas, duplicados, talleres sin inscripción, actividades inactivas, teclado en español e inglés, turnos y contador en vivo, invitados y acompañantes en la entrada. Actividades de varias sesiones: en qué sesión queda cada registro, una asistencia por sesión, cambio de sesión a mano y conversión de los datos que ya existían. | `tests_registro`, `tests_turno`, `tests_teclado`, `tests_invitacion`, `tests_sesiones` |
-| `reportes` | Inscritos y asistentes con filtros, filtro por tipo y lugar, gráficos, datos académicos guardados al participar, reportes con invitados y exportaciones (fórmulas neutralizadas, BOM, separador `;`, permisos y auditoría). | `tests_indicadores`, `tests_filtros`, `tests_graficos`, `tests_foto_academica`, `tests_invitacion`, `tests_exportaciones` |
+| `reportes` | Inscritos y asistentes con filtros, filtro por tipo y lugar, gráficos, datos académicos guardados al participar, reportes con invitados y exportaciones (fórmulas neutralizadas, BOM, separador `;`, permisos y auditoría). Cumplimiento del mínimo de sesiones y reporte Asistencia por sesión. | `tests_indicadores`, `tests_filtros`, `tests_graficos`, `tests_foto_academica`, `tests_invitacion`, `tests_exportaciones`, `tests_sesiones` |
 | `alumnos` | Importación desde Excel y CSV, alumnos bloqueados, directorio con buscador, ficha y bloqueo manual. | `tests_importador`, `tests_importar_web`, `tests_bloqueados`, `tests_pantalla` |
 | `catalogos` | Lugares (con número de sala), escuelas y carreras: agregar, renombrar con confirmación, bloquear, eliminar lo que no se usa, colores y migraciones. | `tests_lugares`, `tests_escuelas_carreras` |
 | `datos` | Auditoría (pantalla, filtros, exportación y límites de los campos), retención de dos años y anonimización. | `tests_auditoria`, `tests_retencion` |

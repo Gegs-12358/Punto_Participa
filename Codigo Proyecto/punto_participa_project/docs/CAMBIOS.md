@@ -22,7 +22,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
 > exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
-> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 689 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 702 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -962,7 +962,25 @@ Pruebas en `escaner/tests_sesiones`.
 Pruebas en `actividades/tests_sesiones_form`. Lo que sigue (parte 3): el listado de quienes cumplen el mínimo,
 para los certificados, y la asistencia por sesión en Participantes, Reportes y las exportaciones.
 
-### 18.23 Pendiente
+### 18.23 Actividades de varias sesiones, parte 3: quiénes cumplen (16/11/2026)
+
+- **Regla**: cumple quien asistió al menos al mínimo de sesiones de la actividad (`asistidas × 100 ≥ mínimo ×
+  sesiones`). Con una sola sesión, cumple quien asistió. Está en un solo lugar,
+  `servicios/sesiones.cumplimiento()`, que usan la pantalla y el reporte.
+- **Personas que se cuentan**: en talleres, los inscritos confirmados y quien asistió; en masivas, quien asistió;
+  en las con invitación, los invitados que no dijeron que no, sus acompañantes y quien ingresó.
+- **Reporte "Asistencia por sesión"** (Reportes, menú Exportar, y en el "Libro completo", que ahora trae cuatro
+  hojas): una fila por persona y actividad con sesiones de la actividad, sesiones asistidas, cuáles ("1, 2,
+  4"), porcentaje, mínimo y Cumple. Mismas reglas que el listado nominal: solo el Administrador y el creador de
+  cada actividad, con los filtros de la pantalla y registro en la auditoría.
+- **Participantes**: en una actividad de varias sesiones, tabla con una columna por sesión (✓ si asistió), "2 de
+  3 (67 %)", si cumple y el botón para descargar el reporte. El detalle de la actividad también ofrece la
+  descarga.
+
+Con esto queda completo lo de varias sesiones. El sistema entrega la lista de quienes cumplen; los certificados
+se siguen haciendo fuera del sistema, como se decidió. Pruebas en `reportes/tests_sesiones`.
+
+### 18.24 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

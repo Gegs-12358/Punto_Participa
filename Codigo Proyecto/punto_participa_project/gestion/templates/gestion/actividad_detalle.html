@@ -91,6 +91,7 @@
         <div class="btn-group">
             <a class="btn" href="{% url 'invitados_actividad' actividad.pk %}">{% icono "participantes" %} Ver invitados</a>
             <a class="btn secondary" href="{% url 'exportar_reporte' 'participantes' 'excel' %}?actividad={{ actividad.pk }}">{% icono "exportar" %} Listado en Excel</a>
+            {% if actividad.varias_sesiones %}<a class="btn secondary" href="{% url 'exportar_reporte' 'sesiones' 'excel' %}?actividad={{ actividad.pk }}">{% icono "exportar" %} Asistencia por sesión</a>{% endif %}
         </div>
     </div>
 
@@ -154,9 +155,12 @@
                 {% endif %}
             </p>
         </div>
-        <a class="btn secondary" href="{% url 'exportar_reporte' 'participantes' 'excel' %}?actividad={{ actividad.pk }}">
-            {% icono "exportar" %} Listado en Excel
-        </a>
+        <div class="btn-group">
+            <a class="btn secondary" href="{% url 'exportar_reporte' 'participantes' 'excel' %}?actividad={{ actividad.pk }}">
+                {% icono "exportar" %} Listado en Excel
+            </a>
+            {% if actividad.varias_sesiones %}<a class="btn secondary" href="{% url 'exportar_reporte' 'sesiones' 'excel' %}?actividad={{ actividad.pk }}">{% icono "exportar" %} Asistencia por sesión</a>{% endif %}
+        </div>
     </div>
 
     <div class="embudo__pasos">

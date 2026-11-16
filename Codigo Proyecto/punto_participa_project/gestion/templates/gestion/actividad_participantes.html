@@ -271,6 +271,56 @@
     {% include 'gestion/includes/paginacion.html' with pagina=asistencias param='page_asis' %}
 </div>
 
+{% if cumplimiento is not None %}
+<!-- ============================================================ -->
+<!-- ASISTENCIA POR SESIÓN (actividades de varias sesiones) -->
+<!-- ============================================================ -->
+<div class="panel" id="asistencia-por-sesion">
+    <div class="panel-head">
+        <div>
+            <span class="eyebrow">CERTIFICADOS</span>
+            <h2>Asistencia por sesión</h2>
+            <p class="panel-subtitle">{{ total_cumplen }} de {{ cumplimiento|length }} cumple{{ total_cumplen|pluralize:"n" }} el mínimo de {{ actividad.asistencia_minima }} % de las sesiones.</p>
+        </div>
+        <a class="btn secondary" href="{% url 'exportar_reporte' 'sesiones' 'excel' %}?actividad={{ actividad.pk }}">{% icono "exportar" %} Descargar en Excel</a>
+    </div>
+
+    <div class="table-wrap">
+        <table class="tabla-sesiones">
+            <caption class="visually-hidden">Asistencia de cada persona a cada sesión</caption>
+            <thead>
+                <tr>
+                    <th>Persona</th>
+                    <th>Documento</th>
+                    {% for s in sesiones %}
+                    <th class="text-center" title="{{ s.fecha_inicio|date:'D d/m H:i' }}">S{{ s.numero }}<small>{{ s.fecha_inicio|date:"d/m" }}</small></th>
+                    {% endfor %}
+                    <th class="text-center">Asistencia</th>
+                    <th class="text-center">Cumple</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in cumplimiento %}
+                <tr>
+                    <td><strong>{{ p.nombres }} {{ p.apellidos }}</strong>{% if p.participa_como != 'Alumno' %}<br><small class="text-muted">{{ p.participa_como }}</small>{% endif %}</td>
+                    <td>{% if p.tipo_documento == 'RUT' %}{{ p.documento|rut_fmt }}{% else %}{{ p.documento }}{% endif %}</td>
+                    {% for asistio in p.marcas %}
+                    <td class="text-center">{% if asistio %}<span class="marca-sesion" aria-label="Asistió">✓</span>{% else %}<span class="text-muted" aria-label="No asistió">·</span>{% endif %}</td>
+                    {% endfor %}
+                    <td class="text-center">{{ p.asistidas }} de {{ p.total }} ({{ p.porcentaje }} %)</td>
+                    <td class="text-center">{% if p.cumple %}<span class="badge badge-success">Sí</span>{% else %}<span class="badge draft">No</span>{% endif %}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{{ sesiones|length|add:4 }}" class="text-center text-muted" style="padding: 30px;">Todavía no hay participantes.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}
 
 {% block extra_js %}

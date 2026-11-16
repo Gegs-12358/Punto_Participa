@@ -261,8 +261,14 @@ def participantes_actividad(request, pk):
                              .order_by('alumno__apellidos', 'alumno__nombres')
 
     from ..utils import paginar
+    from ..servicios.sesiones import cumplimiento
+    sesiones = actividad.lista_sesiones()
+    filas_cumplimiento = cumplimiento(actividad) if len(sesiones) > 1 else None
     return render(request, 'gestion/actividad_participantes.html', {
         'actividad': actividad,
+        'sesiones': sesiones,
+        'cumplimiento': filas_cumplimiento,
+        'total_cumplen': sum(1 for p in filas_cumplimiento if p['cumple']) if filas_cumplimiento else 0,
         'inscripciones': paginar(request, insc, param='page_insc'),
         'asistencias': paginar(request, asis, param='page_asis'),
         'filtro_estado': filtro,
