@@ -16,7 +16,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models import Count, Q
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -98,6 +98,8 @@ def enviar_invitaciones(request):
             'success': fallidos == 0, 'enviados': enviados, 'fallidos': fallidos,
             'message': f'{enviados} invitaciones enviadas, {fallidos} fallidas.'
         })
+    except Http404:
+        return _error_json('La actividad ya no existe. Recarga la página.', 404)
     except Exception:
         logger.exception('Error en enviar_invitaciones')
         return _error_json('Ocurrió un error al procesar las invitaciones.', 500)
@@ -133,6 +135,8 @@ def previsualizar_invitacion(request, pk):
             'alumno_ejemplo': f'{alumno.nombres} {alumno.apellidos}',
             'total_destinatarios': alumnos.count(),
         })
+    except Http404:
+        return _error_json('La actividad ya no existe. Recarga la página.', 404)
     except Exception:
         logger.exception('Error en previsualizar_invitacion')
         return _error_json('Ocurrió un error inesperado.', 500)

@@ -7,7 +7,7 @@ import logging
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -458,6 +458,8 @@ def eliminar_ajax(request, pk):
                       f'Actividad "{nombre}" eliminada por cancelación de creación.',
                       'Actividad', id_act, nombre)
         return JsonResponse({'success': True})
+    except Http404:
+        return _error_json('La actividad ya no existe. Recarga la página.', 404)
     except Exception:
         logger.exception('Error en eliminar_ajax')
         return _error_json('Ocurrió un error inesperado.', 500)

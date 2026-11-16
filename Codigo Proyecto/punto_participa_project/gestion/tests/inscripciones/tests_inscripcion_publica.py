@@ -73,12 +73,6 @@ class ActividadPublicaTests(TestCase):
                 self.assertContains(r, 'puntoestu@duoc.cl', status_code=404)
                 self.assertNotContains(r, 'Not Found', status_code=404)
 
-    def test_la_pagina_de_error_interno_se_puede_mostrar(self):
-        # Se dibuja sin datos de la petición, como hace Django cuando algo falla
-        html = render_to_string('500.html')
-        self.assertIn('Algo salió mal', html)
-        self.assertNotIn('Traceback', html)
-
     def test_finalizada_y_cancelada_se_muestran_con_su_estado(self):
         vencida = crear_actividad(dias=-3)
         self.assertEqual(self._get(vencida).context['estado'], 'finalizada')

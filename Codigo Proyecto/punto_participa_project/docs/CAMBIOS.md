@@ -22,7 +22,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
 > exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
-> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 648 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 652 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -881,7 +881,27 @@ página no existe") y `500.html` ("Algo salió mal"), con el encabezado, los col
 Estudiantil. No muestran detalles internos. La de error interno no usa etiquetas propias del sistema, para que se
 pueda mostrar aunque algo más esté fallando. Pruebas en `inscripciones/tests_inscripcion_publica`.
 
-### 18.19 Pendiente
+### 18.19 Revisión de otras páginas de error (16/11/2026)
+
+Después del caso anterior se abrieron todas las direcciones del sistema con cada perfil (sin sesión, Administrador,
+Creador y Registrador), con cada tipo de actividad, con una actividad inexistente y con datos inválidos, por GET y
+por POST. Aparecieron dos situaciones parecidas:
+
+- **Página en blanco (405)** al abrir desde el navegador una dirección que solo funciona con un botón: enviar
+  invitaciones, quitar un invitado, cancelar una inscripción desde Participantes, bloquear o anonimizar a un alumno
+  y ejecutar el borrado de retención. Pasa, por ejemplo, al recargar justo después de apretar el botón. Django no
+  permite configurar una página para este error, así que `PaginaMetodoNoPermitidoMiddleware` muestra `405.html`
+  ("Esta dirección se usa desde un botón") cuando la abre una persona. Los pedidos de los botones no cambian.
+- **Error 500 en vez de "ya no existe"** al eliminar una actividad que otra persona acababa de eliminar, y al
+  previsualizar o enviar invitaciones de una actividad inexistente. El manejo general de errores atrapaba el "no
+  existe". Ahora responde 404 con "La actividad ya no existe. Recarga la página."
+
+También se agregaron páginas propias para los errores 400, 403 y formulario vencido (`403_csrf.html`, cuando un
+formulario estuvo abierto demasiado tiempo), que antes saldrían en inglés. Todas las páginas de error comparten
+`error_base.html`. Pruebas en `sistema/tests_paginas_error`. Al repetir la revisión no quedó ninguna dirección con
+página en blanco, en inglés o con error 500.
+
+### 18.20 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

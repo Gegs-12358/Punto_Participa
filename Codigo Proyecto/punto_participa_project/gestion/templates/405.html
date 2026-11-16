@@ -1,0 +1,7 @@
+{% extends "error_base.html" %}
+{% load ui %}
+{% block titulo %}Acción no disponible{% endblock %}
+{% block icono %}<div class="state-icon">{% icono "alerta" %}</div>{% endblock %}
+{% block mensaje %}Esta dirección se usa desde un botón{% endblock %}
+{% block detalle %}Sirve para confirmar una acción (como enviar invitaciones, cancelar una inscripción o bloquear a un alumno) y no se abre directamente. Vuelve a la pantalla anterior y usa el botón.{% endblock %}
+{% block acciones %}<p><a href="/">Ir al inicio</a></p>{% endblock %}

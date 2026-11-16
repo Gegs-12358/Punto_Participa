@@ -46,7 +46,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**. La entrega está fijada para el 1 de diciembre de 2026.
 
-* Suite de pruebas automatizadas: 648 tests (detalle en la sección 9).
+* Suite de pruebas automatizadas: 652 tests (detalle en la sección 9).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 * El historial detallado de cambios está en [`docs/CAMBIOS.md`](Codigo%20Proyecto/punto_participa_project/docs/CAMBIOS.md) y la guía de estilo de las pantallas en [`docs/GUIA_ESTILO.md`](Codigo%20Proyecto/punto_participa_project/docs/GUIA_ESTILO.md).
 
@@ -362,7 +362,7 @@ Codigo Proyecto/
 
 ## 9. Pruebas automatizadas
 
-La suite tiene **648 tests** y se ejecuta con:
+La suite tiene **652 tests** y se ejecuta con:
 
 ```bash
 docker compose exec web python manage.py test --parallel --noinput
@@ -394,7 +394,7 @@ Qué se verifica, por carpeta:
 | `alumnos` | Importación desde Excel y CSV, alumnos bloqueados, directorio con buscador, ficha y bloqueo manual. | `tests_importador`, `tests_importar_web`, `tests_bloqueados`, `tests_pantalla` |
 | `catalogos` | Lugares (con número de sala), escuelas y carreras: agregar, renombrar con confirmación, bloquear, eliminar lo que no se usa, colores y migraciones. | `tests_lugares`, `tests_escuelas_carreras` |
 | `datos` | Auditoría (pantalla, filtros, exportación y límites de los campos), retención de dos años y anonimización. | `tests_auditoria`, `tests_retencion` |
-| `sistema` | Funciones de RUT y formato, entradas hostiles que no producen error 500 ni reflejan HTML, límite de intentos del login y del escáner, configuración desde `.env`, respaldo, interfaz, y resistencia (carga, concurrencia en los cupos, reversión ante errores). | `tests_utilidades`, `tests_seguridad`, `tests_limites`, `tests_configuracion`, `tests_interfaz`, `tests_resistencia` |
+| `sistema` | Funciones de RUT y formato, entradas hostiles que no producen error 500 ni reflejan HTML, límite de intentos del login y del escáner, configuración desde `.env`, respaldo, interfaz, páginas de error propias y resistencia (carga, concurrencia en los cupos, reversión ante errores). | `tests_utilidades`, `tests_seguridad`, `tests_limites`, `tests_configuracion`, `tests_interfaz`, `tests_resistencia`, `tests_paginas_error` |
 
 `gestion/tests/base.py` tiene los datos comunes (roles, usuarios, carreras, alumnos y actividades) que usan varias carpetas.
 

@@ -1,0 +1,7 @@
+{% extends "error_base.html" %}
+{% load ui %}
+{% block titulo %}Solicitud no válida{% endblock %}
+{% block icono %}<div class="state-icon">{% icono "alerta" %}</div>{% endblock %}
+{% block mensaje %}No pudimos procesar la solicitud{% endblock %}
+{% block detalle %}La dirección o los datos enviados no son válidos. Vuelve a la página anterior e inténtalo de nuevo.{% endblock %}
+{% block acciones %}<p><a href="/">Ir al inicio</a></p>{% endblock %}

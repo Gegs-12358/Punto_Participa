@@ -1,0 +1,7 @@
+{% extends "error_base.html" %}
+{% load ui %}
+{% block titulo %}Sin acceso{% endblock %}
+{% block icono %}<div class="state-icon">{% icono "alerta" %}</div>{% endblock %}
+{% block mensaje %}No tienes acceso a esta página{% endblock %}
+{% block detalle %}Tu perfil no tiene permiso para ver esto. Si crees que es un error, pide acceso al Administrador.{% endblock %}
+{% block acciones %}<p><a href="/">Ir al inicio</a></p>{% endblock %}

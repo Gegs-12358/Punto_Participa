@@ -1,59 +1,6 @@
-{% load static ui %}
-<!DOCTYPE html>
-<html lang="es-cl">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="robots" content="noindex">
-
-    <title>Página no encontrada - Punto Participa</title>
-
-    <link rel="icon" href="{% static 'gestion/img/logo_duoc.png' %}" type="image/png">
-    <link rel="stylesheet" href="{% static 'gestion/css/styles.css' %}">
-</head>
-
-<body>
-
-    <header class="app-header">
-        <img class="project-logo" src="{% static 'gestion/img/duoc.png' %}" alt="Punto Participa Duoc UC">
-        <img class="duoc-logo" src="{% static 'gestion/img/logo_duoc.png' %}" alt="Duoc UC">
-    </header>
-
-    <main id="main-content" tabindex="-1">
-
-        <div class="enrollment-wrap">
-
-            <div class="event-card card">
-
-                <div class="pagina-error">
-                    <div class="state-box neutral" role="status">
-                        <div class="state-icon">{% icono "alerta" %}</div>
-                        <h3>Esta página no existe</h3>
-                        <p>Puede que el enlace esté incompleto o que la actividad ya no esté publicada. Revisa la dirección o pide el enlace de nuevo a Punto Estudiantil.</p>
-                    </div>
-                </div>
-
-                <div class="event-footer">
-                    <div>Contacta Punto Estudiantil: <a href="mailto:puntoestu@duoc.cl">puntoestu@duoc.cl</a></div>
-                    <div>
-                        <a href="https://www.duoc.cl" target="_blank" rel="noopener">www.duoc.cl</a>
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-
-    </main>
-
-    <footer class="app-footer">
-        <div>Punto Estudiantil - Sede Alameda Duoc UC</div>
-        <div class="footer-links">
-            <a href="https://www.duoc.cl" target="_blank" rel="noopener">www.duoc.cl</a>
-        </div>
-    </footer>
-
-</body>
-
-</html>
+{% extends "error_base.html" %}
+{% load ui %}
+{% block titulo %}Página no encontrada{% endblock %}
+{% block icono %}<div class="state-icon">{% icono "alerta" %}</div>{% endblock %}
+{% block mensaje %}Esta página no existe{% endblock %}
+{% block detalle %}Puede que el enlace esté incompleto o que la actividad ya no esté publicada. Revisa la dirección o pide el enlace de nuevo a Punto Estudiantil.{% endblock %}

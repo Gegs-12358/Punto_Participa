@@ -1,0 +1,7 @@
+{% extends "error_base.html" %}
+{% load ui %}
+{% block titulo %}Formulario vencido{% endblock %}
+{% block icono %}<div class="state-icon">{% icono "alerta" %}</div>{% endblock %}
+{% block mensaje %}El formulario venció{% endblock %}
+{% block detalle %}Por seguridad, los formularios vencen después de un tiempo. Vuelve atrás, recarga la página e inténtalo de nuevo. Si se repite, revisa que tu navegador acepte cookies.{% endblock %}
+{% block acciones %}<p><a href="/">Ir al inicio</a></p>{% endblock %}

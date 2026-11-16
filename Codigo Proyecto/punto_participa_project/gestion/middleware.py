@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.http import HttpResponseNotAllowed
 from django.shortcuts import redirect
 from django.urls import reverse
 
@@ -85,3 +86,27 @@ class LimpiarNulMiddleware:
         if request.method == 'POST' and self._tiene_nul(request.POST):
             request.POST = self._limpiar(request.POST)
         return self.get_response(request)
+
+class PaginaMetodoNoPermitidoMiddleware:
+    """
+    Django no tiene una página propia para el error 405 (método no permitido): las vistas que solo
+    aceptan POST responden con una página en blanco. Pasa si alguien recarga la pantalla después de
+    apretar un botón o abre la dirección de una acción (enviar invitaciones, bloquear a un alumno...).
+
+    Cuando una persona abre esa dirección desde el navegador, se muestra la página 405.html. Las
+    respuestas JSON de los botones y los pedidos AJAX no se tocan.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if response.status_code != 405 or response.content:
+            return response
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or 'json' in request.headers.get('accept', ''):
+            return response
+        from django.template.loader import render_to_string
+        pagina = HttpResponseNotAllowed(response.get('Allow', '').split(', '),
+                                        render_to_string('405.html', request=request))
+        return pagina
