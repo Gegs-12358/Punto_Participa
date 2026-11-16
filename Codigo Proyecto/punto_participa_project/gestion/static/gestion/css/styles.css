@@ -1920,36 +1920,65 @@ td.celda-texto {
    20. FOOTER
    ============================================================ */
 
+/* Pie de página (includes/pie.html): franja azul con la línea amarilla arriba, como el encabezado abajo */
 .app-footer {
+    margin: 28px 0 0;
+    padding: 22px 26px 14px;
+    border-top: 3px solid var(--gold);
+    border-radius: 10px 10px 0 0;
+    background: var(--navy);
+    color: #c9d6e3;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.pie-columnas {
+    display: grid;
+    grid-template-columns: 1.2fr 1.3fr 1fr;
+    gap: 22px 32px;
+}
+
+.pie-bloque p {
+    margin: 4px 0 0;
+}
+
+.pie-titulo {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--white);
+    font-size: 14px;
+}
+
+.pie-dato {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 12px 0;
-    margin-top: 20px;
-    border-top: 1px solid var(--line);
-    color: var(--muted);
-    font-size: 11px;
+    gap: 8px;
+}
+
+.pie-dato svg {
+    flex: none;
+    width: 15px;
+    height: 15px;
+    color: var(--gold);
 }
 
 .app-footer a {
-    color: var(--navy);
+    color: var(--white);
     text-decoration: none;
-    font-weight: 700;
 }
 
-.app-footer a:hover {
+.app-footer a:hover,
+.app-footer a:focus-visible {
+    color: var(--gold);
     text-decoration: underline;
-    color: var(--blue);
 }
 
-.footer-links {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-.footer-links span {
-    color: var(--line);
+.pie-final {
+    margin-top: 18px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    font-size: 12px;
+    color: #9fb3c8;
 }
 
 /* ============================================================
@@ -3624,16 +3653,12 @@ td.celda-texto {
     }
 
     .app-footer {
-        flex-direction: column;
-        gap: 6px;
-        text-align: center;
-        font-size: 10.5px;
+        padding: 18px 18px 12px;
     }
 
-    .footer-links {
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 8px;
+    .pie-columnas {
+        grid-template-columns: 1fr;
+        gap: 16px;
     }
 
     .tabs {

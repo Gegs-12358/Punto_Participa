@@ -22,7 +22,7 @@ Stack: Django 6.1 · PostgreSQL · Gunicorn · WhiteNoise · Docker.
 > **Actualización 12/11/2026.** Después de la reunión con el Punto Estudiantil se agregaron los catálogos
 > de lugares, escuelas y carreras, el respaldo automático (historia 008), la unificación visual, las
 > exportaciones nuevas, la pantalla Alumnos, el escáner con turnos y contador en vivo y las
-> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 652 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
+> actividades con invitación, la cancelación de inscripciones, la lista de espera, la carga masiva de usuarios y la retención de datos con anonimización y los gráficos más claros. La suite tiene 653 pruebas. El detalle está en la **sección 18**. Lo que sigue más abajo describe el estado a la
 > fecha de cada sección.
 
 Funciona hoy: login con roles, dashboard, reportes con filtros y exportación, CRUD de actividades, inscripción pública a talleres, escáner de asistencia (RUT, QR, pasaporte), auditoría, gestión de usuarios, recuperación de contraseña y envío de invitaciones por correo. Todo corre en contenedores (Django + Gunicorn + PostgreSQL 16) con datos sintéticos de prueba (hasta hoy no se ha cargado ninguna nómina real de alumnos).
@@ -901,7 +901,16 @@ formulario estuvo abierto demasiado tiempo), que antes saldrían en inglés. Tod
 `error_base.html`. Pruebas en `sistema/tests_paginas_error`. Al repetir la revisión no quedó ninguna dirección con
 página en blanco, en inglés o con error 500.
 
-### 18.20 Pendiente
+### 18.20 Pie de página único (16/11/2026)
+
+El pie estaba copiado en nueve plantillas, cada una con un texto distinto, letra de 11 px y un "2026" que casi no
+se veía. "Soporte Técnico" apuntaba a `#` (a ninguna parte) y las pantallas de contraseña mandaban a
+`soporte@duoc.cl`, que no es el correo del Punto. Ahora todas incluyen `includes/pie.html`: una franja azul con la
+línea amarilla arriba (como el encabezado abajo) y tres columnas, Punto Participa, contacto del Punto Estudiantil
+(Sede Alameda, Av. España 8, `puntoestu@duoc.cl`) y enlaces (Política de Privacidad y www.duoc.cl), más el año
+tomado de la fecha actual. En celular las columnas quedan una bajo la otra. Prueba en `sistema/tests_interfaz`.
+
+### 18.21 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

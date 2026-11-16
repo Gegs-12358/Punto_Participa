@@ -154,3 +154,26 @@ class SinSimbolosAntiguosTests(BaseSistemaTestCase):
         resp = self.client.get(reverse('reportes'))
         self.assertContains(resp, 'aria-current="page"', count=2)   # menú de escritorio y de celular
         self.assertContains(resp, '</svg> Reportes')
+
+
+class PieDePaginaTests(BaseSistemaTestCase):
+    """Todas las pantallas usan el mismo pie (includes/pie.html), con enlaces que llevan a alguna parte."""
+
+    def test_el_mismo_pie_en_pantallas_internas_publicas_y_de_error(self):
+        self.login_as(self.admin)
+        interna = self.client.get(reverse('lista_actividades'))
+        self.client.logout()
+        paginas = {
+            'interna': interna,
+            'pública': self.client.get(reverse('actividad_publica', args=[self.actividad_masiva.pk])),
+            'recuperar contraseña': self.client.get(reverse('recuperar_contrasena')),
+            'no existe': self.client.get('/no-existe/'),
+        }
+        for nombre, r in paginas.items():
+            with self.subTest(pagina=nombre):
+                html = r.content.decode()
+                pie = html[html.index('<footer class="app-footer">'):]
+                self.assertIn('Punto Estudiantil, Sede Alameda', pie)
+                self.assertIn('mailto:puntoestu@duoc.cl', pie)
+                self.assertIn(f'href="{reverse("privacidad")}"', pie)
+                self.assertNotIn('href="#"', pie)

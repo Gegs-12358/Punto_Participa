@@ -1,0 +1,21 @@
+{% load ui %}
+{# Pie de página único de todas las pantallas. #}
+<footer class="app-footer">
+    <div class="pie-columnas">
+        <div class="pie-bloque">
+            <strong class="pie-titulo">Punto Participa</strong>
+            <p>Inscripción y registro de asistencia a las actividades del Punto Estudiantil.</p>
+        </div>
+        <div class="pie-bloque">
+            <strong class="pie-titulo">Punto Estudiantil, Sede Alameda</strong>
+            <p class="pie-dato">{% icono "lugar" %}<span>Av. España 8, Santiago Centro (metro República)</span></p>
+            <p class="pie-dato">{% icono "correo" %}<a href="mailto:puntoestu@duoc.cl">puntoestu@duoc.cl</a></p>
+        </div>
+        <nav class="pie-bloque" aria-label="Enlaces del pie de página">
+            <strong class="pie-titulo">Enlaces</strong>
+            <p class="pie-dato">{% icono "enlace" %}<a href="{% url 'privacidad' %}">Política de Privacidad</a></p>
+            <p class="pie-dato">{% icono "enlace" %}<a href="https://www.duoc.cl" target="_blank" rel="noopener">www.duoc.cl</a></p>
+        </nav>
+    </div>
+    <div class="pie-final">© {% now "Y" %} Duoc UC</div>
+</footer>
