@@ -23,3 +23,6 @@ respaldos/
 # Imágenes que suben los usuarios (en Docker viven en un volumen; fuera de Docker quedan en media/)
 media/
 __pycache__/
+
+# Archivos de bloqueo de LibreOffice (se crean al abrir un documento)
+.~lock.*#
