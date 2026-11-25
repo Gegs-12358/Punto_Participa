@@ -1,0 +1,5 @@
+{% load ui %}{# Enlace al .ics con todas las sesiones (solo actividades públicas). #}{% url 'calendario_actividad' actividad.id as ruta_ics %}
+<p style="margin: 0 0 22px; text-align: center; font-size: 14px; font-family: Arial, Helvetica, sans-serif;">
+    <a href="{% url_absoluta ruta_ics site_url %}" style="color: #0b5cad;">Agregar {% if actividad.lista_sesiones|length > 1 %}todas las sesiones{% else %}la fecha{% endif %} a mi calendario</a>
+    <span style="color: #5b6878;">(Outlook, Apple o Android)</span>
+</p>

@@ -1,0 +1,12 @@
+{% autoescape off %}Hola {{ alumno.nombres }},
+
+Te anotaste en la lista de espera de {{ actividad.titulo }} y acaba de liberarse un cupo.
+
+{% include 'gestion/correos/_fechas.txt' %}
+
+Inscríbete cuanto antes: los cupos se asignan por orden de inscripción, no por orden en la lista.
+{{ enlace }}
+
+Si cuando entres ya no quedan, sigues en la lista y te avisamos si se libera otro.
+
+{% include 'gestion/correos/_pie.txt' %}{% endautoescape %}

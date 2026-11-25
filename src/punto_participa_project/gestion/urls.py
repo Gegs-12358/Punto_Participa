@@ -55,6 +55,8 @@ urlpatterns = [
     # ============================================================
     path('taller/<int:actividad_id>/', inscripciones.inscripcion_taller, name='inscripcion_taller'),
     path('actividad/<int:actividad_id>/', inscripciones.actividad_publica, name='actividad_publica'),
+    path('calendario/<int:actividad_id>.ics', inscripciones.calendario_actividad,
+         name='calendario_actividad'),
     path('inscripcion/cancelar/<str:token>/', inscripciones.cancelar_inscripcion, name='cancelar_inscripcion'),
     path('actividades/<int:pk>/inscripciones/<int:inscripcion_id>/cancelar/',
          inscripciones.cancelar_inscripcion_gestor, name='cancelar_inscripcion_gestor'),

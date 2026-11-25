@@ -1,46 +1,36 @@
-<!DOCTYPE html>
-<html lang="es">
+{% extends 'gestion/correos/_base.html' %}{% load ui %}
+{% block titulo %}Invitación: {{ actividad.titulo }}{% endblock %}
+{% block preheader %}{% with s=actividad.lista_sesiones.0 %}{{ s.fecha_inicio|date:"l j \d\e F"|capfirst }}, {{ s.fecha_inicio|date:"H:i" }} horas, en {{ actividad.lugar_completo }}.{% endwith %} {% if actividad.tipo == 'TALLER' %}Inscríbete para asegurar tu cupo.{% else %}No necesitas inscribirte.{% endif %}{% endblock %}
+{% block banner %}{% include 'gestion/correos/_banner.html' %}{% endblock %}
+{% block contenido %}{% if actividad.tipo == 'TALLER' %}{% url 'inscripcion_taller' actividad.id as ruta %}{% else %}{% url 'actividad_publica' actividad.id as ruta %}{% endif %}{% url_absoluta ruta site_url as enlace %}
+                            {% if actividad.tipo == 'TALLER' %}{% include 'gestion/correos/_etiqueta.html' with texto='TALLER' %}{% else %}{% include 'gestion/correos/_etiqueta.html' with texto='ACTIVIDAD ABIERTA' %}{% endif %}
+                            <h1 class="pp-titulo" style="margin: 10px 0 16px; font-size: 24px; line-height: 1.25; color: #002F5F;">{{ actividad.titulo }}</h1>
+                            <p style="margin: 0 0 14px;">Hola {{ alumno.nombres|default:"" }},</p>
+                            {% if actividad.descripcion %}<p style="margin: 0 0 20px;">{{ actividad.descripcion|linebreaksbr }}</p>{% endif %}
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invitación: {{ actividad.titulo }}</title>
-</head>
-
-<body style="margin: 0; font-family: Arial, Helvetica, sans-serif; background-color: #eef2f6; padding: 20px;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; border: 1px solid #dde3ea;">
-        {% include 'gestion/correos/_cabecera.html' %}
-
-        <div style="padding: 28px 30px 24px; color: #1f2d3d;">
-            <span style="display: inline-block; background-color: #FBB800; color: #002F5F; font-size: 11px; font-weight: bold; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 999px;">{% if actividad.tipo == 'TALLER' %}TALLER{% else %}ACTIVIDAD{% endif %}</span>
-            <h2 style="color: #002F5F; margin: 10px 0 16px; font-size: 24px; line-height: 1.25;">{{ actividad.titulo }}</h2>
-            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Hola {{ alumno.nombres|default:"" }},</p>
-            {% if actividad.descripcion %}<p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">{{ actividad.descripcion|linebreaksbr }}</p>{% endif %}
-
-            {% include 'gestion/correos/_datos_actividad.html' %}
+                            {% include 'gestion/correos/_fechas.html' %}
 
 {% if actividad.tipo == 'TALLER' %}
-            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Los cupos son limitados. Asegura el tuyo inscribiéndote aquí:</p>
-            <div style="text-align: center; margin: 0 0 22px;">
-                <a href="{{ site_url }}/taller/{{ actividad.id }}/"
-                    style="display: inline-block; background-color: #FBB800; color: #002F5F; padding: 14px 32px; text-decoration: none; font-weight: bold; border-radius: 6px; font-size: 16px;">Inscribirme</a>
-            </div>
+{% if actividad.esta_lleno %}
+                            <p style="margin: 0 0 18px;">Por ahora los cupos están completos. Desde el enlace puedes anotarte en la lista de espera y te avisamos por correo si se libera uno.</p>
+                            {% include 'gestion/correos/_boton.html' with url=enlace texto='Anotarme en la lista de espera' %}
 {% else %}
-            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Esta actividad no requiere inscripción previa: solo tienes que asistir.</p>
-            <div style="text-align: center; margin: 0 0 22px;">
-                <a href="{{ site_url }}/actividad/{{ actividad.id }}/"
-                    style="display: inline-block; background-color: #FBB800; color: #002F5F; padding: 14px 32px; text-decoration: none; font-weight: bold; border-radius: 6px; font-size: 16px;">Ver detalles</a>
-            </div>
+{% if actividad.cupos_totales %}
+                            <p style="margin: 0 0 6px; font-size: 15px;"><strong style="color: #002F5F;">Quedan {{ actividad.cupos_disponibles }} de {{ actividad.cupos_totales }} cupos.</strong></p>
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#e3e8ef" style="background-color: #e3e8ef; border-radius: 4px; margin: 0 0 20px;">
+                                <tr>{% widthratio actividad.cupos_ocupados actividad.cupos_totales 100 as ocupado %}
+                                    {% if actividad.cupos_ocupados %}<td width="{{ ocupado }}%" height="8" bgcolor="#002F5F" style="height: 8px; line-height: 8px; font-size: 8px; background-color: #002F5F; border-radius: 4px;">&nbsp;</td>{% endif %}
+                                    <td height="8" style="height: 8px; line-height: 8px; font-size: 8px;">&nbsp;</td>
+                                </tr>
+                            </table>
 {% endif %}
-            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">¡No dejes pasar esta oportunidad de participar y potenciar tu desarrollo personal y profesional! ¡Te esperamos!</p>
-
-            <p style="font-size: 12px; line-height: 1.5; color: #6b7785; margin: 0;">
-                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>{{ site_url }}/{% if actividad.tipo == 'TALLER' %}taller{% else %}actividad{% endif %}/{{ actividad.id }}/
-            </p>
-        </div>
-
-        {% include 'gestion/correos/_pie.html' %}
-    </div>
-</body>
-
-</html>
+                            {% include 'gestion/correos/_boton.html' with url=enlace texto='Inscribirme' %}
+                            {% include 'gestion/correos/_aviso.html' with titulo='¿Te inscribiste y después no puedes ir?' texto='Cancela tu inscripción desde el correo de confirmación. Así tu cupo le queda a otra persona que quiere participar.' %}
+{% endif %}
+{% else %}
+                            <p style="margin: 0 0 18px;">No necesitas inscribirte: llega el día de la actividad y registra tu asistencia con el encargado, con tu app Vivo Duoc, tu cédula de identidad o tu RUT.</p>
+                            {% include 'gestion/correos/_boton.html' with url=enlace texto='Ver detalles' %}
+{% endif %}
+                            {% include 'gestion/correos/_calendario.html' %}
+                            {% include 'gestion/correos/_enlace_respaldo.html' with url=enlace %}
+{% endblock %}

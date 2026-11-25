@@ -1,37 +1,16 @@
-<!DOCTYPE html>
-<html lang="es">
+{% extends 'gestion/correos/_base.html' %}
+{% block titulo %}Se liberó un cupo: {{ actividad.titulo }}{% endblock %}
+{% block preheader %}Los cupos se asignan por orden de inscripción: si te interesa, inscríbete cuanto antes.{% endblock %}
+{% block banner %}{% include 'gestion/correos/_banner.html' %}{% endblock %}
+{% block contenido %}
+                            {% include 'gestion/correos/_etiqueta.html' with texto='LISTA DE ESPERA' %}
+                            <h1 class="pp-titulo" style="margin: 10px 0 16px; font-size: 24px; line-height: 1.25; color: #002F5F;">Se liberó un cupo en {{ actividad.titulo }}</h1>
+                            <p style="margin: 0 0 14px;">Hola {{ alumno.nombres }},</p>
+                            <p style="margin: 0 0 20px;">Te anotaste en la lista de espera de este taller y acaba de liberarse un cupo.</p>
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Se liberó un cupo</title>
-</head>
+                            {% include 'gestion/correos/_fechas.html' %}
 
-<body style="margin: 0; font-family: Arial, Helvetica, sans-serif; background-color: #eef2f6; padding: 20px;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; border: 1px solid #dde3ea;">
-        {% include 'gestion/correos/_cabecera.html' %}
-
-        <div style="padding: 28px 30px 24px; color: #1f2d3d;">
-            <span style="display: inline-block; background-color: #FBB800; color: #002F5F; font-size: 11px; font-weight: bold; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 999px;">LISTA DE ESPERA</span>
-            <h2 style="color: #002F5F; margin: 10px 0 16px; font-size: 24px; line-height: 1.25;">Se liberó un cupo en {{ actividad.titulo }}</h2>
-            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Hola {{ alumno.nombres }},</p>
-            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Te anotaste en la lista de espera de este taller y acaba de liberarse un cupo.
-                Los cupos se asignan por orden de inscripción, así que si te interesa, inscríbete cuanto antes.</p>
-
-            {% include 'gestion/correos/_datos_actividad.html' %}
-
-            <div style="text-align: center; margin: 0 0 22px;">
-                <a href="{{ enlace }}"
-                    style="display: inline-block; background-color: #FBB800; color: #002F5F; padding: 14px 32px; text-decoration: none; font-weight: bold; border-radius: 6px; font-size: 16px;">Inscribirme</a>
-            </div>
-            <p style="font-size: 12px; line-height: 1.5; color: #6b7785; margin: 0;">
-                Si cuando entres ya no quedan cupos, sigues en la lista y te avisaremos si se libera otro.<br>
-                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>{{ enlace }}
-            </p>
-        </div>
-
-        {% include 'gestion/correos/_pie.html' %}
-    </div>
-</body>
-
-</html>
+                            {% include 'gestion/correos/_aviso.html' with titulo='Inscríbete cuanto antes' texto='Los cupos se asignan por orden de inscripción, no por orden en la lista. Si cuando entres ya no quedan, sigues en la lista y te avisamos si se libera otro.' %}
+                            {% include 'gestion/correos/_boton.html' with url=enlace texto='Inscribirme' %}
+                            {% include 'gestion/correos/_enlace_respaldo.html' with url=enlace %}
+{% endblock %}

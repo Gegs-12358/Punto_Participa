@@ -72,7 +72,10 @@ class PortadaPublicaTests(BaseSistemaTestCase):
         self.con_imagen(self.actividad)
         html = render_to_string('gestion/correos/invitacion.html',
                                 {'actividad': self.actividad, 'alumno': self.alumno, 'site_url': 'https://participa.ejemplo.cl'})
-        self.assertIn(f'src="https://participa.ejemplo.cl{self.actividad.imagen.url}"', html)
+        # Va la versión para correos (1200x600, JPEG), no la imagen original
+        self.actividad.refresh_from_db()
+        self.assertTrue(self.actividad.imagen_correo)
+        self.assertIn(f'src="https://participa.ejemplo.cl{self.actividad.imagen_correo.url}"', html)
         self.assertIn('src="https://participa.ejemplo.cl/static/', html)
         self.assertNotIn('Súmate al', html)
         self.assertNotIn('cronograma', html)
@@ -82,5 +85,6 @@ class PortadaPublicaTests(BaseSistemaTestCase):
         self.client.post(reverse('inscripcion_taller', args=[self.actividad.pk]),
                          {'rut': self.alumno.rut, 'acepta_politica': 'on'})
         html = mail.outbox[-1].alternatives[0][0]
-        self.assertIn(f'https://participa.ejemplo.cl{self.actividad.imagen.url}', html)
+        self.actividad.refresh_from_db()
+        self.assertIn(f'https://participa.ejemplo.cl{self.actividad.imagen_correo.url}', html)
         self.assertIn('Quedaste inscrito', html)

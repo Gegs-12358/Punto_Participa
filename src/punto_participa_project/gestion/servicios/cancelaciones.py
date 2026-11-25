@@ -13,10 +13,10 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
-from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 
+from . import correos
 from ..models import Actividad, Asistencia, Inscripcion, InscripcionCancelada
 
 
@@ -117,10 +117,7 @@ def enviar_confirmacion(inscripcion):
     contexto = {'actividad': actividad, 'alumno': alumno, 'enlace': enlace, 'limite': limite,
                 'puede_cancelar': timezone.now() < limite}
     try:
-        html = render_to_string('gestion/correos/confirmacion_inscripcion.html', contexto)
-        texto = (f'Hola {alumno.nombres}, quedaste inscrito en {actividad.titulo}. '
-                 + (f'Si no puedes asistir, cancela en {enlace} para liberar tu cupo.'
-                    if contexto['puede_cancelar'] else ''))
+        texto, html = correos.armar('confirmacion_inscripcion', contexto)
         n = send_mail(subject=f'Inscripción confirmada: {actividad.titulo}', message=texto,
                       from_email=settings.DEFAULT_FROM_EMAIL, recipient_list=[alumno.correo],
                       html_message=html, fail_silently=False)

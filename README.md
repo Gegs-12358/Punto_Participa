@@ -46,7 +46,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**. La entrega está fijada para el 1 de diciembre de 2026.
 
-* Suite de pruebas automatizadas: 762 tests (detalle en la sección 9).
+* Suite de pruebas automatizadas: 778 tests (detalle en la sección 9).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 * El historial detallado de cambios está en [`docs/CAMBIOS.md`](Codigo%20Proyecto/punto_participa_project/docs/CAMBIOS.md) y la guía de estilo de las pantallas en [`docs/GUIA_ESTILO.md`](Codigo%20Proyecto/punto_participa_project/docs/GUIA_ESTILO.md).
 
@@ -226,7 +226,7 @@ No hace falta instalar Python ni PostgreSQL: todo corre dentro de contenedores.
 | Reiniciar tras editar archivos `.py`, `.html`, `.css` o `.js` | `docker compose restart web` |
 | Aplicar un cambio en `.env` | `docker compose up -d --force-recreate web` |
 | Reconstruir tras cambiar `Dockerfile`, `requirements.txt`, `entrypoint.sh` o `Dockerfile.dockerignore` | `docker compose up -d --build` |
-| Achicar las imágenes de actividades subidas antes del 25/11/2026 y crear sus miniaturas (sin `--aplicar` solo muestra qué haría; respalda antes) | `docker compose exec web python manage.py optimizar_imagenes --aplicar` |
+| Achicar las imágenes de actividades subidas antes del 25/11/2026 y crear sus miniaturas e imágenes para correos (sin `--aplicar` solo muestra qué haría; respalda antes) | `docker compose exec web python manage.py optimizar_imagenes --aplicar` |
 | Detener el sistema (conserva los datos) | `docker compose down` |
 
 Tras editar un `.js` o `.css`, recarga el navegador con `Ctrl+Shift+R`. Si hay una migración nueva, córrela **antes** de reiniciar: al reiniciar, el contenedor también aplica las migraciones y las dos ejecuciones pueden chocar.
@@ -379,7 +379,7 @@ src/                       Código fuente
 
 ## 9. Pruebas automatizadas
 
-La suite tiene **762 tests** y se ejecuta con:
+La suite tiene **778 tests** y se ejecuta con:
 
 ```bash
 docker compose exec web python manage.py test --parallel --noinput

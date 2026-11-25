@@ -1,0 +1,14 @@
+{% autoescape off %}Hola {{ invitado.nombre }},
+
+Estás invitado a {{ actividad.titulo }}.
+{% if actividad.descripcion %}
+{{ actividad.descripcion }}
+{% endif %}
+{% include 'gestion/correos/_fechas.txt' %}
+
+Confirma si asistirás{% if actividad.acompanantes_por_invitado %} y registra a tus acompañantes{% endif %} en este enlace:
+{{ enlace }}
+
+Tu enlace es personal: no lo compartas. El día de la actividad, registra tu asistencia con el encargado, con tu app Vivo Duoc, tu cédula de identidad o tu RUT.{% if actividad.acompanantes_por_invitado %} Cada acompañante entra con su propio documento.{% endif %}
+
+{% include 'gestion/correos/_pie.txt' %}{% endautoescape %}

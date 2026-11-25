@@ -11,10 +11,10 @@ import logging
 
 from django.conf import settings
 from django.core.mail import send_mail
-from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 
+from . import correos
 from ..models import Inscripcion, ListaEspera
 
 
@@ -56,11 +56,8 @@ def avisar(actividad):
     for registro in pendientes:
         alumno = registro.alumno
         try:
-            html = render_to_string('gestion/correos/lista_espera.html',
-                                    {'actividad': actividad, 'alumno': alumno, 'enlace': enlace})
-            n = send_mail(subject=f'Se liberó un cupo: {actividad.titulo}',
-                          message=(f'Hola {alumno.nombres}, se liberó un cupo en {actividad.titulo}. Los cupos se '
-                                   f'asignan por orden de inscripción: si te interesa, inscríbete en {enlace}'),
+            texto, html = correos.armar('lista_espera', {'actividad': actividad, 'alumno': alumno, 'enlace': enlace})
+            n = send_mail(subject=f'Se liberó un cupo: {actividad.titulo}', message=texto,
                           from_email=settings.DEFAULT_FROM_EMAIL, recipient_list=[alumno.correo],
                           html_message=html, fail_silently=False)
             if n != 1:

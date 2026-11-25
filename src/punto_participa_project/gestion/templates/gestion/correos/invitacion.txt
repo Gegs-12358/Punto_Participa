@@ -1,0 +1,22 @@
+{% load ui %}{% autoescape off %}{% if actividad.tipo == 'TALLER' %}{% url 'inscripcion_taller' actividad.id as ruta %}{% else %}{% url 'actividad_publica' actividad.id as ruta %}{% endif %}{% url_absoluta ruta site_url as enlace %}{% url 'calendario_actividad' actividad.id as ruta_ics %}Hola {{ alumno.nombres|default:"" }},
+
+Te invitamos a {% if actividad.tipo == 'TALLER' %}este taller{% else %}esta actividad{% endif %}: {{ actividad.titulo }}
+{% if actividad.descripcion %}
+{{ actividad.descripcion }}
+{% endif %}
+{% include 'gestion/correos/_fechas.txt' %}
+{% if actividad.tipo == 'TALLER' %}{% if actividad.esta_lleno %}
+Por ahora los cupos están completos. Anótate en la lista de espera y te avisamos si se libera uno:
+{{ enlace }}
+{% else %}{% if actividad.cupos_totales %}
+Quedan {{ actividad.cupos_disponibles }} de {{ actividad.cupos_totales }} cupos.{% endif %}
+Inscríbete aquí: {{ enlace }}
+
+¿Te inscribiste y después no puedes ir? Cancela tu inscripción desde el correo de confirmación. Así tu cupo le queda a otra persona que quiere participar.
+{% endif %}{% else %}
+No necesitas inscribirte: llega el día de la actividad y registra tu asistencia con el encargado, con tu app Vivo Duoc, tu cédula de identidad o tu RUT.
+Detalles: {{ enlace }}
+{% endif %}
+Agregar a tu calendario: {% url_absoluta ruta_ics site_url %}
+
+{% include 'gestion/correos/_pie.txt' %}{% endautoescape %}

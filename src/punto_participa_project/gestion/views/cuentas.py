@@ -15,11 +15,11 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.shortcuts import redirect, render
-from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.debug import sensitive_post_parameters
 
+from ..servicios import correos
 from ..permissions import get_perfil, ROLES_VALIDOS
 
 from .comun import registrar_log
@@ -150,11 +150,11 @@ def solicitar_recuperacion(request):
             uid = urlsafe_base64_encode(force_bytes(usuario.pk))
             token = PasswordResetTokenGenerator().make_token(usuario)
             enlace = f'{settings.SITE_URL.rstrip("/")}/restablecer-contrasena/{uid}/{token}/'
-            html = render_to_string('gestion/correos/recuperacion.html',
-                                    {'user': usuario, 'enlace': enlace})
+            dias = max(1, round(settings.PASSWORD_RESET_TIMEOUT / 86400))
+            texto, html = correos.armar('recuperacion', {'user': usuario, 'enlace': enlace, 'dias': dias})
             send_mail(
                 subject='Recuperación de contraseña - Punto Participa',
-                message=f'Restablece tu contraseña aquí:\n\n{enlace}\n',
+                message=texto,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[usuario.email.strip()],
                 html_message=html, fail_silently=False,

@@ -18,12 +18,12 @@ from django.db import transaction
 from django.db.models import Count, Q
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from ..decorators import role_required
+from ..servicios import correos
 from ..servicios.invitados import analizar, aplicar, ArchivoInvalido, documento_valido, leer, MAX_NOMBRE_ACOMPANANTE
 from ..models import (Acompanante, Actividad, Alumno, consentimiento, Invitado, NotificacionCorreo,
                       VERSION_POLITICA)
@@ -72,12 +72,12 @@ def enviar_invitaciones(request):
         enviados = fallidos = 0
         for alumno in alumnos:
             try:
-                html = render_to_string('gestion/correos/invitacion.html', {
+                texto, html = correos.armar('invitacion', {
                     'actividad': actividad, 'alumno': alumno, 'site_url': settings.SITE_URL,
                 })
                 n = send_mail(
                     subject=f'Invitación: {actividad.titulo}',
-                    message=f'Hola {alumno.nombres}, te invitamos a participar en {actividad.titulo}.',
+                    message=texto,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[alumno.correo], html_message=html, fail_silently=False,
                 )
@@ -127,7 +127,7 @@ def previsualizar_invitacion(request, pk):
         if not alumno:
             return _error_json('No hay alumnos que coincidan con los filtros.')
 
-        html = render_to_string('gestion/correos/invitacion.html', {
+        _, html = correos.armar('invitacion', {
             'actividad': actividad, 'alumno': alumno, 'site_url': settings.SITE_URL,
         })
         return JsonResponse({
@@ -297,12 +297,11 @@ def enviar_invitaciones_lista(request, pk):
     for invitado in destinatarios:
         enlace = enlace_invitacion(invitado)
         try:
-            html = render_to_string('gestion/correos/invitacion_especial.html',
-                                    {'actividad': actividad, 'invitado': invitado, 'enlace': enlace})
+            texto, html = correos.armar('invitacion_especial',
+                                        {'actividad': actividad, 'invitado': invitado, 'enlace': enlace})
             n = send_mail(
                 subject=f'Invitación: {actividad.titulo}',
-                message=(f'Hola {invitado.nombre}, estás invitado a {actividad.titulo}. '
-                         f'Confirma tu asistencia en {enlace}'),
+                message=texto,
                 from_email=settings.DEFAULT_FROM_EMAIL, recipient_list=[invitado.correo],
                 html_message=html, fail_silently=False,
             )

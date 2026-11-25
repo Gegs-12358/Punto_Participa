@@ -223,9 +223,9 @@ class MostrarSesionesTests(BaseSesionesForm):
         self.assertContains(detalle, 'Sesiones (2)')
         self.assertContains(detalle, '75 % de las sesiones')
 
-        html = render_to_string('gestion/correos/_datos_actividad.html', {'actividad': self.act})
-        self.assertIn('2 sesiones:', html)
-        self.assertIn('2. ', html)
+        html = render_to_string('gestion/correos/_fechas.html', {'actividad': self.act})
+        self.assertIn('sesión 1 de 2', html)
+        self.assertIn('sesión 2 de 2', html)
         self.assertEqual(len(mail.outbox), 0)
 
         # Una actividad de una sola sesión se muestra como siempre

@@ -191,7 +191,7 @@ class ComandoOptimizarImagenesTests(ConMediaPropia):
     def test_sin_aplicar_solo_muestra_lo_que_haria(self):
         salida = self.correr()
         self.assertIn('Se achicarían 1 imágenes', salida)
-        self.assertIn('Miniaturas por crear: 1', salida)
+        self.assertIn('imagen para correos por crear: 1', salida)
         self.assertIn('--aplicar', salida)
         self.assertEqual(self.tamano(), (3200, 1600))
         self.assertFalse(self.actividad_masiva.imagen_miniatura)

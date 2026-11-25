@@ -13,13 +13,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache as cache_django
 from django.db import IntegrityError, transaction
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from ..servicios.cancelaciones import alumno_puede_cancelar, cancelar, limite_cancelacion, NoSePuedeCancelar
 from ..decorators import role_required
+from ..servicios import calendario
 from ..servicios.lista_espera import avisar as avisar_lista_espera
 from ..models import Actividad, consentimiento, Inscripcion, InscripcionCancelada, VERSION_POLITICA
 from ..permissions import puede_gestionar_actividad
@@ -322,6 +323,17 @@ def actividad_publica(request, actividad_id):
         estado = 'vigente'
     return render(request, 'gestion/actividad_publica.html',
                   {'actividad': actividad, 'estado': estado})
+
+
+def calendario_actividad(request, actividad_id):
+    """Archivo .ics con las sesiones de una actividad pública, para el botón "Agregar a mi calendario" de los
+    correos. Las actividades con invitación son privadas y las canceladas ya no se agregan."""
+    actividad = get_object_or_404(Actividad, pk=actividad_id)
+    if actividad.tipo == 'INVITACION' or actividad.estado == 'CANCELADA':
+        raise Http404('Actividad no disponible.')
+    respuesta = HttpResponse(calendario.ics(actividad), content_type='text/calendar; charset=utf-8')
+    respuesta['Content-Disposition'] = f'attachment; filename="actividad-{actividad.pk}.ics"'
+    return respuesta
 
 
 def politica_privacidad(request):

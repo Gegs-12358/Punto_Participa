@@ -1,47 +1,22 @@
-<!DOCTYPE html>
-<html lang="es">
+{% extends 'gestion/correos/_base.html' %}
+{% block titulo %}Inscripción confirmada: {{ actividad.titulo }}{% endblock %}
+{% block preheader %}Tu cupo está reservado. {% with s=actividad.lista_sesiones.0 %}{{ s.fecha_inicio|date:"l j \d\e F"|capfirst }}, {{ s.fecha_inicio|date:"H:i" }} horas, en {{ actividad.lugar_completo }}.{% endwith %}{% endblock %}
+{% block banner %}{% include 'gestion/correos/_banner.html' %}{% endblock %}
+{% block contenido %}
+                            {% include 'gestion/correos/_etiqueta.html' with texto='INSCRIPCIÓN CONFIRMADA' %}
+                            <h1 class="pp-titulo" style="margin: 10px 0 16px; font-size: 24px; line-height: 1.25; color: #002F5F;">Quedaste inscrito en {{ actividad.titulo }}</h1>
+                            <p style="margin: 0 0 14px;">Hola {{ alumno.nombres }},</p>
+                            <p style="margin: 0 0 20px;">Tu cupo en el taller está reservado. El día del taller, registra tu asistencia con el encargado, con tu app Vivo Duoc, tu cédula de identidad o tu RUT.</p>
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inscripción confirmada</title>
-</head>
+                            {% include 'gestion/correos/_fechas.html' %}
+                            {% include 'gestion/correos/_calendario.html' %}
 
-<body style="margin: 0; font-family: Arial, Helvetica, sans-serif; background-color: #eef2f6; padding: 20px;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; border: 1px solid #dde3ea;">
-        {% include 'gestion/correos/_cabecera.html' %}
-
-        <div style="padding: 28px 30px 24px; color: #1f2d3d;">
-            <span style="display: inline-block; background-color: #FBB800; color: #002F5F; font-size: 11px; font-weight: bold; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 999px;">INSCRIPCIÓN CONFIRMADA</span>
-            <h2 style="color: #002F5F; margin: 10px 0 16px; font-size: 24px; line-height: 1.25;">Quedaste inscrito en {{ actividad.titulo }}</h2>
-            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Hola {{ alumno.nombres }},</p>
-            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Tu cupo en el taller está reservado.</p>
-
-            {% include 'gestion/correos/_datos_actividad.html' %}
-
-            {% if puede_cancelar %}
-            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Si no puedes asistir, cancela tu inscripción para que otro estudiante use el cupo.
-                Puedes hacerlo hasta el {{ limite|date:"d/m/Y" }} a las {{ limite|date:"H:i" }} horas.
-                El enlace es personal: no lo compartas.</p>
-
-            <div style="text-align: center; margin: 0 0 22px;">
-                <a href="{{ enlace }}"
-                    style="display: inline-block; background-color: #ffffff; color: #002F5F; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px; font-size: 15px; border: 2px solid #002F5F;">Cancelar mi inscripción</a>
-            </div>
-            {% else %}
-            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Si al final no puedes asistir, avisa al Punto Estudiantil para liberar tu cupo.</p>
-            {% endif %}
-
-            <p style="font-size: 14px; line-height: 1.6; margin: 0 0 14px;">El día del taller, muestra tu cédula o la app Vivo Duoc en la entrada.</p>
-            {% if puede_cancelar %}
-            <p style="font-size: 12px; line-height: 1.5; color: #6b7785; margin: 0;">
-                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>{{ enlace }}
-            </p>
-            {% endif %}
-        </div>
-
-        {% include 'gestion/correos/_pie.html' %}
-    </div>
-</body>
-
-</html>
+{% if puede_cancelar %}
+                            {% include 'gestion/correos/_aviso.html' with titulo='¿Al final no puedes ir?' texto='Cancela tu inscripción para que otro estudiante use el cupo. El enlace es personal: no lo compartas.' %}
+                            <p style="margin: -6px 0 14px; font-size: 14px; text-align: center; color: #5b6878;">Puedes cancelar hasta el {{ limite|date:"d/m/Y" }} a las {{ limite|date:"H:i" }} horas.</p>
+                            {% include 'gestion/correos/_boton.html' with url=enlace texto='Cancelar mi inscripción' secundario=True %}
+                            {% include 'gestion/correos/_enlace_respaldo.html' with url=enlace %}
+{% else %}
+                            {% include 'gestion/correos/_aviso.html' with titulo='¿Al final no puedes ir?' texto='Ya no se puede cancelar desde el sistema: avisa al Punto Estudiantil para liberar tu cupo.' %}
+{% endif %}
+{% endblock %}

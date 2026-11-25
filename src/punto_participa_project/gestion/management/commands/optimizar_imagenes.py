@@ -1,5 +1,6 @@
 """
-Achica las imágenes de actividades ya guardadas y crea las miniaturas que falten (servicios/imagenes.py).
+Achica las imágenes de actividades ya guardadas y crea las miniaturas e imágenes para correos que
+falten (servicios/imagenes.py).
 
 Las imágenes subidas desde ahora ya quedan así; este comando es para las anteriores. Sin --aplicar solo muestra
 qué haría. Con --aplicar reemplaza los archivos grandes por su versión achicada: haz un respaldo antes.
@@ -21,7 +22,7 @@ def _kb(n):
 
 
 class Command(BaseCommand):
-    help = 'Achica las imágenes grandes de las actividades y crea las miniaturas que falten.'
+    help = 'Achica las imágenes grandes de las actividades y crea las miniaturas e imágenes para correos que falten.'
 
     def add_arguments(self, parser):
         parser.add_argument('--aplicar', action='store_true', help='Hacer los cambios (sin esto solo los muestra).')
@@ -55,17 +56,18 @@ class Command(BaseCommand):
                     if guardado != nombre:
                         Actividad.objects.filter(pk=actividad.pk).update(imagen=guardado)
                         actividad.imagen.name = guardado
-                    imagenes.actualizar_miniatura(actividad, forzar=True)
+                    imagenes.actualizar_derivadas(actividad, forzar=True)
             else:
                 despues += tamano
-            if not imagenes._corresponde(actividad):
+            if not all(imagenes._corresponde(actividad, campo) for campo in imagenes.DERIVADAS):
                 miniaturas += 1
                 if aplicar:
-                    imagenes.actualizar_miniatura(actividad)
+                    imagenes.actualizar_derivadas(actividad)
 
         verbo = 'Se achicaron' if aplicar else 'Se achicarían'
         self.stdout.write(f'{verbo} {achicadas} imágenes: de {_kb(antes)} a {_kb(despues)} en total.')
-        self.stdout.write(f'Miniaturas {"creadas" if aplicar else "por crear"}: {miniaturas}.')
+        self.stdout.write(f'Actividades con miniatura o imagen para correos {"creadas" if aplicar else "por crear"}: '
+                          f'{miniaturas}.')
         if faltan:
             self.stdout.write(f'Imágenes cuyo archivo no está: {faltan}.')
         if not aplicar and (achicadas or miniaturas):

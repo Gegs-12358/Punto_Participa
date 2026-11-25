@@ -1,0 +1,23 @@
+{% autoescape off %}Hola {{ nombre }},
+
+{% if tipo == 'listo' %}El {{ aviso.ejecutado|date:"d/m/Y \a \l\a\s H:i" }}, {{ quien }} verificó los respaldos y borró de la base principal los datos anteriores al {{ aviso.fecha_corte|date:"d/m/Y" }}. El histórico completo sigue en los respaldos mensuales. No tienes que hacer nada más.
+{% else %}{% if tipo == 'vencido' %}El plazo para borrar los datos anteriores al {{ aviso.fecha_corte|date:"d/m/Y" }} venció el {{ aviso.fecha_programada|date:"d/m/Y" }}{% if dias %} (hace {{ dias }} día{{ dias|pluralize }}){% endif %}. Los datos siguen en el sistema y este aviso se repetirá cada día, a todos los Administradores, hasta que uno ejecute el borrado.
+{% else %}Quedan {{ dias }} día{{ dias|pluralize }}: hay datos anteriores al {{ aviso.fecha_corte|date:"d/m/Y" }} que deben borrarse de la base principal a más tardar el {{ aviso.fecha_programada|date:"d/m/Y" }}. Este aviso les llega a todos los Administradores; basta con que uno lo haga.
+{% endif %}
+Qué hacer:
+1. Revisa que en la carpeta de respaldos, dentro de mensuales/, esté el respaldo de este mes.
+2. Comprueba la recuperación: docker compose exec respaldo sh /scripts/verificar.sh
+3. Si todo está bien, entra al Inicio de {{ sitio }} y presiona "Ya verifiqué los respaldos: borrar ahora". Se avisará a los demás Administradores que lo hiciste.
+Si el respaldo falla, no borres: avisa al equipo. Nada se borra sin que un Administrador lo ejecute.
+{% endif %}
+Actividades: {{ resumen.actividades }}
+Inscripciones: {{ resumen.inscripciones }}
+Asistencias: {{ resumen.asistencias }}
+Cancelaciones y lista de espera: {{ resumen.cancelaciones|add:resumen.lista_espera }}
+Invitados y acompañantes: {{ resumen.invitados|add:resumen.acompanantes }}
+Correos enviados y turnos del escáner: {{ resumen.correos|add:resumen.turnos }}
+Registros de auditoría: {{ resumen.auditoria }}
+
+Este correo lo envía el sistema de forma automática. El proceso queda registrado en la auditoría.
+
+{% include 'gestion/correos/_pie.txt' %}{% endautoescape %}

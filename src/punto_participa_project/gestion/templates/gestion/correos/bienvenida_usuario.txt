@@ -1,0 +1,12 @@
+{% autoescape off %}Hola {{ user.first_name }},
+
+El Punto Estudiantil te creó una cuenta en Punto Participa con el rol {{ rol }}.
+
+Tu usuario: {{ user.username }}
+
+Para entrar, primero crea tu contraseña en este enlace (es personal y vence en {{ dias }} día{{ dias|pluralize }}):
+{{ enlace }}
+
+Si el enlace vence, usa "¿Olvidaste tu contraseña?" en la pantalla de inicio de sesión.
+
+{% include 'gestion/correos/_pie.txt' %}{% endautoescape %}

@@ -1,0 +1,14 @@
+{# Botón que se ve como botón también en Outlook. Variables: url, texto y, opcional, secundario (blanco con borde). #}
+<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto 14px;">
+    <tr>
+{% if secundario %}
+        <td align="center" bgcolor="#ffffff" style="background-color: #ffffff; border: 2px solid #002F5F; border-radius: 6px;">
+            <a href="{{ url }}" style="display: inline-block; padding: 11px 26px; font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; line-height: 1.2; color: #002F5F; text-decoration: none; border-radius: 6px;">{{ texto }}</a>
+        </td>
+{% else %}
+        <td align="center" bgcolor="#FBB800" style="background-color: #FBB800; border-radius: 6px;">
+            <a href="{{ url }}" style="display: inline-block; padding: 14px 34px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; line-height: 1.2; color: #002F5F; text-decoration: none; border-radius: 6px;">{{ texto }}</a>
+        </td>
+{% endif %}
+    </tr>
+</table>

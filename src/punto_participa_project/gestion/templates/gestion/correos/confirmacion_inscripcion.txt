@@ -1,0 +1,14 @@
+{% load ui %}{% autoescape off %}{% url 'calendario_actividad' actividad.id as ruta_ics %}Hola {{ alumno.nombres }},
+
+Quedaste inscrito en {{ actividad.titulo }}. Tu cupo está reservado.
+
+{% include 'gestion/correos/_fechas.txt' %}
+
+El día del taller, registra tu asistencia con el encargado, con tu app Vivo Duoc, tu cédula de identidad o tu RUT.
+
+Agregar a tu calendario: {% url_absoluta ruta_ics site_url %}
+
+{% if puede_cancelar %}¿Al final no puedes ir? Cancela tu inscripción para que otro estudiante use el cupo. Puedes hacerlo hasta el {{ limite|date:"d/m/Y" }} a las {{ limite|date:"H:i" }} horas. El enlace es personal: no lo compartas.
+{{ enlace }}{% else %}¿Al final no puedes ir? Ya no se puede cancelar desde el sistema: avisa al Punto Estudiantil para liberar tu cupo.{% endif %}
+
+{% include 'gestion/correos/_pie.txt' %}{% endautoescape %}

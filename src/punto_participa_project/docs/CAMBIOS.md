@@ -1107,7 +1107,39 @@ toda ventana con campos sea persistente (resguardo para ventanas nuevas) y que e
 `.js`. El comportamiento se probó en el navegador (clic afuera, Esc, X y Cancelar, con y sin cambios).
 Quedan 762 pruebas.
 
-### 18.31 Pendiente
+### 18.31 Correos con un diseño nuevo, igual en todos los programas (25/11/2026)
+
+La previsualización de las invitaciones ya era igual al correo enviado (usan la misma plantilla), pero el diseño
+tenía puntos débiles: Outlook para Windows ignoraba parte de los estilos, con las imágenes bloqueadas quedaba un
+texto suelto arriba y la versión de texto simple decía una sola línea, sin fechas, lugar ni enlace. Se rehicieron
+los 7 correos.
+
+- **Una base común** (`correos/_base.html`) armada con tablas y estilos en línea, que se ven igual en Outlook,
+  Gmail y el celular, con piezas compartidas: etiqueta, botón, recuadro de aviso, fechas, lugar y enlace escrito.
+  Se quitaron `_cabecera`, `_datos_actividad` y `_pie`.
+- **Línea de vista previa:** lo que muestra la bandeja junto al asunto (fecha, lugar y qué hacer).
+- **Fechas como hojas de calendario**, una por sesión, cada una con su enlace "Agregar a Google Calendar". Las
+  actividades públicas traen además un archivo `.ics` con todas las sesiones para Outlook, Apple y Android
+  (`/calendario/<id>.ics`, `servicios/calendario.py`). Las actividades con invitación no lo tienen porque son
+  privadas, y las canceladas tampoco.
+- **Invitación a talleres:** cupos que quedan con una barra; si está lleno, el botón lleva a la lista de espera.
+  Debajo del botón, un recuadro destacado recuerda cancelar si después no se puede ir.
+- **Imagen para correos:** al guardar la imagen de una actividad se crea una versión JPEG de 1200x600 (unos
+  50 KB, campo `imagen_correo`, migración 0041). Siempre tiene el mismo alto y un afiche vertical no se recorta:
+  va entero al centro sobre la misma imagen difuminada. Con las imágenes bloqueadas queda un recuadro azul con el
+  título. `optimizar_imagenes --aplicar` la crea para las actividades anteriores y la retención la borra junto
+  con la imagen.
+- **Texto para registrar asistencia** igual en todos: "registra tu asistencia con el encargado, con tu app Vivo
+  Duoc, tu cédula de identidad o tu RUT".
+- **Versión de texto simple completa:** cada correo tiene su `.txt` con los mismos datos y enlaces que el
+  `.html`. Los dos salen de `servicios/correos.armar()`, la misma función que usa la previsualización.
+
+Pruebas nuevas (`invitaciones/tests_diseno_correo`): la previsualización es carácter por carácter el correo
+enviado, el texto simple trae fecha, lugar y enlaces, cupos y lista de espera, sesiones, `.ics` (escape, líneas
+de 75 bytes, 404 para invitación y cancelada), Google Calendar en UTC, imagen de 1200x600 sin recortar afiches,
+y que los 7 correos usan la misma base. Quedan 778 pruebas.
+
+### 18.32 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

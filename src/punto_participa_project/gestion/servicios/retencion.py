@@ -6,7 +6,7 @@ completo queda en los respaldos mensuales (servicio respaldo, ver maquinasVirtua
 
 Qué se borra:
 - Las actividades que terminaron antes de la fecha de corte, con todo lo asociado: inscripciones, asistencias,
-  cancelaciones, lista de espera, invitados, acompañantes, correos enviados, turnos del escáner, imagen y su miniatura.
+  cancelaciones, lista de espera, invitados, acompañantes, correos enviados, turnos del escáner, imagen, su miniatura y su versión para correos.
 - Los registros de auditoría anteriores a la fecha de corte (con su IP y navegador).
 No se borran las fichas de los alumnos: para eso está la anonimización (anonimizacion.py).
 
@@ -28,9 +28,9 @@ from datetime import datetime, time, timedelta
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
-from django.template.loader import render_to_string
 from django.utils import timezone
 
+from . import correos
 from ..models import (Acompanante, Actividad, Asistencia, AvisoRetencion, Inscripcion, InscripcionCancelada,
                      Invitado, ListaEspera, LogAuditoria, NotificacionCorreo, TurnoEscaneo, UsuarioSistema)
 
@@ -103,9 +103,7 @@ def _enviar(aviso, tipo, dias=None):
     enviados = 0
     for perfil in administradores():
         try:
-            html = render_to_string('gestion/correos/retencion.html', {**contexto, 'nombre': perfil.user.first_name})
-            texto = (f'{asunto}. Fecha de corte: {aviso.fecha_corte:%d/%m/%Y}. Plazo: {aviso.fecha_programada:%d/%m/%Y}. '
-                     f'Revisa el detalle en el correo HTML o en el Inicio del sistema.')
+            texto, html = correos.armar('retencion', {**contexto, 'nombre': perfil.user.first_name})
             enviados += send_mail(asunto, texto, settings.DEFAULT_FROM_EMAIL, [perfil.user.email],
                                   html_message=html, fail_silently=False)
         except Exception:
@@ -133,7 +131,7 @@ def ejecutar(aviso, usuario):
         limite = _limite(aviso.fecha_corte)
         resumen = calcular(aviso.fecha_corte)
         acts = Actividad.objects.filter(fecha_fin__lt=limite)
-        imagenes = [nombre for a in acts for nombre in (a.imagen.name, a.imagen_miniatura.name) if nombre]
+        imagenes = [nombre for a in acts for nombre in (a.imagen.name, a.imagen_miniatura.name, a.imagen_correo.name) if nombre]
         acts.delete()
         LogAuditoria.objects.filter(fecha_registro__lt=limite).delete()
         aviso.ejecutado = timezone.now()

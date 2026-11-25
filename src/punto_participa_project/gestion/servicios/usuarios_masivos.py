@@ -18,11 +18,11 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.validators import validate_email
 from django.db import transaction
-from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from .importador_alumnos import ArchivoInvalido, leer_filas  # noqa: F401  (ArchivoInvalido se reexporta)
+from . import correos
 from ..models import Rol, UsuarioSistema
 from ..utils import limpiar_texto, normalizar_documento
 
@@ -127,12 +127,8 @@ def enviar_bienvenida(user, rol):
     enlace = enlace_crear_clave(user)
     dias = max(1, round(settings.PASSWORD_RESET_TIMEOUT / 86400))
     try:
-        html = render_to_string('gestion/correos/bienvenida_usuario.html',
-                                {'user': user, 'rol': rol, 'enlace': enlace, 'dias': dias})
-        n = send_mail(subject='Tu cuenta en Punto Participa',
-                      message=(f'Hola {user.first_name}, se creó tu cuenta en Punto Participa con el rol {rol}. '
-                               f'Tu usuario es {user.username}. Crea tu contraseña en {enlace} '
-                               f'(el enlace vence en {dias} día{"s" if dias != 1 else ""}).'),
+        texto, html = correos.armar('bienvenida_usuario', {'user': user, 'rol': rol, 'enlace': enlace, 'dias': dias})
+        n = send_mail(subject='Tu cuenta en Punto Participa', message=texto,
                       from_email=settings.DEFAULT_FROM_EMAIL, recipient_list=[user.email],
                       html_message=html, fail_silently=False)
         return n == 1

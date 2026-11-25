@@ -1,0 +1,9 @@
+{% autoescape off %}Hola {{ user.first_name|default:user.username }},
+
+Recibimos una solicitud para restablecer la contraseña de tu cuenta {{ user.username }}. Restablécela en este enlace:
+{{ enlace }}
+
+Por seguridad, el enlace vence en {{ dias }} día{{ dias|pluralize }}.
+¿No lo pediste tú? Ignora este correo: tu contraseña no cambia mientras nadie use el enlace.
+
+{% include 'gestion/correos/_pie.txt' %}{% endautoescape %}

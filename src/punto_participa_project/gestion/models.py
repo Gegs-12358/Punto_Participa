@@ -199,6 +199,8 @@ class Actividad(models.Model):
     imagen = models.ImageField(upload_to='actividades/', null=True, blank=True)
     # Copia pequeña de la imagen para el escáner (servicios/imagenes.py la crea al guardar)
     imagen_miniatura = models.ImageField(upload_to='actividades/miniaturas/', null=True, blank=True, editable=False)
+    # Versión de 1200x600 para los correos (también la crea servicios/imagenes.py)
+    imagen_correo = models.ImageField(upload_to='actividades/correo/', null=True, blank=True, editable=False)
     cupos_totales = models.IntegerField(null=True, blank=True)
     cupos_disponibles = models.IntegerField(null=True, blank=True)
     fecha_inicio = models.DateTimeField(db_index=True)
@@ -257,6 +259,13 @@ class Actividad(models.Model):
         if self.tipo != 'TALLER':
             return False
         return (self.cupos_disponibles or 0) <= 0
+
+    @property
+    def cupos_ocupados(self):
+        """Cupos tomados de un taller (para la barra de los correos)."""
+        if self.tipo != 'TALLER' or not self.cupos_totales:
+            return 0
+        return max(0, self.cupos_totales - (self.cupos_disponibles or 0))
 
     def recalcular_cupos(self, inscritos_override=None):
         """

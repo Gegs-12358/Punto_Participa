@@ -1,40 +1,17 @@
-<!DOCTYPE html>
-<html lang="es">
+{% extends 'gestion/correos/_base.html' %}
+{% block titulo %}Invitación: {{ actividad.titulo }}{% endblock %}
+{% block preheader %}{% with s=actividad.lista_sesiones.0 %}{{ s.fecha_inicio|date:"l j \d\e F"|capfirst }}, {{ s.fecha_inicio|date:"H:i" }} horas, en {{ actividad.lugar_completo }}.{% endwith %} Confirma si asistirás.{% endblock %}
+{% block banner %}{% include 'gestion/correos/_banner.html' %}{% endblock %}
+{% block contenido %}
+                            {% include 'gestion/correos/_etiqueta.html' with texto='INVITACIÓN' %}
+                            <h1 class="pp-titulo" style="margin: 10px 0 16px; font-size: 24px; line-height: 1.25; color: #002F5F;">Estás invitado a {{ actividad.titulo }}</h1>
+                            <p style="margin: 0 0 14px;">Hola {{ invitado.nombre }},</p>
+                            {% if actividad.descripcion %}<p style="margin: 0 0 20px;">{{ actividad.descripcion|linebreaksbr }}</p>{% endif %}
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invitación: {{ actividad.titulo }}</title>
-</head>
+                            {% include 'gestion/correos/_fechas.html' %}
 
-<body style="margin: 0; font-family: Arial, Helvetica, sans-serif; background-color: #eef2f6; padding: 20px;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; border: 1px solid #dde3ea;">
-        {% include 'gestion/correos/_cabecera.html' %}
-
-        <div style="padding: 28px 30px 24px; color: #1f2d3d;">
-            <span style="display: inline-block; background-color: #FBB800; color: #002F5F; font-size: 11px; font-weight: bold; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 999px;">INVITACIÓN</span>
-            <h2 style="color: #002F5F; margin: 10px 0 16px; font-size: 24px; line-height: 1.25;">Estás invitado a {{ actividad.titulo }}</h2>
-            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Hola {{ invitado.nombre }},</p>
-            {% if actividad.descripcion %}<p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">{{ actividad.descripcion|linebreaksbr }}</p>{% endif %}
-
-            {% include 'gestion/correos/_datos_actividad.html' %}
-
-            <p style="font-size: 16px; line-height: 1.6; margin: 0 0 14px;">Confirma si asistirás{% if actividad.acompanantes_por_invitado %} y registra a tus acompañantes{% endif %}
-                en el siguiente enlace. Es personal: no lo compartas.</p>
-            <div style="text-align: center; margin: 0 0 22px;">
-                <a href="{{ enlace }}"
-                    style="display: inline-block; background-color: #FBB800; color: #002F5F; padding: 14px 32px; text-decoration: none; font-weight: bold; border-radius: 6px; font-size: 16px;">Responder invitación</a>
-            </div>
-            <p style="font-size: 14px; line-height: 1.6; margin: 0 0 14px;">El día de la actividad, muestra tu cédula o la app Vivo Duoc en la entrada.
-                {% if actividad.acompanantes_por_invitado %}Cada acompañante entra con su propio documento.{% endif %}</p>
-
-            <p style="font-size: 12px; line-height: 1.5; color: #6b7785; margin: 0;">
-                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>{{ enlace }}
-            </p>
-        </div>
-
-        {% include 'gestion/correos/_pie.html' %}
-    </div>
-</body>
-
-</html>
+                            <p style="margin: 0 0 18px;">Confirma si asistirás{% if actividad.acompanantes_por_invitado %} y registra a tus acompañantes{% endif %} en el siguiente enlace.</p>
+                            {% include 'gestion/correos/_boton.html' with url=enlace texto='Responder invitación' %}
+                            {% if actividad.acompanantes_por_invitado %}{% include 'gestion/correos/_aviso.html' with titulo='Tu enlace es personal' texto='No lo compartas. El día de la actividad, registra tu asistencia con el encargado, con tu app Vivo Duoc, tu cédula de identidad o tu RUT. Cada acompañante entra con su propio documento.' %}{% else %}{% include 'gestion/correos/_aviso.html' with titulo='Tu enlace es personal' texto='No lo compartas. El día de la actividad, registra tu asistencia con el encargado, con tu app Vivo Duoc, tu cédula de identidad o tu RUT.' %}{% endif %}
+                            {% include 'gestion/correos/_enlace_respaldo.html' with url=enlace %}
+{% endblock %}

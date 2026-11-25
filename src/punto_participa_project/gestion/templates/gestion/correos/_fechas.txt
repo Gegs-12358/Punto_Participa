@@ -1,0 +1,6 @@
+{% with sesiones=actividad.lista_sesiones %}{% if sesiones|length > 1 %}Sesiones:
+{% for s in sesiones %}  {{ s.numero }}. {{ s.fecha_inicio|date:"l j \d\e F"|capfirst }}, {{ s.fecha_inicio|date:"H:i" }} a {{ s.fecha_fin|date:"H:i" }} horas
+{% endfor %}{% else %}{% with s=sesiones.0 %}Fecha: {{ s.fecha_inicio|date:"l j \d\e F \d\e Y"|capfirst }}
+Horario: {{ s.fecha_inicio|date:"H:i" }} a {{ s.fecha_fin|date:"H:i" }} horas
+{% endwith %}{% endif %}Lugar: {{ actividad.lugar_completo }}, Duoc UC Sede Alameda{% if actividad.tipo == 'INVITACION' and actividad.acompanantes_por_invitado %}
+Acompañantes: puedes venir con hasta {{ actividad.acompanantes_por_invitado }}.{% endif %}{% endwith %}

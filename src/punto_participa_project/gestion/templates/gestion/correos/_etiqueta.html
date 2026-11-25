@@ -1,0 +1,4 @@
+{# Etiqueta sobre el título (TALLER, INVITACIÓN...). Variables: texto y, opcional, alerta (rojo). #}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+    <td bgcolor="{% if alerta %}#b42318{% else %}#FBB800{% endif %}" style="background-color: {% if alerta %}#b42318{% else %}#FBB800{% endif %}; border-radius: 999px; padding: 3px 10px; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; letter-spacing: 0.5px; color: {% if alerta %}#ffffff{% else %}#002F5F{% endif %};">{{ texto }}</td>
+</tr></table>

@@ -66,12 +66,20 @@ _TRAZOS = {
 
 
 @register.simple_tag
-def url_absoluta(ruta):
-    """Dirección completa (con SITE_URL) para los correos: un enlace o imagen relativa no sirve fuera del sitio."""
+def url_absoluta(ruta, base=''):
+    """Dirección completa para los correos: un enlace o imagen relativa no sirve fuera del sitio. Usa `base` (el
+    site_url del contexto del correo) o, si no viene, SITE_URL."""
     from django.conf import settings
     if not ruta or str(ruta).startswith(('http://', 'https://')):
         return ruta or ''
-    return settings.SITE_URL.rstrip('/') + '/' + str(ruta).lstrip('/')
+    return (base or settings.SITE_URL).rstrip('/') + '/' + str(ruta).lstrip('/')
+
+
+@register.simple_tag
+def enlace_google_calendar(actividad, sesion):
+    """Enlace que abre Google Calendar con la sesión lista para guardar (correos)."""
+    from ..servicios.calendario import enlace_google
+    return enlace_google(actividad, sesion)
 
 
 @register.simple_tag

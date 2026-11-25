@@ -97,7 +97,7 @@ class CorreoVerDetallesTests(TestCase):
         self.assertIn('Ver detalles', html)
         self.assertNotIn('/taller/', html)
         self.assertNotIn('Inscribirme', html)
-        self.assertIn('no requiere inscripción', html)
+        self.assertIn('No necesitas inscribirte', html)
 
     def test_el_taller_no_cambia(self):
         taller = crear_actividad('TALLER')
