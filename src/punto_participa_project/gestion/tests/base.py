@@ -41,6 +41,22 @@ class SilenciarRegistros:
         logging.disable(logging.NOTSET)
 
 
+class HorarioAbierto:
+    """Para las pruebas del escáner que no tratan del horario de registro: lo deja siempre abierto
+    (servicios/horario_registro.py). El horario se prueba en escaner/tests_horario."""
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        from unittest import mock
+        cls._parche_horario = mock.patch('gestion.servicios.horario_registro.abierta', return_value=True)
+        cls._parche_horario.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._parche_horario.stop()
+        super().tearDownClass()
+
+
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 class BaseSistemaTestCase(TestCase):
     """Datos comunes para los escenarios integrales."""

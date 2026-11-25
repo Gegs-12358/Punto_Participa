@@ -25,7 +25,7 @@ from ...forms import ActividadForm
 from ...models import Actividad, AvisoRetencion
 from ...servicios import imagenes
 from ...servicios.retencion import ciclo
-from ..base import BaseSistemaTestCase
+from ..base import BaseSistemaTestCase, HorarioAbierto
 
 
 class ConMediaPropia(BaseSistemaTestCase):
@@ -94,7 +94,7 @@ class ImagenAlSubirTests(ConMediaPropia):
         self.assertEqual(resultado.getpixel((0, 0))[3], 0)
 
 
-class MiniaturaTests(ConMediaPropia):
+class MiniaturaTests(HorarioAbierto, ConMediaPropia):
     def con_imagen(self, datos, nombre='portada.jpg', actividad=None):
         actividad = actividad or self.actividad_masiva
         actividad.imagen = ContentFile(datos, name=nombre)

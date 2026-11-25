@@ -5084,6 +5084,37 @@ a.mini-stat:focus-visible {
     text-align: center;
 }
 
+/* Separador de las actividades fuera de horario (solo Administrador y creador: para corregir) */
+.elegir-actividad__grupo {
+    margin: 14px 0 6px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.elegir-actividad__opcion--fuera {
+    opacity: 0.85;
+}
+
+/* Escáner fuera del horario de registro (una hora antes hasta una hora después de cada sesión) */
+.aviso-horario {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-left: 4px solid var(--red);
+    border-radius: 6px;
+    background: var(--red-soft);
+    color: var(--text, #1f2d3d);
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.aviso-horario--correccion {
+    border-left-color: #FBB800;
+    background: #fff3d0;
+}
+
 /* Íconos del menú principal */
 .main-nav a .icono {
     width: 16px;

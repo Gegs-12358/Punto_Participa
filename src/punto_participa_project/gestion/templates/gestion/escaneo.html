@@ -53,8 +53,26 @@
             <p class="text-muted">Escanea el código QR de la cédula o escribe el RUT o pasaporte y presiona Enter.</p>
 
             <div class="scanner-status">
-                <span class="badge">Listo para escanear</span>
+                {% if horario.abierto %}<span class="badge">Listo para escanear</span>
+                {% elif horario.corrige %}<span class="badge draft">Fuera de horario: corrección</span>
+                {% else %}<span class="badge inactive">Registro cerrado</span>{% endif %}
             </div>
+            {% if not horario.abierto %}
+            <div class="aviso-horario{% if horario.corrige %} aviso-horario--correccion{% endif %}" role="status">
+                {% if horario.corrige %}
+                <strong>Estás fuera del horario de registro.</strong>
+                Como {% if user_es_admin %}Administrador{% else %}creador de esta actividad{% endif %} puedes corregir:
+                cada registro queda en la auditoría como "Registro fuera de horario".
+                {% elif horario.antes %}
+                <strong>El registro todavía no abre.</strong>
+                Empieza el {{ horario.desde|date:"d/m" }} a las {{ horario.desde|date:"H:i" }}, una hora antes de la actividad.
+                {% else %}
+                <strong>El registro de esta actividad ya cerró</strong>
+                (era hasta el {{ horario.hasta|date:"d/m" }} a las {{ horario.hasta|date:"H:i" }}, una hora después de terminar).
+                Si falta registrar a alguien, pídeselo al Administrador o a quien creó la actividad.
+                {% endif %}
+            </div>
+            {% endif %}
 
             <form id="formEscaneo" autocomplete="off">
                 {% csrf_token %}
@@ -196,17 +214,36 @@
                         <img class="elegir-actividad__mini" src="{{ actividad.url_miniatura }}" alt="" width="44" height="44" loading="lazy" decoding="async">
                         <strong>{{ actividad.titulo }}</strong>
                         <small>
-                            {% if actividad.en_curso %}<span class="badge">En curso</span>{% endif %}
+                            {% if actividad.en_curso %}<span class="badge">En curso</span>
+                            {% elif actividad.registro_abierto %}<span class="badge">Registro abierto</span>
+                            {% elif actividad.abre %}<span class="badge draft">Abre {{ actividad.abre|date:"d/m H:i" }}</span>{% endif %}
                             {% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %}<span class="badge draft">Tu turno actual</span>{% endif %}
                             {{ actividad.get_tipo_display }}, {{ actividad.fecha_inicio|date:"d/m/Y H:i" }}, {{ actividad.lugar_completo }}
                         </small>
                     </button>
                     {% empty %}
-                    <p class="elegir-actividad__vacio">No hay actividades activas.</p>
+                    <p class="elegir-actividad__vacio">No hay actividades con el registro abierto ni que abran en las próximas 24 horas.</p>
                     {% endfor %}
+                    {% if actividades_fuera_de_horario %}
+                    <p class="elegir-actividad__grupo" role="presentation">Fuera de horario, solo para corregir</p>
+                    {% for actividad in actividades_fuera_de_horario %}
+                    <button type="submit" name="actividad_id" value="{{ actividad.id }}" role="listitem"
+                        class="elegir-actividad__opcion elegir-actividad__opcion--fuera{% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %} es-actual{% endif %}"
+                        data-buscar="{{ actividad.titulo|lower }} {{ actividad.lugar_completo|lower }}">
+                        <img class="elegir-actividad__mini" src="{{ actividad.url_miniatura }}" alt="" width="44" height="44" loading="lazy" decoding="async">
+                        <strong>{{ actividad.titulo }}</strong>
+                        <small>
+                            <span class="badge inactive">{% if actividad.fecha_fin < ahora %}Terminó{% else %}Aún no abre{% endif %}</span>
+                            {% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %}<span class="badge draft">Tu turno actual</span>{% endif %}
+                            {{ actividad.get_tipo_display }}, {{ actividad.fecha_inicio|date:"d/m/Y H:i" }}, {{ actividad.lugar_completo }}
+                        </small>
+                    </button>
+                    {% endfor %}
+                    {% endif %}
                     <p class="elegir-actividad__vacio" id="sinCoincidencias" hidden>Ninguna actividad coincide con la búsqueda.</p>
                 </div>
-                <small class="input-help">Solo aparecen las actividades activas, primero las que están en curso.
+                <small class="input-help">Aparecen las actividades con el registro abierto (desde una hora antes hasta
+                    una hora después) y las que abren en las próximas 24 horas, primero las que están en curso.
                     Al elegir otra, termina tu turno actual y empieza uno nuevo.</small>
             </div>
             <footer class="modal-footer">

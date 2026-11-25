@@ -1162,7 +1162,34 @@ izquierda y no tienen texto, porque el tipo y el título ya aparecen encima o de
 Pruebas: los nueve archivos existen con su tamaño y formato, cada tipo usa la suya, no se copia a la actividad,
 y la usan el correo, la portada y el escáner. Quedan 781 pruebas.
 
-### 18.33 Pendiente
+### 18.33 Horario de registro en el escáner (25/11/2026)
+
+La lista para elegir actividad mostraba todas las activas, también las que terminaron hace semanas: nada pasa
+una actividad a "Finalizada" al cumplirse su fecha, así que se acumulaban. Y el escáner aceptaba registros a
+cualquier hora, incluso días después. Decisión del jefe de proyecto: se registra desde **una hora antes** hasta
+**una hora después** de cada sesión, y fuera de ese rango solo corrigen el **Administrador** o el **creador de
+la actividad**.
+
+- `servicios/horario_registro.py` tiene la regla (margen en `REGISTRO_MARGEN_MINUTOS`, 60 por defecto). En las
+  de varias sesiones vale la sesión en que se registra.
+- **Lista para elegir:** las que tienen el registro abierto (primero las en curso) y las que lo abren en las
+  próximas 24 horas, con la hora en que abren. Al Administrador (todas) y al creador (las suyas) se les muestran
+  aparte las demás activas, en "Fuera de horario, solo para corregir", la más reciente primero. El Encargado de
+  Registrar no puede elegir una actividad fuera de esa lista.
+- **Al escanear fuera de horario:** el Encargado recibe un aviso con el horario ("El registro todavía no abre:
+  empieza el 26/11 a las 08:30" o "ya cerró: era hasta..."). El Administrador o el creador registran igual y la
+  auditoría lo guarda como "Registro fuera de horario", con la palabra "Corrección". Vale también para las
+  actividades con invitación (invitados, acompañantes y "Agregar en la entrada").
+- La pantalla del escáner avisa el estado: "Listo para escanear", "Fuera de horario: corrección" o "Registro
+  cerrado", con una franja que explica qué hacer.
+
+Pruebas nuevas en `escaner/tests_horario` (margen de una hora a cada lado, varias sesiones, qué ve cada rol en
+la lista, que el Encargado no puede elegir una terminada, aviso antes y después, registro normal dentro del
+margen, corrección del Administrador y del creador con auditoría, y que el creador no corrige actividades de
+otros). Las pruebas del escáner que no tratan del horario lo dejan abierto con `HorarioAbierto` (tests/base.py).
+Quedan 793 pruebas.
+
+### 18.34 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

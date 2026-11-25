@@ -15,7 +15,7 @@ from django.utils import timezone
 
 from ...models import (Acompanante, Actividad, Alumno, Asistencia, AsistenciaSesion, Inscripcion, Invitado,
                        LogAuditoria, Sesion)
-from ..base import BaseSistemaTestCase
+from ..base import BaseSistemaTestCase, HorarioAbierto
 from ..invitaciones.tests_lista import BaseInvitadosTests, rut
 
 URL = reverse('escaneo')
@@ -157,7 +157,7 @@ class ConversionDeDatosExistentesTests(TestCase):
         self.assertEqual(registros.get(invitado=inv).metodo_ingreso, 'RUT')
 
 
-class EscanerVariasSesionesTests(BaseSistemaTestCase):
+class EscanerVariasSesionesTests(HorarioAbierto, BaseSistemaTestCase):
     def setUp(self):
         self.s1, self.s2, self.s3 = con_sesiones(self.actividad_masiva, [
             (a_las(-7, 10), a_las(-7, 12)),
@@ -247,7 +247,7 @@ class EscanerVariasSesionesTests(BaseSistemaTestCase):
         self.assertEqual(self.escanear().json()['message'], 'La asistencia ya fue registrada anteriormente.')
 
 
-class EscanerInvitacionVariasSesionesTests(BaseInvitadosTests):
+class EscanerInvitacionVariasSesionesTests(HorarioAbierto, BaseInvitadosTests):
     def setUp(self):
         self.act = self.actividad_invitacion(acompanantes_por_invitado=1)
         self.s1, self.s2 = con_sesiones(self.act, [

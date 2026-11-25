@@ -21,6 +21,8 @@ from django.views.decorators.http import require_GET
 
 from ..decorators import role_required
 from ..models import Actividad, Asistencia, AsistenciaSesion, Inscripcion, TurnoEscaneo
+from ..permissions import tiene_rol
+from ..servicios import horario_registro
 from ..servicios import sesiones as servicio_sesiones
 from ..utils import buscar_alumno_por_documento, formatear_rut, id_o_none, limpiar_documento
 
@@ -245,10 +247,25 @@ def _procesar_escaneo(request):
         _terminar_turno(request)
         return _error_json('La actividad no existe o ya no está activa.', 404)
 
+    # ============================================================
+    # HORARIO: una hora antes hasta una hora después de la sesión (servicios/horario_registro.py)
+    # ============================================================
+    sesion_horario = _sesion_escaneo(request, actividad)
+    correccion = False
+    if not horario_registro.abierta(sesion_horario):
+        if not horario_registro.puede_corregir(request.user, actividad):
+            return _error_json(horario_registro.mensaje_cerrado(sesion_horario), 403)
+        correccion = True
+
     # Con invitación: entran invitados y acompañantes de la lista (pueden no estar en la nómina)
     if actividad.tipo == 'INVITACION':
         from . import escaner_invitacion
-        return escaner_invitacion.procesar(request, actividad, metodo, rut_procesado, confirmar)
+        respuesta = escaner_invitacion.procesar(request, actividad, metodo, rut_procesado, confirmar)
+        if correccion and confirmar and respuesta.status_code == 200:
+            registrar_log(request, 'Escáner', 'Registro fuera de horario',
+                          f'Corrección en "{actividad.titulo}": registro de {rut_procesado} fuera del horario '
+                          f'de la sesión {sesion_horario.numero}.', 'Actividad', actividad.id, actividad.titulo)
+        return respuesta
 
     # ============================================================
     # BUSCAR ALUMNO — Usando helper global
@@ -335,8 +352,10 @@ def _procesar_escaneo(request):
                     metodo_ingreso=metodo,
                     registrado_por=request.user
                 )
-            registrar_log(request, 'Escáner', 'Registro de asistencia',
-                          f'{alumno.nombres} {alumno.apellidos} - {actividad.titulo}'
+            registrar_log(request, 'Escáner',
+                          'Registro fuera de horario' if correccion else 'Registro de asistencia',
+                          ('Corrección: ' if correccion else '')
+                          + f'{alumno.nombres} {alumno.apellidos} - {actividad.titulo}'
                           + (f' ({texto_sesion.lower()})' if texto_sesion else ''),
                           'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
 
@@ -364,22 +383,36 @@ def _procesar_escaneo(request):
     })
 
 
-def _actividades_para_escanear():
-    """Actividades activas, para los tres roles (también el Creador de Evento ve las de otros: el equipo del
-    Punto se reparte el registro). Primero las que están en curso, luego las próximas (la más cercana
-    primero) y al final las que ya terminaron pero siguen activas."""
+def _actividades_para_escanear(user):
+    """
+    Actividades para elegir en el escáner (servicios/horario_registro.py): las que tienen el registro abierto
+    (primero las en curso) y las que lo abren en las próximas 24 horas. El Creador de Evento también ve las de
+    otros: el equipo del Punto se reparte el registro. Devuelve (disponibles, fuera_de_horario); la segunda lista
+    son las demás actividades activas que el usuario puede corregir (Administrador: todas; Creador: las suyas),
+    la más reciente primero.
+    """
     ahora = timezone.now()
-    actividades = list(Actividad.objects.filter(estado='ACTIVA').prefetch_related('sesiones'))
+    actividades = list(Actividad.objects.filter(estado='ACTIVA').select_related('creado_por')
+                       .prefetch_related('sesiones'))
+    disponibles, fuera = [], []
     for a in actividades:
         # En las de varias sesiones, "en curso" es que una de sus sesiones está en curso ahora
         a.en_curso = a.sesion_en_curso(ahora)
+        a.registro_abierto = horario_registro.actividad_abierta(a, ahora)
+        a.abre = None if a.registro_abierto else horario_registro.proxima_apertura(a, ahora)
+        if a.registro_abierto or (a.abre and a.abre - ahora <= horario_registro.PROXIMAS):
+            disponibles.append(a)
+        elif horario_registro.puede_corregir(user, a):
+            fuera.append(a)
+
     def orden(a):
         if a.en_curso:
             return (0, a.fecha_inicio.timestamp())
-        if a.fecha_inicio > ahora:
+        if a.registro_abierto:
             return (1, a.fecha_inicio.timestamp())
-        return (2, -a.fecha_fin.timestamp())
-    return sorted(actividades, key=orden)
+        return (2, a.abre.timestamp())
+    fuera.sort(key=lambda a: -a.fecha_fin.timestamp())
+    return sorted(disponibles, key=orden), fuera
 
 
 @login_required
@@ -396,6 +429,9 @@ def escaneo(request):
                 return redirect('escaneo')
             try:
                 actividad = Actividad.objects.get(pk=actividad_id, estado='ACTIVA')
+                disponibles, fuera = _actividades_para_escanear(request.user)
+                if not any(a.pk == actividad.pk for a in disponibles + fuera):
+                    raise Actividad.DoesNotExist
                 # Sin aviso emergente: taparía el campo y la pistola escribiría en ninguna parte.
                 # La pantalla ya muestra la actividad y la hora de inicio del turno.
                 if (request.session.get('actividad_escaneo_id') != actividad.id
@@ -456,12 +492,17 @@ def escaneo(request):
         _iniciar_turno(request, actividad)
 
     sesion = _sesion_escaneo(request, actividad) if actividad else None
+    disponibles, fuera = _actividades_para_escanear(request.user)
     return render(request, 'gestion/escaneo.html', {
         'actividad_seleccionada': actividad,
         'sesion_escaneo': sesion,
         'sesiones': actividad.lista_sesiones() if actividad else [],
         'contador': _contador_escaneo(request, actividad) if actividad else None,
-        'actividades_disponibles': _actividades_para_escanear(),
+        'horario': horario_registro.estado(request.user, actividad, sesion) if actividad else None,
+        'actividades_disponibles': disponibles,
+        'actividades_fuera_de_horario': fuera,
+        'user_es_admin': tiene_rol(request.user, ['Administrador']),
+        'ahora': timezone.now(),
     })
 
 

@@ -17,7 +17,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ...models import Actividad, Alumno, Asistencia, Inscripcion, LogAuditoria
-from ..base import BaseSistemaTestCase, SilenciarRegistros
+from ..base import BaseSistemaTestCase, HorarioAbierto, SilenciarRegistros
 
 
 class CargaControladaTests(SilenciarRegistros, BaseSistemaTestCase):
@@ -144,7 +144,7 @@ class CargaControladaTests(SilenciarRegistros, BaseSistemaTestCase):
         self.assertGreater(len(response.content), 100)
 
 
-class RollbackTransaccionalTests(SilenciarRegistros, BaseSistemaTestCase):
+class RollbackTransaccionalTests(HorarioAbierto, SilenciarRegistros, BaseSistemaTestCase):
     def test_falla_de_auditoria_no_tumba_la_inscripcion(self):
         cupos_iniciales = self.actividad.cupos_disponibles
         with patch(

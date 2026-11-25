@@ -10,7 +10,7 @@ from django.apps import apps as django_apps
 from django.urls import reverse
 
 from ...models import Alumno, Asistencia, Carrera, Escuela, foto_academica, Inscripcion
-from ..base import BaseSistemaTestCase
+from ..base import BaseSistemaTestCase, HorarioAbierto
 
 
 INFORMATICA = 'Escuela de Informática y Telecomunicaciones'
@@ -83,7 +83,7 @@ class FotoNoCambiaTests(BaseSistemaTestCase):
         self.assertEqual(insc.carrera, 'Ingeniería en Informática')
 
 
-class FotoDesdeLasPantallasTests(BaseSistemaTestCase):
+class FotoDesdeLasPantallasTests(HorarioAbierto, BaseSistemaTestCase):
     def test_inscripcion_publica_guarda_la_foto(self):
         self.client.post(reverse('inscripcion_taller', args=[self.actividad.pk]),
                          {'rut': '20.001.550-9', 'acepta_politica': 'on'})

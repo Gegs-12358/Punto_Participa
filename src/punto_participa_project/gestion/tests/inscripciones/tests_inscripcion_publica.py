@@ -14,7 +14,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ...models import Asistencia, Inscripcion, LogAuditoria
-from ..base import BaseSistemaTestCase
+from ..base import BaseSistemaTestCase, HorarioAbierto
 
 
 def crear_actividad(tipo='MASIVA', estado='ACTIVA', dias=2):
@@ -159,7 +159,7 @@ class EstadosYCuposTests(BaseSistemaTestCase):
         self.assertFalse(Asistencia.objects.filter(actividad=self.actividad_masiva).exists())
 
 
-class InscripcionYAsistenciaIntegralTests(BaseSistemaTestCase):
+class InscripcionYAsistenciaIntegralTests(HorarioAbierto, BaseSistemaTestCase):
     def test_inscripcion_publica_get_muestra_taller_disponible(self):
         response = self.client.get(
             reverse("inscripcion_taller", args=[self.actividad.pk])

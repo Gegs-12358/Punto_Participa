@@ -9,7 +9,7 @@ from django.urls import reverse
 
 from ...models import Asistencia, Inscripcion
 from ...views.escaner import _parse_rut_escaneo
-from ..base import BaseSistemaTestCase, SilenciarRegistros
+from ..base import BaseSistemaTestCase, HorarioAbierto, SilenciarRegistros
 
 
 class ParseRutEscaneoTests(SilenciarRegistros, TestCase):
@@ -29,7 +29,7 @@ class ParseRutEscaneoTests(SilenciarRegistros, TestCase):
                 self.assertEqual(tuple(_parse_rut_escaneo(texto)), esperado)
 
 
-class ProcesarEscaneoTests(SilenciarRegistros, BaseSistemaTestCase):
+class ProcesarEscaneoTests(HorarioAbierto, SilenciarRegistros, BaseSistemaTestCase):
     """Prueba _procesar_escaneo a través de la vista escaneo."""
 
     def seleccionar_actividad(self, actividad=None):
@@ -103,7 +103,7 @@ class ProcesarEscaneoTests(SilenciarRegistros, BaseSistemaTestCase):
         self.assertEqual(asistencia.metodo_ingreso, 'QR')
 
 
-class EscanerFormatosYSesionTests(BaseSistemaTestCase):
+class EscanerFormatosYSesionTests(HorarioAbierto, BaseSistemaTestCase):
    
     def test_escaneo_por_qr_detecta_metodo_qr(self):
         self.seleccionar_actividad()

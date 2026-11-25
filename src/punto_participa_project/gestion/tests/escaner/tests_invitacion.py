@@ -7,6 +7,7 @@ Correr solo este archivo:
 from django.urls import reverse
 
 from ...models import Acompanante, Alumno, Asistencia, Invitado, LogAuditoria
+from ..base import HorarioAbierto
 from ..invitaciones.tests_lista import BaseInvitadosTests, rut
 
 
@@ -22,7 +23,7 @@ ACOMP = rut(18000001)
 DESCONOCIDO = rut(18000009)
 
 
-class BaseEscanerInvitacionTests(BaseInvitadosTests):
+class BaseEscanerInvitacionTests(HorarioAbierto, BaseInvitadosTests):
     def setUp(self):
         self.act = self.actividad_invitacion(acompanantes_por_invitado=1)
         self.juan = Invitado.objects.create(actividad=self.act, alumno=self.alumno, rut='200015509',

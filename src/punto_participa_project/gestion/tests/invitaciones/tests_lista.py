@@ -16,7 +16,7 @@ from ...forms import ActividadForm
 from ...management.commands.seed_data import calcular_dv
 from ...models import Actividad, Alumno, Asistencia, Invitado, LogAuditoria, NotificacionCorreo
 from ...servicios.invitados import analizar, aplicar, leer
-from ..base import BaseSistemaTestCase
+from ..base import BaseSistemaTestCase, HorarioAbierto
 
 
 def rut(cuerpo):
@@ -291,7 +291,7 @@ class PantallaInvitadosTests(BaseInvitadosTests):
 
 
 @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
-class SeguridadTests(BaseInvitadosTests):
+class SeguridadTests(HorarioAbierto, BaseInvitadosTests):
     def setUp(self):
         self.act = self.actividad_invitacion()
 

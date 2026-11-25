@@ -26,7 +26,7 @@ from django.urls import reverse
 from ...decorators import ajax_required, method_required, role_required
 from ...models import Asistencia, Inscripcion, LogAuditoria, Rol, UsuarioSistema
 from ...permissions import tiene_rol
-from ..base import BaseSistemaTestCase
+from ..base import BaseSistemaTestCase, HorarioAbierto
 
 #   pantalla, argumentos                                 anónimo   admin  creador  registrador
 MATRIZ = [
@@ -114,7 +114,7 @@ class MatrizDePermisosTests(BaseSistemaTestCase):
                     self.assertEqual(self.client.get(reverse(pantalla)).status_code, 302)
 
 
-class FlujosPorRolTests(BaseSistemaTestCase):
+class FlujosPorRolTests(HorarioAbierto, BaseSistemaTestCase):
     """Acciones que cambian datos, hechas por el rol que corresponde."""
 
     def test_registrador_registra_asistencia_en_actividad_masiva(self):

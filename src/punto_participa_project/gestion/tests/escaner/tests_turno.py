@@ -17,7 +17,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from ...models import Actividad, Asistencia, Inscripcion, LogAuditoria, TurnoEscaneo
-from ..base import BaseSistemaTestCase
+from ..base import BaseSistemaTestCase, HorarioAbierto
 
 
 URL = reverse('escaneo')
@@ -26,7 +26,7 @@ URL = reverse('escaneo')
 URL_CONTADOR = reverse('escaneo_contador')
 
 
-class BaseTurnoTests(BaseSistemaTestCase):
+class BaseTurnoTests(HorarioAbierto, BaseSistemaTestCase):
     def elegir(self, actividad, usuario=None):
         self.client.force_login(usuario or self.registrador)
         return self.client.post(URL, {'cambiar_actividad': '1', 'actividad_id': actividad.pk}, follow=True)
@@ -301,12 +301,6 @@ class EscanerCasosBordeTests(BaseTurnoTests):
         r = self.client.post(URL, {'rut': "'"})
         self.assertEqual((r.status_code, r.json()['message']), (400, 'Debes ingresar un RUT o Pasaporte válido.'))
 
-    def test_las_que_ya_terminaron_pero_siguen_activas_van_al_final(self):
-        ahora = timezone.now()
-        Actividad.objects.filter(pk=self.actividad_otro.pk).update(
-            fecha_inicio=ahora - timedelta(days=3), fecha_fin=ahora - timedelta(days=3, hours=-2))
-        lista = self.client.get(URL).context['actividades_disponibles']
-        self.assertEqual(lista[-1].pk, self.actividad_otro.pk)
 
 
 
