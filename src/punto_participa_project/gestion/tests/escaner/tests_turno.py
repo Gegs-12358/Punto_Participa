@@ -340,9 +340,11 @@ class OrdenDeLaPantallaTests(BaseTurnoTests):
         Image.new('RGB', (40, 20), (0, 80, 160)).save(salida, 'JPEG')
         self.actividad_masiva.imagen = SimpleUploadedFile('portada.jpg', salida.getvalue(), content_type='image/jpeg')
         self.actividad_masiva.save()
+        self.actividad_masiva.refresh_from_db()
         resp = self.elegir(self.actividad_masiva)
         self.assertContains(resp, 'class="turno__imagen"')
-        self.assertContains(resp, self.actividad_masiva.imagen.url)
+        # usa la miniatura liviana, no la imagen completa
+        self.assertContains(resp, self.actividad_masiva.imagen_miniatura.url)
 
     def test_sin_imagen_no_hay_miniatura(self):
         self.assertNotContains(self.elegir(self.actividad_masiva), 'turno__imagen')

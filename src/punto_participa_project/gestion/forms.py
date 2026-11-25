@@ -8,6 +8,7 @@ from django.db.models import Q
 
 from .models import Actividad, Carrera, Escuela, Lugar
 from .utils import limpiar_texto
+from .servicios import imagenes
 import io
 from PIL import Image
 from django.core.files.base import ContentFile
@@ -475,8 +476,10 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
         1. Rechaza archivos demasiado grandes.
         2. Verifica que el CONTENIDO sea realmente una imagen válida en un
            formato permitido (no solo que el nombre termine en .jpg).
-        3. Si es una imagen nueva, la reconstruye sin metadatos EXIF
-           (ubicación GPS, fecha, modelo de cámara, etc.).
+        3. Si es una imagen nueva, la gira según la orientación de la cámara, la
+           reconstruye sin metadatos EXIF (ubicación GPS, fecha, modelo de cámara)
+           y la achica a 1600 px por su lado mayor si es más grande.
+        La miniatura para el escáner la crea servicios/imagenes.py al guardar.
         No reemplaza un antivirus. ClamAV queda como mejora futura (ver backlog).
         """
         imagen = self.cleaned_data.get('imagen')
@@ -517,20 +520,10 @@ class ActividadForm(LimpiarTextoMixin, forms.ModelForm):
             imagen.seek(0)
             return imagen
 
-        # 3. Reconstruir la imagen sin metadatos EXIF
+        # 3. Girarla según la orientación de la cámara, quitarle los metadatos EXIF y achicarla
+        #    si es más grande de lo que se muestra (servicios/imagenes.py)
         try:
-            datos_pixeles = list(img.getdata())
-            imagen_limpia = Image.new(img.mode, img.size)
-            imagen_limpia.putdata(datos_pixeles)
-
-            buffer = io.BytesIO()
-            opciones_guardado = {}
-            if formato in ('JPEG', 'WEBP'):
-                opciones_guardado['quality'] = 90
-            imagen_limpia.save(buffer, format=formato, **opciones_guardado)
-            buffer.seek(0)
-
-            imagen = ContentFile(buffer.read(), name=imagen.name)
+            imagen = ContentFile(imagenes.preparar(img, formato), name=imagen.name)
         except Exception:
             # Si falla la limpieza de metadatos, usar la imagen original
             # ya validada en los pasos 1 y 2 (no bloquear por esto)

@@ -4989,7 +4989,10 @@ a.mini-stat:focus-visible {
 
 .elegir-actividad__opcion {
     display: grid;
-    gap: 3px;
+    grid-template-columns: 44px 1fr;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 3px;
     width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--line);
@@ -5029,6 +5032,33 @@ a.mini-stat:focus-visible {
 
 .elegir-actividad__opcion .badge {
     margin-right: 4px;
+}
+
+/* Miniatura de la actividad (servicios/imagenes.py): ocupa las dos líneas a la izquierda */
+.elegir-actividad__opcion strong,
+.elegir-actividad__opcion small {
+    grid-column: 2;
+}
+
+.elegir-actividad__mini {
+    grid-row: 1 / span 2;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid var(--line);
+}
+
+.elegir-actividad__mini--vacia {
+    display: grid;
+    place-items: center;
+    background: var(--surface);
+    color: var(--muted);
+}
+
+.elegir-actividad__mini--vacia svg {
+    width: 20px;
+    height: 20px;
 }
 
 .elegir-actividad__vacio {

@@ -156,7 +156,7 @@ class CleanImagenTests(TestCase):
 
     def test_si_falla_la_limpieza_se_usa_la_imagen_original(self):
         archivo = _archivo("PNG", "foto.png")
-        with mock.patch("gestion.forms.Image.new", side_effect=OSError("falla")):
+        with mock.patch("gestion.servicios.imagenes.Image.new", side_effect=OSError("falla")):
             resultado = _limpiar(archivo)
         self.assertIs(resultado, archivo)
 

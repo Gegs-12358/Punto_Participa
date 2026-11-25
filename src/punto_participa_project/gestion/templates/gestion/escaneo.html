@@ -61,7 +61,9 @@
             <div id="resultado" aria-live="polite"></div>
         </div>
         <section class="turno" aria-label="Turno de escaneo">
-            {% if actividad_seleccionada.imagen %}
+            {% if actividad_seleccionada.imagen_miniatura %}
+            <img class="turno__imagen" src="{{ actividad_seleccionada.imagen_miniatura.url }}" alt="" width="64" height="64">
+            {% elif actividad_seleccionada.imagen %}
             <img class="turno__imagen" src="{{ actividad_seleccionada.imagen.url }}" alt="" width="64" height="64">
             {% endif %}
             <div class="turno__actividad">
@@ -193,6 +195,11 @@
                     <button type="submit" name="actividad_id" value="{{ actividad.id }}" role="listitem"
                         class="elegir-actividad__opcion{% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %} es-actual{% endif %}"
                         data-buscar="{{ actividad.titulo|lower }} {{ actividad.lugar_completo|lower }}">
+                        {% if actividad.imagen_miniatura %}
+                        <img class="elegir-actividad__mini" src="{{ actividad.imagen_miniatura.url }}" alt="" width="44" height="44" loading="lazy" decoding="async">
+                        {% else %}
+                        <span class="elegir-actividad__mini elegir-actividad__mini--vacia" aria-hidden="true">{% icono "actividad" %}</span>
+                        {% endif %}
                         <strong>{{ actividad.titulo }}</strong>
                         <small>
                             {% if actividad.en_curso %}<span class="badge">En curso</span>{% endif %}

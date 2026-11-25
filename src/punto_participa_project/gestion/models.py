@@ -197,6 +197,8 @@ class Actividad(models.Model):
     # Número de sala cuando el lugar lo pide ("102", "1203"). Vacío en los demás lugares.
     lugar_numero = models.CharField(max_length=10, blank=True, default='')
     imagen = models.ImageField(upload_to='actividades/', null=True, blank=True)
+    # Copia pequeña de la imagen para el escáner (servicios/imagenes.py la crea al guardar)
+    imagen_miniatura = models.ImageField(upload_to='actividades/miniaturas/', null=True, blank=True, editable=False)
     cupos_totales = models.IntegerField(null=True, blank=True)
     cupos_disponibles = models.IntegerField(null=True, blank=True)
     fecha_inicio = models.DateTimeField(db_index=True)

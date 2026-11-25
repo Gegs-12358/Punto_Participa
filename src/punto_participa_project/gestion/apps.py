@@ -9,3 +9,5 @@ class GestionConfig(AppConfig):
     def ready(self):
         # Señales que mantienen las sesiones y la asistencia por sesión (servicios/sesiones.py)
         from .servicios import sesiones  # noqa: F401
+        # Miniatura de la imagen de cada actividad (servicios/imagenes.py)
+        from .servicios import imagenes  # noqa: F401

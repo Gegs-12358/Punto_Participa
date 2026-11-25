@@ -1054,7 +1054,28 @@ La tarjeta del turno muestra la imagen de la actividad como miniatura, para conf
 registrando en la correcta. Sin imagen, la tarjeta queda como antes. No cambia nada de lo que hace el escáner.
 Pruebas en `escaner/tests_turno` (orden de la pantalla y miniatura). Quedan 742 pruebas.
 
-### 18.28 Pendiente
+### 18.28 Imágenes livianas y miniaturas (25/11/2026)
+
+La imagen de cada actividad se guardaba en su tamaño original (hasta 5 MB). Las páginas públicas la descargaban
+completa, y mostrar miniaturas en el escáner habría obligado a bajar todas las imágenes enteras.
+
+- **Al subirla** (`ActividadForm.clean_imagen`, `servicios/imagenes.py`): se gira según la orientación de la cámara
+  (antes una foto vertical de celular podía quedar acostada), se le quitan los metadatos como antes y, si es más
+  grande, se achica a 1600 px por su lado mayor. Una foto de celular de varios MB queda en unos cientos de KB, sin
+  diferencia visible. Se mantiene el formato (JPEG, PNG o WEBP), así los correos se siguen viendo en Outlook. Los
+  GIF se guardan tal cual, para no perder la animación.
+- **Miniatura** (`Actividad.imagen_miniatura`, migración `0040`): un JPEG de 160 px, de unos 10 KB, que se crea
+  al guardar la actividad (señal en `servicios/imagenes.py`), se cambia si cambia la imagen y se borra si se quita.
+  La usan la lista "Elegir actividad" del escáner (con carga diferida; las actividades sin imagen muestran un
+  ícono) y la tarjeta del turno.
+- **Imágenes anteriores:** `python manage.py optimizar_imagenes` muestra qué achicaría y cuántas miniaturas
+  faltan; con `--aplicar` lo hace. Reemplaza los archivos grandes, así que antes conviene respaldar.
+- **Retención:** al borrar una actividad vieja se borran la imagen y su miniatura.
+
+Pruebas en `actividades/tests_imagenes` (tamaño, orientación, transparencia, GIF, miniatura, comando y
+retención). Quedan 758 pruebas.
+
+### 18.29 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

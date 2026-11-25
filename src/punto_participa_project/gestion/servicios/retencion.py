@@ -6,7 +6,7 @@ completo queda en los respaldos mensuales (servicio respaldo, ver maquinasVirtua
 
 Qué se borra:
 - Las actividades que terminaron antes de la fecha de corte, con todo lo asociado: inscripciones, asistencias,
-  cancelaciones, lista de espera, invitados, acompañantes, correos enviados, turnos del escáner e imagen.
+  cancelaciones, lista de espera, invitados, acompañantes, correos enviados, turnos del escáner, imagen y su miniatura.
 - Los registros de auditoría anteriores a la fecha de corte (con su IP y navegador).
 No se borran las fichas de los alumnos: para eso está la anonimización (anonimizacion.py).
 
@@ -133,7 +133,7 @@ def ejecutar(aviso, usuario):
         limite = _limite(aviso.fecha_corte)
         resumen = calcular(aviso.fecha_corte)
         acts = Actividad.objects.filter(fecha_fin__lt=limite)
-        imagenes = [a.imagen.name for a in acts.exclude(imagen='').exclude(imagen__isnull=True)]
+        imagenes = [nombre for a in acts for nombre in (a.imagen.name, a.imagen_miniatura.name) if nombre]
         acts.delete()
         LogAuditoria.objects.filter(fecha_registro__lt=limite).delete()
         aviso.ejecutado = timezone.now()
