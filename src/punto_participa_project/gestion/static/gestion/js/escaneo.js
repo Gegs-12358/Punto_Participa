@@ -183,6 +183,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // ============================================================
     if (!formEscaneo || !inputRut) return;
 
+    // Se cierre como se cierre (botón, X, Esc o clic afuera), al volver el campo queda vacío y listo
+    // para la siguiente lectura, sin el documento anterior en memoria.
+    ['modalConfirmarAsistencia', 'modalAviso', 'modalAgregar'].forEach(function (id) {
+        const modal = document.getElementById(id);
+        if (modal) modal.addEventListener('modal:hidden', function () { enfocarInput(); });
+    });
+
     // ============================================================
     // FUNCIONES AUXILIARES
     // ============================================================

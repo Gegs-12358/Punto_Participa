@@ -67,6 +67,7 @@ function openModal(modalOrSelector) {
     }
 
     _ultimoFocoAntesDeModal = document.activeElement;
+    modal.dataset.modificado = '0';
     modal.hidden = false;
     modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
@@ -108,10 +109,32 @@ function closeAllModals() {
     document.body.style.overflow = '';
 }
 
+// Ventanas con formulario (data-modal-persistent): no se cierran con un clic afuera ni con Esc, solo con
+// la X o "Cancelar". Si además tienen data-modal-confirmar-cierre y el usuario escribió o cambió algo,
+// preguntan antes de descartar. Al guardar, el código de cada ventana la cierra con closeModal(), sin preguntar.
+function hayCambiosSinGuardar(modal) {
+    return modal.hasAttribute('data-modal-confirmar-cierre') && modal.dataset.modificado === '1';
+}
+
+function cerrarSiConfirma(modal) {
+    if (hayCambiosSinGuardar(modal) &&
+        !confirm('Tienes cambios sin guardar. ¿Quieres cerrar la ventana y descartarlos?')) {
+        return;
+    }
+    closeModal(modal);
+}
+
+['input', 'change'].forEach(function (evento) {
+    document.addEventListener(evento, function (e) {
+        const modal = e.target.closest && e.target.closest('.modal-backdrop');
+        if (modal && e.target.type !== 'search') modal.dataset.modificado = '1';
+    });
+});
+
 document.addEventListener('click', function (e) {
     if (e.target.closest('[data-modal-close]')) {
         const modal = e.target.closest('.modal-backdrop');
-        if (modal) closeModal(modal);
+        if (modal) cerrarSiConfirma(modal);
         return;
     }
 
@@ -533,8 +556,8 @@ document.addEventListener('click', function (e) {
             });
     }
 
-    // Botón "Ahora no" en modal de invitaciones
-    if (e.target.closest('#btnCancelarEnvio')) {
+    // Botón "Ahora no" en modal de invitaciones (la X de esa ventana hace lo mismo)
+    if (e.target.closest('#btnCancelarEnvio, #btnCerrarInvitaciones')) {
         const modalInv = document.getElementById('modalConfirmarInvitaciones');
         const tipo = modalInv.dataset.tipo;
         const esNueva = modalInv.dataset.esNueva === '1';

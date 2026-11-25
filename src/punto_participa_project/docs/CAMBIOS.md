@@ -1084,7 +1084,30 @@ derecha, los últimos registros; la tarjeta del turno va bajo el campo. Si no ca
 de menos de 1200 px) bajan a su propia fila; en celular quedan los tres en una fila. Sin actividad elegida no se
 muestran. Siguen actualizándose en vivo. Prueba del orden en `escaner/tests_turno`.
 
-### 18.30 Pendiente
+### 18.30 Ventanas que se cerraban con un clic afuera (25/11/2026)
+
+Un clic fuera de la ventana de crear actividad la cerraba y se perdía lo escrito. Se revisaron todas las ventanas
+emergentes del sistema. Las que se completan o deciden algo ahora solo se cierran con la X o con "Cancelar", no
+con un clic afuera ni con Esc (`data-modal-persistent`), y las que tienen formulario preguntan antes de cerrar si
+hay cambios sin guardar (`data-modal-confirmar-cierre`, en `scripts.js`). Al guardar no preguntan.
+
+| Ventana | Ahora |
+| --- | --- |
+| Crear y editar actividad | Solo X o Cancelar; avisa si hay cambios sin guardar |
+| Crear y editar usuario | Ya ignoraba el clic afuera; ahora también avisa si hay cambios |
+| Agregar en la entrada (escáner, con invitación) | Solo X o Cancelar; avisa si hay cambios |
+| Enviar invitaciones | Solo los botones. Antes, la X o un clic afuera se saltaban el envío obligatorio de los talleres; ahora la X hace lo mismo que "Ahora no" |
+| Elegir actividad, confirmar asistencia, avisos y mensajes | Sin cambios: se cierran también con un clic afuera o Esc, porque no hay nada que perder |
+
+En el escáner, se cierre como se cierre la confirmación o el aviso, el campo queda vacío y con el cursor listo
+para la siguiente lectura (antes, al cerrar con un clic afuera, el documento leído quedaba en memoria).
+
+Las pruebas de Django no ejecutan JavaScript: `sistema/tests_ventanas` revisa las marcas de cada ventana, que
+toda ventana con campos sea persistente (resguardo para ventanas nuevas) y que el código que las lee siga en los
+`.js`. El comportamiento se probó en el navegador (clic afuera, Esc, X y Cancelar, con y sin cambios).
+Quedan 762 pruebas.
+
+### 18.31 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

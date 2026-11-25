@@ -3,7 +3,8 @@
 <!-- ============================================================ -->
 <!-- MODAL PARA CREAR/EDITAR ACTIVIDAD -->
 <!-- ============================================================ -->
-<div class="modal-backdrop" id="actividadModal" hidden>
+<!-- Con formulario: no se cierra con un clic afuera ni con Esc, y avisa si hay cambios sin guardar -->
+<div class="modal-backdrop" id="actividadModal" data-modal-persistent data-modal-confirmar-cierre hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalLabel">
 
         <header class="modal-header">
@@ -27,14 +28,16 @@
 <!-- ============================================================ -->
 <!-- MODAL DE CONFIRMACIÓN DE INVITACIONES -->
 <!-- ============================================================ -->
-<div class="modal-backdrop" id="modalConfirmarInvitaciones" hidden>
+<!-- Hay que elegir Enviar o "Ahora no": en los talleres el envío es obligatorio -->
+<div class="modal-backdrop" id="modalConfirmarInvitaciones" data-modal-persistent hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalConfirmarInvitacionesLabel">
 
         <header class="modal-header">
             <h2 id="modalConfirmarInvitacionesLabel">Enviar Invitaciones</h2>
+            <!-- La X hace lo mismo que "Ahora no" (ver scripts.js) -->
             <button type="button"
                     class="close-button"
-                    data-modal-close
+                    id="btnCerrarInvitaciones"
                     aria-label="Cerrar">×</button>
         </header>
 
