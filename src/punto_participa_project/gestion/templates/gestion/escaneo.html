@@ -7,12 +7,32 @@
 <!-- ============================================================ -->
 <!-- TÍTULO -->
 <!-- ============================================================ -->
-<div class="page-title">
+<div class="page-title page-title--escaner">
     <div>
         <span class="eyebrow">REGISTRO DE ASISTENCIA</span>
         <h1>Escáner</h1>
         <p>Registra la asistencia con la pistola o escribiendo el documento.</p>
     </div>
+    {% if actividad_seleccionada %}
+    <!-- Indicadores del turno, compactos en la fila del título (se actualizan en vivo) -->
+    <div class="mini-stats mini-stats--3 contador-escaneo page-title__indicadores" id="contadorEscaneo"
+        data-url="{% url 'escaneo_contador' %}" aria-live="polite">
+        <div class="mini-stat mini-stat--destacado">
+            <span>REGISTRADOS EN TU TURNO</span>
+            <strong data-contador="mi_turno">{{ contador.mi_turno }}</strong>
+        </div>
+        <div class="mini-stat">
+            <span>{% if sesiones|length > 1 %}TOTAL EN ESTA SESIÓN{% else %}TOTAL EN LA ACTIVIDAD{% endif %}</span>
+            <strong data-contador="total">{{ contador.total }}</strong>
+            <small class="mini-stat__nota" data-contador="meta">{% if contador.meta %}de {{ contador.meta }} {{ contador.meta_texto }}{% else %}todos los operadores{% endif %}</small>
+        </div>
+        <div class="mini-stat">
+            <span>OPERADORES EN TURNO</span>
+            <strong data-contador="en_turno">{{ contador.en_turno }}</strong>
+            <small class="mini-stat__nota">en esta actividad, ahora</small>
+        </div>
+    </div>
+    {% endif %}
     <div class="page-title__acciones">
         <img class="page-title__ilustracion" src="{% static 'gestion/img/encabezado/registro.webp' %}" alt="" width="92" height="92">
         <p class="globo-mascota">{% if actividad_seleccionada %}¡Escanea y yo voy contando!{% else %}¡Elige una actividad para empezar tu turno!{% endif %}</p>
@@ -20,12 +40,12 @@
 </div>
 
 <!-- ============================================================ -->
-<!-- GRID PRINCIPAL: REGISTRO, TURNO Y CONTADOR + ÚLTIMOS REGISTROS -->
+<!-- GRID PRINCIPAL: REGISTRO Y TURNO + ÚLTIMOS REGISTROS (los indicadores van en el título) -->
 <!-- El campo de escaneo va primero: es lo que el operador usa todo el tiempo. -->
 <!-- ============================================================ -->
 <div class="scanner-grid">
 
-    <!-- COLUMNA IZQUIERDA: REGISTRAR, TURNO Y CONTADOR -->
+    <!-- COLUMNA IZQUIERDA: REGISTRAR Y TURNO -->
     <div class="scanner-principal">
         {% if actividad_seleccionada %}
         <div class="scan-card panel">
@@ -101,24 +121,6 @@
                 </form>
             </div>
         </section>
-
-        <div class="mini-stats mini-stats--3 contador-escaneo" id="contadorEscaneo"
-            data-url="{% url 'escaneo_contador' %}" aria-live="polite">
-            <div class="mini-stat mini-stat--destacado">
-                <span>REGISTRADOS EN TU TURNO</span>
-                <strong data-contador="mi_turno">{{ contador.mi_turno }}</strong>
-            </div>
-            <div class="mini-stat">
-                <span>{% if sesiones|length > 1 %}TOTAL EN ESTA SESIÓN{% else %}TOTAL EN LA ACTIVIDAD{% endif %}</span>
-                <strong data-contador="total">{{ contador.total }}</strong>
-                <small class="mini-stat__nota" data-contador="meta">{% if contador.meta %}de {{ contador.meta }} {{ contador.meta_texto }}{% else %}todos los operadores{% endif %}</small>
-            </div>
-            <div class="mini-stat">
-                <span>OPERADORES EN TURNO</span>
-                <strong data-contador="en_turno">{{ contador.en_turno }}</strong>
-                <small class="mini-stat__nota">en esta actividad, ahora</small>
-            </div>
-        </div>
         {% else %}
         <section class="turno turno--vacio">
             <div class="turno__actividad">

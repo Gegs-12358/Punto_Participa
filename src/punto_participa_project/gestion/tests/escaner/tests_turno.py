@@ -322,16 +322,19 @@ class OrdenDeLaPantallaTests(BaseTurnoTests):
         super().tearDownClass()
         shutil.rmtree(MEDIA_PRUEBA, ignore_errors=True)
 
-    def test_el_campo_de_escaneo_va_antes_del_turno_y_del_contador(self):
+    def test_indicadores_en_el_titulo_y_el_campo_de_escaneo_antes_del_turno(self):
         html = self.elegir(self.actividad_masiva).content.decode()
         posiciones = [html.index(marca) for marca in (
-            'id="rutInput"', 'aria-label="Turno de escaneo"', 'id="contadorEscaneo"', 'class="session"')]
+            'class="page-title', 'id="contadorEscaneo"', 'class="page-title__acciones"', 'id="rutInput"',
+            'aria-label="Turno de escaneo"', 'class="session"')]
         self.assertEqual(posiciones, sorted(posiciones))
+        self.assertEqual(html.count('id="contadorEscaneo"'), 1)
 
     def test_sin_actividad_solo_ofrece_elegirla(self):
         self.client.force_login(self.registrador)
         resp = self.client.get(URL)
         self.assertNotContains(resp, 'id="rutInput"')
+        self.assertNotContains(resp, 'id="contadorEscaneo"')   # sin turno no hay nada que contar
         self.assertContains(resp, 'Elegir actividad')
         self.assertContains(resp, 'No hay actividad seleccionada', count=1)
 

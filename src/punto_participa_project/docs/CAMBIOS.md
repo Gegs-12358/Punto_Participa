@@ -1075,7 +1075,16 @@ completa, y mostrar miniaturas en el escáner habría obligado a bajar todas las
 Pruebas en `actividades/tests_imagenes` (tamaño, orientación, transparencia, GIF, miniatura, comando y
 retención). Quedan 758 pruebas.
 
-### 18.29 Pendiente
+### 18.29 Escáner: indicadores en la fila del título (25/11/2026)
+
+Los tres indicadores del turno (registrados en tu turno, total de la sesión o actividad y operadores en turno)
+pasaron a la fila del título, en formato compacto, entre el nombre de la pantalla y la mascota. Así queda a la
+vista, sin bajar, todo lo que el operador mira mientras escanea: los números, el campo para escanear y, a la
+derecha, los últimos registros; la tarjeta del turno va bajo el campo. Si no caben al lado del título (pantallas
+de menos de 1200 px) bajan a su propia fila; en celular quedan los tres en una fila. Sin actividad elegida no se
+muestran. Siguen actualizándose en vivo. Prueba del orden en `escaner/tests_turno`.
+
+### 18.30 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

@@ -5040,6 +5040,50 @@ a.mini-stat:focus-visible {
     grid-column: 2;
 }
 
+/* Escáner: indicadores del turno en la fila del título, en formato compacto */
+.page-title--escaner {
+    flex-wrap: wrap;
+}
+
+.page-title__indicadores {
+    flex: 1 1 460px;
+    max-width: 640px;
+    margin: 0;
+}
+
+.page-title__indicadores .mini-stat {
+    padding: 6px 10px;
+    gap: 1px;
+}
+
+.contador-escaneo.page-title__indicadores .mini-stat strong {
+    font-size: 21px;
+}
+
+.page-title__indicadores .mini-stat__nota {
+    font-size: 10.5px;
+}
+
+/* Si no caben al lado del título, bajan a su propia fila, a todo el ancho */
+@media (max-width: 1200px) {
+    .page-title__indicadores {
+        order: 3;
+        flex-basis: 100%;
+        max-width: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .page-title__indicadores {
+        align-self: stretch;
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .page-title__indicadores .mini-stat span {
+        font-size: 8.5px;
+    }
+}
+
 .elegir-actividad__mini {
     grid-row: 1 / span 2;
     width: 44px;
