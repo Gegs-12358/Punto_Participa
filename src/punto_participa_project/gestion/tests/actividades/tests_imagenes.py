@@ -153,7 +153,7 @@ class MiniaturaTests(ConMediaPropia):
         resp = self.client.get(reverse('escaneo'))
         self.assertContains(resp, 'class="elegir-actividad__mini"')
         self.assertContains(resp, 'loading="lazy"')
-        self.assertContains(resp, 'elegir-actividad__mini--vacia')   # el taller no tiene imagen
+        self.assertContains(resp, 'genericas/taller_mini')   # el taller no tiene imagen: va la genérica
 
     @override_settings(RETENCION_ANIOS=2, RETENCION_AVISOS_DIAS=[10, 7, 3])
     def test_la_retencion_borra_la_imagen_y_la_miniatura(self):

@@ -1139,7 +1139,30 @@ enviado, el texto simple trae fecha, lugar y enlaces, cupos y lista de espera, s
 de 75 bytes, 404 para invitación y cancelada), Google Calendar en UTC, imagen de 1200x600 sin recortar afiches,
 y que los 7 correos usan la misma base. Quedan 778 pruebas.
 
-### 18.32 Pendiente
+### 18.32 Imagen genérica para las actividades sin imagen (25/11/2026)
+
+Las actividades sin imagen propia muestran ahora una imagen genérica de su tipo: taller (fondo amarillo con
+lápices, reglas y ampolletas), actividad abierta (azul con megáfonos, estrellas y notas) y actividad con
+invitación (azul oscuro con marco dorado, sobres y medallas). Las tres llevan la mascota de Punto Participa a la
+izquierda y no tienen texto, porque el tipo y el título ya aparecen encima o debajo.
+
+- Son archivos fijos del sistema (`static/gestion/img/genericas/`), cada uno en tres tamaños: 1600x800 para la
+  portada pública y el detalle, 1200x600 para los correos y 160x160 para el escáner y las listas. No se copian
+  a la actividad ni a la base de datos: si el creador o el Administrador le sube una imagen propia, esa la
+  reemplaza solo en esa actividad. Cambiar las genéricas requiere un instalador.
+- El modelo entrega la que corresponde (`url_imagen`, `url_imagen_correo`, `url_miniatura`,
+  `usa_imagen_generica`) y la usan los correos, la portada pública, el detalle, el listado de actividades, el
+  Inicio y el escáner. Se quitaron los recuadros grises "sin imagen".
+- En la portada pública con imagen genérica, el tipo y el título van a la derecha para no tapar la mascota.
+- Se corrigió de paso que la portada con imagen no ocupaba todo el ancho en computador (quedaba un espacio
+  blanco a la derecha).
+- El formulario dice ahora "Recomendado: horizontal, 1600x800 px. Si no subes una, se usa la imagen genérica
+  del tipo de actividad." (antes recomendaba 200x150).
+
+Pruebas: los nueve archivos existen con su tamaño y formato, cada tipo usa la suya, no se copia a la actividad,
+y la usan el correo, la portada y el escáner. Quedan 781 pruebas.
+
+### 18.33 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

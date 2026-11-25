@@ -100,9 +100,16 @@ class ContenidoInvitacionTests(BaseSistemaTestCase):
         self.assertIn('display: none; max-height: 0', html)
         self.assertIn('Inscríbete para asegurar tu cupo.', html)
 
-    def test_sin_imagen_no_hay_banner(self):
+    def test_sin_imagen_va_la_generica_de_su_tipo(self):
         _, html = correos.armar('invitacion', _contexto(self.taller, self.alumno))
         self.assertNotIn('/media/', html)
+        self.assertIn(f'src="{SITIO}/static/gestion/img/genericas/taller_correo', html)
+        self.assertIn('width="600" height="300"', html)
+        masiva = Actividad.objects.create(
+            titulo='Charla', descripcion='d', tipo='MASIVA', lugar='Auditorio', estado='ACTIVA',
+            fecha_inicio=self.taller.fecha_inicio, fecha_fin=self.taller.fecha_fin)
+        _, html = correos.armar('invitacion', _contexto(masiva, self.alumno))
+        self.assertIn('genericas/masiva_correo', html)
 
 
 class CalendarioTests(BaseSistemaTestCase):
@@ -221,3 +228,28 @@ class TodosLosCorreosTests(BaseSistemaTestCase):
                 if nombre not in ('invitacion', 'retencion'):
                     self.assertIn(enlace, html)
                     self.assertIn(enlace, texto)
+
+
+class ImagenesGenericasTests(BaseSistemaTestCase):
+    """Cada tipo tiene su imagen genérica en tres tamaños, y la imagen propia de la actividad la reemplaza."""
+    def test_existen_los_archivos_con_su_tamano(self):
+        from django.contrib.staticfiles import finders
+        for tipo in Actividad.GENERICAS.values():
+            for sufijo, tamano in (('', (1600, 800)), ('_correo', imagenes.IMAGEN_CORREO), ('_mini', (160, 160))):
+                with self.subTest(tipo=tipo, sufijo=sufijo):
+                    ruta = finders.find(f'gestion/img/genericas/{tipo}{sufijo}.jpg')
+                    self.assertIsNotNone(ruta)
+                    with Image.open(ruta) as img:
+                        self.assertEqual(img.size, tamano)
+                        self.assertEqual(img.format, 'JPEG')
+
+    def test_cada_tipo_usa_la_suya(self):
+        for tipo, nombre in Actividad.GENERICAS.items():
+            a = Actividad(tipo=tipo)
+            self.assertTrue(a.usa_imagen_generica)
+            self.assertIn(f'genericas/{nombre}.jpg', a.url_imagen)
+            self.assertIn(f'genericas/{nombre}_correo.jpg', a.url_imagen_correo)
+            self.assertIn(f'genericas/{nombre}_mini.jpg', a.url_miniatura)
+
+    def test_la_generica_no_se_copia_a_la_actividad(self):
+        self.assertFalse(Actividad.objects.get(pk=self.actividad.pk).imagen)

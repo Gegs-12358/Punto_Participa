@@ -1042,20 +1042,6 @@ a.role:hover {
     border: 1px solid var(--line);
 }
 
-.img-miniatura-placeholder,
-.activity-thumb-placeholder {
-    width: 28px;
-    height: 28px;
-    background-color: var(--surface);
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--muted);
-    font-size: 11px;
-    border: 1px solid var(--line);
-}
-
 /* ============================================================
    11. TABLA DE TIPO
    ============================================================ */
@@ -2498,6 +2484,7 @@ td.celda-texto {
 }
 
 .event-portada--imagen {
+    width: 100%;
     min-height: 0;
     aspect-ratio: 16 / 8;
     max-height: 300px;
@@ -2520,15 +2507,6 @@ td.celda-texto {
     background: linear-gradient(180deg, rgba(0, 31, 63, 0) 35%, rgba(0, 31, 63, 0.88) 100%);
 }
 
-.event-portada__mascota {
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    width: 120px;
-    transform: translateY(-50%);
-    opacity: 0.95;
-}
-
 .event-portada__texto {
     position: relative;
     z-index: 1;
@@ -2538,6 +2516,13 @@ td.celda-texto {
 
 .event-portada--imagen .event-portada__texto {
     max-width: none;
+}
+
+/* Imagen genérica: la mascota va a la izquierda, así que el tipo y el título van a la derecha */
+.event-portada--generica .event-portada__texto {
+    margin-left: auto;
+    max-width: 58%;
+    text-align: right;
 }
 
 .event-portada__tipo {
@@ -5093,18 +5078,6 @@ a.mini-stat:focus-visible {
     border: 1px solid var(--line);
 }
 
-.elegir-actividad__mini--vacia {
-    display: grid;
-    place-items: center;
-    background: var(--surface);
-    color: var(--muted);
-}
-
-.elegir-actividad__mini--vacia svg {
-    width: 20px;
-    height: 20px;
-}
-
 .elegir-actividad__vacio {
     margin: 10px 0;
     color: var(--muted);
@@ -5147,9 +5120,7 @@ a.mini-stat:focus-visible {
 }
 
 .drop-icon .icono,
-.state-icon .icono,
-.activity-thumb-placeholder .icono,
-.img-miniatura-placeholder .icono {
+.state-icon .icono {
     width: 28px;
     height: 28px;
 }

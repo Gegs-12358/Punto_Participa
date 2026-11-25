@@ -242,11 +242,10 @@
             </div>
 
             <div class="activity-detail">
-                {% if actividad.imagen %}
                 <div class="activity-detail-image">
-                    <img src="{{ actividad.imagen.url }}" alt="{{ actividad.titulo }}">
+                    <img src="{{ actividad.url_imagen }}" alt="{{ actividad.titulo }}">
+                    {% if actividad.usa_imagen_generica %}<p class="input-help">Imagen genérica de su tipo: esta actividad no tiene imagen propia.</p>{% endif %}
                 </div>
-                {% endif %}
 
                 <div class="activity-detail-body">
                     <p><strong>Descripción:</strong> {{ actividad.descripcion }}</p>

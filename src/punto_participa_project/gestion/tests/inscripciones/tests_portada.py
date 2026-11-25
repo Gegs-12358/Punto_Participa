@@ -49,10 +49,11 @@ class PortadaPublicaTests(BaseSistemaTestCase):
         self.assertContains(r, f'<h1>{self.actividad.titulo}</h1>', count=1, html=True)
         self.assertNotContains(r, 'event-portada__mascota')
 
-    def test_sin_imagen_muestra_la_mascota(self):
+    def test_sin_imagen_muestra_la_generica_de_su_tipo(self):
         r = self.client.get(reverse('inscripcion_taller', args=[self.actividad.pk]))
-        self.assertContains(r, 'event-portada__mascota')
-        self.assertNotContains(r, 'event-portada--imagen')
+        self.assertContains(r, 'event-portada--imagen')
+        self.assertContains(r, 'genericas/taller.')
+        self.assertContains(r, 'event-portada--generica')   # título a la derecha: la mascota está a la izquierda
 
     def test_masiva_e_invitacion_usan_la_misma_portada(self):
         self.con_imagen(self.actividad_masiva)

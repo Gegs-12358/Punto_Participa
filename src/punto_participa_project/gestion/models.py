@@ -241,6 +241,37 @@ class Actividad(models.Model):
         """Lugar tal como se muestra: "Sala 102", o solo "Auditorio Principal"."""
         return f'{self.lugar} {self.lugar_numero}'.strip()
 
+    # Imagen genérica de cada tipo (static/gestion/img/genericas/), para las actividades sin imagen propia.
+    # No se copia a la actividad: si la actividad recibe su propia imagen, esa la reemplaza.
+    GENERICAS = {'TALLER': 'taller', 'MASIVA': 'masiva', 'INVITACION': 'invitacion'}
+
+    def _generica(self, sufijo=''):
+        from django.templatetags.static import static
+        return static(f"gestion/img/genericas/{self.GENERICAS.get(self.tipo, 'masiva')}{sufijo}.jpg")
+
+    @property
+    def usa_imagen_generica(self):
+        return not self.imagen
+
+    @property
+    def url_imagen(self):
+        """Imagen para mostrar en grande (portada pública, detalle)."""
+        return self.imagen.url if self.imagen else self._generica()
+
+    @property
+    def url_imagen_correo(self):
+        """Imagen de 1200x600 para los correos."""
+        if self.imagen_correo:
+            return self.imagen_correo.url
+        return self.imagen.url if self.imagen else self._generica('_correo')
+
+    @property
+    def url_miniatura(self):
+        """Imagen pequeña (escáner, listas)."""
+        if self.imagen_miniatura:
+            return self.imagen_miniatura.url
+        return self.imagen.url if self.imagen else self._generica('_mini')
+
     @property
     def esta_activa(self):
         return self.estado == 'ACTIVA'

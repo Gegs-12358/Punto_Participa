@@ -416,11 +416,7 @@
                 {% for actividad in actividades %}
                 <tr>
                     <td>
-                        {% if actividad.imagen %}
-                        <img src="{{ actividad.imagen.url }}" alt="{{ actividad.titulo }}" class="img-miniatura">
-                        {% else %}
-                        <div class="img-miniatura-placeholder">{% icono "imagen" %}</div>
-                        {% endif %}
+                        <img src="{{ actividad.url_miniatura }}" alt="" class="img-miniatura" loading="lazy" decoding="async">
                     </td>
                     <td>
                         <a href="{% url 'actividad_detalle' actividad.pk %}" class="activity-link"

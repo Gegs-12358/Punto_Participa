@@ -1,12 +1,8 @@
 {% load static %}
-{# Portada de las páginas públicas: la imagen de la actividad con el tipo y el título encima. #}
-{# Sin imagen, una franja azul con la mascota. Uso: include con actividad y etiqueta ("TALLER", "INVITACIÓN"...). #}
-<div class="event-portada{% if actividad.imagen %} event-portada--imagen{% endif %}">
-    {% if actividad.imagen %}
-    <img class="event-portada__img" src="{{ actividad.imagen.url }}" alt="" loading="eager">
-    {% else %}
-    <img class="event-portada__mascota" src="{% static 'gestion/img/logo.png' %}" alt="" onerror="this.remove()">
-    {% endif %}
+{# Portada de las páginas públicas: la imagen de la actividad (o la genérica de su tipo) con el tipo y el título encima. #}
+{# Uso: include con actividad y etiqueta ("TALLER", "INVITACIÓN"...). #}
+<div class="event-portada event-portada--imagen{% if actividad.usa_imagen_generica %} event-portada--generica{% endif %}">
+    <img class="event-portada__img" src="{{ actividad.url_imagen }}" alt="" loading="eager">
     <div class="event-portada__texto">
         <span class="event-portada__tipo">{{ etiqueta|default:actividad.get_tipo_display|upper }}</span>
         <h1>{{ actividad.titulo }}</h1>

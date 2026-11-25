@@ -349,5 +349,7 @@ class OrdenDeLaPantallaTests(BaseTurnoTests):
         # usa la miniatura liviana, no la imagen completa
         self.assertContains(resp, self.actividad_masiva.imagen_miniatura.url)
 
-    def test_sin_imagen_no_hay_miniatura(self):
-        self.assertNotContains(self.elegir(self.actividad_masiva), 'turno__imagen')
+    def test_sin_imagen_va_la_miniatura_generica(self):
+        resp = self.elegir(self.actividad_masiva)
+        self.assertContains(resp, 'class="turno__imagen"')
+        self.assertContains(resp, 'genericas/masiva_mini')

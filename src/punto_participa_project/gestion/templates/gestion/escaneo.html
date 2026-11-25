@@ -81,11 +81,7 @@
             <div id="resultado" aria-live="polite"></div>
         </div>
         <section class="turno" aria-label="Turno de escaneo">
-            {% if actividad_seleccionada.imagen_miniatura %}
-            <img class="turno__imagen" src="{{ actividad_seleccionada.imagen_miniatura.url }}" alt="" width="64" height="64">
-            {% elif actividad_seleccionada.imagen %}
-            <img class="turno__imagen" src="{{ actividad_seleccionada.imagen.url }}" alt="" width="64" height="64">
-            {% endif %}
+            <img class="turno__imagen" src="{{ actividad_seleccionada.url_miniatura }}" alt="" width="64" height="64">
             <div class="turno__actividad">
                 <span class="eyebrow">TU TURNO{% if contador.turno_desde %} DESDE LAS {{ contador.turno_desde }}{% endif %}</span>
                 <h2>{{ actividad_seleccionada.titulo }}</h2>
@@ -197,11 +193,7 @@
                     <button type="submit" name="actividad_id" value="{{ actividad.id }}" role="listitem"
                         class="elegir-actividad__opcion{% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %} es-actual{% endif %}"
                         data-buscar="{{ actividad.titulo|lower }} {{ actividad.lugar_completo|lower }}">
-                        {% if actividad.imagen_miniatura %}
-                        <img class="elegir-actividad__mini" src="{{ actividad.imagen_miniatura.url }}" alt="" width="44" height="44" loading="lazy" decoding="async">
-                        {% else %}
-                        <span class="elegir-actividad__mini elegir-actividad__mini--vacia" aria-hidden="true">{% icono "actividad" %}</span>
-                        {% endif %}
+                        <img class="elegir-actividad__mini" src="{{ actividad.url_miniatura }}" alt="" width="44" height="44" loading="lazy" decoding="async">
                         <strong>{{ actividad.titulo }}</strong>
                         <small>
                             {% if actividad.en_curso %}<span class="badge">En curso</span>{% endif %}
