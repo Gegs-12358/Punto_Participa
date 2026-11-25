@@ -1,0 +1,38 @@
+# Qué entra a la imagen. El contexto de construcción es la raíz del repositorio (docker-compose.yml),
+# así que primero se excluye todo y después se permite solo lo que la imagen necesita.
+*
+!src/punto_participa_project
+!maquinasVirtuales/entrypoint.sh
+
+# Dentro del código, nunca: secretos, respaldos, archivos subidos ni generados
+**/.env
+**/.env.*
+**/respaldos/
+**/media/
+**/media_backup/
+**/staticfiles/
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.bak
+**/*.backup
+**/*.dump
+**/*.sql
+**/*.log
+**/db.sqlite3
+**/.coverage
+**/htmlcov/
+**/.venv/
+**/venv/
+**/env/
+**/node_modules/
+**/.pytest_cache/
+**/.vscode/
+**/.idea/
+**/resultados/
+**/cookies*.txt
+**/dash_*.html
+**/login_*.html
+**/rep_*.html
+**/resultado_busqueda_*.txt
+**/estructura.txt

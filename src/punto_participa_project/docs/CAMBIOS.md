@@ -1022,7 +1022,26 @@ Lo que queda sin probar a propósito: choques entre dos operadores en el mismo i
 errores "inesperados" genéricos y algunos límites de intentos por minuto. Probarlos exigiría simular fallas
 internas sin probar nada real. Quedan 736 pruebas.
 
-### 18.26 Pendiente
+### 18.26 Estructura del repositorio según la plantilla de la carrera (25/11/2026)
+
+El profesor publicó la estructura que deben tener los repositorios del Capstone: el código en `src/` y la
+configuración de Docker en `maquinasVirtuales/`. Se reorganizó así, sin cambios en lo que hace el sistema:
+
+- `Codigo Proyecto/` pasó a `src/` (aplicación Django y maqueta estática).
+- `docker-compose.yml`, `Dockerfile`, `entrypoint.sh`, `env.example`, `respaldo/` y `tareas/` pasaron a
+  `maquinasVirtuales/`. `.dockerignore` pasó a `Dockerfile.dockerignore`, junto al Dockerfile.
+- Los comandos `docker compose` se ejecutan ahora desde `maquinasVirtuales/`, y ahí va el `.env`.
+- `docker-compose.yml` tiene `name: punto_participa_project`. Sin él, Docker tomaría el nombre de la carpeta
+  nueva y crearía volúmenes vacíos: la base de datos y las imágenes parecerían perdidas.
+- La imagen se construye con la raíz del repositorio como contexto. `Dockerfile.dockerignore` deja entrar solo
+  el código y `entrypoint.sh`, que ahora va en `/usr/local/bin` porque el código se monta encima de `/app`.
+- El servicio `tareas` lee su script desde `maquinasVirtuales/tareas`, y `web` monta `maquinasVirtuales/` en
+  solo lectura para las pruebas que revisan la configuración.
+- Carpetas `Fase 3/Evidencias Grupales` y `Fase 3/Evidencias Individuales`.
+- Pruebas nuevas: el compose conserva el nombre de los volúmenes y monta el código desde `src/`, y el script de
+  `tareas` existe con fin de línea de Linux. Quedan 738 pruebas.
+
+### 18.27 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

@@ -2,7 +2,7 @@
 Retención de datos personales.
 
 Regla: lo que tenga más de RETENCION_ANIOS años (2 por defecto) se borra de la base principal; el histórico
-completo queda en los respaldos mensuales (servicio respaldo, ver respaldo/LEEME.md).
+completo queda en los respaldos mensuales (servicio respaldo, ver maquinasVirtuales/respaldo/LEEME.md).
 
 Qué se borra:
 - Las actividades que terminaron antes de la fecha de corte, con todo lo asociado: inscripciones, asistencias,

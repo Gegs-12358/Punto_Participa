@@ -1,3 +1,10 @@
+# Configuración de Docker de Punto Participa. Se ejecuta desde esta carpeta (maquinasVirtuales):
+#   docker compose up -d --build
+# El código de la aplicación está en ../src/punto_participa_project.
+# El nombre fijo hace que Docker use los mismos volúmenes (pgdata, media_volume) que antes de mover
+# esta configuración: sin él tomaría el nombre de la carpeta y crearía una base de datos vacía.
+name: punto_participa_project
+
 services:
   db:
     image: postgres:16-alpine
@@ -20,7 +27,11 @@ services:
       retries: 5
 
   web:
-    build: .
+    build:
+      # Contexto = raíz del repositorio, para tomar el código de src/ y entrypoint.sh de aquí.
+      # Qué entra a la imagen: Dockerfile.dockerignore
+      context: ..
+      dockerfile: maquinasVirtuales/Dockerfile
     restart: unless-stopped
     env_file:
       - .env
@@ -32,16 +43,21 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - .:/app                     # código en vivo (útil en desarrollo)
+      - ../src/punto_participa_project:/app   # código en vivo (útil en desarrollo)
+      - .:/maquinasVirtuales:ro               # esta carpeta, para las pruebas que revisan la configuración
       - static_volume:/app/staticfiles
       - media_volume:/app/media
     ports:
       - "8000:8000"
 
   # Tareas programadas (retención de datos, ver gestion/retencion.py). Usa la misma imagen que web
-  # y corre "python manage.py retencion" una vez al día.
+  # y corre "python manage.py retencion" una vez al día (tareas/programar.sh).
   tareas:
-    build: .
+    build:
+      # Contexto = raíz del repositorio, para tomar el código de src/ y entrypoint.sh de aquí.
+      # Qué entra a la imagen: Dockerfile.dockerignore
+      context: ..
+      dockerfile: maquinasVirtuales/Dockerfile
     restart: unless-stopped
     env_file:
       - .env
@@ -52,9 +68,10 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - .:/app
+      - ../src/punto_participa_project:/app
+      - ./tareas:/tareas:ro
       - media_volume:/app/media
-    entrypoint: ["sh", "/app/tareas/programar.sh"]
+    entrypoint: ["sh", "/tareas/programar.sh"]
 
   # Respaldo automático (historia 008). Usa la misma imagen de PostgreSQL que la base,
   # así pg_dump es de la misma versión. Ver respaldo/LEEME.md

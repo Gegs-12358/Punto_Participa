@@ -209,7 +209,7 @@ LOGGING = {
 # =============================================================
 # Los valores por defecto sirven para trabajar en local con Docker. Para producción
 # (con dominio y HTTPS) se activan en .env; ver la sección "Solo para produccion"
-# de env.example.
+# de maquinasVirtuales/env.example.
 def _lista(valor):
     """'a, b,,c' -> ['a', 'b', 'c']"""
     return [v.strip() for v in valor.split(',') if v.strip()]

@@ -5,9 +5,11 @@ seguridad y pruebas) está en el [README del repositorio](../../README.md).
 
 ## Puesta en marcha rápida
 
-Desde esta carpeta (la que tiene `manage.py` y `docker-compose.yml`):
+La configuración de Docker está en `maquinasVirtuales/`, en la raíz del repositorio. Todos los
+comandos `docker compose` se ejecutan desde ahí:
 
 ```bash
+cd ../../maquinasVirtuales
 cp env.example .env          # en Windows: Copy-Item env.example .env
 # edita .env y reemplaza los valores de ejemplo
 mkdir -p respaldos
@@ -26,7 +28,7 @@ Luego abre <http://localhost:8000/login/>.
 | Cambiaste `Dockerfile`, `requirements.txt` o `entrypoint.sh` | `docker compose up -d --build` |
 | Quieres correr las pruebas | `docker compose exec web python manage.py test --parallel --noinput` |
 | Quieres ver errores | `docker compose logs web --tail 50` |
-| En Windows, `web` se reinicia con `exec /app/entrypoint.sh: no such file or directory` | Los `.sh` quedaron con fin de línea de Windows (copia anterior al `.gitattributes`). En PowerShell: `Remove-Item entrypoint.sh, respaldo\*.sh, tareas\*.sh` y `git checkout -- .`; luego `docker compose up -d --force-recreate web respaldo tareas` |
+| En Windows, `web` se reinicia con `exec /app/entrypoint.sh: no such file or directory` | Los `.sh` quedaron con fin de línea de Windows (copia anterior al `.gitattributes`). En PowerShell, desde `maquinasVirtuales`: `Remove-Item entrypoint.sh, respaldo\*.sh, tareas\*.sh` y `git checkout -- .`; luego `docker compose up -d --build` |
 | Editaste `gestion/servicios/retencion.py` o el `.env` y quieres que lo tome el servicio `tareas` | `docker compose up -d --force-recreate tareas` |
 
 ## Más documentación
@@ -35,8 +37,9 @@ Luego abre <http://localhost:8000/login/>.
 | --- | --- |
 | [`docs/CAMBIOS.md`](docs/CAMBIOS.md) | Historial de cambios, decisiones y checklist antes de producción |
 | [`docs/GUIA_ESTILO.md`](docs/GUIA_ESTILO.md) | Colores, botones, íconos y filtros que usan todas las pantallas |
-| [`respaldo/LEEME.md`](respaldo/LEEME.md) | Respaldo automático, prueba de recuperación y restauración |
-| `env.example` | Todas las variables de entorno, con su explicación |
+| [`maquinasVirtuales/respaldo/LEEME.md`](../../maquinasVirtuales/respaldo/LEEME.md) | Respaldo automático, prueba de recuperación y restauración |
+| [`maquinasVirtuales/LEEME.md`](../../maquinasVirtuales/LEEME.md) | Qué hay en la configuración de Docker |
+| `maquinasVirtuales/env.example` | Todas las variables de entorno, con su explicación |
 
 ## Cuidado con los datos
 

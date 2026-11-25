@@ -46,7 +46,7 @@ Los **estudiantes no tienen cuenta**: consultan los talleres disponibles y se in
 
 El proyecto está en desarrollo y funciona de punta a punta en un entorno local con Docker. Hoy se encuentra en etapa de pruebas internas y **todavía no está publicado en un servidor de producción**. La entrega está fijada para el 1 de diciembre de 2026.
 
-* Suite de pruebas automatizadas: 736 tests (detalle en la sección 9).
+* Suite de pruebas automatizadas: 738 tests (detalle en la sección 9).
 * Despliegue en la nube: **por definir**. Actualmente se ejecuta en local con Docker.
 * El historial detallado de cambios está en [`docs/CAMBIOS.md`](Codigo%20Proyecto/punto_participa_project/docs/CAMBIOS.md) y la guía de estilo de las pantallas en [`docs/GUIA_ESTILO.md`](Codigo%20Proyecto/punto_participa_project/docs/GUIA_ESTILO.md).
 
@@ -166,14 +166,16 @@ No hace falta instalar Python ni PostgreSQL: todo corre dentro de contenedores.
 
 ### Pasos
 
-1. **Clonar el repositorio y entrar a la carpeta del proyecto Django:**
+1. **Clonar el repositorio y entrar a la carpeta de Docker:**
 
    ```bash
    git clone https://github.com/Gegs-12358/Punto_Participa.git
-   cd Punto_Participa/"Codigo Proyecto"/punto_participa_project
+   cd Punto_Participa/maquinasVirtuales
    ```
 
-2. **Crear el archivo `.env`** en esa carpeta (junto a `manage.py`) copiando la plantilla incluida en el repositorio:
+   Todos los comandos `docker compose` se ejecutan desde `maquinasVirtuales/`. El código de la aplicación está en `src/punto_participa_project/`.
+
+2. **Crear el archivo `.env`** en `maquinasVirtuales/` (junto a `docker-compose.yml`) copiando la plantilla incluida en el repositorio:
 
    ```bash
    cp env.example .env              # Linux y macOS
@@ -223,7 +225,7 @@ No hace falta instalar Python ni PostgreSQL: todo corre dentro de contenedores.
 | Aplicar migraciones nuevas | `docker compose exec web python manage.py migrate` |
 | Reiniciar tras editar archivos `.py`, `.html`, `.css` o `.js` | `docker compose restart web` |
 | Aplicar un cambio en `.env` | `docker compose up -d --force-recreate web` |
-| Reconstruir tras cambiar `Dockerfile`, `requirements.txt`, `entrypoint.sh` o `.dockerignore` | `docker compose up -d --build` |
+| Reconstruir tras cambiar `Dockerfile`, `requirements.txt`, `entrypoint.sh` o `Dockerfile.dockerignore` | `docker compose up -d --build` |
 | Detener el sistema (conserva los datos) | `docker compose down` |
 
 Tras editar un `.js` o `.css`, recarga el navegador con `Ctrl+Shift+R`. Si hay una migración nueva, córrela **antes** de reiniciar: al reiniciar, el contenedor también aplica las migraciones y las dos ejecuciones pueden chocar.
@@ -238,7 +240,7 @@ El servicio `respaldo` de `docker-compose.yml` respalda la base de datos y las i
 | Prueba de recuperación (restaura en una base temporal y compara las tablas, sin tocar el sistema) | `docker compose exec respaldo sh /scripts/verificar.sh` |
 | Ver lo que está haciendo | `docker compose logs respaldo --tail 20` |
 
-La restauración, la ubicación de la carpeta y la solución de problemas están en [`respaldo/LEEME.md`](Codigo%20Proyecto/punto_participa_project/respaldo/LEEME.md). Los respaldos contienen datos personales: guárdalos en un lugar con acceso restringido y fuera del repositorio (`respaldos/` está en `.gitignore`).
+La restauración, la ubicación de la carpeta y la solución de problemas están en [`maquinasVirtuales/respaldo/LEEME.md`](maquinasVirtuales/respaldo/LEEME.md). Los respaldos contienen datos personales: guárdalos en un lugar con acceso restringido y fuera del repositorio (`respaldos/` está en `.gitignore`).
 
 ### 5.2 Tareas programadas (retención de datos)
 
@@ -292,7 +294,16 @@ Limitación conocida: los carnets más antiguos, cuyo código no es un QR con la
 ```text
 Fase 1/                    Evidencias de la Fase 1 (grupales e individuales)
 Fase 2/                    Documentos de la Fase 2 (versión ágil)
-Codigo Proyecto/
+Fase 3/                    Evidencias de la Fase 3 (grupales e individuales)
+maquinasVirtuales/         Configuración de Docker (se ejecuta desde aquí)
+├── docker-compose.yml         Servicios db, web, respaldo y tareas
+├── Dockerfile                 Imagen de la aplicación
+├── Dockerfile.dockerignore    Qué entra a la imagen
+├── entrypoint.sh              Script de arranque del contenedor
+├── env.example                Plantilla de variables de entorno (.env va aquí)
+├── respaldo/                  Scripts y guía del respaldo automático
+└── tareas/                    Ciclo diario del servicio tareas
+src/                       Código fuente
 ├── puntopartida/              Versión estática del frontend (maqueta de referencia)
 └── punto_participa_project/   Aplicación Django
     ├── gestion/               Lógica de la aplicación
@@ -329,13 +340,7 @@ Codigo Proyecto/
     │   ├── templatetags/      Íconos, filtros y piezas comunes de interfaz
     │   └── tests/             Pruebas automatizadas, en una carpeta por tema
     ├── punto_participa/       Configuración del proyecto Django
-    ├── respaldo/              Scripts y guía del respaldo automático
-    ├── tareas/                Ciclo diario del servicio tareas
     ├── docs/                  CAMBIOS.md (historial) y GUIA_ESTILO.md
-    ├── Dockerfile
-    ├── docker-compose.yml     Servicios db, web, respaldo y tareas
-    ├── entrypoint.sh          Script de arranque del contenedor
-    ├── env.example            Plantilla de variables de entorno
     └── requirements.txt
 ```
 
@@ -373,7 +378,7 @@ Codigo Proyecto/
 
 ## 9. Pruebas automatizadas
 
-La suite tiene **736 tests** y se ejecuta con:
+La suite tiene **738 tests** y se ejecuta con:
 
 ```bash
 docker compose exec web python manage.py test --parallel --noinput
@@ -485,7 +490,7 @@ Todo el sistema se ejecuta con Docker Compose en tres servicios: `db` (PostgreSQ
 
 ## 13. Código del proyecto
 
-La carpeta `Codigo Proyecto` contiene el código del sistema Punto Participa. El historial de commits fue reconstruido el 05/10/2026 a partir de respaldos locales (archivos zip); la fecha de cada commit corresponde a la fecha del respaldo del que proviene.
+La carpeta `src` contiene el código del sistema Punto Participa y `maquinasVirtuales` su configuración de Docker, según la estructura de repositorio que pide la carrera (hasta el 25/11/2026 el código estaba en `Codigo Proyecto`). El historial de commits fue reconstruido el 05/10/2026 a partir de respaldos locales (archivos zip); la fecha de cada commit corresponde a la fecha del respaldo del que proviene.
 
 ---
 

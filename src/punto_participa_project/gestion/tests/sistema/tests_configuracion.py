@@ -17,6 +17,10 @@ from django.test import SimpleTestCase, TestCase
 
 from ...models import LogAuditoria
 
+# Configuración de Docker: <repositorio>/maquinasVirtuales. Dentro del contenedor el código está en /app
+# y docker-compose monta esa carpeta en /maquinasVirtuales, que es la misma ruta relativa.
+CARPETA_DOCKER = Path(settings.BASE_DIR).resolve().parent.parent / 'maquinasVirtuales'
+
 
 class ConfiguracionTests(SimpleTestCase):
     def test_lista_separada_por_comas(self):
@@ -42,12 +46,12 @@ class ArchivosDelProyectoTests(SimpleTestCase):
         self.assertIn('Django==', datos.decode('utf-8'))
 
     def test_entrypoint_sin_comentarios_de_plantilla(self):
-        texto = (Path(settings.BASE_DIR) / 'entrypoint.sh').read_text(encoding='utf-8')
+        texto = (CARPETA_DOCKER / 'entrypoint.sh').read_text(encoding='utf-8')
         self.assertNotIn('AJUSTAR', texto)
         self.assertNotIn('\r\n', texto)
 
 
-CARPETA = Path(settings.BASE_DIR) / 'respaldo'
+CARPETA = CARPETA_DOCKER / 'respaldo'
 
 
 SCRIPTS = ('respaldar.sh', 'verificar.sh', 'restaurar.sh', 'programar.sh')
@@ -75,14 +79,26 @@ class ScriptsRespaldoTests(SimpleTestCase):
         self.assertIn('--confirmo', resultado.stderr)
 
     def test_el_servicio_esta_en_docker_compose(self):
-        compose = (Path(settings.BASE_DIR) / 'docker-compose.yml').read_text(encoding='utf-8')
+        compose = (CARPETA_DOCKER / 'docker-compose.yml').read_text(encoding='utf-8')
         self.assertIn('respaldo:', compose)
         self.assertIn('/scripts/programar.sh', compose)
         self.assertIn('media_volume:/media:ro', compose)
 
     def test_respaldos_fuera_de_la_imagen(self):
-        ignorados = (Path(settings.BASE_DIR) / '.dockerignore').read_text(encoding='utf-8')
+        ignorados = (CARPETA_DOCKER / 'Dockerfile.dockerignore').read_text(encoding='utf-8')
         self.assertIn('respaldos/', ignorados)
+        self.assertIn('**/.env', ignorados)
+
+    def test_el_compose_conserva_el_nombre_de_los_volumenes(self):
+        # Sin este nombre, Docker usaría el de la carpeta (maquinasVirtuales) y crearía volúmenes vacíos
+        compose = (CARPETA_DOCKER / 'docker-compose.yml').read_text(encoding='utf-8')
+        self.assertIn('\nname: punto_participa_project\n', compose)
+        self.assertIn('../src/punto_participa_project:/app', compose)
+
+    def test_el_servicio_tareas_tiene_su_script(self):
+        ruta = CARPETA_DOCKER / 'tareas' / 'programar.sh'
+        self.assertTrue(ruta.exists())
+        self.assertNotIn(b'\r\n', ruta.read_bytes())
 
 
 class SeedDataTests(TestCase):

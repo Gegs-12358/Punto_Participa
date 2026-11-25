@@ -41,7 +41,7 @@ defecto está dentro del proyecto y fuera de git.
 
 ## Comandos
 
-Desde la carpeta del proyecto (donde está `docker-compose.yml`):
+Desde la carpeta `maquinasVirtuales` (donde está `docker-compose.yml`):
 
 | Acción | Comando |
 | --- | --- |
