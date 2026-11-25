@@ -1041,7 +1041,20 @@ configuración de Docker en `maquinasVirtuales/`. Se reorganizó así, sin cambi
 - Pruebas nuevas: el compose conserva el nombre de los volúmenes y monta el código desde `src/`, y el script de
   `tareas` existe con fin de línea de Linux. Quedan 738 pruebas.
 
-### 18.27 Pendiente
+### 18.27 Escáner: el campo de registro primero (25/11/2026)
+
+Al abrir el escáner, el campo para escanear quedaba bajo el turno y los contadores, y en un notebook había que
+bajar para llegarle. Ahora la columna izquierda parte con "Registrar asistencia" (campo y botón), sigue con la
+tarjeta del turno (actividad, sesión, Cambiar actividad y Finalizar turno) y termina con los tres contadores; el
+panel "En vivo" con los últimos registros y el resumen por operador queda a la derecha. En celular van en ese
+mismo orden, uno bajo el otro (antes el panel "En vivo" quedaba primero). Sin actividad elegida se ve solo la
+tarjeta "Elegir actividad": se quitó el recuadro repetido "Sin actividad seleccionada".
+
+La tarjeta del turno muestra la imagen de la actividad como miniatura, para confirmar de un vistazo que se está
+registrando en la correcta. Sin imagen, la tarjeta queda como antes. No cambia nada de lo que hace el escáner.
+Pruebas en `escaner/tests_turno` (orden de la pantalla y miniatura). Quedan 742 pruebas.
+
+### 18.28 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

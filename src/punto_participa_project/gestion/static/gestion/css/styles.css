@@ -3276,10 +3276,6 @@ td.celda-texto {
         grid-template-columns: 1fr;
     }
 
-    .session {
-        order: -1;
-    }
-
     .login-layout {
         grid-template-columns: 1fr 360px;
         gap: 3vw;
@@ -4848,6 +4844,31 @@ a.mini-stat:focus-visible {
     margin: 0;
 }
 
+/* Escáner: el campo de registro va primero, después el turno y el contador (la columna derecha
+   tiene los últimos registros). En una sola columna quedan en ese mismo orden. */
+.scanner-principal {
+    min-width: 0;
+}
+
+.scanner-principal .scan-card {
+    margin: 0 0 12px;
+}
+
+.turno__actividad {
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+.turno__imagen {
+    align-self: flex-start;
+    flex: 0 0 auto;
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid var(--line);
+}
+
 .contador-escaneo {
     margin-bottom: 12px;
 }
@@ -4926,6 +4947,10 @@ a.mini-stat:focus-visible {
     .turno {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .turno__actividad {
+        flex: none;
     }
 }
 

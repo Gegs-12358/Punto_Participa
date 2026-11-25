@@ -4,8 +4,15 @@ Turnos del escáner, contador en vivo con varios operadores y lista para elegir 
 Correr solo este archivo:
     python manage.py test gestion.tests.escaner.tests_turno --noinput
 """
+import io
+import shutil
+import tempfile
 from datetime import timedelta
 
+from PIL import Image
+
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -301,3 +308,41 @@ class EscanerCasosBordeTests(BaseTurnoTests):
         lista = self.client.get(URL).context['actividades_disponibles']
         self.assertEqual(lista[-1].pk, self.actividad_otro.pk)
 
+
+
+MEDIA_PRUEBA = tempfile.mkdtemp()
+
+
+@override_settings(MEDIA_ROOT=MEDIA_PRUEBA)
+class OrdenDeLaPantallaTests(BaseTurnoTests):
+    """El campo de escaneo va primero; debajo, el turno y el contador; a la derecha, los últimos registros."""
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(MEDIA_PRUEBA, ignore_errors=True)
+
+    def test_el_campo_de_escaneo_va_antes_del_turno_y_del_contador(self):
+        html = self.elegir(self.actividad_masiva).content.decode()
+        posiciones = [html.index(marca) for marca in (
+            'id="rutInput"', 'aria-label="Turno de escaneo"', 'id="contadorEscaneo"', 'class="session"')]
+        self.assertEqual(posiciones, sorted(posiciones))
+
+    def test_sin_actividad_solo_ofrece_elegirla(self):
+        self.client.force_login(self.registrador)
+        resp = self.client.get(URL)
+        self.assertNotContains(resp, 'id="rutInput"')
+        self.assertContains(resp, 'Elegir actividad')
+        self.assertContains(resp, 'No hay actividad seleccionada', count=1)
+
+    def test_muestra_la_imagen_de_la_actividad_en_el_turno(self):
+        salida = io.BytesIO()
+        Image.new('RGB', (40, 20), (0, 80, 160)).save(salida, 'JPEG')
+        self.actividad_masiva.imagen = SimpleUploadedFile('portada.jpg', salida.getvalue(), content_type='image/jpeg')
+        self.actividad_masiva.save()
+        resp = self.elegir(self.actividad_masiva)
+        self.assertContains(resp, 'class="turno__imagen"')
+        self.assertContains(resp, self.actividad_masiva.imagen.url)
+
+    def test_sin_imagen_no_hay_miniatura(self):
+        self.assertNotContains(self.elegir(self.actividad_masiva), 'turno__imagen')
