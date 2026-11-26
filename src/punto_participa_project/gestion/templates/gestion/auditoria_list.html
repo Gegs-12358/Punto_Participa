@@ -11,7 +11,7 @@
     <div>
         <span class="eyebrow">AUDITORÍA</span>
         <h1>Auditoría del sistema</h1>
-        <p>Quién hizo qué y cuándo. Los registros se guardan dos años; usa "Ver todo" para el detalle completo, el ID y la IP.</p>
+        <p>Quién hizo qué y cuándo. Los registros se guardan {{ retencion_anios }} año{{ retencion_anios|pluralize }}; usa "Ver todo" para el detalle completo, el ID y la IP.</p>
     </div>
     <div class="page-title__acciones">
         <img class="page-title__ilustracion" src="{% static 'gestion/img/encabezado/auditoria.webp' %}" alt="" width="92" height="92">

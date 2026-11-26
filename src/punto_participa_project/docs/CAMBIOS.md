@@ -1212,7 +1212,30 @@ Quedan 793 pruebas.
 Pruebas nuevas: `actividades/tests_estado_mostrado` y casos en `escaner/tests_horario` (aviso antes de aceptar,
 sin aviso dentro del horario, motivo en la auditoría, lista plegada y colores). Quedan 801 pruebas.
 
-### 18.35 Pendiente
+### 18.35 Revisión: que lo mostrado corresponda a los datos reales (25/11/2026)
+
+Revisión de todo el sistema buscando casos como el de "Activa" en actividades ya realizadas.
+
+- **Fechas en hora de UTC:** el detalle de Reportes mostraba la fecha de la actividad en UTC (una actividad a las
+  22:30 salía con el día siguiente); también el aviso "ya había ejecutado este borrado el..." y el nombre de los
+  turnos en el administrador. Ahora usan la hora de Chile.
+- **"Promedio asistentes" del Inicio:** dividía por todas las actividades, también las que aún no ocurren y las
+  canceladas, así que bajaba cada vez que se creaba una actividad. Ahora divide por las que ya empezaron.
+- **"Tasa de talleres" (Inicio y Reportes):** contaba los inscritos de talleres que todavía no empiezan, donde
+  nadie puede haber asistido; la tasa bajaba sin motivo. Ahora se calcula con los talleres que ya empezaron. El
+  total de inscritos se sigue mostrando completo.
+- **Etiqueta del Inicio:** decía "Actividades activas en curso" y contaba también las próximas. Ahora dice
+  "Actividades próximas o en curso".
+- **Plazo de conservación:** la Auditoría y la Política de Privacidad decían "dos años" fijo; ahora muestran el
+  valor configurado (`RETENCION_ANIOS`).
+- Dirección del pie (Av. España 8, Santiago Centro, metro República): confirmada con fuentes públicas.
+
+Quedan para decidir (no se cambiaron): el límite de invitaciones por envío, las columnas "Cupos" y "Tasa" de
+las masivas (siempre vacías) y confirmar el correo puntoestu@duoc.cl con el Punto.
+
+Pruebas nuevas en `reportes/tests_datos_reales`. Quedan 806 pruebas.
+
+### 18.36 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

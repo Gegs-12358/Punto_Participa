@@ -2,6 +2,7 @@
 Auditoría: pantalla con filtros (texto, usuario, módulo, acción, sobre qué y fechas). Los mismos filtros
 los usa la exportación (exportaciones.exportar_auditoria).
 """
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q
@@ -91,6 +92,7 @@ def lista_auditoria(request):
     usuarios = (User.objects.filter(logs_auditoria__isnull=False).distinct().order_by('username')
                 .values_list('username', flat=True))
     return render(request, 'gestion/auditoria_list.html', {
+        'retencion_anios': settings.RETENCION_ANIOS,
         'logs': logs,
         'filtros': f,
         'sistema': SISTEMA,

@@ -338,4 +338,6 @@ def calendario_actividad(request, actividad_id):
 
 def politica_privacidad(request):
     """Página pública con la Política de Privacidad."""
-    return render(request, 'gestion/politica_privacidad.html', {'version_politica': VERSION_POLITICA})
+    from django.conf import settings
+    return render(request, 'gestion/politica_privacidad.html', {'version_politica': VERSION_POLITICA,
+                                                                'retencion_anios': settings.RETENCION_ANIOS})

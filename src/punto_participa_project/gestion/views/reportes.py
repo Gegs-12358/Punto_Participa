@@ -7,6 +7,7 @@ from collections import defaultdict
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q, Sum
 from django.shortcuts import render
+from django.utils import timezone
 
 from ..decorators import role_required
 from ..models import Acompanante, Actividad, Asistencia, Carrera, Inscripcion, Invitado, Jornada, Lugar
@@ -46,6 +47,12 @@ def _construir_desglose_tipo(act_qs, asis_qs, carrera=None, jornada=None, escuel
 
     t_insc = insc.count()
     t_asis = asis_qs.filter(actividad_id__in=ids_talleres).count()
+    # La tasa se calcula con los talleres que ya empezaron: en los que vienen nadie puede haber asistido aún,
+    # y contarlos bajaba la tasa
+    empezados = list(act_qs.filter(tipo='TALLER', fecha_inicio__lte=timezone.now())
+                     .exclude(estado='CANCELADA').values_list('id', flat=True))
+    e_insc = insc.filter(actividad_id__in=empezados).count()
+    e_asis = asis_qs.filter(actividad_id__in=empezados).count()
     m_asis = asis_qs.filter(actividad_id__in=ids_masivas).count()
     cupos_m = act_qs.filter(tipo='MASIVA', cupos_totales__isnull=False).aggregate(
         t=Sum('cupos_totales')).get('t') or 0
@@ -58,7 +65,7 @@ def _construir_desglose_tipo(act_qs, asis_qs, carrera=None, jornada=None, escuel
         'talleres_count': len(ids_talleres),
         'talleres_inscritos': t_insc,
         'talleres_asistentes': t_asis,
-        'tasa_talleres': round(t_asis / t_insc * 100, 1) if t_insc else None,
+        'tasa_talleres': round(e_asis / e_insc * 100, 1) if e_insc else None,
     }
 
 
@@ -220,7 +227,7 @@ def reportes(request):
         for (escuela_item, carrera_n, jornada_n), vals in agrupado.get(a.id, {}).items():
             detalle_data.append({
                 'actividad': a.titulo, 'tipo': a.get_tipo_display(),
-                'fecha': a.fecha_inicio.strftime("%d/%m/%Y"),
+                'fecha': timezone.localtime(a.fecha_inicio).strftime("%d/%m/%Y"),
                 'escuela': escuela_item, 'carrera': carrera_n, 'jornada': jornada_n,
                 'asistentes': vals['t'],
                 'registrado_por': ", ".join(f"{u} ({c})" for u, c in vals['regs'].items()),

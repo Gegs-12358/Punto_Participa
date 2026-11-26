@@ -855,7 +855,8 @@ class TurnoEscaneo(models.Model):
         indexes = [models.Index(fields=['actividad', 'fin'])]
 
     def __str__(self):
-        return f'{self.usuario} en {self.actividad} ({self.inicio:%d/%m/%Y %H:%M})'
+        from django.utils import timezone
+        return f'{self.usuario} en {self.actividad} ({timezone.localtime(self.inicio):%d/%m/%Y %H:%M})'
 
     @classmethod
     def abiertos(cls, actividad):

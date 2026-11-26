@@ -202,6 +202,8 @@ def dashboard(request):
         activas=Count('id', filter=Actividad.vigente_q(ahora)),
         finalizadas=Count('id', filter=Actividad.finalizada_q(ahora)),
         total=Count('id'),
+        # Para el promedio de asistentes: las que ya empezaron (las futuras aún no tienen asistentes)
+        realizadas=Count('id', filter=Q(fecha_inicio__lte=ahora) & ~Q(estado='CANCELADA')),
     )
     total_asis = asis_qs.count()
     total_inscritos = _filtrar_por_foto(
@@ -226,7 +228,9 @@ def dashboard(request):
         'asistencias_hoy': asis_qs.filter(fecha_ingreso__date=hoy).count(),
         'invitaciones_enviadas': notif_qs.filter(actividad__in=act_qs, estado_envio='EXITO').count(),
         'actividades_finalizadas': agg['finalizadas'],
-        'promedio_asistentes': round(total_asis / agg['total'], 1) if agg['total'] else 0,
+        'promedio_asistentes': (round(asis_qs.filter(actividad__fecha_inicio__lte=ahora)
+                                      .exclude(actividad__estado='CANCELADA').count() / agg['realizadas'], 1)
+                                if agg['realizadas'] else 0),
         'cupos_disponibles_totales': act_qs.filter(Actividad.vigente_q(ahora), tipo='TALLER')
             .aggregate(t=Sum('cupos_disponibles')).get('t') or 0,
         'tasa_asistencia': round(total_asis / total_inscritos * 100, 1) if total_inscritos else 0,
@@ -277,7 +281,7 @@ def retencion_ejecutar(request, pk):
     except YaEjecutado as e:
         previo = e.args[0]
         messages.info(request, f'{nombre_usuario(previo.ejecutado_por)} ya había ejecutado este borrado el '
-                               f'{previo.ejecutado:%d/%m/%Y}.')
+                               f'{timezone.localtime(previo.ejecutado):%d/%m/%Y}.')
         return redirect('dashboard')
     messages.success(request, f'Listo: se borraron {resumen["actividades"]} actividades y {resumen["auditoria"]} '
                               f'registros de auditoría anteriores al {aviso.fecha_corte:%d/%m/%Y}. Se avisó a los '
