@@ -336,6 +336,25 @@ def calendario_actividad(request, actividad_id):
     return respuesta
 
 
+# Créditos del equipo (página Acerca de y pie de página). Nombres como en el README y la licencia.
+EQUIPO = [
+    {'nombre': 'Gabriel Eduardo González Soto', 'corto': 'Gabriel González',
+     'rol': 'Jefe de Proyecto y Desarrollador Backend'},
+    {'nombre': 'Pablo Emilio Rebolledo Alvear', 'corto': 'Pablo Rebolledo', 'rol': 'Desarrollador Frontend'},
+    {'nombre': 'Diverson Nonnombre Nonnombre', 'corto': 'Diverson Nonnombre',
+     'rol': 'Encargado de Base de Datos y QA'},
+]
+REPOSITORIO = 'https://github.com/Gegs-12358/Punto_Participa'
+
+
+def acerca(request):
+    """Página pública con el equipo que desarrolló el sistema, la licencia y el código fuente."""
+    return render(request, 'gestion/acerca.html', {
+        'equipo': EQUIPO, 'repositorio': REPOSITORIO,
+        'autores': ', '.join(p['nombre'] for p in EQUIPO[:-1]) + ' y ' + EQUIPO[-1]['nombre'],
+    })
+
+
 def politica_privacidad(request):
     """Página pública con la Política de Privacidad."""
     from django.conf import settings

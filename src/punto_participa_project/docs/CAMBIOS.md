@@ -1235,7 +1235,19 @@ las masivas (siempre vacías) y confirmar el correo puntoestu@duoc.cl con el Pun
 
 Pruebas nuevas en `reportes/tests_datos_reales`. Quedan 806 pruebas.
 
-### 18.36 Pendiente
+### 18.36 Créditos del equipo (25/11/2026)
+
+- **Pie de página:** con sesión iniciada, una línea discreta con "Desarrollado por Gabriel González, Pablo
+  Rebolledo y Diverson Nonnombre, proyecto Capstone de Ingeniería en Informática, Duoc UC Sede Alameda". En las
+  páginas públicas (inscripción, invitación, política) dice solo "Desarrollado por estudiantes de Ingeniería en
+  Informática, Duoc UC Sede Alameda", sin nombres. Los correos no llevan créditos.
+- **Página "Acerca de"** (`/acerca/`, pública, enlazada desde el pie): nombres completos y rol de cada
+  integrante (como en el README), licencia GPL v3 con el aviso de copyright y el enlace al código fuente.
+- Pendiente: confirmar con el Punto Estudiantil que acepta los créditos en las páginas públicas.
+
+Pruebas nuevas en `sistema/tests_creditos`. Quedan 809 pruebas.
+
+### 18.37 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

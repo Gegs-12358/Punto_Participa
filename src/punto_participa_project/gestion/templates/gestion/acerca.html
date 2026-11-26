@@ -1,0 +1,51 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es-cl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Acerca de - Punto Participa</title>
+    <link rel="icon" href="{% static 'gestion/img/logo_duoc.png' %}" type="image/png">
+    <link rel="stylesheet" href="{% static 'gestion/css/styles.css' %}">
+</head>
+
+<body>
+    <header class="app-header">
+        <img class="project-logo" src="{% static 'gestion/img/duoc.png' %}" alt="Punto Participa Duoc UC">
+        <img class="duoc-logo" src="{% static 'gestion/img/logo_duoc.png' %}" alt="Duoc UC">
+    </header>
+
+    <main id="main-content" tabindex="-1">
+        <div class="enrollment-wrap">
+            <div class="card acerca" style="padding: 24px; line-height: 1.6;">
+                <h1>Acerca de Punto Participa</h1>
+                <p>Plataforma de inscripción y registro de asistencia a las actividades del Punto Estudiantil de
+                    Duoc UC Sede Alameda.</p>
+                <p>Se desarrolló como proyecto Capstone de Ingeniería en Informática, Duoc UC Sede Alameda, en 2026.</p>
+
+                <h2>Equipo</h2>
+                <table class="acerca__equipo">
+                    <caption class="visually-hidden">Integrantes del equipo y su rol</caption>
+                    <thead><tr><th scope="col">Integrante</th><th scope="col">Rol</th></tr></thead>
+                    <tbody>
+                        {% for persona in equipo %}
+                        <tr><td><strong>{{ persona.nombre }}</strong></td><td>{{ persona.rol }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <h2>Licencia</h2>
+                <p>Software libre bajo la Licencia Pública General GNU (GPL), versión 3.
+                    Copyright &copy; 2026 {{ autores }}.</p>
+                <p>Código fuente: <a href="{{ repositorio }}" target="_blank" rel="noopener">{{ repositorio }}</a></p>
+
+                <p><a href="javascript:history.back()">&larr; Volver</a></p>
+            </div>
+        </div>
+    </main>
+
+    {% include 'gestion/includes/pie.html' %}
+</body>
+
+</html>

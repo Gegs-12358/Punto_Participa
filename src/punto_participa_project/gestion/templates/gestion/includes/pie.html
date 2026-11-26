@@ -17,5 +17,14 @@
             <p class="pie-dato">{% icono "enlace" %}<a href="https://www.duoc.cl" target="_blank" rel="noopener">www.duoc.cl</a></p>
         </nav>
     </div>
-    <div class="pie-final">© {% now "Y" %} Duoc UC</div>
+    <div class="pie-final">
+        <span>© {% now "Y" %} Duoc UC</span>
+        {# Créditos: con sesión iniciada, los nombres del equipo; en las páginas públicas, sin nombres. #}
+        <span class="pie-creditos">
+            {% if user.is_authenticated %}Desarrollado por Gabriel González, Pablo Rebolledo y Diverson Nonnombre,
+            proyecto Capstone de Ingeniería en Informática, Duoc UC Sede Alameda.{% else %}Desarrollado por
+            estudiantes de Ingeniería en Informática, Duoc UC Sede Alameda.{% endif %}
+            <a href="{% url 'acerca' %}">Acerca de</a>
+        </span>
+    </div>
 </footer>

@@ -61,6 +61,7 @@ urlpatterns = [
     path('actividades/<int:pk>/inscripciones/<int:inscripcion_id>/cancelar/',
          inscripciones.cancelar_inscripcion_gestor, name='cancelar_inscripcion_gestor'),
     path('privacidad/', inscripciones.politica_privacidad, name='privacidad'),
+    path('acerca/', inscripciones.acerca, name='acerca'),
 
     # ============================================================
     # ESCÁNER
