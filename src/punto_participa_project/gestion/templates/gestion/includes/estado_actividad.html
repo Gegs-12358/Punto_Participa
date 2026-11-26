@@ -1,0 +1,2 @@
+{# Estado de la actividad como se muestra (Actividad.estado_mostrado): Próxima, En curso, Finalizada o Cancelada. #}
+{% with e=actividad.estado_mostrado %}<span class="badge{% if e == 'CANCELADA' %} inactive{% elif e == 'FINALIZADA' %} draft{% elif e == 'PROXIMA' %} tono-info{% endif %}">{{ actividad.etiqueta_estado }}</span>{% endwith %}

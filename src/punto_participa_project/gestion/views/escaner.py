@@ -4,6 +4,7 @@ Las actividades con invitación se resuelven en escaner_invitacion.py.
 """
 from collections import defaultdict
 from datetime import datetime
+import json
 import logging
 import re
 
@@ -256,15 +257,24 @@ def _procesar_escaneo(request):
         if not horario_registro.puede_corregir(request.user, actividad):
             return _error_json(horario_registro.mensaje_cerrado(sesion_horario), 403)
         correccion = True
+    # Aviso en la ventana de confirmar (antes de aceptar) y motivo para la auditoría
+    aviso_correccion = horario_registro.mensaje_correccion(sesion_horario, request.user) if correccion else ''
+    motivo = f' (fuera de horario: {horario_registro.motivo_fuera(sesion_horario)})' if correccion else ''
 
     # Con invitación: entran invitados y acompañantes de la lista (pueden no estar en la nómina)
     if actividad.tipo == 'INVITACION':
         from . import escaner_invitacion
         respuesta = escaner_invitacion.procesar(request, actividad, metodo, rut_procesado, confirmar)
-        if correccion and confirmar and respuesta.status_code == 200:
-            registrar_log(request, 'Escáner', 'Registro fuera de horario',
-                          f'Corrección en "{actividad.titulo}": registro de {rut_procesado} fuera del horario '
-                          f'de la sesión {sesion_horario.numero}.', 'Actividad', actividad.id, actividad.titulo)
+        if correccion and respuesta.status_code == 200:
+            if confirmar:
+                registrar_log(request, 'Escáner', 'Registro fuera de horario',
+                              f'Corrección en "{actividad.titulo}": registro de {rut_procesado}{motivo}.',
+                              'Actividad', actividad.id, actividad.titulo)
+            else:
+                datos = json.loads(respuesta.content)
+                if datos.get('confirmar') or datos.get('agregar'):
+                    datos['correccion'] = aviso_correccion
+                    return JsonResponse(datos, status=respuesta.status_code)
         return respuesta
 
     # ============================================================
@@ -312,6 +322,7 @@ def _procesar_escaneo(request):
         return JsonResponse({
             'success': True,
             'confirmar': True,
+            'correccion': aviso_correccion,
             'alumno': {
                 'nombre': f'{alumno.nombres} {alumno.apellidos}',
                 'rut': formatear_rut(alumno.rut),
@@ -356,7 +367,7 @@ def _procesar_escaneo(request):
                           'Registro fuera de horario' if correccion else 'Registro de asistencia',
                           ('Corrección: ' if correccion else '')
                           + f'{alumno.nombres} {alumno.apellidos} - {actividad.titulo}'
-                          + (f' ({texto_sesion.lower()})' if texto_sesion else ''),
+                          + (f' ({texto_sesion.lower()})' if texto_sesion else '') + motivo,
                           'Alumno', alumno.id, f'{alumno.nombres} {alumno.apellidos}')
 
     except Actividad.DoesNotExist:

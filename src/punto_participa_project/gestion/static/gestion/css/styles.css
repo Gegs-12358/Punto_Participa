@@ -5084,15 +5084,34 @@ a.mini-stat:focus-visible {
     text-align: center;
 }
 
-/* Separador de las actividades fuera de horario (solo Administrador y creador: para corregir) */
-.elegir-actividad__grupo {
-    margin: 14px 0 6px;
+/* Actividades fuera de horario (solo Administrador y creador: para corregir), plegadas */
+.elegir-actividad__fuera {
+    margin-top: 12px;
     padding-top: 10px;
     border-top: 1px solid var(--line);
-    color: var(--muted);
-    font-size: 12px;
-    font-weight: 700;
 }
+
+.elegir-actividad__fuera > summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 4px 0;
+}
+
+.elegir-actividad__fuera > summary:hover,
+.elegir-actividad__fuera > summary:focus-visible {
+    color: var(--navy);
+}
+
+.elegir-actividad__fuera .elegir-actividad__opcion {
+    margin-top: 6px;
+}
+
+/* Color por tipo en la lista del escáner: el mismo de las etiquetas de tipo (Taller, Masiva, Con invitación) */
+.elegir-actividad__opcion.tipo-borde--taller { border-left: 5px solid #1d4f91; }
+.elegir-actividad__opcion.tipo-borde--masiva { border-left: 5px solid var(--green); }
+.elegir-actividad__opcion.tipo-borde--invitacion { border-left: 5px solid #5b2fb0; }
 
 .elegir-actividad__opcion--fuera {
     opacity: 0.85;

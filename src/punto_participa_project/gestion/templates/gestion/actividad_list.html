@@ -168,17 +168,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if actividad.estado == 'CANCELADA' %}
-                        <span class="badge inactive">Cancelada</span>
-                        {% elif actividad.estado == 'FINALIZADA' %}
-                        <span class="badge draft">Finalizada</span>
-                        {% elif actividad.fecha_inicio|date:"Y-m-d H:i" > ahora %}
-                        <span class="badge draft">Próxima</span>
-                        {% elif actividad.fecha_fin|date:"Y-m-d H:i" < ahora %} <span class="badge draft">
-                            Finalizada</span>
-                            {% else %}
-                            <span class="badge">En curso</span>
-                            {% endif %}
+                        {% include 'gestion/includes/estado_actividad.html' %}
                     </td>
                     <td>
                         <div class="acciones-fila">

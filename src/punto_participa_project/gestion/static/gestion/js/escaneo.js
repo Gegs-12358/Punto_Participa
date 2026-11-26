@@ -137,6 +137,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Fuera de horario (Administrador o creador): aviso en la ventana antes de aceptar
+    function mostrarCorreccion(id, texto) {
+        const caja = document.getElementById(id);
+        if (!caja) return;
+        caja.textContent = texto || '';
+        caja.hidden = !texto;
+    }
+
     // Buscador de la lista de actividades (sin distinguir tildes ni mayúsculas)
     const buscarActividad = document.getElementById('buscarActividad');
     if (buscarActividad) {
@@ -153,6 +161,9 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             const aviso = document.getElementById('sinCoincidencias');
             if (aviso) aviso.hidden = visibles > 0;
+            // Si lo buscado está entre las fuera de horario (plegadas), se despliegan
+            const fuera = document.getElementById('fueraDeHorario');
+            if (fuera && texto && fuera.querySelector('.elegir-actividad__opcion:not([hidden])')) fuera.open = true;
         });
         // Enter en el buscador elige la primera actividad visible
         buscarActividad.addEventListener('keydown', function (e) {
@@ -328,6 +339,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 : 'Carrera: ' + data.alumno.carrera + ', ' + data.alumno.jornada
                         ));
                     }
+                    mostrarCorreccion('aviso-correccion', data.correccion);
                     openModal(modalConfirmar);
                 } else if (data.agregar) {
                     // Actividad con invitación: no está en la lista, se ofrece agregarlo
@@ -368,6 +380,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!modalAgregar) return;
         modoAgregar = data.agregar;
         document.getElementById('agregarMensaje').textContent = data.message;
+        mostrarCorreccion('aviso-correccion-agregar', data.correccion);
         const bloque = document.getElementById('agregarAcompanante');
         const lista = document.getElementById('agregarInvitados');
         const nombre = document.getElementById('agregarNombre');

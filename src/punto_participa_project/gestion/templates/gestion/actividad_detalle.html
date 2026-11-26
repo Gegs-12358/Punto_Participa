@@ -20,13 +20,7 @@
         <h1>{{ actividad.titulo }}</h1>
         <p>
             {% include 'gestion/includes/tipo_actividad.html' with tipo=actividad.tipo %}
-            {% if actividad.estado == 'ACTIVA' %}
-            <span class="badge">Activa</span>
-            {% elif actividad.estado == 'FINALIZADA' %}
-            <span class="badge draft">Finalizada</span>
-            {% else %}
-            <span class="badge inactive">Cancelada</span>
-            {% endif %}
+            {% include 'gestion/includes/estado_actividad.html' %}
         </p>
     </div>
     <div class="btn-group detail-actions">

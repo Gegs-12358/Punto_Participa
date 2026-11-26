@@ -130,7 +130,8 @@ class FiltrosDelInicioTests(BaseSistemaTestCase):
         Actividad.objects.create(titulo='Taller antiguo', descripcion='d', tipo='TALLER', lugar='Sala',
                                  fecha_inicio=ahora - timedelta(days=40), fecha_fin=ahora - timedelta(days=40, hours=-2),
                                  cupos_totales=5, cupos_disponibles=5)
-        activas = Actividad.objects.filter(estado='ACTIVA')
+        # "Activas" del Inicio: activas que no han terminado (las terminadas cuentan como finalizadas)
+        activas = Actividad.objects.filter(Actividad.vigente_q())
         local = timezone.localtime(ahora)
         esperado = {
             'hoy': activas.filter(fecha_inicio__date=timezone.localdate()).count(),

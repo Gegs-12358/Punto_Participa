@@ -1189,7 +1189,30 @@ margen, corrección del Administrador y del creador con auditoría, y que el cre
 otros). Las pruebas del escáner que no tratan del horario lo dejan abierto con `HorarioAbierto` (tests/base.py).
 Quedan 793 pruebas.
 
-### 18.34 Pendiente
+### 18.34 Estado según la fecha, escáner más limpio y aviso antes de corregir (25/11/2026)
+
+- **Estado que se muestra:** una actividad activa cuya fecha de término ya pasó se muestra como **Finalizada**
+  en el Inicio, el listado, el detalle y las exportaciones, sin cambiar el estado guardado (así el escáner deja
+  corregir). Las activas se muestran como **Próxima** o **En curso** (`Actividad.estado_mostrado`,
+  `includes/estado_actividad.html`). El filtro "Activa" del listado ya no trae las terminadas y "Finalizada" sí
+  las trae (`Actividad.vigente_q` / `finalizada_q`). Los contadores del Inicio (activas, finalizadas, talleres
+  sin cupos, sin inscritos, cupos disponibles) dejan de contar las terminadas. Se corrigió de paso que el
+  listado mostraba "Próxima" en todas las activas (comparaba con una variable que no existía).
+- **Inicio, "hoy":** usaba la fecha de UTC, así que entre las 21:00 y las 24:00 "hoy" era el día siguiente.
+  Ahora usa la fecha de Chile (`timezone.localdate`).
+- **Lista del escáner:** las actividades fuera de horario del Administrador y del creador van plegadas en
+  "Corregir una actividad fuera de horario (N)", así la lista del día solo muestra las que se van a realizar o
+  están en curso. Si lo que se busca está ahí, se despliega solo. Cada actividad lleva su tipo con el color de
+  siempre (Taller azul, Masiva verde, Con invitación morado) y un borde del mismo color.
+- **Antes de aceptar una corrección:** la ventana de confirmar (y la de "Agregar en la entrada") avisa
+  "Fuera de horario: esta actividad terminó el 23/11 a las 11:00. Si confirmas, el registro queda en la
+  auditoría como corrección hecha por <nombre>". La auditoría guarda además el motivo ("fuera de horario:
+  terminó el ...").
+
+Pruebas nuevas: `actividades/tests_estado_mostrado` y casos en `escaner/tests_horario` (aviso antes de aceptar,
+sin aviso dentro del horario, motivo en la auditoría, lista plegada y colores). Quedan 801 pruebas.
+
+### 18.35 Pendiente
 
 - **Plan original:** prueba de usabilidad del escáner con operadores (H001) y ubicación definitiva de los
   respaldos. El criterio del backlog ya dice "límite por usuario".

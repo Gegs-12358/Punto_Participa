@@ -442,9 +442,7 @@
                     </td>
                     <td>{% if actividad.cupos_disponibles is not None %}{{ actividad.cupos_disponibles }}{% else %}—{% endif %}</td>
                     <td>
-                        {% if actividad.estado == 'ACTIVA' %}<span class="badge">Activa</span>
-                        {% elif actividad.estado == 'FINALIZADA' %}<span class="badge draft">Finalizada</span>
-                        {% else %}<span class="badge inactive">Cancelada</span>{% endif %}
+                        {% include 'gestion/includes/estado_actividad.html' %}
                     </td>
                     <td>{{ actividad.creado_por.username|default:"N/A" }}</td>
                     <td>

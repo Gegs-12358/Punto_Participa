@@ -187,7 +187,8 @@ def dashboard(request):
         insc_qs = insc_qs.filter(actividad__creado_por=request.user)
         notif_qs = notif_qs.filter(actividad__creado_por=request.user)
 
-    ahora, hoy = timezone.now(), timezone.now().date()
+    # localdate: la fecha de hoy en Chile (now().date() es la de UTC y entre las 21:00 y las 24:00 ya es mañana)
+    ahora, hoy = timezone.now(), timezone.localdate()
     rango = request.GET.get('rango', '')
     tipo = request.GET.get('tipo', '')
     carrera = request.GET.get('carrera', '')
@@ -198,8 +199,8 @@ def dashboard(request):
     )
 
     agg = act_qs.aggregate(
-        activas=Count('id', filter=Q(estado='ACTIVA')),
-        finalizadas=Count('id', filter=Q(estado='FINALIZADA')),
+        activas=Count('id', filter=Actividad.vigente_q(ahora)),
+        finalizadas=Count('id', filter=Actividad.finalizada_q(ahora)),
         total=Count('id'),
     )
     total_asis = asis_qs.count()
@@ -226,15 +227,16 @@ def dashboard(request):
         'invitaciones_enviadas': notif_qs.filter(actividad__in=act_qs, estado_envio='EXITO').count(),
         'actividades_finalizadas': agg['finalizadas'],
         'promedio_asistentes': round(total_asis / agg['total'], 1) if agg['total'] else 0,
-        'cupos_disponibles_totales': act_qs.filter(tipo='TALLER', estado='ACTIVA')
+        'cupos_disponibles_totales': act_qs.filter(Actividad.vigente_q(ahora), tipo='TALLER')
             .aggregate(t=Sum('cupos_disponibles')).get('t') or 0,
         'tasa_asistencia': round(total_asis / total_inscritos * 100, 1) if total_inscritos else 0,
         'actividades_proximas': act_qs.filter(estado='ACTIVA', fecha_inicio__gte=ahora)
             .order_by('fecha_inicio')[:4],
         'alertas': {
-            'talleres_sin_cupos': act_qs.filter(tipo='TALLER', estado='ACTIVA', cupos_disponibles=0).count(),
+            'talleres_sin_cupos': act_qs.filter(Actividad.vigente_q(ahora), tipo='TALLER',
+                                                cupos_disponibles=0).count(),
             'comienzan_hoy': act_qs.filter(estado='ACTIVA', fecha_inicio__date=hoy).count(),
-            'sin_inscritos': act_qs.filter(estado='ACTIVA', inscripciones__isnull=True).count(),
+            'sin_inscritos': act_qs.filter(Actividad.vigente_q(ahora), inscripciones__isnull=True).count(),
             'correos_fallidos': notif_qs.filter(actividad__in=act_qs, estado_envio='FALLO').count(),
         },
         'ultimas_asistencias': asis_qs.select_related('alumno', 'actividad')

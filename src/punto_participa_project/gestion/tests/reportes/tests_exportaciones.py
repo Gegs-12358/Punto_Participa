@@ -72,7 +72,7 @@ class ResumenTests(BaseExportTests):
     def test_taller_inscritos_asistentes_no_asistieron_y_porcentaje(self):
         fila = self._fila('Taller integral')
         self.assertEqual(fila['Tipo'], 'Taller')
-        self.assertEqual(fila['Estado'], 'Activa')
+        self.assertEqual(fila['Estado'], 'En curso')   # activa y empezada (Actividad.etiqueta_estado)
         self.assertEqual(fila['Lugar'], 'Sede Alameda')
         self.assertEqual(fila['Creador'], 'creador_integral')
         self.assertEqual(fila['Invitados'], '1')

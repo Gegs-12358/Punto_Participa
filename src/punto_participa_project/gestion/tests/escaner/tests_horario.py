@@ -76,6 +76,16 @@ class ListaParaElegirTests(BaseSistemaTestCase):
         self.assertEqual(disponibles, [self.en_curso.pk])
         self.assertEqual(fuera, [self.terminada.pk, self.de_otro.pk])   # la más reciente primero
 
+    def test_las_fuera_de_horario_van_plegadas_y_con_color_por_tipo(self):
+        self.client.force_login(self.admin)
+        r = self.client.get(URL)
+        self.assertContains(r, '<details class="elegir-actividad__fuera"')
+        self.assertContains(r, 'Corregir una actividad fuera de horario (2)')
+        self.assertContains(r, 'tipo-borde--masiva')
+        self.assertContains(r, 'tipo-borde--taller')
+        self.client.force_login(self.registrador)
+        self.assertNotContains(self.client.get(URL), 'elegir-actividad__fuera')
+
     def test_el_creador_ve_aparte_solo_las_suyas(self):
         _, fuera = self.listas(self.creador)
         self.assertEqual(fuera, [self.terminada.pk])
@@ -128,6 +138,29 @@ class RegistroFueraDeHorarioTests(BaseSistemaTestCase):
         log = LogAuditoria.objects.get(accion='Registro fuera de horario')
         self.assertEqual(log.usuario_sistema, self.admin)
         self.assertIn('Corrección', log.detalle)
+
+    def test_antes_de_aceptar_avisa_que_es_una_correccion(self):
+        act = mover(self.actividad_masiva, -timedelta(days=1))
+        self.client.force_login(self.admin)
+        self.client.post(URL, {'cambiar_actividad': '1', 'actividad_id': act.pk})
+        datos = self.client.post(URL, {'rut': self.alumno.rut}).json()
+        self.assertTrue(datos['confirmar'])
+        self.assertIn('Fuera de horario: esta actividad terminó el', datos['correccion'])
+        self.assertIn('corrección hecha por', datos['correccion'])
+        self.assertFalse(Asistencia.objects.filter(actividad=act).exists())   # aún no se registra
+
+    def test_dentro_del_horario_no_hay_aviso(self):
+        act = mover(self.actividad_masiva, -timedelta(minutes=30))
+        self.client.force_login(self.admin)
+        self.client.post(URL, {'cambiar_actividad': '1', 'actividad_id': act.pk})
+        self.assertEqual(self.client.post(URL, {'rut': self.alumno.rut}).json()['correccion'], '')
+
+    def test_la_auditoria_dice_quien_y_por_que(self):
+        act = mover(self.actividad_masiva, -timedelta(days=1))
+        self.escanear(self.admin, act)
+        log = LogAuditoria.objects.get(accion='Registro fuera de horario')
+        self.assertIn('fuera de horario: terminó el', log.detalle)
+        self.assertIn(self.alumno.nombres, log.detalle)
 
     def test_el_creador_corrige_la_suya_pero_no_la_de_otro(self):
         suya = mover(self.actividad_masiva, -timedelta(days=1))

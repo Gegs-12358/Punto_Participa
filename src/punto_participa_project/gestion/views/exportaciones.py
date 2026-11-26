@@ -201,7 +201,7 @@ def reporte_resumen(request, datos=None):
             esperados = d['total'] - d['rechazados']
             empezo = _ya_empezo(act)
             filas.append([
-                act.titulo, act.get_tipo_display(), act.get_estado_display(),
+                act.titulo, act.get_tipo_display(), act.etiqueta_estado,
                 _local(act.fecha_inicio), _local(act.fecha_fin), act.lugar_completo,
                 act.creado_por.username if act.creado_por else '',
                 None, d['total'], d['confirmados'], d['entraron'],
@@ -219,7 +219,7 @@ def reporte_resumen(request, datos=None):
             no_asistieron = None
             pct = (n_asis / act.cupos_totales) if act.cupos_totales else None
         filas.append([
-            act.titulo, act.get_tipo_display(), act.get_estado_display(),
+            act.titulo, act.get_tipo_display(), act.etiqueta_estado,
             _local(act.fecha_inicio), _local(act.fecha_fin), act.lugar_completo,
             act.creado_por.username if act.creado_por else '',
             act.cupos_totales, invitados.get(act.id, 0),

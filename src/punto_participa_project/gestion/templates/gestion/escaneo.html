@@ -209,36 +209,42 @@
                 <div class="elegir-actividad__lista" id="listaActividades" role="list">
                     {% for actividad in actividades_disponibles %}
                     <button type="submit" name="actividad_id" value="{{ actividad.id }}" role="listitem"
-                        class="elegir-actividad__opcion{% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %} es-actual{% endif %}"
+                        class="elegir-actividad__opcion tipo-borde--{{ actividad.tipo|lower }}{% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %} es-actual{% endif %}"
                         data-buscar="{{ actividad.titulo|lower }} {{ actividad.lugar_completo|lower }}">
                         <img class="elegir-actividad__mini" src="{{ actividad.url_miniatura }}" alt="" width="44" height="44" loading="lazy" decoding="async">
                         <strong>{{ actividad.titulo }}</strong>
                         <small>
+                            {% include 'gestion/includes/tipo_actividad.html' with tipo=actividad.tipo %}
                             {% if actividad.en_curso %}<span class="badge">En curso</span>
                             {% elif actividad.registro_abierto %}<span class="badge">Registro abierto</span>
                             {% elif actividad.abre %}<span class="badge draft">Abre {{ actividad.abre|date:"d/m H:i" }}</span>{% endif %}
                             {% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %}<span class="badge draft">Tu turno actual</span>{% endif %}
-                            {{ actividad.get_tipo_display }}, {{ actividad.fecha_inicio|date:"d/m/Y H:i" }}, {{ actividad.lugar_completo }}
+                            {{ actividad.fecha_inicio|date:"d/m/Y H:i" }}, {{ actividad.lugar_completo }}
                         </small>
                     </button>
                     {% empty %}
                     <p class="elegir-actividad__vacio">No hay actividades con el registro abierto ni que abran en las próximas 24 horas.</p>
                     {% endfor %}
                     {% if actividades_fuera_de_horario %}
-                    <p class="elegir-actividad__grupo" role="presentation">Fuera de horario, solo para corregir</p>
-                    {% for actividad in actividades_fuera_de_horario %}
-                    <button type="submit" name="actividad_id" value="{{ actividad.id }}" role="listitem"
-                        class="elegir-actividad__opcion elegir-actividad__opcion--fuera{% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %} es-actual{% endif %}"
-                        data-buscar="{{ actividad.titulo|lower }} {{ actividad.lugar_completo|lower }}">
-                        <img class="elegir-actividad__mini" src="{{ actividad.url_miniatura }}" alt="" width="44" height="44" loading="lazy" decoding="async">
-                        <strong>{{ actividad.titulo }}</strong>
-                        <small>
-                            <span class="badge inactive">{% if actividad.fecha_fin < ahora %}Terminó{% else %}Aún no abre{% endif %}</span>
-                            {% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %}<span class="badge draft">Tu turno actual</span>{% endif %}
-                            {{ actividad.get_tipo_display }}, {{ actividad.fecha_inicio|date:"d/m/Y H:i" }}, {{ actividad.lugar_completo }}
-                        </small>
-                    </button>
-                    {% endfor %}
+                    {# Solo Administrador (todas) y creador (las suyas). Cerrado: la lista del día queda limpia. #}
+                    <details class="elegir-actividad__fuera" id="fueraDeHorario">
+                        <summary>Corregir una actividad fuera de horario ({{ actividades_fuera_de_horario|length }})</summary>
+                        <p class="input-help">Solo para registrar a alguien que faltó. Cada registro queda en la auditoría.</p>
+                        {% for actividad in actividades_fuera_de_horario %}
+                        <button type="submit" name="actividad_id" value="{{ actividad.id }}" role="listitem"
+                            class="elegir-actividad__opcion elegir-actividad__opcion--fuera tipo-borde--{{ actividad.tipo|lower }}{% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %} es-actual{% endif %}"
+                            data-buscar="{{ actividad.titulo|lower }} {{ actividad.lugar_completo|lower }}">
+                            <img class="elegir-actividad__mini" src="{{ actividad.url_miniatura }}" alt="" width="44" height="44" loading="lazy" decoding="async">
+                            <strong>{{ actividad.titulo }}</strong>
+                            <small>
+                                {% include 'gestion/includes/tipo_actividad.html' with tipo=actividad.tipo %}
+                                {% if actividad.abre %}<span class="badge draft">Abre {{ actividad.abre|date:"d/m H:i" }}</span>{% else %}<span class="badge inactive">Terminó</span>{% endif %}
+                                {% if actividad_seleccionada and actividad.id == actividad_seleccionada.id %}<span class="badge draft">Tu turno actual</span>{% endif %}
+                                {{ actividad.fecha_inicio|date:"d/m/Y H:i" }}, {{ actividad.lugar_completo }}
+                            </small>
+                        </button>
+                        {% endfor %}
+                    </details>
                     {% endif %}
                     <p class="elegir-actividad__vacio" id="sinCoincidencias" hidden>Ninguna actividad coincide con la búsqueda.</p>
                 </div>
@@ -265,6 +271,7 @@
 
         <div class="modal-body">
             <p>¿Confirmas el registro de asistencia?</p>
+            <div id="aviso-correccion" class="aviso-horario aviso-horario--correccion" role="alert" hidden></div>
             <div id="info-alumno" class="alert alert-info" aria-live="polite"></div>
         </div>
 
@@ -285,6 +292,7 @@
             <button type="button" class="close-button" data-modal-close aria-label="Cerrar">×</button>
         </header>
         <div class="modal-body">
+            <div id="aviso-correccion-agregar" class="aviso-horario aviso-horario--correccion" role="alert" hidden></div>
             <p id="agregarMensaje" aria-live="polite"></p>
             <div id="agregarAcompanante" hidden>
                 <fieldset class="agregar-acompanante__invitados">

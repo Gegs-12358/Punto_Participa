@@ -64,6 +64,23 @@ def mensaje_cerrado(sesion, ahora=None):
             f'(una hora después de terminar). Solo el Administrador o quien creó la actividad pueden corregirlo.')
 
 
+def motivo_fuera(sesion, ahora=None):
+    """"terminó el 25/11 a las 18:00" o "abre el 26/11 a las 08:30", para avisos y auditoría."""
+    ahora = ahora or timezone.now()
+    if ahora < desde(sesion):
+        d = timezone.localtime(desde(sesion))
+        return f'el registro abre el {d:%d/%m} a las {d:%H:%M}'
+    f = timezone.localtime(sesion.fecha_fin)
+    return f'terminó el {f:%d/%m} a las {f:%H:%M}'
+
+
+def mensaje_correccion(sesion, user, ahora=None):
+    """Aviso que ve el Administrador o el creador antes de confirmar un registro fuera de horario."""
+    nombre = (user.get_full_name() or user.username).strip()
+    return (f'Fuera de horario: esta actividad {motivo_fuera(sesion, ahora)}. Si confirmas, el registro queda en '
+            f'la auditoría como corrección hecha por {nombre}.')
+
+
 def estado(user, actividad, sesion, ahora=None):
     """Lo que el escáner muestra del horario de la sesión elegida."""
     ahora = ahora or timezone.now()

@@ -58,9 +58,16 @@ def lista_actividades(request):
 
     if tiene_rol(request.user, ['Creador de Evento']) and not es_admin:
         qs = qs.filter(creado_por=request.user)
-    for campo, val in [('tipo', tipo), ('estado', estado), ('lugar', lugar)]:
+    for campo, val in [('tipo', tipo), ('lugar', lugar)]:
         if val:
             qs = qs.filter(**{campo: val})
+    # Estado como se muestra: "Finalizada" incluye las activas que ya terminaron (Actividad.estado_mostrado)
+    if estado == 'ACTIVA':
+        qs = qs.filter(Actividad.vigente_q())
+    elif estado == 'FINALIZADA':
+        qs = qs.filter(Actividad.finalizada_q())
+    elif estado == 'CANCELADA':
+        qs = qs.filter(estado='CANCELADA')
     if buscar:
         qs = qs.filter(Q(titulo__icontains=buscar) | Q(descripcion__icontains=buscar)
                        | Q(lugar__icontains=buscar))
@@ -81,7 +88,8 @@ def lista_actividades(request):
     return render(request, 'gestion/actividad_list.html', {
         'actividades': paginar(request, qs),
         'tipos': [('', 'Todos los tipos')] + list(Actividad.TIPO_CHOICES),
-        'estados': [('', 'Todos los estados')] + list(Actividad.ESTADO_CHOICES),
+        'estados': [('', 'Todos los estados'), ('ACTIVA', 'Activa (próxima o en curso)'),
+                    ('FINALIZADA', 'Finalizada'), ('CANCELADA', 'Cancelada')],
         'lugares_opciones': _lugares_para_filtro(),
         'es_admin': es_admin, 'orden_actual': orden_seguro, 'totales': totales,
     })

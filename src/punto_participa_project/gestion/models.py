@@ -276,6 +276,42 @@ class Actividad(models.Model):
     def esta_activa(self):
         return self.estado == 'ACTIVA'
 
+    # Estado para mostrar: una actividad activa cuya fecha de término ya pasó se muestra como Finalizada, sin
+    # cambiar el estado guardado (así el Administrador y el creador pueden seguir corrigiendo asistencias en el
+    # escáner). Las activas se muestran como Próxima o En curso. Los filtros usan finalizada_q() / vigente_q().
+    ESTADOS_MOSTRADOS = {'PROXIMA': 'Próxima', 'EN_CURSO': 'En curso', 'FINALIZADA': 'Finalizada',
+                         'CANCELADA': 'Cancelada'}
+
+    @property
+    def estado_mostrado(self):
+        from django.utils import timezone
+        if self.estado == 'CANCELADA':
+            return 'CANCELADA'
+        ahora = timezone.now()
+        if self.estado == 'FINALIZADA' or self.fecha_fin < ahora:
+            return 'FINALIZADA'
+        return 'PROXIMA' if self.fecha_inicio > ahora else 'EN_CURSO'
+
+    @property
+    def etiqueta_estado(self):
+        return self.ESTADOS_MOSTRADOS[self.estado_mostrado]
+
+    @staticmethod
+    def finalizada_q(ahora=None):
+        """Filtro de las que se muestran como Finalizada (guardadas así o activas ya terminadas)."""
+        from django.db.models import Q
+        from django.utils import timezone
+        ahora = ahora or timezone.now()
+        return Q(estado='FINALIZADA') | Q(estado='ACTIVA', fecha_fin__lt=ahora)
+
+    @staticmethod
+    def vigente_q(ahora=None):
+        """Filtro de las activas que no han terminado (Próxima o En curso)."""
+        from django.db.models import Q
+        from django.utils import timezone
+        ahora = ahora or timezone.now()
+        return Q(estado='ACTIVA', fecha_fin__gte=ahora)
+
     @property
     def es_taller(self):
         return self.tipo == 'TALLER'
